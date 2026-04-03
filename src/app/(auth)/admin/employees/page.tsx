@@ -1,0 +1,251 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
+import { DashboardNav } from "@/components/layout/DashboardNav";
+import { Button } from "@/components/ui/Button";
+import { employeeApi } from "@/lib/employeeApi";
+import { EmployeeModal, Employee } from "@/components/admin/EmployeeModal";
+
+type Tab = "active" | "inactive";
+
+function getInitials(name: string) {
+  const parts = name.trim().split(" ");
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function EmployeeCard({ employee, onClick }: { employee: Employee; onClick: () => void }) {
+  const isInactive = !employee.active;
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-4 border rounded-2xl p-5 hover:shadow-md transition-all duration-200 text-left w-full cursor-pointer ${
+        isInactive
+          ? "bg-surface-container-low border-outline-variant opacity-70 hover:opacity-100"
+          : "bg-surface-container-lowest border-outline-variant hover:border-primary/30"
+      }`}
+    >
+      <div
+        className={`w-12 h-12 rounded-full flex items-center justify-center font-headline font-bold text-sm flex-shrink-0 ${
+          isInactive ? "bg-outline-variant text-on-surface-variant" : "bg-primary text-white"
+        }`}
+      >
+        {getInitials(employee.name)}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold text-on-surface truncate">{employee.name}</p>
+        <p className="text-sm text-on-surface-variant truncate">{employee.email}</p>
+        <p className="text-xs text-on-surface-variant mt-0.5">Mat. {employee.registrationId}</p>
+      </div>
+      <span
+        className="material-symbols-outlined text-outline-variant flex-shrink-0"
+        style={{ fontSize: "18px" }}
+      >
+        chevron_right
+      </span>
+    </button>
+  );
+}
+
+function EmployeeCardSkeleton() {
+  return (
+    <div className="flex items-center gap-4 bg-surface-container-lowest border border-outline-variant rounded-2xl p-5">
+      <div className="w-12 h-12 rounded-full bg-surface-container-high animate-pulse flex-shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-4 bg-surface-container-high rounded animate-pulse w-3/4" />
+        <div className="h-3 bg-surface-container-high rounded animate-pulse w-1/2" />
+        <div className="h-3 bg-surface-container-high rounded animate-pulse w-1/3" />
+      </div>
+    </div>
+  );
+}
+
+export default function EmployeesPage() {
+  const { user, logout } = useEmployeeAuth();
+  const [tab, setTab] = useState<Tab>("active");
+  const [active, setActive] = useState<Employee[]>([]);
+  const [inactive, setInactive] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selected, setSelected] = useState<Employee | null>(null);
+
+  const fetchActive = useCallback(async () => {
+    const data = await employeeApi.get<Employee[]>("/employee");
+    setActive(data);
+  }, []);
+
+  const fetchInactive = useCallback(async () => {
+    const data = await employeeApi.get<Employee[]>("/employee/inactive");
+    setInactive(data);
+  }, []);
+
+  const loadTab = useCallback(
+    async (t: Tab) => {
+      setLoading(true);
+      setError("");
+      try {
+        if (t === "active") await fetchActive();
+        else await fetchInactive();
+      } catch {
+        setError("Não foi possível carregar os funcionários");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchActive, fetchInactive]
+  );
+
+  useEffect(() => {
+    loadTab("active");
+  }, [loadTab]);
+
+  const handleTabChange = (t: Tab) => {
+    setTab(t);
+    loadTab(t);
+  };
+
+  const handleUpdated = (updated: Employee) => {
+    setActive((prev) => prev.map((e) => (e._id === updated._id ? updated : e)));
+    setSelected(null);
+  };
+
+  const handleDeleted = (id: string) => {
+    setActive((prev) => prev.filter((e) => e._id !== id));
+    // move to inactive list
+    const removed = active.find((e) => e._id === id);
+    if (removed) setInactive((prev) => [{ ...removed, active: false }, ...prev]);
+    setSelected(null);
+  };
+
+  const displayed = tab === "active" ? active : inactive;
+  const count = displayed.length;
+  const emptyLabel =
+    tab === "active" ? "Nenhum funcionário ativo" : "Nenhum funcionário desativado";
+  const emptySubLabel =
+    tab === "active"
+      ? "Adicione o primeiro funcionário ao sistema"
+      : "Funcionários desativados aparecerão aqui";
+
+  return (
+    <div className="flex flex-col flex-1">
+      <DashboardNav user={user} onLogout={logout} />
+
+      <main className="flex-1 bg-surface px-6 py-8 md:px-10">
+        <div className="max-w-3xl mx-auto">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-6">
+            <Link
+              href="/admin/dashboard"
+              className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+              title="Voltar ao painel"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
+                arrow_back
+              </span>
+            </Link>
+            <div className="flex-1">
+              <h1 className="font-headline font-bold text-2xl text-on-surface">Funcionários</h1>
+              {!loading && !error && (
+                <p className="text-sm text-on-surface-variant">
+                  {count} {count === 1 ? "funcionário" : "funcionários"} {tab === "active" ? "ativos" : "desativados"}
+                </p>
+              )}
+            </div>
+            <Link href="/admin/employees/new">
+              <Button variant="primary" size="sm" icon="person_add">
+                Adicionar
+              </Button>
+            </Link>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-1 bg-surface-container-high p-1 rounded-xl mb-5 w-fit">
+            {(["active", "inactive"] as Tab[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => handleTabChange(t)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  tab === t
+                    ? "bg-surface-container-lowest text-on-surface shadow-sm"
+                    : "text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: "16px" }}
+                >
+                  {t === "active" ? "check_circle" : "person_off"}
+                </span>
+                {t === "active" ? "Ativos" : "Desativados"}
+              </button>
+            ))}
+          </div>
+
+          {/* Content */}
+          {error && (
+            <div className="flex flex-col items-center gap-3 py-16 text-center">
+              <span className="material-symbols-outlined text-error" style={{ fontSize: "40px" }}>
+                error
+              </span>
+              <p className="text-on-surface-variant">{error}</p>
+              <Button variant="outline" size="sm" onClick={() => loadTab(tab)}>
+                Tentar novamente
+              </Button>
+            </div>
+          )}
+
+          {loading && (
+            <div className="flex flex-col gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <EmployeeCardSkeleton key={i} />
+              ))}
+            </div>
+          )}
+
+          {!loading && !error && displayed.length === 0 && (
+            <div className="flex flex-col items-center gap-4 py-16 text-center">
+              <div className="p-5 bg-surface-container-high rounded-full">
+                <span
+                  className="material-symbols-outlined text-on-surface-variant"
+                  style={{ fontSize: "36px" }}
+                >
+                  {tab === "active" ? "group" : "person_off"}
+                </span>
+              </div>
+              <div>
+                <p className="font-semibold text-on-surface">{emptyLabel}</p>
+                <p className="text-sm text-on-surface-variant mt-1">{emptySubLabel}</p>
+              </div>
+              {tab === "active" && (
+                <Link href="/admin/employees/new">
+                  <Button variant="primary" size="sm" icon="person_add">
+                    Adicionar funcionário
+                  </Button>
+                </Link>
+              )}
+            </div>
+          )}
+
+          {!loading && !error && displayed.length > 0 && (
+            <div className="flex flex-col gap-3">
+              {displayed.map((emp) => (
+                <EmployeeCard key={emp._id} employee={emp} onClick={() => setSelected(emp)} />
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+
+      {selected && (
+        <EmployeeModal
+          employee={selected}
+          onClose={() => setSelected(null)}
+          onUpdated={handleUpdated}
+          onDeleted={handleDeleted}
+        />
+      )}
+    </div>
+  );
+}

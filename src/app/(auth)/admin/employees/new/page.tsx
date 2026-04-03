@@ -158,7 +158,7 @@ export default function RegisterEmployeePage() {
         <div className="max-w-lg mx-auto">
           <div className="mb-6 flex items-center gap-3">
             <Link
-              href="/admin/dashboard"
+              href="/admin/employees"
               className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
               title="Voltar ao painel"
             >

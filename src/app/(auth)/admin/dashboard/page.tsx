@@ -27,7 +27,7 @@ export default function AdminDashboard() {
               icon="group"
               title="Gerenciamento de Funcionários"
               description="Cadastrar, editar e gerenciar funcionários do sistema."
-              href="/admin/employees/new"
+              href="/admin/employees"
             />
             <DashboardCard
               icon="monitoring"
