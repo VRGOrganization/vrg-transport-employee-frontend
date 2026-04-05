@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -156,12 +156,7 @@ async function getImageSize(dataUrl: string): Promise<{ width: number; height: n
   });
 }
 
-async function openCardsPdf(cards: PrintableCard[], title: string): Promise<boolean> {
-  const pdfTab = window.open("", "_blank", "noopener,noreferrer");
-  if (!pdfTab) {
-    return false;
-  }
-
+async function buildCardsPdfUrl(cards: PrintableCard[], title: string): Promise<string> {
   const [{ jsPDF }, imageSizes] = await Promise.all([
     import("jspdf"),
     Promise.all(cards.map((card) => getImageSize(card.imageData))),
@@ -184,21 +179,11 @@ async function openCardsPdf(cards: PrintableCard[], title: string): Promise<bool
   const margin = 10;
   const contentWidth = pageWidth - margin * 2;
 
-  const titleHeight = 5;
-  const titleGap = 1.5;
-  const framePadding = 1.5;
-  const frameHeight = 58;
+  const cardAreaHeight = 58;
   const cutLineGapTop = 2.5;
-  const cutLabelGap = 1.2;
   const cutLineGapBottom = 3;
 
-  const blockHeight =
-    titleHeight +
-    titleGap +
-    frameHeight +
-    cutLineGapTop +
-    cutLabelGap +
-    cutLineGapBottom;
+  const blockHeight = cardAreaHeight + cutLineGapTop + cutLineGapBottom;
 
   let y = margin;
 
@@ -209,33 +194,23 @@ async function openCardsPdf(cards: PrintableCard[], title: string): Promise<bool
     }
 
     const imageInfo = imageSizes[index];
-    const frameX = margin;
-    const frameY = y + titleHeight + titleGap;
-    const frameInnerW = contentWidth - framePadding * 2;
-    const frameInnerH = frameHeight - framePadding * 2;
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.text(card.studentName, margin, y + 4);
-
-    doc.setDrawColor(209, 213, 219);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(frameX, frameY, contentWidth, frameHeight, 1.5, 1.5);
+    const areaX = margin;
+    const areaY = y;
 
     const imageAspect = imageInfo.width / imageInfo.height;
-    const frameAspect = frameInnerW / frameInnerH;
+    const areaAspect = contentWidth / cardAreaHeight;
 
-    let drawW = frameInnerW;
-    let drawH = frameInnerH;
+    let drawW = contentWidth;
+    let drawH = cardAreaHeight;
 
-    if (imageAspect > frameAspect) {
-      drawH = frameInnerW / imageAspect;
+    if (imageAspect > areaAspect) {
+      drawH = contentWidth / imageAspect;
     } else {
-      drawW = frameInnerH * imageAspect;
+      drawW = cardAreaHeight * imageAspect;
     }
 
-    const drawX = frameX + framePadding + (frameInnerW - drawW) / 2;
-    const drawY = frameY + framePadding + (frameInnerH - drawH) / 2;
+    const drawX = areaX + (contentWidth - drawW) / 2;
+    const drawY = areaY + (cardAreaHeight - drawH) / 2;
 
     doc.addImage(
       card.imageData,
@@ -249,59 +224,19 @@ async function openCardsPdf(cards: PrintableCard[], title: string): Promise<bool
     );
 
     if (index < cards.length - 1) {
-      const cutY = frameY + frameHeight + cutLineGapTop;
+      const cutY = areaY + cardAreaHeight + cutLineGapTop;
       doc.setDrawColor(107, 114, 128);
       doc.setLineDashPattern([1.5, 1.5], 0);
       doc.setLineWidth(0.2);
       doc.line(margin, cutY, pageWidth - margin, cutY);
       doc.setLineDashPattern([], 0);
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.setTextColor(107, 114, 128);
-      doc.text("CORTE AQUI", pageWidth / 2, cutY + cutLabelGap + 1.2, {
-        align: "center",
-      });
-      doc.setTextColor(0, 0, 0);
     }
 
     y += blockHeight;
   });
 
   const pdfBlob = doc.output("blob");
-  const pdfUrl = URL.createObjectURL(pdfBlob);
-
-  pdfTab.document.open();
-  pdfTab.document.write(`
-    <!doctype html>
-    <html lang="pt-BR">
-      <head>
-        <meta charset="UTF-8" />
-        <title>${title}</title>
-        <style>
-          html, body {
-            margin: 0;
-            height: 100%;
-            background: #0b0f19;
-          }
-
-          .pdf-viewer {
-            width: 100%;
-            height: 100%;
-            border: 0;
-          }
-        </style>
-      </head>
-      <body>
-        <iframe class="pdf-viewer" src="${pdfUrl}" title="${title}"></iframe>
-      </body>
-    </html>
-  `);
-  pdfTab.document.close();
-
-  setTimeout(() => URL.revokeObjectURL(pdfUrl), 2 * 60 * 1000);
-
-  return true;
+  return URL.createObjectURL(pdfBlob);
 }
 
 const DAY_LABELS: Record<string, string> = {
@@ -335,6 +270,35 @@ export default function EmployeeCardsPage() {
   const [selectedForBatch, setSelectedForBatch] = useState<string[]>([]);
   const [printingSingle, setPrintingSingle] = useState(false);
   const [printingBatch, setPrintingBatch] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [pdfPreviewTitle, setPdfPreviewTitle] = useState("Preview de impressão");
+  const pdfFrameRef = useRef<HTMLIFrameElement | null>(null);
+
+  const closePdfPreview = useCallback(() => {
+    if (pdfPreviewUrl) {
+      URL.revokeObjectURL(pdfPreviewUrl);
+    }
+    setPdfPreviewUrl(null);
+  }, [pdfPreviewUrl]);
+
+  const openPdfPreview = useCallback((url: string, title: string) => {
+    setPdfPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return url;
+    });
+    setPdfPreviewTitle(title);
+  }, []);
+
+  const handlePrintFromPreview = useCallback(() => {
+    pdfFrameRef.current?.contentWindow?.focus();
+    pdfFrameRef.current?.contentWindow?.print();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+    };
+  }, [pdfPreviewUrl]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -548,19 +512,16 @@ export default function EmployeeCardsPage() {
     setApproveMessage("");
 
     try {
-      const opened = await openCardsPdf([
+      const pdfUrl = await buildCardsPdfUrl([
         printable,
       ], `Carteirinha - ${printable.studentName}`);
-
-      if (!opened) {
-        setApproveMessage("Permita pop-ups no navegador para abrir o PDF de impressão.");
-      }
+      openPdfPreview(pdfUrl, `Carteirinha - ${printable.studentName}`);
     } catch {
       setApproveMessage("Falha ao gerar PDF de impressão.");
     } finally {
       setPrintingSingle(false);
     }
-  }, [selected, printableCardsByStudentId]);
+  }, [selected, printableCardsByStudentId, openPdfPreview]);
 
   const handlePrintBatch = useCallback(async () => {
     if (selectedForBatch.length === 0) {
@@ -581,16 +542,14 @@ export default function EmployeeCardsPage() {
     setApproveMessage("");
 
     try {
-      const opened = await openCardsPdf(cards, `Carteirinhas em lote (${cards.length})`);
-      if (!opened) {
-        setApproveMessage("Permita pop-ups no navegador para abrir o PDF de impressão.");
-      }
+      const pdfUrl = await buildCardsPdfUrl(cards, `Carteirinhas em lote (${cards.length})`);
+      openPdfPreview(pdfUrl, `Carteirinhas em lote (${cards.length})`);
     } catch {
       setApproveMessage("Falha ao gerar PDF em lote.");
     } finally {
       setPrintingBatch(false);
     }
-  }, [selectedForBatch, printableCardsByStudentId]);
+  }, [selectedForBatch, printableCardsByStudentId, openPdfPreview]);
 
   return (
     <div className="flex flex-col flex-1">
@@ -859,6 +818,40 @@ export default function EmployeeCardsPage() {
           onClose={() => setLightboxIndex(null)}
           onNavigate={(nextIndex) => setLightboxIndex(nextIndex)}
         />
+      )}
+
+      {pdfPreviewUrl && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true">
+          <div className="flex h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-white/20 bg-surface-container-lowest shadow-2xl">
+            <div className="flex items-center justify-between border-b border-outline-variant bg-surface px-4 py-3">
+              <p className="truncate text-sm font-semibold text-on-surface">{pdfPreviewTitle}</p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<Printer className="h-4 w-4" />}
+                  onClick={handlePrintFromPreview}
+                >
+                  Imprimir
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={closePdfPreview}
+                >
+                  Fechar
+                </Button>
+              </div>
+            </div>
+
+            <iframe
+              ref={pdfFrameRef}
+              src={pdfPreviewUrl}
+              title={pdfPreviewTitle}
+              className="h-full w-full border-0 bg-white"
+            />
+          </div>
+        </div>
       )}
     </div>
   );
