@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "@/providers/ThemeProvider";
+import { Sun, Moon } from "lucide-react";
 
 interface ThemeToggleProps {
   className?: string;
@@ -16,9 +17,7 @@ export function ThemeToggle({ className = "" }: ThemeToggleProps) {
       title={theme === "dark" ? "Modo claro" : "Modo escuro"}
       aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
     >
-      <span className="material-symbols-outlined" style={{ fontSize: "20px", display: "block" }}>
-        {theme === "dark" ? "light_mode" : "dark_mode"}
-      </span>
+      {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
     </button>
   );
 }
