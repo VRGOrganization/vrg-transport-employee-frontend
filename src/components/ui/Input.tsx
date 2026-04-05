@@ -1,17 +1,26 @@
 import { cn } from "@/lib/utils";
-import { InputHTMLAttributes, forwardRef, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { InputHTMLAttributes, ReactNode, forwardRef, useState } from "react";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
-  icon?: string;
-  rightElement?: React.ReactNode;
+  icon?: ReactNode;
+  rightElement?: ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, icon, rightElement, className, type, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
     const inputType = type === "password" && showPassword ? "text" : type;
+
+    const renderIcon = () => {
+      if (!icon) return null;
+      if (typeof icon === "string") {
+        return <span className="material-symbols-outlined text-2xl">{icon}</span>;
+      }
+      return <span className="inline-flex items-center justify-center">{icon}</span>;
+    };
 
     return (
       <div className="space-y-2">
@@ -23,7 +32,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <div className="relative group">
           {icon && (
             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-outline group-focus-within:text-primary transition-colors">
-              <span className="material-symbols-outlined text-2xl">{icon}</span>
+              {renderIcon()}
             </div>
           )}
           <input
@@ -45,9 +54,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               onClick={() => setShowPassword(!showPassword)}
               className="absolute inset-y-0 right-4 flex items-center text-outline hover:text-on-surface transition-colors"
             >
-              <span className="material-symbols-outlined text-2xl">
-                {showPassword ? "visibility_off" : "visibility"}
-              </span>
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           )}
           {rightElement && (

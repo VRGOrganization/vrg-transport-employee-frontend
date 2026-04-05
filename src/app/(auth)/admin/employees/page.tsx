@@ -7,6 +7,15 @@ import { DashboardNav } from "@/components/layout/DashboardNav";
 import { Button } from "@/components/ui/Button";
 import { employeeApi } from "@/lib/employeeApi";
 import { EmployeeModal, Employee } from "@/components/admin/EmployeeModal";
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  ChevronRight,
+  UserPlus,
+  UserX,
+  Users,
+} from "lucide-react";
 
 type Tab = "active" | "inactive";
 
@@ -28,7 +37,7 @@ function EmployeeCard({ employee, onClick }: { employee: Employee; onClick: () =
       }`}
     >
       <div
-        className={`w-12 h-12 rounded-full flex items-center justify-center font-headline font-bold text-sm flex-shrink-0 ${
+        className={`w-12 h-12 rounded-full flex items-center justify-center font-headline font-bold text-sm shrink-0 ${
           isInactive ? "bg-outline-variant text-on-surface-variant" : "bg-primary text-white"
         }`}
       >
@@ -39,12 +48,7 @@ function EmployeeCard({ employee, onClick }: { employee: Employee; onClick: () =
         <p className="text-sm text-on-surface-variant truncate">{employee.email}</p>
         <p className="text-xs text-on-surface-variant mt-0.5">Mat. {employee.registrationId}</p>
       </div>
-      <span
-        className="material-symbols-outlined text-outline-variant flex-shrink-0"
-        style={{ fontSize: "18px" }}
-      >
-        chevron_right
-      </span>
+      <ChevronRight className="text-outline-variant shrink-0" size={18} />
     </button>
   );
 }
@@ -52,7 +56,7 @@ function EmployeeCard({ employee, onClick }: { employee: Employee; onClick: () =
 function EmployeeCardSkeleton() {
   return (
     <div className="flex items-center gap-4 bg-surface-container-lowest border border-outline-variant rounded-2xl p-5">
-      <div className="w-12 h-12 rounded-full bg-surface-container-high animate-pulse flex-shrink-0" />
+      <div className="w-12 h-12 rounded-full bg-surface-container-high animate-pulse shrink-0" />
       <div className="flex-1 space-y-2">
         <div className="h-4 bg-surface-container-high rounded animate-pulse w-3/4" />
         <div className="h-3 bg-surface-container-high rounded animate-pulse w-1/2" />
@@ -141,9 +145,7 @@ export default function EmployeesPage() {
               className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
               title="Voltar ao painel"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
-                arrow_back
-              </span>
+              <ArrowLeft size={20} />
             </Link>
             <div className="flex-1">
               <h1 className="font-headline font-bold text-2xl text-on-surface">Funcionários</h1>
@@ -154,7 +156,7 @@ export default function EmployeesPage() {
               )}
             </div>
             <Link href="/admin/employees/new">
-              <Button variant="primary" size="sm" icon="person_add">
+              <Button variant="primary" size="sm" icon={<UserPlus size={18} />}>
                 Adicionar
               </Button>
             </Link>
@@ -172,12 +174,7 @@ export default function EmployeesPage() {
                     : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: "16px" }}
-                >
-                  {t === "active" ? "check_circle" : "person_off"}
-                </span>
+                {t === "active" ? <CheckCircle2 size={16} /> : <UserX size={16} />}
                 {t === "active" ? "Ativos" : "Desativados"}
               </button>
             ))}
@@ -186,9 +183,7 @@ export default function EmployeesPage() {
           {/* Content */}
           {error && (
             <div className="flex flex-col items-center gap-3 py-16 text-center">
-              <span className="material-symbols-outlined text-error" style={{ fontSize: "40px" }}>
-                error
-              </span>
+              <AlertCircle className="text-error" size={40} />
               <p className="text-on-surface-variant">{error}</p>
               <Button variant="outline" size="sm" onClick={() => loadTab(tab)}>
                 Tentar novamente
@@ -207,12 +202,11 @@ export default function EmployeesPage() {
           {!loading && !error && displayed.length === 0 && (
             <div className="flex flex-col items-center gap-4 py-16 text-center">
               <div className="p-5 bg-surface-container-high rounded-full">
-                <span
-                  className="material-symbols-outlined text-on-surface-variant"
-                  style={{ fontSize: "36px" }}
-                >
-                  {tab === "active" ? "group" : "person_off"}
-                </span>
+                {tab === "active" ? (
+                  <Users className="text-on-surface-variant" size={36} />
+                ) : (
+                  <UserX className="text-on-surface-variant" size={36} />
+                )}
               </div>
               <div>
                 <p className="font-semibold text-on-surface">{emptyLabel}</p>
@@ -220,7 +214,7 @@ export default function EmployeesPage() {
               </div>
               {tab === "active" && (
                 <Link href="/admin/employees/new">
-                  <Button variant="primary" size="sm" icon="person_add">
+                  <Button variant="primary" size="sm" icon={<UserPlus size={18} />}>
                     Adicionar funcionário
                   </Button>
                 </Link>
