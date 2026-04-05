@@ -168,63 +168,39 @@ async function buildCardsPdfUrl(cards: PrintableCard[], title: string): Promise<
     format: "a4",
   });
 
-  doc.setProperties({
-    title,
-    subject: "Carteirinhas para impressão",
-    creator: "VRG Employee Frontend",
-  });
-
   const pageWidth = 210;
   const pageHeight = 297;
-  const margin = 10;
-  const contentWidth = pageWidth - margin * 2;
+  const margin = 2;
 
-  const cardAreaHeight = 58;
-  const cutLineGapTop = 2.5;
-  const cutLineGapBottom = 3;
+  // Dimensões reais da carteirinha (tamanho CNH × 2 dobrada)
+  const cardW = 171.2;
+  const cardH = 53.98;
+  const cutLineGap = 1;
+  const blockHeight = cardH + cutLineGap;
 
-  const blockHeight = cardAreaHeight + cutLineGapTop + cutLineGapBottom;
-
+  const offsetX = (pageWidth - cardW) / 2; // centraliza na página
   let y = margin;
 
   cards.forEach((card, index) => {
-    if (index > 0 && y + blockHeight > pageHeight - margin) {
+    if (index > 0 && y + cardH > pageHeight - margin) {
       doc.addPage();
       y = margin;
     }
 
-    const imageInfo = imageSizes[index];
-    const areaX = margin;
-    const areaY = y;
-
-    const imageAspect = imageInfo.width / imageInfo.height;
-    const areaAspect = contentWidth / cardAreaHeight;
-
-    let drawW = contentWidth;
-    let drawH = cardAreaHeight;
-
-    if (imageAspect > areaAspect) {
-      drawH = contentWidth / imageAspect;
-    } else {
-      drawW = cardAreaHeight * imageAspect;
-    }
-
-    const drawX = areaX + (contentWidth - drawW) / 2;
-    const drawY = areaY + (cardAreaHeight - drawH) / 2;
-
     doc.addImage(
       card.imageData,
       getImageFormatFromDataUrl(card.imageData),
-      drawX,
-      drawY,
-      drawW,
-      drawH,
+      offsetX,
+      y,
+      cardW,
+      cardH,
       undefined,
       "FAST",
     );
 
+    // linha de corte
     if (index < cards.length - 1) {
-      const cutY = areaY + cardAreaHeight + cutLineGapTop;
+      const cutY = y + cardH + cutLineGap / 2;
       doc.setDrawColor(107, 114, 128);
       doc.setLineDashPattern([1.5, 1.5], 0);
       doc.setLineWidth(0.2);
