@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { SideNav } from "@/components/layout/SideNav";
@@ -15,7 +15,7 @@ import { StudentFormLayout } from "@/components/students/StudentFormLayout";
 import { SuccessBanner } from "@/components/students/SuccessBanner";
 import { useStudentForm } from "@/components/hooks/useStudentForm";
 
-export default function EditStudentPage() {
+function EditStudentPageInner() {
   const { user, logout } = useEmployeeAuth();
   const searchParams = useSearchParams();
   const studentId = searchParams.get("id");
@@ -238,5 +238,13 @@ export default function EditStudentPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function EditStudentPage() {
+  return (
+    <Suspense>
+      <EditStudentPageInner />
+    </Suspense>
   );
 }
