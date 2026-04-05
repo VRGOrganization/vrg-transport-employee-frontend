@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Cores primárias ── */
+  --color-primary: #003f87;
+  --color-primary-container: #0056b3;
+  --color-primary-fixed: #d7e2ff;
+  --color-primary-fixed-dim: #acc7ff;
+
+  /* ── Cores secundárias ── */
+  --color-secondary: #a33e00;
+  --color-secondary-container: #ff7f41;
+  --color-secondary-fixed: #ffdbcd;
+
+  /* ── Cores terciárias ── */
+  --color-tertiary: #08417e;
+  --color-tertiary-container: #2c5997;
+
+  /* ── Superfícies ── */
+  --color-surface: #f8f9fa;
+  --color-surface-container-low: #f3f4f5;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-high: #e7e8e9;
+
+  /* ── Texto sobre superfícies ── */
+  --color-on-surface: #191c1d;
+  --color-on-surface-variant: #424752;
+
+  /* ── Contornos ── */
+  --color-outline: #727784;
+  --color-outline-variant: #c2c6d4;
+
+  /* ── Status: erro ── */
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-error-border: #fecaca;
+
+  /* ── Status: sucesso ── */
+  --color-success: #16a34a;
+  --color-success-container: #f0fdf4;
+  --color-success-border: #bbf7d0;
+  --color-on-success: #15803d;
+
+  /* ── Status: aviso ── */
+  --color-warning: #ca8a04;
+  --color-warning-container: #fefce8;
+
+  /* ── Fontes ── */
+  --font-headline: 'Manrope', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-label: 'Inter', sans-serif;
+
+  /* ── Espaçamentos extras ── */
+  --spacing-18: 4.5rem;
+  --spacing-22: 5.5rem;
+}
+
+/* ── Shadow tokens — light mode ── */
+:root {
+  --shadow-primary: rgba(0, 63, 135, 0.25);
+  --shadow-primary-soft: rgba(0, 63, 135, 0.08);
+  --shadow-primary-overlay: rgba(0, 86, 179, 0.2);
+  --shadow-secondary: rgba(163, 62, 0, 0.25);
+  --shadow-tertiary: rgba(8, 65, 126, 0.25);
+  --shadow-border: rgba(194, 198, 212, 0.3);
+}
+
+/* ════════════════════════════════════════
+   Dark mode — Preto Profundo e Dourado
+   Ativar adicionando a classe .dark no <html>
+   ════════════════════════════════════════ */
+.dark {
+  /* ── Cores primárias (azul → dourado âmbar) ── */
+  --color-primary: #d4a827;           /* dourado principal — 8.8:1 sobre surface */
+  --color-primary-container: #3d2c08; /* container escuro dourado — fundos tintados */
+  --color-primary-fixed: #261d06;     /* tint muito sutil — bg-primary/5, chips */
+  --color-primary-fixed-dim: #6b4e16; /* brilho reduzido — badges, sublinhados */
+
+  /* ── Cores secundárias (laranja ajustado para fundo escuro) ── */
+  --color-secondary: #e07030;         /* laranja vibrante — 4.5:1 com texto escuro */
+  --color-secondary-container: #3d1e09; /* container laranja escuro */
+  --color-secondary-fixed: #5c2d10;   /* fixed escuro */
+
+  /* ── Cores terciárias (azul elétrico/safira) ── */
+  --color-tertiary: #4d9ef5;          /* safira vibrante no fundo escuro */
+  --color-tertiary-container: #0f2948; /* container azul profundo */
+
+  /* ── Superfícies — hierarquia de elevação via luminosidade ── */
+  --color-surface-container-lowest: #080809; /* ① mais escuro — fundos afundados, header frosted */
+  --color-surface: #0d0d11;                  /* ② base — fundo da página */
+  --color-surface-container-low: #14141b;    /* ③ cards, skeletons */
+  --color-surface-container-high: #1d1d28;   /* ④ mais claro — modais, ícones elevados */
+
+  /* ── Texto sobre superfícies ── */
+  --color-on-surface: #e8e9ea;        /* branco suave quente — 15:1 sobre surface */
+  --color-on-surface-variant: #9a9890; /* cinza médio com leve tom quente */
+
+  /* ── Contornos ── */
+  --color-outline: #2e3040;           /* visível, sutil — separadores, bordas de input */
+  --color-outline-variant: #1c1e28;   /* quase invisível — divisores internos */
+
+  /* ── Status: erro (vermelho vibrante escuro) ── */
+  --color-error: #ff6b6b;             /* vermelho claro saturado — legível no escuro */
+  --color-error-container: #2d0d0d;   /* container vermelho escuro */
+  --color-error-border: #5c1a1a;      /* borda tintada */
+
+  /* ── Status: sucesso (verde esmeralda) ── */
+  --color-success: #4ade80;           /* verde vibrante */
+  --color-success-container: #0d2218; /* container verde escuro */
+  --color-success-border: #1a5c30;    /* borda verde */
+  --color-on-success: #86efac;        /* texto sobre container de sucesso */
+
+  /* ── Status: aviso (âmbar) ── */
+  --color-warning: #fbbf24;           /* âmbar saturado */
+  --color-warning-container: #2a1e04; /* container âmbar escuro */
+
+  /* ── Glows (sombras viram brilhos no fundo escuro) ── */
+  --shadow-primary: rgba(212, 168, 39, 0.32);  /* glow dourado */
+  --shadow-primary-soft: rgba(212, 168, 39, 0.09); /* glow ultra sutil */
+  --shadow-primary-overlay: rgba(212, 168, 39, 0.20); /* overlay gradiente */
+  --shadow-secondary: rgba(224, 112, 48, 0.28); /* glow laranja */
+  --shadow-tertiary: rgba(77, 158, 245, 0.25);  /* glow safira */
+  --shadow-border: rgba(255, 255, 255, 0.07);   /* borda luminosa sutil */
+}
+
+/* NÃO coloque * { margin: 0; padding: 0 } — o Tailwind Preflight já faz isso corretamente */
+
+body {
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  font-family: var(--font-body);
+  min-height: 100dvh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-headline);
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.bg-mesh {
+  background-color: var(--color-surface);
+  background-image: radial-gradient(at 0% 0%, var(--color-primary-fixed) 0px, transparent 50%),
+                    radial-gradient(at 100% 100%, var(--color-secondary-fixed) 0px, transparent 50%);
+}
+
+.bg-surface {
+  background-color: var(--color-surface);
+}
+
+.text-primary-fixed-dim {
+  color: var(--color-primary-fixed-dim);
+}
