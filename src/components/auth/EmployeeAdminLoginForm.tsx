@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ArrowRight, Badge, Lock } from "lucide-react";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { useEmployeeAuth } from "../hooks/useEmployeeAuth";
@@ -58,7 +59,7 @@ export function EmployeeAdminLoginForm() {
           </label>
           <Input
             type="text"
-            icon="badge"
+            icon={<Badge size={20} />}
             placeholder="email@dominio.com ou MAT123456"
             value={formData.login}
             onChange={(e) => setFormData({ ...formData, login: e.target.value })}
@@ -72,7 +73,7 @@ export function EmployeeAdminLoginForm() {
           </label>
           <Input
             type="password"
-            icon="lock"
+            icon={<Lock size={20} />}
             placeholder="••••••••"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -86,7 +87,7 @@ export function EmployeeAdminLoginForm() {
           size="lg"
           fullWidth
           loading={loading}
-          icon="arrow_forward"
+          icon={<ArrowRight size={20} />}
         >
           Acessar Sistema
         </Button>
