@@ -1,77 +1,90 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { employeeApi, setTokens, clearTokens } from "@/lib/employeeApi";
-import { EmployeeUser, EmployeeLoginCredentials } from "@/types/employeeAuth";
+import {
+  configureEmployeeApi,
+  resetEmployeeApiState,
+} from "@/lib/employeeApi";
+import {
+  EmployeeUser,
+  EmployeeLoginCredentials,
+  EmployeeAuthResponse,
+} from "@/types/employeeAuth";
 
 export function useEmployeeAuth() {
   const [user, setUser] = useState<EmployeeUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  const clearSession = useCallback(() => {
+    setUser(null);
+  }, []);
+
+  const handleUnauthorized = useCallback(() => {
+    clearSession();
+    router.push("/login");
+  }, [clearSession, router]);
+
+  useEffect(() => {
+    resetEmployeeApiState();
+    configureEmployeeApi({ onUnauthorized: handleUnauthorized });
+  }, [handleUnauthorized]);
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem("employee_access_token");
-        if (!token) return;
+        const response = await fetch("/api/auth/session", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
 
-        // Tenta buscar o perfil baseado no papel do usuário
-        // Como não temos um endpoint /me unificado, tentamos admin primeiro
-        try {
-          const adminData = await employeeApi.get<EmployeeUser>("/admin/me");
-          setUser({ ...adminData, role: "admin" });
-        } catch {
-          try {
-            const employeeData = await employeeApi.get<EmployeeUser>("/employee/me");
-            setUser({ ...employeeData, role: "employee" });
-          } catch {
-            clearTokens();
-          }
+        if (!response.ok) {
+          clearSession();
+          return;
         }
+
+        const data = (await response.json()) as EmployeeAuthResponse;
+        setUser(data.user);
       } catch {
-        clearTokens();
+        clearSession();
       } finally {
         setLoading(false);
       }
     };
 
-    checkAuth();
-  }, []);
+    void checkAuth();
+  }, [clearSession]);
 
   const login = async (credentials: EmployeeLoginCredentials) => {
     setLoading(true);
     try {
-      // Primeiro tenta login como admin
-      let response;
-      try {
-        response = await employeeApi.post<{
-          access_token: string;
-          refresh_token: string;
-          user: EmployeeUser;
-        }>("/auth/admin/login", {
-          username: credentials.login, // admin usa username
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          login: credentials.login,
           password: credentials.password,
-        });
-        response.user.role = "admin";
-      } catch (adminError) {
-        // Se falhar, tenta login como funcionário (com matrícula)
-        response = await employeeApi.post<{
-          access_token: string;
-          refresh_token: string;
-          user: EmployeeUser;
-        }>("/auth/employee/login", {
-          registrationId: credentials.login, // funcionário usa matrícula
-          password: credentials.password,
-        });
-        response.user.role = "employee";
+        }),
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        user?: EmployeeUser;
+        message?: string;
+      };
+
+      if (!response.ok || !payload.user) {
+        return {
+          success: false,
+          error: typeof payload.message === "string" ? payload.message : "Credenciais inválidas",
+        };
       }
 
-      setTokens(response.access_token, response.refresh_token);
-      setUser(response.user);
+      setUser(payload.user);
 
-      // Redireciona baseado no papel
-      if (response.user.role === "admin") {
+      if (payload.user.role === "admin") {
         router.push("/admin/dashboard");
       } else {
         router.push("/employee/dashboard");
@@ -91,12 +104,14 @@ export function useEmployeeAuth() {
 
   const logout = async () => {
     try {
-      await employeeApi.post("/auth/logout", {});
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
     } catch {
       // ignora erro de logout
     } finally {
-      clearTokens();
-      setUser(null);
+      clearSession();
       router.push("/login");
     }
   };
