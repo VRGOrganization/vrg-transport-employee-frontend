@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { SideNav } from "@/components/layout/SideNav";
+import { EmployeeSideNav } from "@/components/layout/EmployeeSideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
@@ -30,7 +30,7 @@ function EditStudentPageInner() {
   const { data, errors, loading, setLoading, onChange, setError, validate, clearErrors } =
     useStudentForm({ mode: "edit" });
 
-  // Load student data
+  // Carrega os dados do estudante
   useEffect(() => {
     if (!studentId) {
       setFetchError("ID do estudante não encontrado");
@@ -82,7 +82,7 @@ function EditStudentPageInner() {
 
   const handleToggleStatus = async () => {
     if (!student) return;
-    if (!student.active && !confirmDeactivate) {
+    if (student.active && !confirmDeactivate) {
       setConfirmDeactivate(true);
       return;
     }
@@ -93,7 +93,7 @@ function EditStudentPageInner() {
         ? `/student/${studentId}/deactivate`
         : `/student/${studentId}/activate`;
       await employeeApi.patch(endpoint, {});
-      setStudent((prev) => prev ? { ...prev, active: !prev.active } : prev);
+      setStudent((prev) => (prev ? { ...prev, active: !prev.active } : prev));
       setConfirmDeactivate(false);
     } catch (err: unknown) {
       const error = err as { message?: string };
@@ -103,11 +103,11 @@ function EditStudentPageInner() {
     }
   };
 
-  // Loading skeleton
+  // ── Skeleton de carregamento ──────────────────────────────────────────────
   if (fetchLoading) {
     return (
       <div className="flex min-h-screen bg-surface">
-        <SideNav activePath="/admin/students" onLogout={logout} />
+        <EmployeeSideNav activePath="/employee/students" onLogout={logout} />
         <div className="flex-1 ml-64 flex flex-col">
           <TopBar user={user} />
           <main className="mt-16 p-8">
@@ -121,16 +121,19 @@ function EditStudentPageInner() {
     );
   }
 
-  // Fetch error
+  // ── Erro de carregamento ──────────────────────────────────────────────────
   if (fetchError) {
     return (
       <div className="flex min-h-screen bg-surface">
-        <SideNav activePath="/admin/students" onLogout={logout} />
+        <EmployeeSideNav activePath="/employee/students" onLogout={logout} />
         <div className="flex-1 ml-64 flex flex-col">
           <TopBar user={user} />
           <main className="mt-16 p-8">
             <div className="max-w-lg mx-auto flex flex-col items-center gap-4 py-16 text-center">
-              <span className="material-symbols-outlined text-error" style={{ fontSize: "40px" }}>
+              <span
+                className="material-symbols-outlined text-error"
+                style={{ fontSize: "40px" }}
+              >
                 error
               </span>
               <p className="text-on-surface-variant">{fetchError}</p>
@@ -144,9 +147,10 @@ function EditStudentPageInner() {
     );
   }
 
+  // ── Página principal ──────────────────────────────────────────────────────
   return (
     <div className="flex min-h-screen bg-surface">
-      <SideNav activePath="/admin/students" onLogout={logout} />
+      <EmployeeSideNav activePath="/employee/students" onLogout={logout} />
 
       <div className="flex-1 ml-64 flex flex-col">
         <TopBar user={user} />
@@ -155,13 +159,13 @@ function EditStudentPageInner() {
           <StudentFormLayout
             title="Editar Estudante"
             subtitle={`Atualize os dados de ${student?.name ?? "estudante"}`}
-            backHref="/admin/students"
+            backHref="/employee/students"
           >
             {success ? (
               <SuccessBanner
                 title="Dados atualizados!"
                 description={`As informações de ${data.name} foram salvas com sucesso.`}
-                backHref="/admin/students"
+                backHref="/employee/students"
                 backLabel="Ver estudantes"
                 onReset={() => setSuccess(false)}
                 resetLabel="Editar novamente"
@@ -169,7 +173,7 @@ function EditStudentPageInner() {
               />
             ) : (
               <>
-                {/* Status badge */}
+                {/* Badge de status + toggle ativo/inativo */}
                 {student && (
                   <div className="flex items-center justify-between mb-5 pb-5 border-b border-outline-variant/20">
                     <div className="flex items-center gap-2">
@@ -183,10 +187,11 @@ function EditStudentPageInner() {
                       </span>
                     </div>
 
-                    {/* Toggle active/inactive */}
                     {confirmDeactivate ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-on-surface-variant">Confirmar desativação?</span>
+                        <span className="text-xs text-on-surface-variant">
+                          Confirmar desativação?
+                        </span>
                         <button
                           onClick={() => setConfirmDeactivate(false)}
                           className="text-xs text-on-surface-variant hover:text-on-surface px-2 py-1 rounded-lg hover:bg-surface-container-high transition-colors"
@@ -211,7 +216,10 @@ function EditStudentPageInner() {
                             : "text-success hover:bg-success-container"
                         }`}
                       >
-                        <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
+                        <span
+                          className="material-symbols-outlined"
+                          style={{ fontSize: "16px" }}
+                        >
                           {student.active ? "person_off" : "person_check"}
                         </span>
                         {student.active ? "Desativar" : "Reativar"}
@@ -235,14 +243,13 @@ function EditStudentPageInner() {
           <div className="absolute bottom-0 left-0 w-full">
             <Footer />
           </div>
-
         </main>
       </div>
     </div>
   );
 }
 
-export default function EditStudentPage() {
+export default function EmployeeEditStudentPage() {
   return (
     <Suspense>
       <EditStudentPageInner />
