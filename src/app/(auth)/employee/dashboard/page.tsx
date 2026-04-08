@@ -26,6 +26,15 @@ interface LicenseRecord {
   studentId: string;
 }
 
+type StudentsResponse =
+  | Student[]
+  | {
+      data?: Student[];
+      total?: number;
+      page?: number;
+      limit?: number;
+    };
+
 interface DashboardStats {
   activeStudents: number | null;
   withCard: number | null;
@@ -48,12 +57,18 @@ export default function EmployeeDashboardPage() {
   useEffect(() => {
     const fetchAll = async () => {
       const [studentsResult, licensesResult] = await Promise.allSettled([
-        employeeApi.get<Student[]>("/student"),
+        employeeApi.get<StudentsResponse>("/student"),
         employeeApi.get<LicenseRecord[]>("/license/all"),
       ]);
 
       if (studentsResult.status === "fulfilled") {
-        const activeStudents = studentsResult.value.filter((s) => s.active);
+        const resolvedStudents = Array.isArray(studentsResult.value)
+          ? studentsResult.value
+          : Array.isArray(studentsResult.value?.data)
+            ? studentsResult.value.data
+            : [];
+
+        const activeStudents = resolvedStudents.filter((s) => s.active);
         setStudents(activeStudents);
 
         const licensedIds =

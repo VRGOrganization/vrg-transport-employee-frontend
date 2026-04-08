@@ -12,6 +12,28 @@ export interface Student {
   updatedAt: string;
 }
 
+export interface ImageHistory {
+  _id: string;
+  studentId: string;
+  imageId: string;
+  photoType: "ProfilePhoto" | "EnrollmentProof" | "CourseSchedule" | "LicenseImage";
+  photo3x4: string | null;
+  documentImage: string | null;
+  replacedAt: string;
+}
+
+export interface LicenseRequestRecord {
+  _id: string;
+  studentId: string;
+  type: "initial" | "update";
+  changedDocuments: string[];
+  status: "pending" | "approved" | "rejected";
+  rejectionReason: string | null;
+  rejectedAt: string | null;
+  licenseId: string | null;
+  createdAt: string;
+}
+
 export interface StudentFormData {
   name: string;
   email: string;

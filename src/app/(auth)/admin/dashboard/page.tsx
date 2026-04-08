@@ -24,6 +24,15 @@ interface StudentRecord {
   active: boolean;
 }
 
+type StudentsResponse =
+  | StudentRecord[]
+  | {
+      data?: StudentRecord[];
+      total?: number;
+      page?: number;
+      limit?: number;
+    };
+
 interface LicenseRecord {
   _id: string;
   studentId: string;
@@ -51,7 +60,7 @@ export default function AdminDashboardPage() {
       const [employeesResult, studentsResult, licensesResult] =
         await Promise.allSettled([
           employeeApi.get<Employee[]>("/employee"),
-          employeeApi.get<StudentRecord[]>("/student"),
+          employeeApi.get<StudentsResponse>("/student"),
           employeeApi.get<LicenseRecord[]>("/license/all"),
         ]);
 
@@ -66,7 +75,13 @@ export default function AdminDashboardPage() {
 
       // Alunos ativos + pendências de carteirinha
       if (studentsResult.status === "fulfilled") {
-        const activeStudents = studentsResult.value.filter((s) => s.active);
+        const resolvedStudents = Array.isArray(studentsResult.value)
+          ? studentsResult.value
+          : Array.isArray(studentsResult.value?.data)
+            ? studentsResult.value.data
+            : [];
+
+        const activeStudents = resolvedStudents.filter((s) => s.active);
         const activeStudentIds = new Set(activeStudents.map((s) => s._id));
 
         const licensedIds =
