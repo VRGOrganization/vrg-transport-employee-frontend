@@ -1,4 +1,4 @@
-export const SID_COOKIE_NAME = "sid";
+export const SID_COOKIE_NAME = "_atk";
 
 function normalizeApiBaseUrl(rawValue: string): string {
   const base = rawValue.trim().replace(/\/+$/, "");
