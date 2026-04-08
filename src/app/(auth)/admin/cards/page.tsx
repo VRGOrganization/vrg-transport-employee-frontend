@@ -20,6 +20,7 @@ import {
   Search,
   UserRound,
   X,
+  XCircle,
   Printer,
 } from "lucide-react";
 import Link from "next/link";
@@ -28,6 +29,14 @@ import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/Button";
 import { employeeApi } from "@/lib/employeeApi";
+
+const REJECTION_REASONS = [
+  "Foto inadequada ou ilegível",
+  "Comprovante de matrícula inválido",
+  "Grade horária não corresponde aos documentos",
+  "Documentos ilegíveis ou corrompidos",
+  "Informações inconsistentes",
+] as const;
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -53,6 +62,16 @@ interface LicenseRecord {
   status: "active" | "inactive" | "expired";
 }
 
+interface LicenseRequestRecord {
+  _id: string;
+  studentId: string;
+  status: "pending" | "approved" | "rejected";
+  rejectionReason: string | null;
+  rejectedAt: string | null;
+  licenseId: string | null;
+  createdAt: string;
+}
+
 interface LicenseApiResponse {
   _id?: string;
   studentId?: string;
@@ -60,7 +79,9 @@ interface LicenseApiResponse {
   image?: string;
   licenseImage?: string;
   studentCard?: string;
-  status?: "active" | "inactive" | "expired";
+  status?: "active" | "inactive" | "expired" | "rejected";
+  rejectionReason?: string | null;
+  rejectedAt?: string | null;
 }
 
 interface ImageRecord {
@@ -224,6 +245,7 @@ export default function AdminCardsPage() {
 
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [licenses, setLicenses] = useState<LicenseRecord[]>([]);
+  const [licenseRequests, setLicenseRequests] = useState<LicenseRequestRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -236,6 +258,10 @@ export default function AdminCardsPage() {
 
   const [approving, setApproving] = useState(false);
   const [approveMessage, setApproveMessage] = useState("");
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [selectedRejectionReason, setSelectedRejectionReason] = useState<string>("");
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectMessage, setRejectMessage] = useState("");
   const [approvedLicensePreview, setApprovedLicensePreview] = useState<string | null>(null);
   const [selectedBus, setSelectedBus] = useState("");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -274,12 +300,14 @@ export default function AdminCardsPage() {
     setLoading(true);
     setError("");
     try {
-      const [studentsResponse, licensesResponse] = await Promise.all([
+      const [studentsResponse, licensesResponse, requestsResponse] = await Promise.all([
         employeeApi.get<StudentRecord[]>("/student"),
         employeeApi.get<LicenseRecord[]>("/license/all"),
+        employeeApi.get<LicenseRequestRecord[]>("/license-request/all"),
       ]);
       setStudents(studentsResponse);
       setLicenses(licensesResponse);
+      setLicenseRequests(requestsResponse);
     } catch {
       setError("Não foi possível carregar os dados de revisão de carteirinhas.");
     } finally {
@@ -295,12 +323,20 @@ export default function AdminCardsPage() {
     return new Set(licenses.map((license) => license.studentId));
   }, [licenses]);
 
+  const pendingStudentIds = useMemo(() => {
+    return new Set(
+      licenseRequests
+        .filter((r) => r.status === "pending")
+        .map((r) => r.studentId),
+    );
+  }, [licenseRequests]);
+
   const filteredStudents = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
     return students
       .filter((student) => student.active)
       .filter((student) => {
-        if (filter === "pending") return !licensedStudentIds.has(student._id);
+        if (filter === "pending") return pendingStudentIds.has(student._id);
         if (filter === "with-card") return licensedStudentIds.has(student._id);
         return true;
       })
@@ -312,7 +348,7 @@ export default function AdminCardsPage() {
           (student.institution ?? "").toLowerCase().includes(normalizedSearch)
         );
       });
-  }, [students, filter, search, licensedStudentIds]);
+  }, [students, filter, search, licensedStudentIds, pendingStudentIds]);
 
   const stats = useMemo(() => {
     const total = students.filter((student) => student.active).length;
@@ -325,6 +361,15 @@ export default function AdminCardsPage() {
     if (!selected) return null;
     return licenses.find((license) => license.studentId === selected._id) ?? null;
   }, [licenses, selected]);
+
+  const currentLicenseRequest = useMemo(() => {
+    if (!selected) return null;
+    return (
+      licenseRequests
+        .filter((r) => r.studentId === selected._id)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null
+    );
+  }, [licenseRequests, selected]);
 
   const profileImage = normalizeMediaSource(
     selectedImages.find((img) => img.photoType === "ProfilePhoto")?.photo3x4 ?? null,
@@ -406,7 +451,7 @@ export default function AdminCardsPage() {
   }, []);
 
   const handleApprove = useCallback(async () => {
-    if (!selected || approving) return;
+    if (!selected || approving || !currentLicenseRequest) return;
     if (!selected.institution?.trim()) {
       setApproveMessage("Não é possível criar a carteirinha sem instituição no cadastro.");
       return;
@@ -419,13 +464,11 @@ export default function AdminCardsPage() {
     setApproving(true);
     setApproveMessage("");
     try {
-      const created = await employeeApi.post<LicenseApiResponse>("/license/create", {
-        id: selected._id,
+      await employeeApi.patch(`/license-request/approve/${currentLicenseRequest._id}`, {
         institution: selected.institution,
         bus: normalizedBus,
         ...(profileImage ? { photo: profileImage } : {}),
       });
-      setApprovedLicensePreview(extractLicenseImage(created));
       setApproveMessage("Carteirinha criada com sucesso.");
       await loadData();
     } catch (err: unknown) {
@@ -434,7 +477,33 @@ export default function AdminCardsPage() {
     } finally {
       setApproving(false);
     }
-  }, [selected, approving, selectedBus, profileImage, loadData]);
+  }, [selected, approving, currentLicenseRequest, selectedBus, profileImage, loadData]);
+
+  const handleReject = useCallback(async () => {
+    if (!selected || !currentLicenseRequest || rejecting) return;
+    if (!selectedRejectionReason) {
+      setRejectMessage("Selecione um motivo de recusa.");
+      return;
+    }
+
+    setRejecting(true);
+    setRejectMessage("");
+
+    try {
+      await employeeApi.patch(`/license-request/reject/${currentLicenseRequest._id}`, {
+        reason: selectedRejectionReason,
+      });
+      setRejectModalOpen(false);
+      setSelectedRejectionReason("");
+      setApproveMessage("Carteirinha recusada. O aluno foi notificado por e-mail.");
+      await loadData();
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setRejectMessage(e.message ?? "Falha ao recusar a carteirinha.");
+    } finally {
+      setRejecting(false);
+    }
+  }, [selected, currentLicenseRequest, rejecting, selectedRejectionReason, loadData]);
 
   const toggleBatchSelection = useCallback((studentId: string) => {
     setSelectedForBatch((prev) => {
@@ -607,7 +676,13 @@ export default function AdminCardsPage() {
                 {!loading && !error && filteredStudents.length > 0 && (
                   <div className="space-y-2">
                     {filteredStudents.map((student) => {
-                      const hasCard = licensedStudentIds.has(student._id);
+                        const studentRequest =
+                          licenseRequests
+                            .filter((r) => r.studentId === student._id)
+                            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null;
+                        const hasCard = licensedStudentIds.has(student._id);
+                        const isPending = studentRequest?.status === "pending";
+                        const isRejected = studentRequest?.status === "rejected";
                       const isSelected = selected?._id === student._id;
                       const selectedInBatch = selectedForBatch.includes(student._id);
 
@@ -648,10 +723,14 @@ export default function AdminCardsPage() {
                                 className={`rounded-full px-2 py-1 text-[11px] font-semibold ${
                                   hasCard
                                     ? "bg-success/15 text-success"
-                                    : "bg-warning/20 text-warning"
+                                    : isPending
+                                    ? "bg-warning/20 text-warning"
+                                    : isRejected
+                                    ? "bg-error/15 text-error"
+                                    : "bg-outline-variant/30 text-on-surface-variant"
                                 }`}
                               >
-                                {hasCard ? "Com carteirinha" : "Pendente"}
+                                {hasCard ? "Com carteirinha" : isPending ? "Pendente" : isRejected ? "Recusada" : "Sem solicitação"}
                               </span>
                             </div>
                           </div>
@@ -765,12 +844,7 @@ export default function AdminCardsPage() {
                           variant="outline"
                           size="md"
                           icon={<Printer className="h-4 w-4" />}
-                          disabled={
-                            !selected ||
-                            !selectedLicensePreview ||
-                            isPdfDataUrl(selectedLicensePreview) ||
-                            printingSingle
-                          }
+                          disabled={!selectedLicensePreview || isPdfDataUrl(selectedLicensePreview ?? "") || printingSingle}
                           loading={printingSingle}
                           onClick={handlePrintSingle}
                         >
@@ -778,18 +852,29 @@ export default function AdminCardsPage() {
                         </Button>
 
                         <Button
+                          variant="outline"
+                          size="md"
+                          icon={<XCircle className="h-4 w-4" />}
+                          disabled={!currentLicenseRequest || currentLicenseRequest.status !== "pending" || rejecting}
+                          onClick={() => {
+                            setSelectedRejectionReason("");
+                            setRejectMessage("");
+                            setRejectModalOpen(true);
+                          }}
+                          className="text-error border-error/40 hover:bg-error/5"
+                        >
+                          Recusar
+                        </Button>
+
+                        <Button
                           variant="primary"
                           size="md"
                           icon={<Bus className="h-4 w-4" />}
                           loading={approving}
-                          disabled={
-                            !!currentLicense ||
-                            !selected.institution ||
-                            !selectedBus.trim()
-                          }
+                          disabled={!currentLicenseRequest || currentLicenseRequest.status !== "pending" || !selected?.institution || !selectedBus.trim()}
                           onClick={handleApprove}
                         >
-                          {currentLicense ? "Carteirinha já criada" : "Aprovar e criar carteirinha"}
+                          {currentLicense ? "Carteirinha já criada" : "Aprovar e criar"}
                         </Button>
                       </div>
                     </div>
@@ -842,6 +927,70 @@ export default function AdminCardsPage() {
               title={pdfPreviewTitle}
               className="h-full w-full border-0 bg-white"
             />
+          </div>
+        </div>
+      )}
+
+      {rejectModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => !rejecting && setRejectModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-surface p-6 space-y-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-error/10 flex items-center justify-center shrink-0">
+                <XCircle className="h-5 w-5 text-error" />
+              </div>
+              <div>
+                <h2 className="font-bold text-on-surface text-base">Recusar carteirinha</h2>
+                <p className="text-xs text-on-surface-variant">Selecione o motivo da recusa</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {REJECTION_REASONS.map((reason) => (
+                <button
+                  key={reason}
+                  type="button"
+                  onClick={() => setSelectedRejectionReason(reason)}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-sm border transition-all ${
+                    selectedRejectionReason === reason
+                      ? "border-error bg-error/10 text-error font-medium"
+                      : "border-outline-variant bg-surface-container-low text-on-surface hover:border-error/40"
+                  }`}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+
+            {rejectMessage && (
+              <p className="text-xs text-error">{rejectMessage}</p>
+            )}
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setRejectModalOpen(false)}
+                disabled={rejecting}
+                className="flex-1 py-2.5 text-sm font-medium text-on-surface-variant hover:bg-surface-container rounded-xl transition-all disabled:opacity-40"
+              >
+                Cancelar
+              </button>
+              <Button
+                variant="primary"
+                size="md"
+                loading={rejecting}
+                disabled={!selectedRejectionReason || rejecting}
+                onClick={handleReject}
+                className="flex-1 bg-error hover:bg-error/90"
+              >
+                Confirmar recusa
+              </Button>
+            </div>
           </div>
         </div>
       )}
