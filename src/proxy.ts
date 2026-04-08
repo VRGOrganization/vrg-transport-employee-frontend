@@ -16,12 +16,12 @@ export function proxy(request: NextRequest) {
 
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
-  // Se já está logado e tenta acessar /login, redireciona pro dashboard
+  // Se ja esta logado e tenta acessar /login, redireciona pro dashboard
   if (isPublic && sid) {
     return NextResponse.redirect(new URL("/employee/dashboard", request.url));
   }
 
-  // Rota protegida sem token → login
+  // Rota protegida sem token -> login
   if (!isPublic && !sid) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname); // preserva destino
