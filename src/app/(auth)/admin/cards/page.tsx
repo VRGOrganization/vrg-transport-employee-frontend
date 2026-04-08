@@ -1,33 +1,37 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   BadgeCheck,
   Bus,
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   Eye,
-  FileImage,
-  FileText,
-  Download,
   IdCard,
   Loader2,
-  Maximize2,
-  ExternalLink,
+  Printer,
   RefreshCw,
   Search,
   UserRound,
-  X,
   XCircle,
-  Printer,
 } from "lucide-react";
 import Link from "next/link";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
+import {
+  DocumentPreview,
+  FilterButton,
+  ImageLightbox,
+  StatBox,
+} from "../../../../components/cards/CardPageComponents";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/Button";
+import {
+  buildCardsPdfUrl,
+  extractLicenseImage,
+  isPdfDataUrl,
+  normalizeMediaSource,
+} from "@/lib/cardUtils";
 import { employeeApi } from "@/lib/employeeApi";
 
 const REJECTION_REASONS = [
@@ -103,132 +107,6 @@ interface PrintableCard {
   imageData: string;
 }
 
-type PrintableImageFormat = "JPEG" | "PNG" | "WEBP";
-
-// ── Utilitários ───────────────────────────────────────────────────────────────
-
-function detectMimeFromBase64(base64Value: string): string {
-  const normalized = base64Value.replace(/\s/g, "");
-  if (normalized.startsWith("JVBERi0")) return "application/pdf";
-  if (normalized.startsWith("iVBORw0KGgo")) return "image/png";
-  if (normalized.startsWith("/9j/")) return "image/jpeg";
-  if (normalized.startsWith("UklGR")) return "image/webp";
-  return "image/jpeg";
-}
-
-function normalizeMediaSource(value: string | null | undefined): string | null {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (
-    trimmed.startsWith("data:") ||
-    trimmed.startsWith("blob:") ||
-    /^https?:\/\//i.test(trimmed)
-  ) {
-    return trimmed;
-  }
-  const mimeType = detectMimeFromBase64(trimmed);
-  return `data:${mimeType};base64,${trimmed}`;
-}
-
-function extractLicenseImage(data: LicenseApiResponse | null | undefined): string | null {
-  if (!data) return null;
-  return normalizeMediaSource(
-    data.imageLicense ?? data.image ?? data.licenseImage ?? data.studentCard ?? null,
-  );
-}
-
-function isPdfDataUrl(value: string | null): boolean {
-  const normalized = normalizeMediaSource(value);
-  if (!normalized) return false;
-  return (
-    normalized.startsWith("data:application/pdf") || /\.pdf(\?|#|$)/i.test(normalized)
-  );
-}
-
-function getDownloadName(title: string, value: string | null): string {
-  const slug = title
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  if (!value) return `${slug || "documento"}.bin`;
-  if (isPdfDataUrl(value)) return `${slug || "documento"}.pdf`;
-  return `${slug || "documento"}.jpg`;
-}
-
-function getImageFormatFromDataUrl(dataUrl: string): PrintableImageFormat {
-  if (dataUrl.startsWith("data:image/png")) return "PNG";
-  if (dataUrl.startsWith("data:image/webp")) return "WEBP";
-  return "JPEG";
-}
-
-async function getImageSize(dataUrl: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      resolve({ width: img.naturalWidth || 1, height: img.naturalHeight || 1 });
-    };
-    img.onerror = () => reject(new Error("Falha ao ler imagem para PDF"));
-    img.src = dataUrl;
-  });
-}
-
-async function buildCardsPdfUrl(cards: PrintableCard[], title: string): Promise<string> {
-  const [{ jsPDF }, imageSizes] = await Promise.all([
-    import("jspdf"),
-    Promise.all(cards.map((card) => getImageSize(card.imageData))),
-  ]);
-
-  const doc = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4",
-  });
-
-  const pageWidth = 210;
-  const pageHeight = 297;
-  const margin = 2;
-  const cardW = 171.2;
-  const cardH = 53.98;
-  const cutLineGap = 1;
-  const blockHeight = cardH + cutLineGap;
-  const offsetX = (pageWidth - cardW) / 2;
-  let y = margin;
-
-  cards.forEach((card, index) => {
-    if (index > 0 && y + cardH > pageHeight - margin) {
-      doc.addPage();
-      y = margin;
-    }
-
-    doc.addImage(
-      card.imageData,
-      getImageFormatFromDataUrl(card.imageData),
-      offsetX,
-      y,
-      cardW,
-      cardH,
-      undefined,
-      "FAST",
-    );
-
-    if (index < cards.length - 1) {
-      const cutY = y + cardH + cutLineGap / 2;
-      doc.setDrawColor(107, 114, 128);
-      doc.setLineDashPattern([1.5, 1.5], 0);
-      doc.setLineWidth(0.2);
-      doc.line(margin, cutY, pageWidth - margin, cutY);
-      doc.setLineDashPattern([], 0);
-    }
-
-    y += blockHeight;
-  });
-
-  const pdfBlob = doc.output("blob");
-  return URL.createObjectURL(pdfBlob);
-}
 
 const DAY_LABELS: Record<string, string> = {
   SEG: "Segunda",
@@ -999,276 +877,3 @@ export default function AdminCardsPage() {
 }
 
 // ── Componentes auxiliares ────────────────────────────────────────────────────
-
-function FilterButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`rounded-lg px-3 py-1.5 font-medium transition ${
-        active
-          ? "bg-surface-container-lowest text-on-surface shadow"
-          : "text-on-surface-variant"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function StatBox({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  value: number;
-}) {
-  return (
-    <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-4">
-      <div className="mb-2 inline-flex rounded-lg bg-primary/10 p-2">
-        <Icon className="h-4 w-4 text-primary" />
-      </div>
-      <p className="text-xl font-bold text-on-surface">{value}</p>
-      <p className="text-xs text-on-surface-variant">{label}</p>
-    </div>
-  );
-}
-
-function DocumentPreview({
-  title,
-  dataUrl,
-  loading,
-  onOpen,
-}: {
-  title: string;
-  dataUrl: string | null;
-  loading: boolean;
-  onOpen?: () => void;
-}) {
-  const isPdf = isPdfDataUrl(dataUrl);
-
-  return (
-    <div className="rounded-xl border border-outline-variant bg-surface p-3">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold text-on-surface">{title}</p>
-        {dataUrl && (
-          <div className="flex items-center gap-1">
-            <a
-              href={dataUrl}
-              download={getDownloadName(title, dataUrl)}
-              className="inline-flex items-center gap-1 rounded-md border border-outline-variant bg-surface-container-low px-2 py-1 text-[11px] text-on-surface hover:bg-surface-container"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Baixar
-            </a>
-            {onOpen && (
-              <button
-                type="button"
-                onClick={onOpen}
-                className="inline-flex items-center gap-1 rounded-md border border-outline-variant bg-surface-container-low px-2 py-1 text-[11px] text-on-surface hover:bg-surface-container"
-              >
-                <Maximize2 className="h-3.5 w-3.5" />
-                Ampliar
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="relative flex h-48 items-center justify-center overflow-hidden rounded-lg border border-outline-variant bg-surface-container-low md:h-56">
-        {loading ? (
-          <Loader2 className="h-5 w-5 animate-spin text-on-surface-variant" />
-        ) : dataUrl ? (
-          <>
-            {isPdf ? (
-              <div className="h-full w-full bg-white">
-                <iframe src={dataUrl} title={title} className="h-full w-full" />
-              </div>
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={dataUrl} alt={title} className="h-full w-full object-contain" />
-            )}
-            {onOpen && (
-              <button
-                type="button"
-                onClick={onOpen}
-                className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md bg-black/60 px-2 py-1 text-[11px] text-white hover:bg-black/75"
-              >
-                <Eye className="h-3.5 w-3.5" />
-                {isPdf ? "Ler melhor" : "Ver melhor"}
-              </button>
-            )}
-          </>
-        ) : (
-          <div className="flex flex-col items-center gap-1 text-on-surface-variant">
-            <FileImage className="h-5 w-5" />
-            <span className="text-[11px]">Sem arquivo</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ImageLightbox({
-  items,
-  availableIndexes,
-  currentIndex,
-  onClose,
-  onNavigate,
-}: {
-  items: PreviewItem[];
-  availableIndexes: number[];
-  currentIndex: number;
-  onClose: () => void;
-  onNavigate: (index: number) => void;
-}) {
-  const currentPos = availableIndexes.indexOf(currentIndex);
-  const canNavigate = availableIndexes.length > 1;
-  const item = items[currentIndex];
-  const currentIsPdf = isPdfDataUrl(item?.dataUrl ?? null);
-
-  const goPrev = () => {
-    if (!canNavigate || currentPos < 0) return;
-    const prevPos = (currentPos - 1 + availableIndexes.length) % availableIndexes.length;
-    onNavigate(availableIndexes[prevPos]);
-  };
-
-  const goNext = () => {
-    if (!canNavigate || currentPos < 0) return;
-    const nextPos = (currentPos + 1) % availableIndexes.length;
-    onNavigate(availableIndexes[nextPos]);
-  };
-
-  if (!item?.dataUrl) return null;
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="relative flex w-full max-w-5xl flex-col gap-3 rounded-2xl border border-white/20 bg-black/60 p-3 md:p-4">
-        <div className="flex items-center justify-between gap-2 text-white">
-          <div>
-            <p className="text-sm font-semibold">{item.title}</p>
-            <p className="text-xs text-white/70">Clique na miniatura para trocar de documento.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <a
-              href={item.dataUrl}
-              download={getDownloadName(item.title, item.dataUrl)}
-              className="inline-flex items-center gap-1 rounded-md border border-white/30 bg-white/10 px-3 py-1.5 text-xs text-white hover:bg-white/20"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Baixar
-            </a>
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex items-center justify-center rounded-lg border border-white/30 bg-white/10 p-2 hover:bg-white/20"
-              aria-label="Fechar visualização"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        <div className="relative flex h-[55vh] min-h-80 items-center justify-center overflow-hidden rounded-xl border border-white/20 bg-black/30">
-          {currentIsPdf ? (
-            <div className="h-full w-full bg-white">
-              <iframe src={item.dataUrl} title={item.title} className="h-full w-full" />
-            </div>
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.dataUrl} alt={item.title} className="h-full w-full object-contain" />
-          )}
-
-          {canNavigate && (
-            <>
-              <button
-                type="button"
-                onClick={goPrev}
-                className="absolute left-2 inline-flex items-center justify-center rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
-                aria-label="Imagem anterior"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                onClick={goNext}
-                className="absolute right-2 inline-flex items-center justify-center rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
-                aria-label="Próxima imagem"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </>
-          )}
-        </div>
-
-        {currentIsPdf && (
-          <div className="flex justify-end">
-            <a
-              href={item.dataUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 rounded-md border border-white/30 bg-white/10 px-3 py-1.5 text-xs text-white hover:bg-white/20"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Abrir PDF em nova aba
-            </a>
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-          {items.map((preview, index) => {
-            const isActive = index === currentIndex;
-            const hasData = !!preview.dataUrl;
-            return (
-              <button
-                key={preview.title}
-                type="button"
-                disabled={!hasData}
-                onClick={() => onNavigate(index)}
-                className={`rounded-lg border p-1 text-left transition ${
-                  isActive
-                    ? "border-white bg-white/20"
-                    : hasData
-                    ? "border-white/30 bg-white/5 hover:bg-white/15"
-                    : "border-white/10 bg-white/5 opacity-50"
-                }`}
-              >
-                <div className="mb-1 line-clamp-1 text-[11px] text-white/85">{preview.title}</div>
-                <div className="flex h-20 items-center justify-center overflow-hidden rounded border border-white/20 bg-black/40">
-                  {hasData ? (
-                    isPdfDataUrl(preview.dataUrl) ? (
-                      <FileText className="h-4 w-4 text-white/70" />
-                    ) : (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={preview.dataUrl!}
-                        alt={preview.title}
-                        className="h-full w-full object-cover"
-                      />
-                    )
-                  ) : (
-                    <FileImage className="h-4 w-4 text-white/40" />
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
