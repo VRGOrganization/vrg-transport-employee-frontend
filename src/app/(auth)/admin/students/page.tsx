@@ -15,6 +15,14 @@ import { StudentCard, StudentCardSkeleton } from "@/components/students/StudentC
 import { StudentListEmpty } from "@/components/students/StudentListEmpty";
 
 type Tab = "active" | "inactive";
+type StudentsResponse =
+  | Student[]
+  | {
+      data?: Student[];
+      total?: number;
+      page?: number;
+      limit?: number;
+    };
 
 export default function StudentsPage() {
   const { user, logout } = useEmployeeAuth();
@@ -26,9 +34,14 @@ export default function StudentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const resolveStudents = (payload: StudentsResponse): Student[] => {
+    if (Array.isArray(payload)) return payload;
+    return Array.isArray(payload?.data) ? payload.data : [];
+  };
+
   const fetchActive = useCallback(async () => {
-    const data = await employeeApi.get<Student[]>("/student");
-    setActive(data);
+    const data = await employeeApi.get<StudentsResponse>('/student');
+    setActive(resolveStudents(data));
   }, []);
 
   const fetchInactive = useCallback(async () => {

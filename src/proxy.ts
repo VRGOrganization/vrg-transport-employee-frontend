@@ -4,7 +4,7 @@ const PUBLIC_PATHS = ["/login"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const sid = request.cookies.get("sid")?.value;
+  const sid = request.cookies.get("_atk")?.value;
 
   if (pathname === "/") {
     if (!sid) {

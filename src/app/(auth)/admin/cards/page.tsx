@@ -59,6 +59,15 @@ interface StudentRecord {
   active: boolean;
 }
 
+type StudentsResponse =
+  | StudentRecord[]
+  | {
+      data?: StudentRecord[];
+      total?: number;
+      page?: number;
+      limit?: number;
+    };
+
 interface LicenseRecord {
   _id: string;
   studentId: string;
@@ -69,6 +78,9 @@ interface LicenseRecord {
 interface LicenseRequestRecord {
   _id: string;
   studentId: string;
+  type: "initial" | "update";
+  changedDocuments: string[];
+  pendingImages?: Array<{ photoType: string; dataUrl: string }>;
   status: "pending" | "approved" | "rejected";
   rejectionReason: string | null;
   rejectedAt: string | null;
@@ -114,6 +126,13 @@ const DAY_LABELS: Record<string, string> = {
   QUA: "Quarta",
   QUI: "Quinta",
   SEX: "Sexta",
+};
+
+const PHOTO_TYPE_LABELS: Record<PhotoType, string> = {
+  ProfilePhoto: "Foto 3x4",
+  EnrollmentProof: "Comprovante de Matrícula",
+  CourseSchedule: "Grade Horária",
+  LicenseImage: "Carteirinha",
 };
 
 // ── Página Principal ──────────────────────────────────────────────────────────
@@ -179,11 +198,17 @@ export default function AdminCardsPage() {
     setError("");
     try {
       const [studentsResponse, licensesResponse, requestsResponse] = await Promise.all([
-        employeeApi.get<StudentRecord[]>("/student"),
+        employeeApi.get<StudentsResponse>('/student'),
         employeeApi.get<LicenseRecord[]>("/license/all"),
         employeeApi.get<LicenseRequestRecord[]>("/license-request/all"),
       ]);
-      setStudents(studentsResponse);
+      const resolvedStudents = Array.isArray(studentsResponse)
+        ? studentsResponse
+        : Array.isArray(studentsResponse?.data)
+          ? studentsResponse.data
+          : [];
+
+      setStudents(resolvedStudents);
       setLicenses(licensesResponse);
       setLicenseRequests(requestsResponse);
     } catch {
@@ -249,14 +274,41 @@ export default function AdminCardsPage() {
     );
   }, [licenseRequests, selected]);
 
+  const pendingImagesByType = useMemo<Partial<Record<PhotoType, string>>>(() => {
+    if (currentLicenseRequest?.type !== "update" || currentLicenseRequest?.status !== "pending") {
+      return {};
+    }
+
+    return (currentLicenseRequest.pendingImages ?? []).reduce(
+      (acc, item) => {
+        if (
+          item.photoType === "ProfilePhoto" ||
+          item.photoType === "EnrollmentProof" ||
+          item.photoType === "CourseSchedule" ||
+          item.photoType === "LicenseImage"
+        ) {
+          acc[item.photoType] = item.dataUrl;
+        }
+        return acc;
+      },
+      {} as Partial<Record<PhotoType, string>>,
+    );
+  }, [currentLicenseRequest]);
+
   const profileImage = normalizeMediaSource(
-    selectedImages.find((img) => img.photoType === "ProfilePhoto")?.photo3x4 ?? null,
+    pendingImagesByType.ProfilePhoto ??
+      selectedImages.find((img) => img.photoType === "ProfilePhoto")?.photo3x4 ??
+      null,
   );
   const enrollmentImage = normalizeMediaSource(
-    selectedImages.find((img) => img.photoType === "EnrollmentProof")?.documentImage ?? null,
+    pendingImagesByType.EnrollmentProof ??
+      selectedImages.find((img) => img.photoType === "EnrollmentProof")?.documentImage ??
+      null,
   );
   const scheduleImage = normalizeMediaSource(
-    selectedImages.find((img) => img.photoType === "CourseSchedule")?.documentImage ?? null,
+    pendingImagesByType.CourseSchedule ??
+      selectedImages.find((img) => img.photoType === "CourseSchedule")?.documentImage ??
+      null,
   );
   const licenseImageFromImages = normalizeMediaSource(
     selectedImages.find((img) => img.photoType === "LicenseImage")?.studentCard ?? null,
@@ -306,6 +358,7 @@ export default function AdminCardsPage() {
 
   const selectStudent = useCallback(async (student: StudentRecord) => {
     setSelected(student);
+    setSelectedImages([]);
     setApprovedLicensePreview(null);
     setApproveMessage("");
     setSelectedBus("");
@@ -561,6 +614,7 @@ export default function AdminCardsPage() {
                         const hasCard = licensedStudentIds.has(student._id);
                         const isPending = studentRequest?.status === "pending";
                         const isRejected = studentRequest?.status === "rejected";
+                        const isUpdateRequest = studentRequest?.type === "update";
                       const isSelected = selected?._id === student._id;
                       const selectedInBatch = selectedForBatch.includes(student._id);
 
@@ -610,6 +664,11 @@ export default function AdminCardsPage() {
                               >
                                 {hasCard ? "Com carteirinha" : isPending ? "Pendente" : isRejected ? "Recusada" : "Sem solicitação"}
                               </span>
+                              {isUpdateRequest && (
+                                <span className="rounded-full px-2 py-1 text-[10px] font-semibold bg-secondary/15 text-secondary">
+                                  Alteração
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -620,9 +679,9 @@ export default function AdminCardsPage() {
               </section>
 
               {/* Painel de detalhes */}
-              <section className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 md:p-5">
+              <section className="relative h-full min-h-0 rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 md:p-5 flex flex-col">
                 {!selected && (
-                  <div className="flex h-full min-h-96 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-outline-variant bg-surface text-center text-on-surface-variant">
+                  <div className="flex flex-1 min-h-96 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-outline-variant bg-surface text-center text-on-surface-variant">
                     <Eye className="h-8 w-8" />
                     <p className="font-medium">Selecione um aluno para revisar.</p>
                     <p className="max-w-xs text-xs">
@@ -633,91 +692,152 @@ export default function AdminCardsPage() {
                 )}
 
                 {selected && (
-                  <div className="space-y-4">
-                    {/* Info do aluno */}
-                    <div className="rounded-xl border border-outline-variant bg-surface p-4">
-                      <div className="mb-2 flex items-center justify-between gap-3">
-                        <h2 className="font-semibold text-on-surface">{selected.name}</h2>
-                        {currentLicense ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-xs font-semibold text-success">
-                            <BadgeCheck className="h-3.5 w-3.5" />
-                            Carteirinha ativa
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-warning/20 px-2 py-1 text-xs font-semibold text-warning">
-                            Aguardando aprovação
-                          </span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-1 gap-2 text-xs text-on-surface-variant md:grid-cols-2">
-                        <p><strong className="text-on-surface">Curso:</strong> {selected.degree ?? "—"}</p>
-                        <p><strong className="text-on-surface">Turno:</strong> {selected.shift ?? "—"}</p>
-                        <p className="md:col-span-2">
-                          <strong className="text-on-surface">Instituição:</strong>{" "}
-                          {selected.institution ?? "—"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Grade horária */}
-                    <div className="rounded-xl border border-outline-variant bg-surface p-4">
-                      <h3 className="mb-2 text-sm font-semibold text-on-surface">Grade informada</h3>
-                      {selected.schedule && selected.schedule.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {selected.schedule.map((item, index) => (
-                            <span
-                              key={`${item.day}-${item.period}-${index}`}
-                              className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary"
-                            >
-                              {DAY_LABELS[item.day] ?? item.day} · {item.period}
+                  <div className="flex flex-1 min-h-0 flex-col">
+                    <div className="flex-1 min-h-0 space-y-4 overflow-y-auto pb-4 pr-1">
+                      <div className="rounded-xl border border-outline-variant bg-surface p-4">
+                        <div className="mb-2 flex items-center justify-between gap-3">
+                          <h2 className="font-semibold text-on-surface">{selected.name}</h2>
+                          {currentLicense ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-xs font-semibold text-success">
+                              <BadgeCheck className="h-3.5 w-3.5" />
+                              Carteirinha ativa
                             </span>
-                          ))}
+                          ) : (
+                            <span className="rounded-full bg-warning/20 px-2 py-1 text-xs font-semibold text-warning">
+                              Aguardando aprovação
+                            </span>
+                          )}
                         </div>
-                      ) : (
-                        <p className="text-xs text-on-surface-variant">Sem grade cadastrada.</p>
+                      </div>
+
+                      <div className="rounded-xl border border-outline-variant bg-surface px-4 py-4 space-y-4">
+                        <h3 className="text-sm font-semibold text-on-surface">Dados do aluno</h3>
+                        <div className="grid grid-cols-1 gap-2 text-xs text-on-surface-variant md:grid-cols-2">
+                          <p><strong className="text-on-surface">Curso:</strong> {selected.degree ?? "—"}</p>
+                          <p><strong className="text-on-surface">Turno:</strong> {selected.shift ?? "—"}</p>
+                          <p className="md:col-span-2">
+                            <strong className="text-on-surface">Instituição:</strong> {" "}
+                            {selected.institution ?? "—"}
+                          </p>
+                        </div>
+
+                        <div className="border-t border-outline-variant/20 pt-4">
+                          <h4 className="mb-2 text-sm font-semibold text-on-surface">Grade informada</h4>
+                          {selected.schedule && selected.schedule.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {selected.schedule.map((item, index) => (
+                                <span
+                                  key={`${item.day}-${item.period}-${index}`}
+                                  className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary"
+                                >
+                                  {DAY_LABELS[item.day] ?? item.day} · {item.period}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-on-surface-variant">Sem grade cadastrada.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="border-t border-outline-variant/20" />
+
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-semibold text-on-surface">Documentos enviados</h3>
+
+                      {currentLicenseRequest?.type === "update" && (
+                        <>
+                          <div className="rounded-xl border border-secondary/30 bg-secondary/5 p-4 space-y-3">
+                            <h3 className="text-sm font-semibold text-on-surface">
+                              Documentos alterados nesta solicitação
+                            </h3>
+
+                            {currentLicenseRequest.changedDocuments.length > 0 ? (
+                              <div className="space-y-3">
+                                {currentLicenseRequest.changedDocuments.map((docType) => {
+                                  const typedDoc = docType as PhotoType;
+                                  const currentImage = selectedImages.find((img) => img.photoType === typedDoc);
+
+                                  const newDataUrl = normalizeMediaSource(
+                                    pendingImagesByType[typedDoc] ?? null,
+                                  );
+
+                                  const previousDataUrl = typedDoc === "ProfilePhoto"
+                                    ? normalizeMediaSource(currentImage?.photo3x4 ?? null)
+                                    : normalizeMediaSource(currentImage?.documentImage ?? null);
+
+                                  return (
+                                    <div key={docType} className="rounded-xl border border-outline-variant bg-surface p-3 space-y-2">
+                                      <p className="inline-flex items-center rounded-full px-2 py-1 text-[11px] font-semibold bg-secondary/15 text-secondary">
+                                        {PHOTO_TYPE_LABELS[typedDoc] ?? docType}
+                                      </p>
+
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <DocumentPreview
+                                          title="Anterior"
+                                          dataUrl={previousDataUrl}
+                                          loading={loadingSelected}
+                                        />
+                                        <DocumentPreview
+                                          title="Novo"
+                                          dataUrl={newDataUrl}
+                                          loading={loadingSelected}
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-on-surface-variant">Nenhum documento informado nesta solicitação.</p>
+                            )}
+                          </div>
+                        </>
+                      )}
+
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        {previewItems.map((item, index) => (
+                          <DocumentPreview
+                            key={item.title}
+                            title={item.title}
+                            dataUrl={item.dataUrl}
+                            loading={item.title !== "Preview da Carteirinha" && loadingSelected}
+                            onOpen={item.dataUrl ? () => setLightboxIndex(index) : undefined}
+                          />
+                        ))}
+                      </div>
+                      </div>
+
+                      {approveMessage && (
+                        <>
+                          <div className="border-t border-outline-variant/60" />
+                          <div className="rounded-xl border border-outline-variant bg-surface p-3 text-xs text-on-surface">
+                            {approveMessage}
+                          </div>
+                        </>
                       )}
                     </div>
 
-                    {/* Linha de ônibus */}
-                    <div className="rounded-xl border border-outline-variant bg-surface p-4">
-                      <label className="mb-2 block text-sm font-semibold text-on-surface">
-                        Linha de ônibus para a carteirinha
-                      </label>
-                      <input
-                        value={selectedBus}
-                        onChange={(e) => setSelectedBus(e.target.value)}
-                        placeholder="Ex.: 205"
-                        maxLength={10}
-                        className="h-10 w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface outline-none focus:border-primary"
-                      />
-                      <p className="mt-1 text-[11px] text-on-surface-variant">
-                        Esse valor será usado no campo de ônibus da carteirinha.
-                      </p>
-                    </div>
-
-                    {/* Documentos */}
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                      {previewItems.map((item, index) => (
-                        <DocumentPreview
-                          key={item.title}
-                          title={item.title}
-                          dataUrl={item.dataUrl}
-                          loading={item.title !== "Preview da Carteirinha" && loadingSelected}
-                          onOpen={item.dataUrl ? () => setLightboxIndex(index) : undefined}
+                    <div className="border-t border-outline-variant bg-surface-container-lowest pt-3 pb-4 px-4 space-y-3">
+                      <div>
+                        <label className="mb-2 block text-sm font-semibold text-on-surface">
+                          Linha de ônibus para a carteirinha
+                        </label>
+                        <input
+                          value={selectedBus}
+                          onChange={(e) => setSelectedBus(e.target.value)}
+                          placeholder="Ex.: 205"
+                          maxLength={10}
+                          className="h-10 w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface outline-none focus:border-primary"
                         />
-                      ))}
-                    </div>
-
-                    {/* Mensagem de feedback */}
-                    {approveMessage && (
-                      <div className="rounded-xl border border-outline-variant bg-surface p-3 text-xs text-on-surface">
-                        {approveMessage}
+                        <p className="mt-1 text-[11px] text-on-surface-variant">
+                          Esse valor será usado no campo de ônibus da carteirinha.
+                        </p>
                       </div>
-                    )}
 
-                    {/* Ações */}
-                    <div className="flex justify-end">
-                      <div className="flex items-center gap-2">
+                      <div className="border-t border-outline-variant/60" />
+
+                      <div className="flex flex-wrap justify-end gap-2">
                         <Button
                           variant="outline"
                           size="md"
@@ -875,5 +995,3 @@ export default function AdminCardsPage() {
     </div>
   );
 }
-
-// ── Componentes auxiliares ────────────────────────────────────────────────────
