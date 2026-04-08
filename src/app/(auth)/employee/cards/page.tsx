@@ -6,13 +6,17 @@ import {
   BadgeCheck,
   Bus,
   CalendarDays,
+  Download,
   Eye,
+  ExternalLink,
+  FileText,
   IdCard,
   Loader2,
   Printer,
   RefreshCw,
   Search,
   UserRound,
+  X,
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
@@ -77,21 +81,12 @@ interface LicenseRequestRecord {
   studentId: string;
   type: "initial" | "update";
   changedDocuments: string[];
+  pendingImages?: Array<{ photoType: string; dataUrl: string }>;
   status: "pending" | "approved" | "rejected";
   rejectionReason: string | null;
   rejectedAt: string | null;
   licenseId: string | null;
   createdAt: string;
-}
-
-interface ImageHistory {
-  _id: string;
-  studentId: string;
-  imageId: string;
-  photoType: PhotoType;
-  photo3x4: string | null;
-  documentImage: string | null;
-  replacedAt: string;
 }
 
 interface LicenseApiResponse {
@@ -125,6 +120,12 @@ interface PrintableCard {
   imageData: string;
 }
 
+interface ComparePairPreview {
+  title: string;
+  previousDataUrl: string | null;
+  newDataUrl: string | null;
+}
+
 
 const DAY_LABELS: Record<string, string> = {
   SEG: "Segunda",
@@ -155,7 +156,6 @@ export default function EmployeeCardsPage() {
 
   const [selected, setSelected] = useState<StudentRecord | null>(null);
   const [selectedImages, setSelectedImages] = useState<ImageRecord[]>([]);
-  const [selectedImageHistory, setSelectedImageHistory] = useState<ImageHistory[]>([]);
   const [loadingSelected, setLoadingSelected] = useState(false);
 
   const [approving, setApproving] = useState(false);
@@ -167,6 +167,7 @@ export default function EmployeeCardsPage() {
   const [approvedLicensePreview, setApprovedLicensePreview] = useState<string | null>(null);
   const [selectedBus, setSelectedBus] = useState("");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [comparePairPreview, setComparePairPreview] = useState<ComparePairPreview | null>(null);
   const [selectedForBatch, setSelectedForBatch] = useState<string[]>([]);
   const [printingSingle, setPrintingSingle] = useState(false);
   const [printingBatch, setPrintingBatch] = useState(false);
@@ -284,14 +285,41 @@ export default function EmployeeCardsPage() {
     );
   }, [licenseRequests, selected]);
 
+  const pendingImagesByType = useMemo<Partial<Record<PhotoType, string>>>(() => {
+    if (currentLicenseRequest?.type !== "update" || currentLicenseRequest?.status !== "pending") {
+      return {};
+    }
+
+    return (currentLicenseRequest.pendingImages ?? []).reduce(
+      (acc, item) => {
+        if (
+          item.photoType === "ProfilePhoto" ||
+          item.photoType === "EnrollmentProof" ||
+          item.photoType === "CourseSchedule" ||
+          item.photoType === "LicenseImage"
+        ) {
+          acc[item.photoType] = item.dataUrl;
+        }
+        return acc;
+      },
+      {} as Partial<Record<PhotoType, string>>,
+    );
+  }, [currentLicenseRequest]);
+
   const profileImage = normalizeMediaSource(
-    selectedImages.find((img) => img.photoType === "ProfilePhoto")?.photo3x4 ?? null,
+    pendingImagesByType.ProfilePhoto ??
+      selectedImages.find((img) => img.photoType === "ProfilePhoto")?.photo3x4 ??
+      null,
   );
   const enrollmentImage = normalizeMediaSource(
-    selectedImages.find((img) => img.photoType === "EnrollmentProof")?.documentImage ?? null,
+    pendingImagesByType.EnrollmentProof ??
+      selectedImages.find((img) => img.photoType === "EnrollmentProof")?.documentImage ??
+      null,
   );
   const scheduleImage = normalizeMediaSource(
-    selectedImages.find((img) => img.photoType === "CourseSchedule")?.documentImage ?? null,
+    pendingImagesByType.CourseSchedule ??
+      selectedImages.find((img) => img.photoType === "CourseSchedule")?.documentImage ??
+      null,
   );
   const licenseImageFromImages =
     normalizeMediaSource(
@@ -353,28 +381,25 @@ export default function EmployeeCardsPage() {
   const selectStudent = useCallback(async (student: StudentRecord) => {
     setSelected(student);
     setSelectedImages([]);
-    setSelectedImageHistory([]);
     setApprovedLicensePreview(null);
     setApproveMessage("");
     setSelectedBus("");
     setLightboxIndex(null);
+    setComparePairPreview(null);
     setLoadingSelected(true);
 
     try {
-      const [images, imageHistory, license] = await Promise.all([
+      const [images, license] = await Promise.all([
         employeeApi.get<ImageRecord[]>(`/image/student/${student._id}`),
-        employeeApi.get<ImageHistory[]>(`/image/history/student/${student._id}`).catch(() => []),
         employeeApi
           .get<LicenseApiResponse>(`/license/searchByStudent/${student._id}`)
           .catch(() => null),
       ]);
 
       setSelectedImages(images);
-      setSelectedImageHistory(imageHistory);
       setApprovedLicensePreview(extractLicenseImage(license));
     } catch {
       setSelectedImages([]);
-      setSelectedImageHistory([]);
       setApprovedLicensePreview(null);
     } finally {
       setLoadingSelected(false);
@@ -399,10 +424,15 @@ export default function EmployeeCardsPage() {
     setApproveMessage("");
 
     try {
+      const approvalPhoto =
+        currentLicenseRequest.type === "update" && currentLicenseRequest.status === "pending"
+          ? normalizeMediaSource(pendingImagesByType.ProfilePhoto ?? null)
+          : profileImage;
+
       await employeeApi.patch(`/license-request/approve/${currentLicenseRequest._id}`, {
         institution: selected.institution,
         bus: normalizedBus,
-        ...(profileImage ? { photo: profileImage } : {}),
+        ...(approvalPhoto ? { photo: approvalPhoto } : {}),
       });
       setApproveMessage("Carteirinha criada com sucesso.");
       await loadData();
@@ -412,7 +442,7 @@ export default function EmployeeCardsPage() {
     } finally {
       setApproving(false);
     }
-  }, [selected, approving, currentLicenseRequest, selectedBus, profileImage, loadData]);
+  }, [selected, approving, currentLicenseRequest, selectedBus, pendingImagesByType.ProfilePhoto, profileImage, loadData]);
 
   const handleReject = useCallback(async () => {
     if (!selected || !currentLicenseRequest || rejecting) return;
@@ -734,16 +764,15 @@ export default function EmployeeCardsPage() {
                             <div className="space-y-3">
                               {currentLicenseRequest.changedDocuments.map((docType) => {
                                 const typedDoc = docType as PhotoType;
-                                const newImage = selectedImages.find((img) => img.photoType === typedDoc);
-                                const historyImage = selectedImageHistory.find((img) => img.photoType === typedDoc);
+                                const currentImage = selectedImages.find((img) => img.photoType === typedDoc);
 
-                                const newDataUrl = typedDoc === "ProfilePhoto"
-                                  ? normalizeMediaSource(newImage?.photo3x4 ?? null)
-                                  : normalizeMediaSource(newImage?.documentImage ?? null);
+                                const newDataUrl = normalizeMediaSource(
+                                  pendingImagesByType[typedDoc] ?? null,
+                                );
 
                                 const previousDataUrl = typedDoc === "ProfilePhoto"
-                                  ? normalizeMediaSource(historyImage?.photo3x4 ?? null)
-                                  : normalizeMediaSource(historyImage?.documentImage ?? null);
+                                  ? normalizeMediaSource(currentImage?.photo3x4 ?? null)
+                                  : normalizeMediaSource(currentImage?.documentImage ?? null);
 
                                 return (
                                   <div key={docType} className="rounded-xl border border-outline-variant bg-surface p-3 space-y-2">
@@ -751,26 +780,28 @@ export default function EmployeeCardsPage() {
                                       {PHOTO_TYPE_LABELS[typedDoc] ?? docType}
                                     </p>
 
-                                    {previousDataUrl ? (
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <DocumentPreview
-                                          title="Anterior"
-                                          dataUrl={previousDataUrl}
-                                          loading={loadingSelected}
-                                        />
-                                        <DocumentPreview
-                                          title="Novo"
-                                          dataUrl={newDataUrl}
-                                          loading={loadingSelected}
-                                        />
-                                      </div>
-                                    ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                       <DocumentPreview
-                                        title="Novo (primeiro envio)"
-                                        dataUrl={newDataUrl}
+                                        title="Anterior"
+                                        dataUrl={previousDataUrl}
                                         loading={loadingSelected}
                                       />
-                                    )}
+                                      <DocumentPreview
+                                        title="Novo"
+                                        dataUrl={newDataUrl}
+                                        loading={loadingSelected}
+                                        onOpen={
+                                          newDataUrl
+                                            ? () =>
+                                                setComparePairPreview({
+                                                  title: PHOTO_TYPE_LABELS[typedDoc] ?? docType,
+                                                  previousDataUrl,
+                                                  newDataUrl,
+                                                })
+                                            : undefined
+                                        }
+                                      />
+                                    </div>
                                   </div>
                                 );
                               })}
@@ -878,6 +909,126 @@ export default function EmployeeCardsPage() {
           onClose={() => setLightboxIndex(null)}
           onNavigate={(nextIndex) => setLightboxIndex(nextIndex)}
         />
+      )}
+
+      {comparePairPreview && (
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/75 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-[96vw] max-h-[92vh] rounded-2xl border border-white/20 bg-surface-container-lowest shadow-2xl overflow-hidden">
+            <div className="flex flex-col gap-3 border-b border-outline-variant bg-surface px-4 py-3 md:flex-row md:items-center md:justify-between">
+              <p className="truncate text-sm font-semibold text-on-surface">
+                Comparação - {comparePairPreview.title}
+              </p>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setComparePairPreview(null)}
+                  className="inline-flex items-center justify-center rounded-lg border border-outline-variant bg-surface-container-low p-2 text-on-surface-variant hover:bg-surface-container"
+                  aria-label="Fechar comparação"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-surface overflow-auto">
+              <div className="rounded-xl border border-outline-variant bg-surface-container-low p-3 flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-on-surface">Anterior</p>
+                  {comparePairPreview.previousDataUrl && (
+                    <a
+                      href={comparePairPreview.previousDataUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 rounded-md border border-outline-variant bg-surface-container-low px-2 py-1 text-[11px] text-on-surface hover:bg-surface-container"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Nova aba
+                    </a>
+                  )}
+                </div>
+                <div className="h-[62vh] min-h-72 rounded-lg border border-outline-variant bg-surface overflow-hidden">
+                  {comparePairPreview.previousDataUrl ? (
+                    isPdfDataUrl(comparePairPreview.previousDataUrl) ? (
+                      <iframe
+                        src={comparePairPreview.previousDataUrl}
+                        title={`Anterior - ${comparePairPreview.title}`}
+                        className="h-full w-full bg-white"
+                      />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={comparePairPreview.previousDataUrl}
+                        alt={`Anterior - ${comparePairPreview.title}`}
+                        className="h-full w-full object-contain bg-white"
+                      />
+                    )
+                  ) : (
+                    <div className="h-full w-full flex flex-col items-center justify-center text-on-surface-variant gap-2">
+                      <FileText className="h-5 w-5" />
+                      <span className="text-xs">Sem arquivo anterior</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-on-surface">Novo</p>
+                  {comparePairPreview.newDataUrl && (
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={comparePairPreview.newDataUrl}
+                        download={`${comparePairPreview.title}-novo`}
+                        className="inline-flex items-center gap-1 rounded-md border border-outline-variant bg-surface-container-low px-2 py-1 text-[11px] text-on-surface hover:bg-surface-container"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Baixar
+                      </a>
+                      <a
+                        href={comparePairPreview.newDataUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 rounded-md border border-outline-variant bg-surface-container-low px-2 py-1 text-[11px] text-on-surface hover:bg-surface-container"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        Nova aba
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                <div className="h-[62vh] min-h-72 rounded-lg border border-outline-variant bg-surface overflow-hidden">
+                  {comparePairPreview.newDataUrl ? (
+                    isPdfDataUrl(comparePairPreview.newDataUrl) ? (
+                      <iframe
+                        src={comparePairPreview.newDataUrl}
+                        title={`Novo - ${comparePairPreview.title}`}
+                        className="h-full w-full bg-white"
+                      />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={comparePairPreview.newDataUrl}
+                        alt={`Novo - ${comparePairPreview.title}`}
+                        className="h-full w-full object-contain bg-white"
+                      />
+                    )
+                  ) : (
+                    <div className="h-full w-full flex flex-col items-center justify-center text-on-surface-variant gap-2">
+                      <FileText className="h-5 w-5" />
+                      <span className="text-xs">Sem arquivo novo</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {pdfPreviewUrl && (

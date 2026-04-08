@@ -80,21 +80,12 @@ interface LicenseRequestRecord {
   studentId: string;
   type: "initial" | "update";
   changedDocuments: string[];
+  pendingImages?: Array<{ photoType: string; dataUrl: string }>;
   status: "pending" | "approved" | "rejected";
   rejectionReason: string | null;
   rejectedAt: string | null;
   licenseId: string | null;
   createdAt: string;
-}
-
-interface ImageHistory {
-  _id: string;
-  studentId: string;
-  imageId: string;
-  photoType: PhotoType;
-  photo3x4: string | null;
-  documentImage: string | null;
-  replacedAt: string;
 }
 
 interface LicenseApiResponse {
@@ -160,7 +151,6 @@ export default function AdminCardsPage() {
 
   const [selected, setSelected] = useState<StudentRecord | null>(null);
   const [selectedImages, setSelectedImages] = useState<ImageRecord[]>([]);
-  const [selectedImageHistory, setSelectedImageHistory] = useState<ImageHistory[]>([]);
   const [loadingSelected, setLoadingSelected] = useState(false);
 
   const [approving, setApproving] = useState(false);
@@ -284,14 +274,41 @@ export default function AdminCardsPage() {
     );
   }, [licenseRequests, selected]);
 
+  const pendingImagesByType = useMemo<Partial<Record<PhotoType, string>>>(() => {
+    if (currentLicenseRequest?.type !== "update" || currentLicenseRequest?.status !== "pending") {
+      return {};
+    }
+
+    return (currentLicenseRequest.pendingImages ?? []).reduce(
+      (acc, item) => {
+        if (
+          item.photoType === "ProfilePhoto" ||
+          item.photoType === "EnrollmentProof" ||
+          item.photoType === "CourseSchedule" ||
+          item.photoType === "LicenseImage"
+        ) {
+          acc[item.photoType] = item.dataUrl;
+        }
+        return acc;
+      },
+      {} as Partial<Record<PhotoType, string>>,
+    );
+  }, [currentLicenseRequest]);
+
   const profileImage = normalizeMediaSource(
-    selectedImages.find((img) => img.photoType === "ProfilePhoto")?.photo3x4 ?? null,
+    pendingImagesByType.ProfilePhoto ??
+      selectedImages.find((img) => img.photoType === "ProfilePhoto")?.photo3x4 ??
+      null,
   );
   const enrollmentImage = normalizeMediaSource(
-    selectedImages.find((img) => img.photoType === "EnrollmentProof")?.documentImage ?? null,
+    pendingImagesByType.EnrollmentProof ??
+      selectedImages.find((img) => img.photoType === "EnrollmentProof")?.documentImage ??
+      null,
   );
   const scheduleImage = normalizeMediaSource(
-    selectedImages.find((img) => img.photoType === "CourseSchedule")?.documentImage ?? null,
+    pendingImagesByType.CourseSchedule ??
+      selectedImages.find((img) => img.photoType === "CourseSchedule")?.documentImage ??
+      null,
   );
   const licenseImageFromImages = normalizeMediaSource(
     selectedImages.find((img) => img.photoType === "LicenseImage")?.studentCard ?? null,
@@ -342,26 +359,22 @@ export default function AdminCardsPage() {
   const selectStudent = useCallback(async (student: StudentRecord) => {
     setSelected(student);
     setSelectedImages([]);
-    setSelectedImageHistory([]);
     setApprovedLicensePreview(null);
     setApproveMessage("");
     setSelectedBus("");
     setLightboxIndex(null);
     setLoadingSelected(true);
     try {
-      const [images, imageHistory, license] = await Promise.all([
+      const [images, license] = await Promise.all([
         employeeApi.get<ImageRecord[]>(`/image/student/${student._id}`),
-        employeeApi.get<ImageHistory[]>(`/image/history/student/${student._id}`).catch(() => []),
         employeeApi
           .get<LicenseApiResponse>(`/license/searchByStudent/${student._id}`)
           .catch(() => null),
       ]);
       setSelectedImages(images);
-      setSelectedImageHistory(imageHistory);
       setApprovedLicensePreview(extractLicenseImage(license));
     } catch {
       setSelectedImages([]);
-      setSelectedImageHistory([]);
       setApprovedLicensePreview(null);
     } finally {
       setLoadingSelected(false);
@@ -743,16 +756,15 @@ export default function AdminCardsPage() {
                               <div className="space-y-3">
                                 {currentLicenseRequest.changedDocuments.map((docType) => {
                                   const typedDoc = docType as PhotoType;
-                                  const newImage = selectedImages.find((img) => img.photoType === typedDoc);
-                                  const historyImage = selectedImageHistory.find((img) => img.photoType === typedDoc);
+                                  const currentImage = selectedImages.find((img) => img.photoType === typedDoc);
 
-                                  const newDataUrl = typedDoc === "ProfilePhoto"
-                                    ? normalizeMediaSource(newImage?.photo3x4 ?? null)
-                                    : normalizeMediaSource(newImage?.documentImage ?? null);
+                                  const newDataUrl = normalizeMediaSource(
+                                    pendingImagesByType[typedDoc] ?? null,
+                                  );
 
                                   const previousDataUrl = typedDoc === "ProfilePhoto"
-                                    ? normalizeMediaSource(historyImage?.photo3x4 ?? null)
-                                    : normalizeMediaSource(historyImage?.documentImage ?? null);
+                                    ? normalizeMediaSource(currentImage?.photo3x4 ?? null)
+                                    : normalizeMediaSource(currentImage?.documentImage ?? null);
 
                                   return (
                                     <div key={docType} className="rounded-xl border border-outline-variant bg-surface p-3 space-y-2">
@@ -760,26 +772,18 @@ export default function AdminCardsPage() {
                                         {PHOTO_TYPE_LABELS[typedDoc] ?? docType}
                                       </p>
 
-                                      {previousDataUrl ? (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                          <DocumentPreview
-                                            title="Anterior"
-                                            dataUrl={previousDataUrl}
-                                            loading={loadingSelected}
-                                          />
-                                          <DocumentPreview
-                                            title="Novo"
-                                            dataUrl={newDataUrl}
-                                            loading={loadingSelected}
-                                          />
-                                        </div>
-                                      ) : (
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <DocumentPreview
-                                          title="Novo (primeiro envio)"
+                                          title="Anterior"
+                                          dataUrl={previousDataUrl}
+                                          loading={loadingSelected}
+                                        />
+                                        <DocumentPreview
+                                          title="Novo"
                                           dataUrl={newDataUrl}
                                           loading={loadingSelected}
                                         />
-                                      )}
+                                      </div>
                                     </div>
                                   );
                                 })}
