@@ -4,17 +4,17 @@ const PUBLIC_PATHS = ["/login"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get("employee_access_token")?.value;
+  const sid = request.cookies.get("sid")?.value;
 
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
   // Se já está logado e tenta acessar /login, redireciona pro dashboard
-  if (isPublic && token) {
-    return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+  if (isPublic && sid) {
+    return NextResponse.redirect(new URL("/employee/dashboard", request.url));
   }
 
   // Rota protegida sem token → login
-  if (!isPublic && !token) {
+  if (!isPublic && !sid) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname); // preserva destino
     return NextResponse.redirect(loginUrl);

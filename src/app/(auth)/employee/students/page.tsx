@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { SideNav } from "@/components/layout/SideNav";
+import { EmployeeSideNav } from "@/components/layout/EmployeeSideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
@@ -16,7 +16,7 @@ import { StudentListEmpty } from "@/components/students/StudentListEmpty";
 
 type Tab = "active" | "inactive";
 
-export default function StudentsPage() {
+export default function EmployeeStudentsPage() {
   const { user, logout } = useEmployeeAuth();
   const router = useRouter();
 
@@ -62,7 +62,7 @@ export default function StudentsPage() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/admin/students/edit?id=${id}`);
+    router.push(`/employee/students/edit?id=${id}`);
   };
 
   const displayed = tab === "active" ? active : inactive;
@@ -70,7 +70,7 @@ export default function StudentsPage() {
 
   return (
     <div className="flex min-h-screen bg-surface">
-      <SideNav activePath="/admin/students" onLogout={logout} />
+      <EmployeeSideNav activePath="/employee/students" onLogout={logout} />
 
       <div className="flex-1 ml-64 flex flex-col">
         <TopBar user={user} />
@@ -81,7 +81,7 @@ export default function StudentsPage() {
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
               <Link
-                href="/admin/dashboard"
+                href="/employee/dashboard"
                 className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
                 title="Voltar ao painel"
               >
@@ -100,7 +100,7 @@ export default function StudentsPage() {
                   </p>
                 )}
               </div>
-              <Link href="/admin/students/new">
+              <Link href="/employee/students/new">
                 <Button variant="primary" size="sm" icon="person_add">
                   Adicionar
                 </Button>
@@ -132,7 +132,7 @@ export default function StudentsPage() {
               <StudentListEmpty tab={tab} isError onRetry={() => loadTab(tab)} />
             )}
 
-            {/* Loading skeletons — key prop corrigido */}
+            {/* Loading skeletons */}
             {loading && (
               <div className="flex flex-col gap-3">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -165,8 +165,6 @@ export default function StudentsPage() {
           <div className="absolute bottom-0 left-0 w-full">
             <Footer />
           </div>
-
-         
         </main>
       </div>
     </div>

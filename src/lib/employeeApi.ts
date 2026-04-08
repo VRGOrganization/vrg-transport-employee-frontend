@@ -1,40 +1,49 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+import type { EmployeeApiError } from "@/types/employeeAuth";
 
-// Lê o token do cookie (funciona no browser)
-function getToken(): string | null {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie.match(/(?:^|;\s*)employee_access_token=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
+export const API_BASE_URL = "/api/v1";
+
+let onUnauthorized: (() => void) | null = null;
+
+export function configureEmployeeApi(opts: { onUnauthorized: () => void }) {
+  onUnauthorized = opts.onUnauthorized;
 }
 
-export function setTokens(accessToken: string, refreshToken: string) {
-  // Apenas cookies — o middleware consegue ler
-  // SameSite=Strict impede CSRF; omita HttpOnly aqui pois precisamos ler no cliente
-  document.cookie = `employee_access_token=${encodeURIComponent(accessToken)}; path=/; SameSite=Strict; max-age=${60 * 15}`; // 15 min
-  document.cookie = `employee_refresh_token=${encodeURIComponent(refreshToken)}; path=/; SameSite=Strict; max-age=${60 * 60 * 24 * 7}`; // 7 dias
+export function resetEmployeeApiState(): void {
+  onUnauthorized = null;
+}
+
+export function setTokens(_accessToken: string, _refreshToken: string) {
+  // No-op: sessão agora é controlada por cookie httpOnly sid no BFF.
 }
 
 export function clearTokens() {
-  document.cookie = "employee_access_token=; path=/; max-age=0";
-  document.cookie = "employee_refresh_token=; path=/; max-age=0";
+  // No-op: sessão agora é controlada por cookie httpOnly sid no BFF.
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken();
+  const headers: HeadersInit = {
+    ...(!(options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
+    ...options.headers,
+  };
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
+    headers,
+    credentials: "include",
   });
 
   const data = await res.json().catch(() => ({}));
 
+  if (res.status === 401) {
+    onUnauthorized?.();
+  }
+
   if (!res.ok) {
-    throw { message: data?.message ?? "Erro desconhecido", status: res.status };
+    const error: EmployeeApiError = {
+      message: data?.message ?? "Erro desconhecido",
+      status: res.status,
+    };
+    throw error;
   }
 
   return data as T;

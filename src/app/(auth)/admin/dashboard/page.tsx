@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { employeeApi } from "@/lib/employeeApi";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 
-import { StatCard } from "@/components/ui/StatCard";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { EmployeeTable } from "@/components/admin/EmployeeTable";
@@ -21,6 +19,16 @@ export interface Employee {
   updatedAt: string;
 }
 
+interface StudentRecord {
+  _id: string;
+  active: boolean;
+}
+
+interface LicenseRecord {
+  _id: string;
+  studentId: string;
+}
+
 interface DashboardStats {
   activeStudents: number | null;
   activeEmployees: number | null;
@@ -31,25 +39,56 @@ export default function AdminDashboardPage() {
   const { user, logout } = useEmployeeAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
-    activeStudents: 1248,
+    activeStudents: null,
     activeEmployees: null,
-    pendingRequests: 42,
+    pendingRequests: null,
   });
   const [loadingEmployees, setLoadingEmployees] = useState(true);
 
   useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        const data = await employeeApi.get<Employee[]>("/employee");
-        setEmployees(data);
-        setStats((prev) => ({ ...prev, activeEmployees: data.length }));
-      } catch {
-        // keep null
-      } finally {
-        setLoadingEmployees(false);
+    const fetchAll = async () => {
+      // Busca os 3 recursos em paralelo
+      const [employeesResult, studentsResult, licensesResult] =
+        await Promise.allSettled([
+          employeeApi.get<Employee[]>("/employee"),
+          employeeApi.get<StudentRecord[]>("/student"),
+          employeeApi.get<LicenseRecord[]>("/license/all"),
+        ]);
+
+      // Funcionários
+      if (employeesResult.status === "fulfilled") {
+        setEmployees(employeesResult.value);
+        setStats((prev) => ({
+          ...prev,
+          activeEmployees: employeesResult.value.length,
+        }));
       }
+
+      // Alunos ativos + pendências de carteirinha
+      if (studentsResult.status === "fulfilled") {
+        const activeStudents = studentsResult.value.filter((s) => s.active);
+        const activeStudentIds = new Set(activeStudents.map((s) => s._id));
+
+        const licensedIds =
+          licensesResult.status === "fulfilled"
+            ? new Set(licensesResult.value.map((l) => l.studentId))
+            : new Set<string>();
+
+        const pending = activeStudents.filter(
+          (s) => !licensedIds.has(s._id)
+        ).length;
+
+        setStats((prev) => ({
+          ...prev,
+          activeStudents: activeStudents.length,
+          pendingRequests: pending,
+        }));
+      }
+
+      setLoadingEmployees(false);
     };
-    fetchEmployees();
+
+    fetchAll();
   }, []);
 
   const handleEmployeeDeleted = (id: string) => {
@@ -63,7 +102,7 @@ export default function AdminDashboardPage() {
 
   const handleEmployeeUpdated = (updated: Employee) => {
     setEmployees((prev) =>
-      prev.map((e) => (e._id === updated._id ? updated : e)),
+      prev.map((e) => (e._id === updated._id ? updated : e))
     );
   };
 
@@ -121,7 +160,7 @@ export default function AdminDashboardPage() {
   );
 }
 
-/* ── Internal stat card variant matching the HTML design ── */
+/* ── Internal stat card variant ── */
 interface DashboardStatCardProps {
   icon: string;
   label: string;

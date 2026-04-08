@@ -6,7 +6,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { Footer } from "@/components/layout/Footer";
 import { StatsDashboard } from "@/components/stats/StatsDashboard";
 
-export default function AdminInfoPage() {
+export default function EmployeeInfoPage() {
   const { user } = useEmployeeAuth();
 
   return (
