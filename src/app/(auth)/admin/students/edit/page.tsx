@@ -82,7 +82,7 @@ function EditStudentPageInner() {
 
   const handleToggleStatus = async () => {
     if (!student) return;
-    if (!student.active && !confirmDeactivate) {
+    if (student.active && !confirmDeactivate) {
       setConfirmDeactivate(true);
       return;
     }

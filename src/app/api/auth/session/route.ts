@@ -46,13 +46,50 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "Resposta inválida ao carregar sessão." }, { status: 502 });
     }
 
+    const defaultName = meData.userType === "admin" ? "Administrador" : "Funcionário";
+    let resolvedName = defaultName;
+
+    const detailPath = meData.userType === "employee"
+      ? `/employee/${userId}`
+      : `/admin/${userId}`;
+
+    try {
+      const detailResponse = await fetch(`${getBackendApiBaseUrl()}${detailPath}`, {
+        method: "GET",
+        headers: {
+          "x-service-secret": getServiceSecret(),
+          "x-session-id": sid,
+        },
+        cache: "no-store",
+      });
+
+      if (detailResponse.ok) {
+        const detailData = (await detailResponse.json()) as {
+          name?: string;
+          username?: string;
+        };
+
+        if (typeof detailData.name === "string" && detailData.name.trim().length > 0) {
+          resolvedName = detailData.name;
+        } else if (
+          meData.userType === "admin" &&
+          typeof detailData.username === "string" &&
+          detailData.username.trim().length > 0
+        ) {
+          resolvedName = detailData.username;
+        }
+      }
+    } catch {
+      // Mantém fallback genérico sem falhar a sessão.
+    }
+
     return NextResponse.json({
       ok: true,
       user: {
         id: userId,
         role: meData.userType,
         identifier: userId,
-        name: meData.userType === "admin" ? "Administrador" : "Funcionário",
+        name: resolvedName,
       },
     });
   } catch {
