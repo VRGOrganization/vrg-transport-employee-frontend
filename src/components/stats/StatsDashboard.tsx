@@ -68,7 +68,7 @@ export function StatsDashboard() {
           <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-0.5">
             Painel de Informações
           </p>
-          <h1 className="text-xl font-medium text-gray-800">
+          <h1 className="text-xl font-medium text-gray-800 pt-10">
             Estatísticas de Alunos
           </h1>
         </div>
