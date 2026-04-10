@@ -40,4 +40,28 @@ describe("EmployeeAdminLoginForm", () => {
     expect(await screen.findByText("Credenciais invalidas")).toBeInTheDocument();
     expect(loginMock).toHaveBeenCalledTimes(1);
   });
+
+  it("deve validar senha curta e mostrar erro por campo", async () => {
+    render(<EmployeeAdminLoginForm />);
+
+    await userEvent.type(screen.getByPlaceholderText("email@dominio.com ou MAT123456"), "MAT123456");
+    await userEvent.type(screen.getByPlaceholderText("••••••••"), "123");
+    await userEvent.click(screen.getByRole("button", { name: "Acessar Sistema" }));
+
+    expect(await screen.findByText("Senha deve ter no minimo 6 caracteres")).toBeInTheDocument();
+    expect(loginMock).not.toHaveBeenCalled();
+  });
+
+  it("deve permitir navegacao basica por teclado no formulario", async () => {
+    render(<EmployeeAdminLoginForm />);
+
+    await userEvent.tab();
+    expect(screen.getByRole("combobox")).toHaveFocus();
+
+    await userEvent.tab();
+    expect(screen.getByPlaceholderText("email@dominio.com ou MAT123456")).toHaveFocus();
+
+    await userEvent.tab();
+    expect(screen.getByPlaceholderText("••••••••")).toHaveFocus();
+  });
 });
