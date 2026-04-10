@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   getBackendApiBaseUrl,
+  getSidMaxAgeSeconds,
   getServiceSecret,
   ROLE_COOKIE_NAME,
   SID_COOKIE_NAME,
@@ -111,7 +112,7 @@ export async function GET(request: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: 24 * 60 * 60,
+      maxAge: getSidMaxAgeSeconds(meData.userType),
     });
 
     return response;

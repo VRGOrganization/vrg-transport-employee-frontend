@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
 
     const sessionId = sessionResult.data.sessionId;
     const resolvedRole = sessionResult.data.user?.role === "admin" ? "admin" : "employee";
+    const sidMaxAgeSeconds = getSidMaxAgeSeconds(resolvedRole);
 
     const response = NextResponse.json({
       ok: true,
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: getSidMaxAgeSeconds(),
+      maxAge: sidMaxAgeSeconds,
     });
 
     response.cookies.set(ROLE_COOKIE_NAME, resolvedRole, {
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
-      maxAge: getSidMaxAgeSeconds(),
+      maxAge: sidMaxAgeSeconds,
     });
 
     return response;
