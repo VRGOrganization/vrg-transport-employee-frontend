@@ -97,12 +97,6 @@ export default function EmployeeDashboardPage() {
     fetchAll();
   }, []);
 
-  const handleStudentUpdated = (updated: Student) => {
-    setStudents((prev) =>
-      prev.map((s) => (s._id === updated._id ? updated : s))
-    );
-  };
-
   const handleStudentDeleted = (id: string) => {
     setStudents((prev) => prev.filter((s) => s._id !== id));
     setStats((prev) => ({
@@ -149,7 +143,6 @@ export default function EmployeeDashboardPage() {
           <StudentTable
             students={students}
             loading={loadingStudents}
-            onUpdated={handleStudentUpdated}
             onDeleted={handleStudentDeleted}
           />
 

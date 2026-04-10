@@ -12,7 +12,7 @@ export function resetEmployeeApiState(): void {
   onUnauthorized = null;
 }
 
-export function setTokens(_accessToken: string, _refreshToken: string) {
+export function setTokens() {
   // No-op: sessão agora é controlada por cookie httpOnly sid no BFF.
 }
 

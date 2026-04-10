@@ -9,8 +9,12 @@ import {
 import {
   EmployeeUser,
   EmployeeLoginCredentials,
-  EmployeeAuthResponse,
 } from "@/types/employeeAuth";
+import {
+  csrfBootstrapSchema,
+  employeeAuthResponseSchema,
+  employeeLoginRequestSchema,
+} from "@/lib/validation/auth";
 
 export function useEmployeeAuth() {
   const [user, setUser] = useState<EmployeeUser | null>(null);
@@ -45,8 +49,15 @@ export function useEmployeeAuth() {
           return;
         }
 
-        const data = (await response.json()) as EmployeeAuthResponse;
-        setUser(data.user);
+        const payload = await response.json().catch(() => ({}));
+        const sessionResult = employeeAuthResponseSchema.safeParse(payload);
+
+        if (!sessionResult.success) {
+          clearSession();
+          return;
+        }
+
+        setUser(sessionResult.data.user);
       } catch {
         clearSession();
       } finally {
@@ -57,34 +68,64 @@ export function useEmployeeAuth() {
     void checkAuth();
   }, [clearSession]);
 
+  const getCsrfHeaders = useCallback(async (): Promise<Record<string, string>> => {
+    const response = await fetch("/api/auth/csrf", {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    const csrfResult = csrfBootstrapSchema.safeParse(payload);
+
+    if (!response.ok || !csrfResult.success) {
+      throw new Error("Não foi possível inicializar a proteção CSRF.");
+    }
+
+    return { [csrfResult.data.csrfHeaderName.trim()]: csrfResult.data.csrfToken };
+  }, []);
+
   const login = async (credentials: EmployeeLoginCredentials) => {
     setLoading(true);
     try {
+      const credentialsResult = employeeLoginRequestSchema.safeParse(credentials);
+      if (!credentialsResult.success) {
+        const firstIssue = credentialsResult.error.issues[0]?.message ?? "Credenciais invalidas";
+        return { success: false, error: firstIssue };
+      }
+
+      const csrfHeaders = await getCsrfHeaders();
+
       const response = await fetch("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...csrfHeaders,
+        },
         credentials: "include",
-        body: JSON.stringify({
-          login: credentials.login,
-          password: credentials.password,
-        }),
+        body: JSON.stringify(credentialsResult.data),
       });
 
-      const payload = (await response.json().catch(() => ({}))) as {
-        user?: EmployeeUser;
-        message?: string;
-      };
+      const payload = await response.json().catch(() => ({}));
+      const authResult = employeeAuthResponseSchema.safeParse(payload);
 
-      if (!response.ok || !payload.user) {
+      if (!response.ok || !authResult.success) {
+        const message =
+          typeof payload === "object" &&
+          payload !== null &&
+          "message" in payload &&
+          typeof (payload as { message?: unknown }).message === "string"
+            ? (payload as { message: string }).message
+            : "Credenciais invalidas";
         return {
           success: false,
-          error: typeof payload.message === "string" ? payload.message : "Credenciais inválidas",
+          error: message,
         };
       }
 
-      setUser(payload.user);
+      setUser(authResult.data.user);
 
-      if (payload.user.role === "admin") {
+      if (authResult.data.user.role === "admin") {
         router.push("/admin/dashboard");
       } else {
         router.push("/employee/dashboard");
@@ -104,9 +145,12 @@ export function useEmployeeAuth() {
 
   const logout = async () => {
     try {
+      const csrfHeaders = await getCsrfHeaders();
+
       await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
+        headers: csrfHeaders,
       });
     } catch {
       // ignora erro de logout

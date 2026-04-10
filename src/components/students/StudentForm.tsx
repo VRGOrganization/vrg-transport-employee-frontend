@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/Button";
 import {
   StudentFormData,
   StudentFormErrors,
-  INSTITUTIONS,
-  SHIFTS,
 } from "@/types/student";
 
 interface StudentFormProps {

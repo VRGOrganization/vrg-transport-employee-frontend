@@ -15,21 +15,21 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
-
-  useEffect(() => {
-    const saved = localStorage.getItem("theme");
-    if (saved === "light" || saved === "dark") {
-      setTheme(saved);
-      return;
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === "undefined") {
+      return "light";
     }
 
-    setTheme(
-      window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light",
-    );
-  }, []);
+    // Validate against allowlist before use - never use localStorage values directly.
+    const saved = localStorage.getItem("theme");
+    if (saved === "light" || saved === "dark") {
+      return saved;
+    }
+
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  });
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -39,7 +39,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme((prev) => {
       const next = prev === "light" ? "dark" : "light";
       localStorage.setItem("theme", next);
-      document.documentElement.classList.toggle("dark", next === "dark");
       return next;
     });
   };

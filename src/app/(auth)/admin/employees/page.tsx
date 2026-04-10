@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";

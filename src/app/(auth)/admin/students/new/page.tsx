@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
-import { Footer } from "@/components/layout/Footer";
 import { employeeApi } from "@/lib/employeeApi";
 
 import { StudentForm } from "@/components/students/StudentForm";

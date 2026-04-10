@@ -82,7 +82,6 @@ export default function AdminDashboardPage() {
             : [];
 
         const activeStudents = resolvedStudents.filter((s) => s.active);
-        const activeStudentIds = new Set(activeStudents.map((s) => s._id));
 
         const licensedIds =
           licensesResult.status === "fulfilled"
