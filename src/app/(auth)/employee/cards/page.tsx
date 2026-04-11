@@ -379,32 +379,45 @@ export default function EmployeeCardsPage() {
   const activeLightboxItem = lightboxIndex !== null ? previewItems[lightboxIndex] : null;
 
   const selectStudent = useCallback(async (student: StudentRecord) => {
-    setSelected(student);
+  setSelected(student);
+  setSelectedImages([]);
+  setApprovedLicensePreview(null);
+  setApproveMessage("");
+  setSelectedBus("");
+  setLightboxIndex(null);
+  setLoadingSelected(true);
+
+  try {
+    const [imageList, license] = await Promise.all([
+      employeeApi.get<ImageRecord[]>(`/image/student/${student._id}`),
+      employeeApi
+        .get<LicenseApiResponse>(`/license/searchByStudent/${student._id}`)
+        .catch(() => null),
+    ]);
+
+    const hydratedImages = await Promise.all(
+      imageList.map(async (item) => {
+        const full = await employeeApi
+          .get<ImageRecord>(`/image/${item._id}/file`)
+          .catch(() => null);
+        return {
+          ...item,
+          photo3x4: full?.photo3x4 ?? null,
+          documentImage: full?.documentImage ?? null,
+          studentCard: full?.studentCard ?? null,
+        };
+      }),
+    );
+
+    setSelectedImages(hydratedImages);
+    setApprovedLicensePreview(extractLicenseImage(license));
+  } catch {
     setSelectedImages([]);
     setApprovedLicensePreview(null);
-    setApproveMessage("");
-    setSelectedBus("");
-    setLightboxIndex(null);
-    setComparePairPreview(null);
-    setLoadingSelected(true);
-
-    try {
-      const [images, license] = await Promise.all([
-        employeeApi.get<ImageRecord[]>(`/image/student/${student._id}`),
-        employeeApi
-          .get<LicenseApiResponse>(`/license/searchByStudent/${student._id}`)
-          .catch(() => null),
-      ]);
-
-      setSelectedImages(images);
-      setApprovedLicensePreview(extractLicenseImage(license));
-    } catch {
-      setSelectedImages([]);
-      setApprovedLicensePreview(null);
-    } finally {
-      setLoadingSelected(false);
-    }
-  }, []);
+  } finally {
+    setLoadingSelected(false);
+  }
+}, []);
 
   const handleApprove = useCallback(async () => {
     if (!selected || approving || !currentLicenseRequest) return;

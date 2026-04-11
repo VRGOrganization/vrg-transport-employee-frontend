@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
+              "frame-src 'self' data: blob:",
               "frame-ancestors 'none'",
               "upgrade-insecure-requests",
             ].join("; "),

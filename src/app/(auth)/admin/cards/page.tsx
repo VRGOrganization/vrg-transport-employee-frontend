@@ -44,7 +44,11 @@ const REJECTION_REASONS = [
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type PhotoType = "ProfilePhoto" | "EnrollmentProof" | "CourseSchedule" | "LicenseImage";
+type PhotoType =
+  | "ProfilePhoto"
+  | "EnrollmentProof"
+  | "CourseSchedule"
+  | "LicenseImage";
 
 interface StudentRecord {
   _id: string;
@@ -119,7 +123,6 @@ interface PrintableCard {
   imageData: string;
 }
 
-
 const DAY_LABELS: Record<string, string> = {
   SEG: "Segunda",
   TER: "Terça",
@@ -142,12 +145,16 @@ export default function AdminCardsPage() {
 
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [licenses, setLicenses] = useState<LicenseRecord[]>([]);
-  const [licenseRequests, setLicenseRequests] = useState<LicenseRequestRecord[]>([]);
+  const [licenseRequests, setLicenseRequests] = useState<
+    LicenseRequestRecord[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"pending" | "all" | "with-card">("pending");
+  const [filter, setFilter] = useState<"pending" | "all" | "with-card">(
+    "pending",
+  );
 
   const [selected, setSelected] = useState<StudentRecord | null>(null);
   const [selectedImages, setSelectedImages] = useState<ImageRecord[]>([]);
@@ -156,17 +163,22 @@ export default function AdminCardsPage() {
   const [approving, setApproving] = useState(false);
   const [approveMessage, setApproveMessage] = useState("");
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
-  const [selectedRejectionReason, setSelectedRejectionReason] = useState<string>("");
+  const [selectedRejectionReason, setSelectedRejectionReason] =
+    useState<string>("");
   const [rejecting, setRejecting] = useState(false);
   const [rejectMessage, setRejectMessage] = useState("");
-  const [approvedLicensePreview, setApprovedLicensePreview] = useState<string | null>(null);
+  const [approvedLicensePreview, setApprovedLicensePreview] = useState<
+    string | null
+  >(null);
   const [selectedBus, setSelectedBus] = useState("");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [selectedForBatch, setSelectedForBatch] = useState<string[]>([]);
   const [printingSingle, setPrintingSingle] = useState(false);
   const [printingBatch, setPrintingBatch] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
-  const [pdfPreviewTitle, setPdfPreviewTitle] = useState("Preview de impressão");
+  const [pdfPreviewTitle, setPdfPreviewTitle] = useState(
+    "Preview de impressão",
+  );
   const pdfFrameRef = useRef<HTMLIFrameElement | null>(null);
 
   const closePdfPreview = useCallback(() => {
@@ -197,11 +209,12 @@ export default function AdminCardsPage() {
     setLoading(true);
     setError("");
     try {
-      const [studentsResponse, licensesResponse, requestsResponse] = await Promise.all([
-        employeeApi.get<StudentsResponse>('/student'),
-        employeeApi.get<LicenseRecord[]>("/license/all"),
-        employeeApi.get<LicenseRequestRecord[]>("/license-request/all"),
-      ]);
+      const [studentsResponse, licensesResponse, requestsResponse] =
+        await Promise.all([
+          employeeApi.get<StudentsResponse>("/student"),
+          employeeApi.get<LicenseRecord[]>("/license/all"),
+          employeeApi.get<LicenseRequestRecord[]>("/license-request/all"),
+        ]);
       const resolvedStudents = Array.isArray(studentsResponse)
         ? studentsResponse
         : Array.isArray(studentsResponse?.data)
@@ -212,7 +225,9 @@ export default function AdminCardsPage() {
       setLicenses(licensesResponse);
       setLicenseRequests(requestsResponse);
     } catch {
-      setError("Não foi possível carregar os dados de revisão de carteirinhas.");
+      setError(
+        "Não foi possível carregar os dados de revisão de carteirinhas.",
+      );
     } finally {
       setLoading(false);
     }
@@ -255,14 +270,18 @@ export default function AdminCardsPage() {
 
   const stats = useMemo(() => {
     const total = students.filter((student) => student.active).length;
-    const withCard = students.filter((student) => licensedStudentIds.has(student._id)).length;
+    const withCard = students.filter((student) =>
+      licensedStudentIds.has(student._id),
+    ).length;
     const pending = Math.max(total - withCard, 0);
     return { total, withCard, pending };
   }, [students, licensedStudentIds]);
 
   const currentLicense = useMemo(() => {
     if (!selected) return null;
-    return licenses.find((license) => license.studentId === selected._id) ?? null;
+    return (
+      licenses.find((license) => license.studentId === selected._id) ?? null
+    );
   }, [licenses, selected]);
 
   const currentLicenseRequest = useMemo(() => {
@@ -270,12 +289,20 @@ export default function AdminCardsPage() {
     return (
       licenseRequests
         .filter((r) => r.studentId === selected._id)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        )[0] ?? null
     );
   }, [licenseRequests, selected]);
 
-  const pendingImagesByType = useMemo<Partial<Record<PhotoType, string>>>(() => {
-    if (currentLicenseRequest?.type !== "update" || currentLicenseRequest?.status !== "pending") {
+  const pendingImagesByType = useMemo<
+    Partial<Record<PhotoType, string>>
+  >(() => {
+    if (
+      currentLicenseRequest?.type !== "update" ||
+      currentLicenseRequest?.status !== "pending"
+    ) {
       return {};
     }
 
@@ -297,27 +324,33 @@ export default function AdminCardsPage() {
 
   const profileImage = normalizeMediaSource(
     pendingImagesByType.ProfilePhoto ??
-      selectedImages.find((img) => img.photoType === "ProfilePhoto")?.photo3x4 ??
+      selectedImages.find((img) => img.photoType === "ProfilePhoto")
+        ?.photo3x4 ??
       null,
   );
   const enrollmentImage = normalizeMediaSource(
     pendingImagesByType.EnrollmentProof ??
-      selectedImages.find((img) => img.photoType === "EnrollmentProof")?.documentImage ??
+      selectedImages.find((img) => img.photoType === "EnrollmentProof")
+        ?.documentImage ??
       null,
   );
   const scheduleImage = normalizeMediaSource(
     pendingImagesByType.CourseSchedule ??
-      selectedImages.find((img) => img.photoType === "CourseSchedule")?.documentImage ??
+      selectedImages.find((img) => img.photoType === "CourseSchedule")
+        ?.documentImage ??
       null,
   );
   const licenseImageFromImages = normalizeMediaSource(
-    selectedImages.find((img) => img.photoType === "LicenseImage")?.studentCard ?? null,
+    selectedImages.find((img) => img.photoType === "LicenseImage")
+      ?.studentCard ?? null,
   );
 
   const selectedLicensePreview = useMemo(() => {
     return (
       approvedLicensePreview ??
-      extractLicenseImage((currentLicense as unknown as LicenseApiResponse) ?? null) ??
+      extractLicenseImage(
+        (currentLicense as unknown as LicenseApiResponse) ?? null,
+      ) ??
       licenseImageFromImages
     );
   }, [approvedLicensePreview, currentLicense, licenseImageFromImages]);
@@ -343,7 +376,10 @@ export default function AdminCardsPage() {
       { title: "Imagem da Grade Horária", dataUrl: scheduleImage },
     ];
     if (selectedLicensePreview) {
-      baseItems.push({ title: "Preview da Carteirinha", dataUrl: selectedLicensePreview });
+      baseItems.push({
+        title: "Preview da Carteirinha",
+        dataUrl: selectedLicensePreview,
+      });
     }
     return baseItems;
   }, [profileImage, enrollmentImage, scheduleImage, selectedLicensePreview]);
@@ -354,7 +390,8 @@ export default function AdminCardsPage() {
       .filter((index) => index >= 0);
   }, [previewItems]);
 
-  const activeLightboxItem = lightboxIndex !== null ? previewItems[lightboxIndex] : null;
+  const activeLightboxItem =
+    lightboxIndex !== null ? previewItems[lightboxIndex] : null;
 
   const selectStudent = useCallback(async (student: StudentRecord) => {
     setSelected(student);
@@ -364,14 +401,31 @@ export default function AdminCardsPage() {
     setSelectedBus("");
     setLightboxIndex(null);
     setLoadingSelected(true);
+
     try {
-      const [images, license] = await Promise.all([
+      const [imageList, license] = await Promise.all([
         employeeApi.get<ImageRecord[]>(`/image/student/${student._id}`),
         employeeApi
           .get<LicenseApiResponse>(`/license/searchByStudent/${student._id}`)
           .catch(() => null),
       ]);
-      setSelectedImages(images);
+
+      // ✅ Endpoint correto para EMPLOYEE/ADMIN é GET /image/:id (sem /file)
+      const hydratedImages = await Promise.all(
+        imageList.map(async (item) => {
+          const full = await employeeApi
+            .get<ImageRecord>(`/image/${item._id}`)
+            .catch(() => null);
+          return {
+            ...item,
+            photo3x4: full?.photo3x4 ?? null,
+            documentImage: full?.documentImage ?? null,
+            studentCard: full?.studentCard ?? null,
+          };
+        }),
+      );
+
+      setSelectedImages(hydratedImages);
       setApprovedLicensePreview(extractLicenseImage(license));
     } catch {
       setSelectedImages([]);
@@ -384,22 +438,29 @@ export default function AdminCardsPage() {
   const handleApprove = useCallback(async () => {
     if (!selected || approving || !currentLicenseRequest) return;
     if (!selected.institution?.trim()) {
-      setApproveMessage("Não é possível criar a carteirinha sem instituição no cadastro.");
+      setApproveMessage(
+        "Não é possível criar a carteirinha sem instituição no cadastro.",
+      );
       return;
     }
     const normalizedBus = selectedBus.trim();
     if (!normalizedBus) {
-      setApproveMessage("Defina a linha de ônibus antes de criar a carteirinha.");
+      setApproveMessage(
+        "Defina a linha de ônibus antes de criar a carteirinha.",
+      );
       return;
     }
     setApproving(true);
     setApproveMessage("");
     try {
-      await employeeApi.patch(`/license-request/approve/${currentLicenseRequest._id}`, {
-        institution: selected.institution,
-        bus: normalizedBus,
-        ...(profileImage ? { photo: profileImage } : {}),
-      });
+      await employeeApi.patch(
+        `/license-request/approve/${currentLicenseRequest._id}`,
+        {
+          institution: selected.institution,
+          bus: normalizedBus,
+          ...(profileImage ? { photo: profileImage } : {}),
+        },
+      );
       setApproveMessage("Carteirinha criada com sucesso.");
       await loadData();
     } catch (err: unknown) {
@@ -408,7 +469,14 @@ export default function AdminCardsPage() {
     } finally {
       setApproving(false);
     }
-  }, [selected, approving, currentLicenseRequest, selectedBus, profileImage, loadData]);
+  }, [
+    selected,
+    approving,
+    currentLicenseRequest,
+    selectedBus,
+    profileImage,
+    loadData,
+  ]);
 
   const handleReject = useCallback(async () => {
     if (!selected || !currentLicenseRequest || rejecting) return;
@@ -421,12 +489,17 @@ export default function AdminCardsPage() {
     setRejectMessage("");
 
     try {
-      await employeeApi.patch(`/license-request/reject/${currentLicenseRequest._id}`, {
-        reason: selectedRejectionReason,
-      });
+      await employeeApi.patch(
+        `/license-request/reject/${currentLicenseRequest._id}`,
+        {
+          reason: selectedRejectionReason,
+        },
+      );
       setRejectModalOpen(false);
       setSelectedRejectionReason("");
-      setApproveMessage("Carteirinha recusada. O aluno foi notificado por e-mail.");
+      setApproveMessage(
+        "Carteirinha recusada. O aluno foi notificado por e-mail.",
+      );
       await loadData();
     } catch (err: unknown) {
       const e = err as { message?: string };
@@ -434,11 +507,18 @@ export default function AdminCardsPage() {
     } finally {
       setRejecting(false);
     }
-  }, [selected, currentLicenseRequest, rejecting, selectedRejectionReason, loadData]);
+  }, [
+    selected,
+    currentLicenseRequest,
+    rejecting,
+    selectedRejectionReason,
+    loadData,
+  ]);
 
   const toggleBatchSelection = useCallback((studentId: string) => {
     setSelectedForBatch((prev) => {
-      if (prev.includes(studentId)) return prev.filter((id) => id !== studentId);
+      if (prev.includes(studentId))
+        return prev.filter((id) => id !== studentId);
       return [...prev, studentId];
     });
   }, []);
@@ -456,7 +536,10 @@ export default function AdminCardsPage() {
     setPrintingSingle(true);
     setApproveMessage("");
     try {
-      const pdfUrl = await buildCardsPdfUrl([printable], `Carteirinha - ${printable.studentName}`);
+      const pdfUrl = await buildCardsPdfUrl(
+        [printable],
+        `Carteirinha - ${printable.studentName}`,
+      );
       openPdfPreview(pdfUrl, `Carteirinha - ${printable.studentName}`);
     } catch {
       setApproveMessage("Falha ao gerar PDF de impressão.");
@@ -467,20 +550,27 @@ export default function AdminCardsPage() {
 
   const handlePrintBatch = useCallback(async () => {
     if (selectedForBatch.length === 0) {
-      setApproveMessage("Selecione pelo menos uma carteirinha aprovada para impressão em lote.");
+      setApproveMessage(
+        "Selecione pelo menos uma carteirinha aprovada para impressão em lote.",
+      );
       return;
     }
     const cards = selectedForBatch
       .map((id) => printableCardsByStudentId.get(id) ?? null)
       .filter((item): item is PrintableCard => !!item);
     if (cards.length === 0) {
-      setApproveMessage("Nenhuma carteirinha selecionada está disponível para impressão.");
+      setApproveMessage(
+        "Nenhuma carteirinha selecionada está disponível para impressão.",
+      );
       return;
     }
     setPrintingBatch(true);
     setApproveMessage("");
     try {
-      const pdfUrl = await buildCardsPdfUrl(cards, `Carteirinhas em lote (${cards.length})`);
+      const pdfUrl = await buildCardsPdfUrl(
+        cards,
+        `Carteirinhas em lote (${cards.length})`,
+      );
       openPdfPreview(pdfUrl, `Carteirinhas em lote (${cards.length})`);
     } catch {
       setApproveMessage("Falha ao gerar PDF em lote.");
@@ -502,7 +592,6 @@ export default function AdminCardsPage() {
         {/* Page Content */}
         <main className="mt-16 bg-surface flex flex-col flex-1 px-6 py-8 md:px-10">
           <div className="max-w-7xl mx-auto w-full space-y-6">
-
             {/* Header */}
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -534,14 +623,25 @@ export default function AdminCardsPage() {
 
             {/* Stats */}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <StatBox icon={UserRound} label="Alunos ativos" value={stats.total} />
-              <StatBox icon={IdCard} label="Carteirinhas criadas" value={stats.withCard} />
-              <StatBox icon={CalendarDays} label="Pendentes de aprovação" value={stats.pending} />
+              <StatBox
+                icon={UserRound}
+                label="Alunos ativos"
+                value={stats.total}
+              />
+              <StatBox
+                icon={IdCard}
+                label="Carteirinhas criadas"
+                value={stats.withCard}
+              />
+              <StatBox
+                icon={CalendarDays}
+                label="Pendentes de aprovação"
+                value={stats.pending}
+              />
             </div>
 
             {/* Content Grid */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr]">
-
               {/* Lista de alunos */}
               <section className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 md:p-5">
                 <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -556,13 +656,22 @@ export default function AdminCardsPage() {
                   </div>
 
                   <div className="flex rounded-xl border border-outline-variant bg-surface-container-low p-1 text-sm">
-                    <FilterButton active={filter === "pending"} onClick={() => setFilter("pending")}>
+                    <FilterButton
+                      active={filter === "pending"}
+                      onClick={() => setFilter("pending")}
+                    >
                       Pendentes
                     </FilterButton>
-                    <FilterButton active={filter === "with-card"} onClick={() => setFilter("with-card")}>
+                    <FilterButton
+                      active={filter === "with-card"}
+                      onClick={() => setFilter("with-card")}
+                    >
                       Com carteirinha
                     </FilterButton>
-                    <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>
+                    <FilterButton
+                      active={filter === "all"}
+                      onClick={() => setFilter("all")}
+                    >
                       Todos
                     </FilterButton>
                   </div>
@@ -571,7 +680,9 @@ export default function AdminCardsPage() {
                 <div className="mb-4 flex items-center justify-between gap-2 rounded-xl border border-outline-variant bg-surface p-2">
                   <p className="text-xs text-on-surface-variant">
                     Selecionadas para lote:{" "}
-                    <strong className="text-on-surface">{selectedForBatch.length}</strong>
+                    <strong className="text-on-surface">
+                      {selectedForBatch.length}
+                    </strong>
                   </p>
                   <Button
                     variant="outline"
@@ -607,16 +718,22 @@ export default function AdminCardsPage() {
                 {!loading && !error && filteredStudents.length > 0 && (
                   <div className="space-y-2">
                     {filteredStudents.map((student) => {
-                        const studentRequest =
-                          licenseRequests
-                            .filter((r) => r.studentId === student._id)
-                            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null;
-                        const hasCard = licensedStudentIds.has(student._id);
-                        const isPending = studentRequest?.status === "pending";
-                        const isRejected = studentRequest?.status === "rejected";
-                        const isUpdateRequest = studentRequest?.type === "update";
+                      const studentRequest =
+                        licenseRequests
+                          .filter((r) => r.studentId === student._id)
+                          .sort(
+                            (a, b) =>
+                              new Date(b.createdAt).getTime() -
+                              new Date(a.createdAt).getTime(),
+                          )[0] ?? null;
+                      const hasCard = licensedStudentIds.has(student._id);
+                      const isPending = studentRequest?.status === "pending";
+                      const isRejected = studentRequest?.status === "rejected";
+                      const isUpdateRequest = studentRequest?.type === "update";
                       const isSelected = selected?._id === student._id;
-                      const selectedInBatch = selectedForBatch.includes(student._id);
+                      const selectedInBatch = selectedForBatch.includes(
+                        student._id,
+                      );
 
                       return (
                         <div
@@ -632,10 +749,15 @@ export default function AdminCardsPage() {
                               onClick={() => selectStudent(student)}
                               className="min-w-0 flex-1 text-left"
                             >
-                              <p className="truncate font-semibold text-on-surface">{student.name}</p>
-                              <p className="truncate text-xs text-on-surface-variant">{student.email}</p>
+                              <p className="truncate font-semibold text-on-surface">
+                                {student.name}
+                              </p>
                               <p className="truncate text-xs text-on-surface-variant">
-                                {student.institution ?? "Instituição não informada"}
+                                {student.email}
+                              </p>
+                              <p className="truncate text-xs text-on-surface-variant">
+                                {student.institution ??
+                                  "Instituição não informada"}
                               </p>
                             </button>
 
@@ -645,7 +767,9 @@ export default function AdminCardsPage() {
                                   <input
                                     type="checkbox"
                                     checked={selectedInBatch}
-                                    onChange={() => toggleBatchSelection(student._id)}
+                                    onChange={() =>
+                                      toggleBatchSelection(student._id)
+                                    }
                                     className="h-3.5 w-3.5"
                                   />
                                   Lote
@@ -656,13 +780,19 @@ export default function AdminCardsPage() {
                                   hasCard
                                     ? "bg-success/15 text-success"
                                     : isPending
-                                    ? "bg-warning/20 text-warning"
-                                    : isRejected
-                                    ? "bg-error/15 text-error"
-                                    : "bg-outline-variant/30 text-on-surface-variant"
+                                      ? "bg-warning/20 text-warning"
+                                      : isRejected
+                                        ? "bg-error/15 text-error"
+                                        : "bg-outline-variant/30 text-on-surface-variant"
                                 }`}
                               >
-                                {hasCard ? "Com carteirinha" : isPending ? "Pendente" : isRejected ? "Recusada" : "Sem solicitação"}
+                                {hasCard
+                                  ? "Com carteirinha"
+                                  : isPending
+                                    ? "Pendente"
+                                    : isRejected
+                                      ? "Recusada"
+                                      : "Sem solicitação"}
                               </span>
                               {isUpdateRequest && (
                                 <span className="rounded-full px-2 py-1 text-[10px] font-semibold bg-secondary/15 text-secondary">
@@ -683,10 +813,12 @@ export default function AdminCardsPage() {
                 {!selected && (
                   <div className="flex flex-1 min-h-96 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-outline-variant bg-surface text-center text-on-surface-variant">
                     <Eye className="h-8 w-8" />
-                    <p className="font-medium">Selecione um aluno para revisar.</p>
+                    <p className="font-medium">
+                      Selecione um aluno para revisar.
+                    </p>
                     <p className="max-w-xs text-xs">
-                      Você verá documentos, informações acadêmicas e poderá aprovar a criação da
-                      carteirinha.
+                      Você verá documentos, informações acadêmicas e poderá
+                      aprovar a criação da carteirinha.
                     </p>
                   </div>
                 )}
@@ -696,7 +828,9 @@ export default function AdminCardsPage() {
                     <div className="flex-1 min-h-0 space-y-4 overflow-y-auto pb-4 pr-1">
                       <div className="rounded-xl border border-outline-variant bg-surface p-4">
                         <div className="mb-2 flex items-center justify-between gap-3">
-                          <h2 className="font-semibold text-on-surface">{selected.name}</h2>
+                          <h2 className="font-semibold text-on-surface">
+                            {selected.name}
+                          </h2>
                           {currentLicense ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-xs font-semibold text-success">
                               <BadgeCheck className="h-3.5 w-3.5" />
@@ -711,18 +845,30 @@ export default function AdminCardsPage() {
                       </div>
 
                       <div className="rounded-xl border border-outline-variant bg-surface px-4 py-4 space-y-4">
-                        <h3 className="text-sm font-semibold text-on-surface">Dados do aluno</h3>
+                        <h3 className="text-sm font-semibold text-on-surface">
+                          Dados do aluno
+                        </h3>
                         <div className="grid grid-cols-1 gap-2 text-xs text-on-surface-variant md:grid-cols-2">
-                          <p><strong className="text-on-surface">Curso:</strong> {selected.degree ?? "—"}</p>
-                          <p><strong className="text-on-surface">Turno:</strong> {selected.shift ?? "—"}</p>
+                          <p>
+                            <strong className="text-on-surface">Curso:</strong>{" "}
+                            {selected.degree ?? "—"}
+                          </p>
+                          <p>
+                            <strong className="text-on-surface">Turno:</strong>{" "}
+                            {selected.shift ?? "—"}
+                          </p>
                           <p className="md:col-span-2">
-                            <strong className="text-on-surface">Instituição:</strong> {" "}
+                            <strong className="text-on-surface">
+                              Instituição:
+                            </strong>{" "}
                             {selected.institution ?? "—"}
                           </p>
                         </div>
 
                         <div className="border-t border-outline-variant/20 pt-4">
-                          <h4 className="mb-2 text-sm font-semibold text-on-surface">Grade informada</h4>
+                          <h4 className="mb-2 text-sm font-semibold text-on-surface">
+                            Grade informada
+                          </h4>
                           {selected.schedule && selected.schedule.length > 0 ? (
                             <div className="flex flex-wrap gap-2">
                               {selected.schedule.map((item, index) => (
@@ -730,12 +876,15 @@ export default function AdminCardsPage() {
                                   key={`${item.day}-${item.period}-${index}`}
                                   className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary"
                                 >
-                                  {DAY_LABELS[item.day] ?? item.day} · {item.period}
+                                  {DAY_LABELS[item.day] ?? item.day} ·{" "}
+                                  {item.period}
                                 </span>
                               ))}
                             </div>
                           ) : (
-                            <p className="text-xs text-on-surface-variant">Sem grade cadastrada.</p>
+                            <p className="text-xs text-on-surface-variant">
+                              Sem grade cadastrada.
+                            </p>
                           )}
                         </div>
                       </div>
@@ -743,69 +892,95 @@ export default function AdminCardsPage() {
                       <div className="border-t border-outline-variant/20" />
 
                       <div className="space-y-3">
-                        <h3 className="text-sm font-semibold text-on-surface">Documentos enviados</h3>
+                        <h3 className="text-sm font-semibold text-on-surface">
+                          Documentos enviados
+                        </h3>
 
-                      {currentLicenseRequest?.type === "update" && (
-                        <>
-                          <div className="rounded-xl border border-secondary/30 bg-secondary/5 p-4 space-y-3">
-                            <h3 className="text-sm font-semibold text-on-surface">
-                              Documentos alterados nesta solicitação
-                            </h3>
+                        {currentLicenseRequest?.type === "update" && (
+                          <>
+                            <div className="rounded-xl border border-secondary/30 bg-secondary/5 p-4 space-y-3">
+                              <h3 className="text-sm font-semibold text-on-surface">
+                                Documentos alterados nesta solicitação
+                              </h3>
 
-                            {currentLicenseRequest.changedDocuments.length > 0 ? (
-                              <div className="space-y-3">
-                                {currentLicenseRequest.changedDocuments.map((docType) => {
-                                  const typedDoc = docType as PhotoType;
-                                  const currentImage = selectedImages.find((img) => img.photoType === typedDoc);
+                              {currentLicenseRequest.changedDocuments.length >
+                              0 ? (
+                                <div className="space-y-3">
+                                  {currentLicenseRequest.changedDocuments.map(
+                                    (docType) => {
+                                      const typedDoc = docType as PhotoType;
+                                      const currentImage = selectedImages.find(
+                                        (img) => img.photoType === typedDoc,
+                                      );
 
-                                  const newDataUrl = normalizeMediaSource(
-                                    pendingImagesByType[typedDoc] ?? null,
-                                  );
+                                      const newDataUrl = normalizeMediaSource(
+                                        pendingImagesByType[typedDoc] ?? null,
+                                      );
 
-                                  const previousDataUrl = typedDoc === "ProfilePhoto"
-                                    ? normalizeMediaSource(currentImage?.photo3x4 ?? null)
-                                    : normalizeMediaSource(currentImage?.documentImage ?? null);
+                                      const previousDataUrl =
+                                        typedDoc === "ProfilePhoto"
+                                          ? normalizeMediaSource(
+                                              currentImage?.photo3x4 ?? null,
+                                            )
+                                          : normalizeMediaSource(
+                                              currentImage?.documentImage ??
+                                                null,
+                                            );
 
-                                  return (
-                                    <div key={docType} className="rounded-xl border border-outline-variant bg-surface p-3 space-y-2">
-                                      <p className="inline-flex items-center rounded-full px-2 py-1 text-[11px] font-semibold bg-secondary/15 text-secondary">
-                                        {PHOTO_TYPE_LABELS[typedDoc] ?? docType}
-                                      </p>
+                                      return (
+                                        <div
+                                          key={docType}
+                                          className="rounded-xl border border-outline-variant bg-surface p-3 space-y-2"
+                                        >
+                                          <p className="inline-flex items-center rounded-full px-2 py-1 text-[11px] font-semibold bg-secondary/15 text-secondary">
+                                            {PHOTO_TYPE_LABELS[typedDoc] ??
+                                              docType}
+                                          </p>
 
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <DocumentPreview
-                                          title="Anterior"
-                                          dataUrl={previousDataUrl}
-                                          loading={loadingSelected}
-                                        />
-                                        <DocumentPreview
-                                          title="Novo"
-                                          dataUrl={newDataUrl}
-                                          loading={loadingSelected}
-                                        />
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            ) : (
-                              <p className="text-xs text-on-surface-variant">Nenhum documento informado nesta solicitação.</p>
-                            )}
-                          </div>
-                        </>
-                      )}
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <DocumentPreview
+                                              title="Anterior"
+                                              dataUrl={previousDataUrl}
+                                              loading={loadingSelected}
+                                            />
+                                            <DocumentPreview
+                                              title="Novo"
+                                              dataUrl={newDataUrl}
+                                              loading={loadingSelected}
+                                            />
+                                          </div>
+                                        </div>
+                                      );
+                                    },
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="text-xs text-on-surface-variant">
+                                  Nenhum documento informado nesta solicitação.
+                                </p>
+                              )}
+                            </div>
+                          </>
+                        )}
 
-                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                        {previewItems.map((item, index) => (
-                          <DocumentPreview
-                            key={item.title}
-                            title={item.title}
-                            dataUrl={item.dataUrl}
-                            loading={item.title !== "Preview da Carteirinha" && loadingSelected}
-                            onOpen={item.dataUrl ? () => setLightboxIndex(index) : undefined}
-                          />
-                        ))}
-                      </div>
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                          {previewItems.map((item, index) => (
+                            <DocumentPreview
+                              key={item.title}
+                              title={item.title}
+                              dataUrl={item.dataUrl}
+                              loading={
+                                item.title !== "Preview da Carteirinha" &&
+                                loadingSelected
+                              }
+                              onOpen={
+                                item.dataUrl
+                                  ? () => setLightboxIndex(index)
+                                  : undefined
+                              }
+                            />
+                          ))}
+                        </div>
                       </div>
 
                       {approveMessage && (
@@ -831,7 +1006,8 @@ export default function AdminCardsPage() {
                           className="h-10 w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface outline-none focus:border-primary"
                         />
                         <p className="mt-1 text-[11px] text-on-surface-variant">
-                          Esse valor será usado no campo de ônibus da carteirinha.
+                          Esse valor será usado no campo de ônibus da
+                          carteirinha.
                         </p>
                       </div>
 
@@ -842,7 +1018,11 @@ export default function AdminCardsPage() {
                           variant="outline"
                           size="md"
                           icon={<Printer className="h-4 w-4" />}
-                          disabled={!selectedLicensePreview || isPdfDataUrl(selectedLicensePreview ?? "") || printingSingle}
+                          disabled={
+                            !selectedLicensePreview ||
+                            isPdfDataUrl(selectedLicensePreview ?? "") ||
+                            printingSingle
+                          }
                           loading={printingSingle}
                           onClick={handlePrintSingle}
                         >
@@ -853,7 +1033,11 @@ export default function AdminCardsPage() {
                           variant="outline"
                           size="md"
                           icon={<XCircle className="h-4 w-4" />}
-                          disabled={!currentLicenseRequest || currentLicenseRequest.status !== "pending" || rejecting}
+                          disabled={
+                            !currentLicenseRequest ||
+                            currentLicenseRequest.status !== "pending" ||
+                            rejecting
+                          }
                           onClick={() => {
                             setSelectedRejectionReason("");
                             setRejectMessage("");
@@ -869,10 +1053,17 @@ export default function AdminCardsPage() {
                           size="md"
                           icon={<Bus className="h-4 w-4" />}
                           loading={approving}
-                          disabled={!currentLicenseRequest || currentLicenseRequest.status !== "pending" || !selected?.institution || !selectedBus.trim()}
+                          disabled={
+                            !currentLicenseRequest ||
+                            currentLicenseRequest.status !== "pending" ||
+                            !selected?.institution ||
+                            !selectedBus.trim()
+                          }
                           onClick={handleApprove}
                         >
-                          {currentLicense ? "Carteirinha já criada" : "Aprovar e criar"}
+                          {currentLicense
+                            ? "Carteirinha já criada"
+                            : "Aprovar e criar"}
                         </Button>
                       </div>
                     </div>
@@ -904,7 +1095,9 @@ export default function AdminCardsPage() {
         >
           <div className="flex h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-white/20 bg-surface-container-lowest shadow-2xl">
             <div className="flex items-center justify-between border-b border-outline-variant bg-surface px-4 py-3">
-              <p className="truncate text-sm font-semibold text-on-surface">{pdfPreviewTitle}</p>
+              <p className="truncate text-sm font-semibold text-on-surface">
+                {pdfPreviewTitle}
+              </p>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -943,8 +1136,12 @@ export default function AdminCardsPage() {
                 <XCircle className="h-5 w-5 text-error" />
               </div>
               <div>
-                <h2 className="font-bold text-on-surface text-base">Recusar carteirinha</h2>
-                <p className="text-xs text-on-surface-variant">Selecione o motivo da recusa</p>
+                <h2 className="font-bold text-on-surface text-base">
+                  Recusar carteirinha
+                </h2>
+                <p className="text-xs text-on-surface-variant">
+                  Selecione o motivo da recusa
+                </p>
               </div>
             </div>
 
