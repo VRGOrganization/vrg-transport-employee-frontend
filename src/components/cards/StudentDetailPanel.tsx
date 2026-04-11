@@ -1,0 +1,166 @@
+import { Eye } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ImageLightbox } from "@/components/cards/CardPageComponents";
+import { employeeApi } from "@/lib/employeeApi";
+import type {
+  ImageRecord,
+  LicenseRecord,
+  LicenseRequestRecord,
+  PreviewItem,
+  StudentRecord,
+} from "@/types/cards.types";
+import { ApprovalFooter } from "./ApprovalFooter";
+import { DocumentsGrid } from "./DocumentsGrid";
+import { StudentInfoCard } from "./StudentInfoCard";
+import { UpdateRequestDiff } from "./UpdateRequestDiff";
+import { useStudentSelection } from "../hooks/useStudentSelection";
+
+interface StudentDetailPanelProps {
+  selected: StudentRecord | null;
+  licenses: LicenseRecord[];
+  licenseRequests: LicenseRequestRecord[];
+  onReload: () => Promise<void>;
+  onOpenRejectModal: () => void;
+  printingSingle: boolean;
+  onPrintSingle: () => void;
+}
+
+export function StudentDetailPanel({
+  selected,
+  licenses,
+  licenseRequests,
+  onReload,
+  onOpenRejectModal,
+  printingSingle,
+  onPrintSingle,
+}: StudentDetailPanelProps) {
+  const {
+    selectedImages,
+    loadingSelected,
+    currentLicense,
+    currentLicenseRequest,
+    pendingImagesByType,
+    profileImage,
+    enrollmentImage,
+    scheduleImage,
+    selectedLicensePreview,
+  } = useStudentSelection(licenses, licenseRequests);
+
+  const [selectedBus, setSelectedBus] = useState("");
+  const [approving, setApproving] = useState(false);
+  const [approveMessage, setApproveMessage] = useState("");
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const previewItems = useMemo<PreviewItem[]>(() => {
+    const base: PreviewItem[] = [
+      { title: "Foto 3x4", dataUrl: profileImage },
+      { title: "Comprovante de Matrícula", dataUrl: enrollmentImage },
+      { title: "Imagem da Grade Horária", dataUrl: scheduleImage },
+    ];
+    if (selectedLicensePreview) {
+      base.push({ title: "Preview da Carteirinha", dataUrl: selectedLicensePreview });
+    }
+    return base;
+  }, [profileImage, enrollmentImage, scheduleImage, selectedLicensePreview]);
+
+  const availablePreviewIndexes = useMemo(
+    () => previewItems.map((item, i) => (item.dataUrl ? i : -1)).filter((i) => i >= 0),
+    [previewItems],
+  );
+
+  const handleApprove = async () => {
+    if (!selected || approving || !currentLicenseRequest) return;
+    if (!selected.institution?.trim()) {
+      setApproveMessage("Não é possível criar a carteirinha sem instituição no cadastro.");
+      return;
+    }
+    const normalized = selectedBus.trim();
+    if (!normalized) {
+      setApproveMessage("Defina a linha de ônibus antes de criar a carteirinha.");
+      return;
+    }
+    setApproving(true);
+    setApproveMessage("");
+    try {
+      await employeeApi.patch(`/license-request/approve/${currentLicenseRequest._id}`, {
+        institution: selected.institution,
+        bus: normalized,
+        ...(profileImage ? { photo: profileImage } : {}),
+      });
+      setApproveMessage("Carteirinha criada com sucesso.");
+      await onReload();
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setApproveMessage(e.message ?? "Falha ao criar a carteirinha.");
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  if (!selected) {
+    return (
+      <section className="relative h-full min-h-0 rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 md:p-5 flex flex-col">
+        <div className="flex flex-1 min-h-96 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-outline-variant bg-surface text-center text-on-surface-variant">
+          <Eye className="h-8 w-8" />
+          <p className="font-medium">Selecione um aluno para revisar.</p>
+          <p className="max-w-xs text-xs">
+            Você verá documentos, informações acadêmicas e poderá aprovar a criação da
+            carteirinha.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="relative h-full min-h-0 rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 md:p-5 flex flex-col">
+      <div className="flex flex-1 min-h-0 flex-col">
+        <div className="flex-1 min-h-0 space-y-4 overflow-y-auto pb-4 pr-1">
+          <StudentInfoCard student={selected} currentLicense={currentLicense} />
+
+          <div className="border-t border-outline-variant/20" />
+
+          {currentLicenseRequest && (
+            <UpdateRequestDiff
+              request={currentLicenseRequest}
+              savedImages={selectedImages}
+              pendingImagesByType={pendingImagesByType}
+              loadingImages={loadingSelected}
+            />
+          )}
+
+          <DocumentsGrid
+            items={previewItems}
+            loadingImages={loadingSelected}
+            onOpenLightbox={setLightboxIndex}
+          />
+        </div>
+
+        <ApprovalFooter
+          currentLicense={currentLicense}
+          currentLicenseRequest={currentLicenseRequest}
+          selectedLicensePreview={selectedLicensePreview}
+          selectedBus={selectedBus}
+          hasInstitution={!!selected.institution?.trim()}
+          approving={approving}
+          printingSingle={printingSingle}
+          approveMessage={approveMessage}
+          onBusChange={setSelectedBus}
+          onApprove={handleApprove}
+          onRejectOpen={onOpenRejectModal}
+          onPrintSingle={onPrintSingle}
+        />
+      </div>
+
+      {lightboxIndex !== null && previewItems[lightboxIndex]?.dataUrl && (
+        <ImageLightbox
+          items={previewItems}
+          availableIndexes={availablePreviewIndexes}
+          currentIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
+        />
+      )}
+    </section>
+  );
+}
