@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Student } from "@/types/student";
 
 function getInitials(name: string) {

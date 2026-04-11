@@ -17,7 +17,6 @@ export interface Student {
 interface StudentTableProps {
   students: Student[];
   loading?: boolean;
-  onUpdated: (updated: Student) => void;
   onDeleted: (id: string) => void;
 }
 
@@ -40,27 +39,19 @@ const avatarColors = [
 export function StudentTable({
   students,
   loading,
-  onUpdated,
   onDeleted,
 }: StudentTableProps) {
   const [page, setPage] = useState(1);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(students.length / PAGE_SIZE));
   const paginated = students.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleDeleted = (id: string) => {
     onDeleted(id);
-    setSelectedStudent(null);
 
     const newTotal = students.length - 1;
     const newPages = Math.max(1, Math.ceil(newTotal / PAGE_SIZE));
     if (page > newPages) setPage(newPages);
-  };
-
-  const handleUpdated = (updated: Student) => {
-    onUpdated(updated);
-    setSelectedStudent(null);
   };
 
   return (
@@ -137,8 +128,7 @@ export function StudentTable({
                   return (
                     <tr
                       key={student._id}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors cursor-pointer"
-                      onClick={() => setSelectedStudent(student)}
+                      className="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors"
                     >
                       {/* Nome */}
                       <td className="px-8 py-5">
@@ -170,7 +160,7 @@ export function StudentTable({
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button
-                          onClick={() => setSelectedStudent(student)}
+                          onClick={() => window.location.assign(`/employee/students/edit?id=${student._id}`)}
                           className="p-2 text-primary hover:bg-primary-fixed rounded-lg transition-colors inline-flex"
                           title="Editar"
                         >

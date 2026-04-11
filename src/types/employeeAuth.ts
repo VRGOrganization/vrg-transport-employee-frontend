@@ -10,8 +10,9 @@ export interface EmployeeUser {
 }
 
 export interface EmployeeLoginCredentials {
-  login: string; 
+  login: string;
   password: string;
+  role: EmployeeRole;
 }
 
 export interface EmployeeAuthResponse {

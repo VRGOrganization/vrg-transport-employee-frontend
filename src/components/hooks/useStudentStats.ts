@@ -25,7 +25,7 @@ export function useStudentStats(): UseStudentStatsResult {
 
       try {
         // URL corrigida: removido "/api/proxy" - agora chama diretamente o endpoint do backend
-        const res = await fetch("/student/stats/dashboard", {
+        const res = await fetch("/api/v1/student/stats/dashboard", {
           cache: "no-store",
           credentials: "include", // Importante: envia cookies para autenticação
           headers: {

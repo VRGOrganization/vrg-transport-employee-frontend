@@ -4,20 +4,16 @@ import {
   getBackendApiBaseUrl,
   getServiceSecret,
   getSidMaxAgeSeconds,
+  ROLE_COOKIE_NAME,
   SID_COOKIE_NAME,
 } from "@/lib/server/bff-auth";
-
-type BackendSessionResponse = {
-  ok?: true;
-  sessionId?: string;
-  user?: {
-    id?: string;
-    role?: "admin" | "employee" | "student";
-    identifier?: string;
-    name?: string;
-  };
-  message?: string;
-};
+import { validateCsrfToken } from "@/lib/server/csrf";
+import { checkRateLimit } from "@/lib/server/rate-limit";
+import {
+  backendSessionPayloadSchema,
+  employeeLoginRequestSchema,
+  getFieldErrors,
+} from "@/lib/validation/auth";
 
 async function tryLogin(url: string, body: unknown): Promise<Response> {
   return fetch(url, {
@@ -31,59 +27,96 @@ async function tryLogin(url: string, body: unknown): Promise<Response> {
   });
 }
 
+function isUpstreamConnectivityError(error: unknown): boolean {
+  if (!(error instanceof TypeError)) return false;
+
+  const message = (error.message ?? "").toLowerCase();
+  if (!message.includes("fetch failed")) return false;
+
+  const cause = error.cause as
+    | { code?: string; errors?: Array<{ code?: string }> }
+    | undefined;
+
+  const directCode = cause?.code?.toUpperCase();
+  if (directCode === "ECONNREFUSED" || directCode === "ETIMEDOUT") return true;
+
+  if (Array.isArray(cause?.errors)) {
+    const hasKnownCode = cause.errors.some((item) => {
+      const code = item?.code?.toUpperCase();
+      return code === "ECONNREFUSED" || code === "ETIMEDOUT";
+    });
+    if (hasKnownCode) return true;
+  }
+
+  return true;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as { login?: string; password?: string };
+    const xff = request.headers.get("x-forwarded-for") ?? "";
+    const clientIp = xff.split(",")[0]?.trim() || "unknown";
 
-    const login = typeof body.login === "string" ? body.login.trim() : "";
-    const password = typeof body.password === "string" ? body.password : "";
-
-    if (!login || !password) {
-      return NextResponse.json({ message: "Credenciais inválidas." }, { status: 400 });
-    }
-
-    const base = getBackendApiBaseUrl();
-
-    let upstream = await tryLogin(`${base}/auth/admin/login`, {
-      username: login,
-      password,
-    });
-
-    if (!upstream.ok) {
-      upstream = await tryLogin(`${base}/auth/employee/login`, {
-        registrationId: login,
-        password,
-      });
-    }
-
-    const data = (await upstream.json().catch(() => ({}))) as BackendSessionResponse;
-
-    if (!upstream.ok) {
+    if (!checkRateLimit(`login:${clientIp}`, 3, 300000)) {
       return NextResponse.json(
-        { message: typeof data.message === "string" ? data.message : "Credenciais inválidas." },
-        { status: upstream.status || 401 },
+        { message: "Muitas tentativas. Tente novamente em 5 minutos." },
+        { status: 429 },
       );
     }
 
-    const sessionId = typeof data.sessionId === "string" ? data.sessionId : null;
+    if (!(await validateCsrfToken(request))) {
+      return NextResponse.json({ message: "Invalid CSRF token" }, { status: 403 });
+    }
 
-    if (!sessionId) {
+    const rawBody = await request.json();
+    const bodyResult = employeeLoginRequestSchema.safeParse(rawBody);
+
+    if (!bodyResult.success) {
+      const fieldErrors = getFieldErrors(bodyResult.error);
+      const firstError = Object.values(fieldErrors)[0] ?? "Dados de login invalidos.";
+      return NextResponse.json({ message: firstError, errors: fieldErrors }, { status: 400 });
+    }
+
+    const { login, password, role } = bodyResult.data;
+
+    const base = getBackendApiBaseUrl();
+    const endpoint = role === "admin" ? "/auth/admin/login" : "/auth/employee/login";
+    const payload = role === "admin"
+      ? { username: login, password }
+      : { registrationId: login, password };
+
+    const upstream = await tryLogin(`${base}${endpoint}`, payload);
+
+    const data = await upstream.json().catch(() => ({}));
+
+    if (!upstream.ok) {
+      return NextResponse.json(
+        { message: "Login falhou. Verifique suas credenciais e tente novamente." },
+        { status: 401 },
+      );
+    }
+
+    const sessionResult = backendSessionPayloadSchema.safeParse(data);
+    if (!sessionResult.success) {
       return NextResponse.json(
         { message: "Resposta inválida do backend ao criar sessão." },
         { status: 502 },
       );
     }
 
+    const sessionId = sessionResult.data.sessionId;
+    const resolvedRole = sessionResult.data.user?.role === "admin" ? "admin" : "employee";
+    const sidMaxAgeSeconds = getSidMaxAgeSeconds(resolvedRole);
+
     const response = NextResponse.json({
       ok: true,
       user: {
-        id: data.user?.id ?? "",
-        role: data.user?.role === "admin" ? "admin" : "employee",
-        identifier: data.user?.identifier ?? "",
+        id: sessionResult.data.user?.id ?? "",
+        role: resolvedRole,
+        identifier: sessionResult.data.user?.identifier ?? "",
         name:
-          typeof data.user?.name === "string" && data.user.name.trim()
-            ? data.user.name
-            : data.user?.role === "admin"
+          typeof sessionResult.data.user?.name === "string" && sessionResult.data.user.name.trim()
+            ? sessionResult.data.user.name
+            : sessionResult.data.user?.role === "admin"
               ? "Administrador"
               : "Funcionário",
       },
@@ -92,13 +125,36 @@ export async function POST(request: NextRequest) {
     response.cookies.set(SID_COOKIE_NAME, sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "strict",
       path: "/",
-      maxAge: getSidMaxAgeSeconds(),
+      maxAge: sidMaxAgeSeconds,
+    });
+
+    response.cookies.set(ROLE_COOKIE_NAME, resolvedRole, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: sidMaxAgeSeconds,
     });
 
     return response;
-  } catch {
-    return NextResponse.json({ message: "Falha ao processar login." }, { status: 500 });
+  } catch (error) {
+    console.error("[BFF][auth/login] error:", error);
+
+    if (isUpstreamConnectivityError(error)) {
+      return NextResponse.json(
+        {
+          message:
+            "Não foi possível conectar ao backend de autenticação. Verifique se a API está rodando e acessível.",
+        },
+        { status: 503 },
+      );
+    }
+
+    return NextResponse.json(
+      { message: "Erro ao processar login. Tente novamente." },
+      { status: 500 },
+    );
   }
 }

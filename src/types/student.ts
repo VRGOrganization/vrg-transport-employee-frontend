@@ -27,10 +27,12 @@ export interface LicenseRequestRecord {
   studentId: string;
   type: "initial" | "update";
   changedDocuments: string[];
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "waitlisted";
   rejectionReason: string | null;
   rejectedAt: string | null;
   licenseId: string | null;
+  enrollmentPeriodId?: string | null;
+  filaPosition?: number | null;
   createdAt: string;
 }
 

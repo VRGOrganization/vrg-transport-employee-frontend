@@ -15,7 +15,7 @@ const navItems: NavItem[] = [
   { icon: "dashboard",      label: "Painel do Funcionário", href: "/employee/dashboard" },
   { icon: "school",         label: "Gerenciar Estudantes",  href: "/employee/students"  },
   { icon: "badge",          label: "Gerenciar Carteirinhas",href: "/employee/cards"     },
-  { icon: "bar_chart",      label: "Estatísticas de Aluno", href: "/employee/stats"     },
+  { icon: "bar_chart",      label: "Estatísticas de Aluno", href: "/employee/info"     },
 ];
 
 interface EmployeeSideNavProps {

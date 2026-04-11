@@ -18,17 +18,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
+    // Resolve preferred theme only on client to keep SSR/CSR initial render consistent.
     const saved = localStorage.getItem("theme");
     if (saved === "light" || saved === "dark") {
       setTheme(saved);
       return;
     }
 
-    setTheme(
-      window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light",
-    );
+    setTheme(window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   }, []);
 
   useEffect(() => {
@@ -39,7 +36,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme((prev) => {
       const next = prev === "light" ? "dark" : "light";
       localStorage.setItem("theme", next);
-      document.documentElement.classList.toggle("dark", next === "dark");
       return next;
     });
   };
