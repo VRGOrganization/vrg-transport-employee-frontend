@@ -13,6 +13,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { icon: "dashboard", label: "Painel Administrativo", href: "/admin/dashboard" },
   { icon: "info", label: "Painel de Informações", href: "/admin/info" },
+  { icon: "event", label: "Período de Inscrição", href: "/admin/enrollment-period" },
   { icon: "person_add", label: "Gerenciar Funcionário", href: "/admin/employees" },
   { icon: "school", label: "Gerenciar Estudantes", href: "/admin/students" },
   { icon: "badge", label: "Gerenciar Carteirinhas", href: "/admin/cards" },

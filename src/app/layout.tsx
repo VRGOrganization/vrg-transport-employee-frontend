@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Inter, Manrope } from "next/font/google";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import "./globals.css";
@@ -36,14 +37,13 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
-        {/* Anti-FOUC: aplica classe dark antes da hidratação */}
-        <script dangerouslySetInnerHTML={{ __html: `
-          try {
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`try {
             var t = localStorage.getItem('theme') ||
               (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
             if (t === 'dark') document.documentElement.classList.add('dark');
-          } catch(e) {}
-        `}} />
+          } catch (e) {}`}
+        </Script>
       </head>
       <body className={`${inter.variable} ${manrope.variable} antialiased`}>
         <ThemeProvider>

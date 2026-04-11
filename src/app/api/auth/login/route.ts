@@ -27,6 +27,30 @@ async function tryLogin(url: string, body: unknown): Promise<Response> {
   });
 }
 
+function isUpstreamConnectivityError(error: unknown): boolean {
+  if (!(error instanceof TypeError)) return false;
+
+  const message = (error.message ?? "").toLowerCase();
+  if (!message.includes("fetch failed")) return false;
+
+  const cause = error.cause as
+    | { code?: string; errors?: Array<{ code?: string }> }
+    | undefined;
+
+  const directCode = cause?.code?.toUpperCase();
+  if (directCode === "ECONNREFUSED" || directCode === "ETIMEDOUT") return true;
+
+  if (Array.isArray(cause?.errors)) {
+    const hasKnownCode = cause.errors.some((item) => {
+      const code = item?.code?.toUpperCase();
+      return code === "ECONNREFUSED" || code === "ETIMEDOUT";
+    });
+    if (hasKnownCode) return true;
+  }
+
+  return true;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const xff = request.headers.get("x-forwarded-for") ?? "";
@@ -117,6 +141,17 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("[BFF][auth/login] error:", error);
+
+    if (isUpstreamConnectivityError(error)) {
+      return NextResponse.json(
+        {
+          message:
+            "Não foi possível conectar ao backend de autenticação. Verifique se a API está rodando e acessível.",
+        },
+        { status: 503 },
+      );
+    }
+
     return NextResponse.json(
       { message: "Erro ao processar login. Tente novamente." },
       { status: 500 },

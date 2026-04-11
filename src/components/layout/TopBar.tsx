@@ -18,9 +18,14 @@ function getPageTitle(pathname: string): string {
   const titles: Record<string, string> = {
     "/admin/info": "Painel de Informações",
     "/admin/dashboard": "Painel Administrativo",
+    "/admin/enrollment-period": "Período de Inscrição",
     "/admin/employees/new": "Criar Funcionário",
     "/admin/students": "Gerenciar Estudantes",
     "/admin/cards": "Gerenciar Carteirinhas",
+    "/employee/dashboard": "Painel do Funcionário",
+    "/employee/students": "Gerenciar Estudantes",
+    "/employee/cards": "Gerenciar Carteirinhas",
+    "/employee/info": "Estatísticas de Aluno",
   };
 
   // Verifica se é uma rota dinâmica (ex: /admin/students/123)
@@ -47,7 +52,7 @@ export function TopBar({ user }: TopBarProps) {
         <div className="flex items-center gap-4">
           {user && (
             <span className="text-sm font-medium text-slate-500 hidden md:block">
-              Administrador: {user.name}
+              {user.role === "admin" ? "Administrador" : "Funcionário"}: {user.name}
               {user.registrationId && (
                 <span className="ml-1">| Matrícula: {user.registrationId}</span>
               )}

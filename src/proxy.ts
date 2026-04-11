@@ -50,10 +50,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (pathname.startsWith("/employee") && role !== "employee") {
-    if (role === "admin") {
-      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
-    }
+  if (pathname.startsWith("/employee") && role !== "employee" && role !== "admin") {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

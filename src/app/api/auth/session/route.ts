@@ -7,7 +7,7 @@ import {
   ROLE_COOKIE_NAME,
   SID_COOKIE_NAME,
 } from "@/lib/server/bff-auth";
-import { backendMeSchema, backendUserDetailSchema } from "@/lib/validation/auth";
+import { backendMeSchema } from "@/lib/validation/auth";
 
 export async function GET(request: NextRequest) {
   const sid = request.cookies.get(SID_COOKIE_NAME)?.value;
@@ -61,41 +61,7 @@ export async function GET(request: NextRequest) {
     const userId = meData.userId;
 
     const defaultName = meData.userType === "admin" ? "Administrador" : "Funcionário";
-    let resolvedName = defaultName;
-
-    const detailPath = meData.userType === "employee"
-      ? `/employee/${userId}`
-      : `/admin/${userId}`;
-
-    try {
-      const detailResponse = await fetch(`${getBackendApiBaseUrl()}${detailPath}`, {
-        method: "GET",
-        headers: {
-          "x-service-secret": getServiceSecret(),
-          "x-session-id": sid,
-        },
-        cache: "no-store",
-      });
-
-      if (detailResponse.ok) {
-        const detailPayload = await detailResponse.json().catch(() => ({}));
-        const detailResult = backendUserDetailSchema.safeParse(detailPayload);
-        const detailData = detailResult.success ? detailResult.data : null;
-
-        if (detailData && typeof detailData.name === "string" && detailData.name.trim().length > 0) {
-          resolvedName = detailData.name;
-        } else if (
-          detailData &&
-          meData.userType === "admin" &&
-          typeof detailData.username === "string" &&
-          detailData.username.trim().length > 0
-        ) {
-          resolvedName = detailData.username;
-        }
-      }
-    } catch {
-      // Mantém fallback genérico sem falhar a sessão.
-    }
+    const resolvedName = defaultName;
 
     const response = NextResponse.json({
       ok: true,

@@ -6,6 +6,7 @@ vi.mock("@/lib/server/bff-auth", () => ({
   ROLE_COOKIE_NAME: "_atk_role",
   getBackendApiBaseUrl: () => "http://backend.local/api/v1",
   getServiceSecret: () => "service-secret-test",
+  getSidMaxAgeSeconds: () => 60 * 60 * 8,
 }));
 
 import { GET } from "./route";
@@ -70,31 +71,19 @@ describe("GET /api/auth/session", () => {
     expect(response.status).toBe(403);
   });
 
-  it("deve retornar sessao valida e nome vindo do endpoint de detalhe", async () => {
-    fetchMock
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            userId: "507f1f77bcf86cd799439011",
-            userType: "employee",
-          }),
-          {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          },
-        ),
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            name: "Funcionario Nomeado",
-          }),
-          {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          },
-        ),
-      );
+  it("deve retornar sessao valida com nome fallback", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          userId: "507f1f77bcf86cd799439011",
+          userType: "employee",
+        }),
+        {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        },
+      ),
+    );
 
     const response = await GET(makeRequest("_atk=session-abc"));
     const body = (await response.json()) as {
@@ -106,7 +95,8 @@ describe("GET /api/auth/session", () => {
     expect(body.ok).toBe(true);
     expect(body.user.id).toBe("507f1f77bcf86cd799439011");
     expect(body.user.role).toBe("employee");
-    expect(body.user.name).toBe("Funcionario Nomeado");
+    expect(body.user.name).toBe("Funcionário");
     expect(response.cookies.get("_atk_role")?.value).toBe("employee");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

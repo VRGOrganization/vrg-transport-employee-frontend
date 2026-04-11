@@ -28,6 +28,7 @@ describe("Side navigation por perfil", () => {
     render(<SideNav onLogout={onLogout} />);
 
     expect(screen.getByText("Gerenciar Funcionário")).toBeInTheDocument();
+    expect(screen.getByText("Período de Inscrição")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /sair/i }));
     expect(onLogout).toHaveBeenCalledTimes(1);
@@ -38,6 +39,7 @@ describe("Side navigation por perfil", () => {
     render(<EmployeeSideNav onLogout={vi.fn()} />);
 
     expect(screen.queryByText("Gerenciar Funcionário")).not.toBeInTheDocument();
+    expect(screen.queryByText("Período de Inscrição")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /gerenciar estudantes/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /gerenciar carteirinhas/i })).toBeInTheDocument();
   });

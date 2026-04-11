@@ -8,6 +8,7 @@ import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { EmployeeTable } from "@/components/admin/EmployeeTable";
 import { Footer } from "@/components/layout/Footer";
+import { DashboardStatCard } from "@/components/cards/DashboardStatCard";
 
 export interface Employee {
   _id: string;
@@ -44,6 +45,24 @@ interface DashboardStats {
   pendingRequests: number | null;
 }
 
+interface EnrollmentPeriodRecord {
+  _id: string;
+  startDate: string;
+  endDate: string;
+  totalSlots: number;
+  filledSlots: number;
+  active: boolean;
+}
+
+function formatShortDate(dateValue: string): string {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+}
+
 export default function AdminDashboardPage() {
   const { user, logout } = useEmployeeAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -52,16 +71,18 @@ export default function AdminDashboardPage() {
     activeEmployees: null,
     pendingRequests: null,
   });
+  const [activePeriod, setActivePeriod] = useState<EnrollmentPeriodRecord | null>(null);
   const [loadingEmployees, setLoadingEmployees] = useState(true);
 
   useEffect(() => {
     const fetchAll = async () => {
-      // Busca os 3 recursos em paralelo
-      const [employeesResult, studentsResult, licensesResult] =
+      // Busca os recursos em paralelo
+      const [employeesResult, studentsResult, licensesResult, activePeriodResult] =
         await Promise.allSettled([
           employeeApi.get<Employee[]>("/employee"),
           employeeApi.get<StudentsResponse>("/student"),
           employeeApi.get<LicenseRecord[]>("/license/all"),
+          employeeApi.get<EnrollmentPeriodRecord>("/enrollment-period/active"),
         ]);
 
       // Funcionários
@@ -99,6 +120,12 @@ export default function AdminDashboardPage() {
         }));
       }
 
+      if (activePeriodResult.status === "fulfilled") {
+        setActivePeriod(activePeriodResult.value);
+      } else {
+        setActivePeriod(null);
+      }
+
       setLoadingEmployees(false);
     };
 
@@ -133,7 +160,7 @@ export default function AdminDashboardPage() {
         {/* Page Content */}
         <main className="mt-16 p-8 bg-surface min-h-[calc(100vh-4rem)]">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
             <DashboardStatCard
               icon="school"
               label="Alunos Ativos"
@@ -155,6 +182,17 @@ export default function AdminDashboardPage() {
               badge="URGENTE"
               accent="secondary"
             />
+            <DashboardStatCard
+              icon="event"
+              label="Período de Inscrição"
+              value={
+                activePeriod
+                  ? `${activePeriod.filledSlots}/${activePeriod.totalSlots} · encerra ${formatShortDate(activePeriod.endDate)}`
+                  : null
+              }
+              badge={activePeriod ? "ABERTO" : "SEM PERÍODO"}
+              accent={activePeriod ? "primary" : "tertiary"}
+            />
           </div>
 
           {/* Employee Table */}
@@ -174,62 +212,3 @@ export default function AdminDashboardPage() {
   );
 }
 
-/* ── Internal stat card variant ── */
-interface DashboardStatCardProps {
-  icon: string;
-  label: string;
-  value: number | null;
-  badge: string;
-  accent: "primary" | "secondary" | "tertiary";
-}
-
-const accentMap = {
-  primary: {
-    border: "border-primary",
-    icon: "text-primary",
-    badge: "text-primary bg-primary-fixed",
-    value: "text-primary",
-  },
-  secondary: {
-    border: "border-secondary",
-    icon: "text-secondary",
-    badge: "text-on-secondary-container bg-secondary-fixed",
-    value: "text-secondary",
-  },
-  tertiary: {
-    border: "border-on-primary-fixed-variant",
-    icon: "text-on-primary-fixed-variant",
-    badge: "text-on-primary-fixed-variant bg-tertiary-fixed",
-    value: "text-on-primary-fixed-variant",
-  },
-};
-
-function DashboardStatCard({
-  icon,
-  label,
-  value,
-  badge,
-  accent,
-}: DashboardStatCardProps) {
-  const c = accentMap[accent];
-  return (
-    <div
-      className={`bg-surface-container-lowest p-6 rounded-xl border-l-4 ${c.border} shadow-sm hover:-translate-y-1 transition-transform duration-300`}
-    >
-      <div className="flex justify-between items-start mb-4">
-        <span className={`material-symbols-outlined ${c.icon} text-3xl`}>
-          {icon}
-        </span>
-        <span className={`text-xs font-bold ${c.badge} px-2 py-1 rounded`}>
-          {badge}
-        </span>
-      </div>
-      <p className="text-on-surface-variant text-sm font-medium mb-1">
-        {label}
-      </p>
-      <h3 className={`font-headline text-3xl font-extrabold ${c.value}`}>
-        {value === null ? "—" : value.toLocaleString("pt-BR")}
-      </h3>
-    </div>
-  );
-}

@@ -15,21 +15,18 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === "undefined") {
-      return "light";
-    }
+  const [theme, setTheme] = useState<Theme>("light");
 
-    // Validate against allowlist before use - never use localStorage values directly.
+  useEffect(() => {
+    // Resolve preferred theme only on client to keep SSR/CSR initial render consistent.
     const saved = localStorage.getItem("theme");
     if (saved === "light" || saved === "dark") {
-      return saved;
+      setTheme(saved);
+      return;
     }
 
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  });
+    setTheme(window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");

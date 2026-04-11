@@ -97,6 +97,18 @@ describe("POST /api/auth/login", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("deve retornar 503 quando backend estiver indisponivel", async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError("fetch failed"));
+
+    const response = await POST(
+      makeRequest({ login: "MAT123", password: "Senha123", role: "employee" }),
+    );
+    const body = (await response.json()) as { message?: string };
+
+    expect(response.status).toBe(503);
+    expect(body.message).toContain("Não foi possível conectar ao backend");
+  });
+
   it("deve mapear credencial admin com username e definir cookies de sessao", async () => {
     fetchMock.mockResolvedValueOnce(
       new Response(
