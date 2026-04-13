@@ -26,6 +26,8 @@ function getPageTitle(pathname: string): string {
     "/employee/students": "Gerenciar Estudantes",
     "/employee/cards": "Gerenciar Carteirinhas",
     "/employee/info": "Estatísticas de Aluno",
+    "/admin/universities": "Gerenciar Instituições",
+    "/admin/buses": "Gerenciar Ônibus"
   };
 
   // Verifica se é uma rota dinâmica (ex: /admin/students/123)

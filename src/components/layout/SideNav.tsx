@@ -17,6 +17,8 @@ const navItems: NavItem[] = [
   { icon: "person_add", label: "Gerenciar Funcionário", href: "/admin/employees" },
   { icon: "school", label: "Gerenciar Estudantes", href: "/admin/students" },
   { icon: "badge", label: "Gerenciar Carteirinhas", href: "/admin/cards" },
+  { icon: "account_balance", label: "Gerenciar Instituições", href: "/admin/universities" },
+  { icon: "directions_bus", label: "Gerenciar Ônibus", href: "/admin/buses" }
 ];
 
 interface SideNavProps {

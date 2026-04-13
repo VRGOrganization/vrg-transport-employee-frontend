@@ -99,7 +99,7 @@ export default function EmployeeCardsPage() {
 
               <StudentDetailPanel
                 selected={selected}
-                licenses={licenses}
+                clicenses={licenses}
                 licenseRequests={licenseRequests}
                 onReload={reload}
                 onOpenRejectModal={() => setRejectModalOpen(true)}
