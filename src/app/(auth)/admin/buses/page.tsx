@@ -9,6 +9,7 @@ import type { Bus } from "@/types/university.types";
 import { BusTable } from "@/components/buses/BusTable";
 import { BusFormModal } from "@/components/buses/BusFormModal";
 import { BusStudentsDrawer } from "@/components/buses/BusStudentsDrawer";
+import { DashboardStatCard } from "@/components/cards/DashboardStatCard";
 
 export default function BusesPage() {
   const { user, logout } = useEmployeeAuth();
@@ -34,7 +35,9 @@ export default function BusesPage() {
     }
   }, []);
 
-  useEffect(() => { loadBuses(); }, [loadBuses]);
+  useEffect(() => {
+    loadBuses();
+  }, [loadBuses]);
 
   const handleCreate = async (data: { identifier: string; capacity: number }) => {
     await busApi.create(data);
@@ -79,59 +82,50 @@ export default function BusesPage() {
               onClick={() => setCreating(true)}
               className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>add</span>
+              <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
+                add
+              </span>
               Novo Ônibus
             </button>
           </div>
 
           {/* Resumo */}
           {!loading && buses.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              {[
-                {
-                  label: "Ônibus ativos",
-                  value: buses.length,
-                  icon: "directions_bus",
-                  color: "blue",
-                },
-                {
-                  label: "Total de vagas",
-                  value: buses.reduce((acc, b) => acc + b.capacity, 0),
-                  icon: "event_seat",
-                  color: "emerald",
-                },
-                {
-                  label: "Faculdades cobertas",
-                  value: new Set(
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+              <DashboardStatCard
+                icon="directions_bus"
+                label="Ônibus Ativos"
+                value={buses.length}
+                badge="FROTA"
+                accent="primary"
+              />
+              <DashboardStatCard
+                icon="event_seat"
+                label="Total de Vagas"
+                value={buses.reduce((acc, b) => acc + b.capacity, 0)}
+                badge="CAPACIDADE"
+                accent="secondary"
+              />
+              <DashboardStatCard
+                icon="account_balance"
+                label="Faculdades Cobertas"
+                value={
+                  new Set(
                     buses.flatMap((b) =>
                       b.universityIds.map((u) => (typeof u === "string" ? u : u._id))
                     )
-                  ).size,
-                  icon: "account_balance",
-                  color: "purple",
-                },
-                {
-                  label: "Sem vínculo",
-                  value: buses.filter((b) => b.universityIds.length === 0).length,
-                  icon: "link_off",
-                  color: "amber",
-                },
-              ].map(({ label, value, icon, color }) => (
-                <div
-                  key={label}
-                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm px-5 py-4 flex items-center gap-4"
-                >
-                  <div className={`w-10 h-10 rounded-xl bg-${color}-50 dark:bg-${color}-900/20 flex items-center justify-center flex-shrink-0`}>
-                    <span className={`material-symbols-outlined text-${color}-600`} style={{ fontSize: "20px" }}>
-                      {icon}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{value}</p>
-                    <p className="text-xs text-slate-400">{label}</p>
-                  </div>
-                </div>
-              ))}
+                  ).size
+                }
+                badge="COBERTURA"
+                accent="tertiary"
+              />
+              <DashboardStatCard
+                icon="link_off"
+                label="Sem Vínculo"
+                value={buses.filter((b) => b.universityIds.length === 0).length}
+                badge="ATENÇÃO"
+                accent="secondary"
+              />
             </div>
           )}
 
