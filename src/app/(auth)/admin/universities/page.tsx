@@ -27,6 +27,7 @@ export default function UniversitiesPage() {
   const [editing, setEditing] = useState<University | null>(null);
   const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [coursesError, setCoursesError] = useState("");
 
   const loadUniversities = useCallback(async () => {
     setLoadingUniversities(true);
@@ -47,11 +48,14 @@ export default function UniversitiesPage() {
 
   const loadCourses = useCallback(async (universityId: string) => {
     setLoadingCourses(true);
+    setCoursesError("");
     try {
       const data = await courseApi.listByUniversity(universityId);
       setCourses(data);
-    } catch {
+    } catch (err: any) {
+      console.error("[loadCourses] erro:", err);
       setCourses([]);
+      setCoursesError(err?.message ?? "Não foi possível carregar os cursos.");
     } finally {
       setLoadingCourses(false);
     }
@@ -64,6 +68,8 @@ export default function UniversitiesPage() {
   const handleSelect = (university: University) => {
     setSelected(university);
     setActiveTab("courses");
+    setCourses([]);
+    setCoursesError("");
     loadCourses(university._id);
   };
 
@@ -139,7 +145,7 @@ export default function UniversitiesPage() {
           <div className="flex gap-6 items-start">
 
             {/* Coluna esquerda — lista de faculdades */}
-            <div className="w-96 flex-shrink-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm p-5">
+            <div className="w-96 shrink-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
                   Faculdades ativas
@@ -225,6 +231,17 @@ export default function UniversitiesPage() {
                         {[...Array(3)].map((_, i) => (
                           <div key={i} className="h-12 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
                         ))}
+                      </div>
+                    ) : coursesError ? (
+                      <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
+                        <span className="material-symbols-outlined text-red-400 text-4xl">error</span>
+                        <p className="text-sm text-red-500 dark:text-red-400">{coursesError}</p>
+                        <button
+                          onClick={() => loadCourses(selected._id)}
+                          className="mt-1 text-xs text-blue-600 hover:underline"
+                        >
+                          Tentar novamente
+                        </button>
                       </div>
                     ) : (
                       <CoursesPanel

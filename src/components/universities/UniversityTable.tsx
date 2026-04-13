@@ -48,10 +48,13 @@ export function UniversityTable({
         const isSelected = selectedId === university._id;
         return (
           <li key={university._id}>
-            <button
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => onSelect(university)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onSelect(university); }}
               className={cn(
-                "w-full text-left px-5 py-4 rounded-xl border transition-all duration-150",
+                "w-full text-left px-5 py-4 rounded-xl border transition-all duration-150 cursor-pointer",
                 isSelected
                   ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-sm"
                   : "border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800/40 hover:border-blue-200 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -60,7 +63,7 @@ export function UniversityTable({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={cn(
-                    "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
+                    "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
                     isSelected ? "bg-blue-600" : "bg-slate-100 dark:bg-slate-700"
                   )}>
                     <span
@@ -116,7 +119,7 @@ export function UniversityTable({
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5 ml-12 truncate">
                 {university.address}
               </p>
-            </button>
+            </div>
           </li>
         );
       })}
