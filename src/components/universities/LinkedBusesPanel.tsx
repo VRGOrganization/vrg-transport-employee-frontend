@@ -16,17 +16,25 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
   const [selectedBusId, setSelectedBusId] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  const linkedBuses = allBuses.filter((bus) =>
-    bus.universityIds.some((u) =>
+  const linkedBuses = allBuses.filter((bus) => {
+    const inSlots = (bus.universitySlots ?? []).some((s) =>
+      typeof s.universityId === "string" ? s.universityId === university._id : s.universityId._id === university._id
+    );
+    const inIds = (bus.universityIds ?? []).some((u) =>
       typeof u === "string" ? u === university._id : u._id === university._id
-    )
-  );
+    );
+    return inSlots || inIds;
+  });
 
-  const availableBuses = allBuses.filter(
-    (bus) => !bus.universityIds.some((u) =>
+  const availableBuses = allBuses.filter((bus) => {
+    const inSlots = (bus.universitySlots ?? []).some((s) =>
+      typeof s.universityId === "string" ? s.universityId === university._id : s.universityId._id === university._id
+    );
+    const inIds = (bus.universityIds ?? []).some((u) =>
       typeof u === "string" ? u === university._id : u._id === university._id
-    )
-  );
+    );
+    return !(inSlots || inIds);
+  });
 
   const handleLink = async () => {
     if (!selectedBusId) return;

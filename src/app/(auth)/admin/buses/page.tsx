@@ -26,7 +26,8 @@ export default function BusesPage() {
     setLoading(true);
     setError("");
     try {
-      const data = await busApi.list();
+      // usar endpoint que já traz contagens e slots preenchidos
+      const data = await busApi.listWithQueueCounts();
       setBuses(data);
     } catch {
       setError("Não foi possível carregar os ônibus.");
@@ -39,14 +40,20 @@ export default function BusesPage() {
     loadBuses();
   }, [loadBuses]);
 
-  const handleCreate = async (data: { identifier: string; capacity: number }) => {
-    await busApi.create(data);
+  const handleCreate = async (data: { identifier: string; capacity?: number | null; universitySlots?: Array<{ universityId: string; priorityOrder: number }>; shift?: string }) => {
+    const created = await busApi.create({ identifier: data.identifier, capacity: data.capacity, ...(data.shift ? { shift: data.shift } : {}) });
+    if (data.universitySlots && data.universitySlots.length > 0) {
+      await busApi.updateUniversitySlots(created._id, data.universitySlots);
+    }
     await loadBuses();
   };
 
-  const handleEdit = async (data: { identifier: string; capacity: number }) => {
+  const handleEdit = async (data: { identifier: string; capacity?: number | null; universitySlots?: Array<{ universityId: string; priorityOrder: number }>; shift?: string }) => {
     if (!editing) return;
-    await busApi.update(editing._id, data);
+    await busApi.update(editing._id, { identifier: data.identifier, capacity: data.capacity, ...(data.shift ? { shift: data.shift } : {}) });
+    if (data.universitySlots) {
+      await busApi.updateUniversitySlots(editing._id, data.universitySlots);
+    }
     await loadBuses();
   };
 
@@ -102,7 +109,7 @@ export default function BusesPage() {
               <DashboardStatCard
                 icon="event_seat"
                 label="Total de Vagas"
-                value={buses.reduce((acc, b) => acc + b.capacity, 0)}
+                value={buses.reduce((acc, b) => acc + (b.capacity ?? 0), 0)}
                 badge="CAPACIDADE"
                 accent="secondary"
               />
@@ -112,7 +119,7 @@ export default function BusesPage() {
                 value={
                   new Set(
                     buses.flatMap((b) =>
-                      b.universityIds.map((u) => (typeof u === "string" ? u : u._id))
+                      (b.universitySlots ?? []).map((s) => (typeof s.universityId === "string" ? s.universityId : s.universityId._id))
                     )
                   ).size
                 }
@@ -122,7 +129,7 @@ export default function BusesPage() {
               <DashboardStatCard
                 icon="link_off"
                 label="Sem Vínculo"
-                value={buses.filter((b) => b.universityIds.length === 0).length}
+                value={buses.filter((b) => (b.universitySlots ?? []).length === 0).length}
                 badge="ATENÇÃO"
                 accent="secondary"
               />

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { busApi } from "@/lib/universityApi";
 import type { EnrollmentPeriod } from "@/types/enrollmentPeriod";
 
 interface EnrollmentPeriodFormPayload {
@@ -78,6 +79,8 @@ export function EnrollmentPeriodModal({
 }: EnrollmentPeriodModalProps) {
   const [form, setForm] = useState<FormState>(() => buildInitialForm(period));
   const [errors, setErrors] = useState<FormErrors>(EMPTY_ERRORS);
+  const [minSlotsFromBuses, setMinSlotsFromBuses] = useState<number>(0);
+  const [loadingBusMin, setLoadingBusMin] = useState<boolean>(false);
 
   useEffect(() => {
     if (!open) return;
@@ -85,7 +88,40 @@ export function EnrollmentPeriodModal({
     setErrors(EMPTY_ERRORS);
   }, [open, period]);
 
-  const minAllowedSlots = useMemo(() => period?.filledSlots ?? 0, [period]);
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+
+    const load = async () => {
+      setLoadingBusMin(true);
+      try {
+        const buses = await busApi.list();
+        if (cancelled) return;
+        let sum = 0;
+        if (Array.isArray(buses)) {
+          for (const b of buses) {
+            const cap = (b as any)?.capacity;
+            if (typeof cap === "number" && cap > 0) sum += cap;
+          }
+        }
+        if (!cancelled) setMinSlotsFromBuses(sum);
+      } catch (e) {
+        if (!cancelled) setMinSlotsFromBuses(0);
+      } finally {
+        if (!cancelled) setLoadingBusMin(false);
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  const minAllowedSlots = useMemo(() => {
+    const periodFilled = period?.filledSlots ?? 0;
+    return Math.max(periodFilled, minSlotsFromBuses ?? 0);
+  }, [period, minSlotsFromBuses]);
 
   if (!open) return null;
 
@@ -107,7 +143,7 @@ export function EnrollmentPeriodModal({
       nextErrors.totalSlots = "Quantidade de vagas deve ser maior ou igual a 1.";
     }
 
-    if (period && totalSlots < minAllowedSlots) {
+    if (totalSlots < minAllowedSlots) {
       nextErrors.totalSlots = `Quantidade de vagas não pode ser menor que ${minAllowedSlots}.`;
     }
 
@@ -196,13 +232,25 @@ export function EnrollmentPeriodModal({
               <label className="mb-1 block text-sm font-medium text-on-surface">Quantidade de vagas</label>
               <input
                 type="number"
-                min={period ? minAllowedSlots : 1}
+                min={Math.max(minAllowedSlots, 1)}
                 step={1}
                 value={form.totalSlots}
                 onChange={(event) => setField("totalSlots", event.target.value)}
                 className="h-10 w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface"
               />
-              {errors.totalSlots && <p className="mt-1 text-xs text-error">{errors.totalSlots}</p>}
+              {errors.totalSlots ? (
+                <p className="mt-1 text-xs text-error">{errors.totalSlots}</p>
+              ) : (
+                <>
+                  {loadingBusMin ? (
+                    <p className="mt-1 text-xs text-on-surface-variant">Carregando capacidades dos ônibus...</p>
+                  ) : (
+                    minSlotsFromBuses > 0 && (
+                      <p className="mt-1 text-xs text-on-surface-variant">Soma das capacidades dos ônibus: {minSlotsFromBuses} vagas.</p>
+                    )
+                  )}
+                </>
+              )}
             </div>
 
             <div>

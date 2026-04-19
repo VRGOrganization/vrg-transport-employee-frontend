@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { employeeApi } from "@/lib/employeeApi";
-import { LicenseRecord, LicenseRequestRecord, StudentRecord, StudentsResponse } from "@/types/cards.types";
-
+import {
+  LicenseRecord,
+  LicenseRequestRecord,
+  StudentRecord,
+  StudentsResponse,
+} from "@/types/cards.types";
 
 interface UseCardsDataReturn {
   students: StudentRecord[];
@@ -16,7 +20,27 @@ interface UseCardsDataReturn {
   reload: () => Promise<void>;
 }
 
-export function useCardsData(): UseCardsDataReturn {
+function normalizeArrayResponse<T>(
+  response: T[] | { data?: T[] } | null | undefined,
+): T[] {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray((response as { data?: T[] } | null | undefined)?.data)) {
+    return (response as { data?: T[] }).data ?? [];
+  }
+  return [];
+}
+
+function resolveId(value: unknown): string | null {
+  if (!value) return null;
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value !== null && "_id" in value) {
+    const nested = (value as { _id?: unknown })._id;
+    return typeof nested === "string" ? nested : null;
+  }
+  return null;
+}
+
+export function useCardsData(busId?: string | null): UseCardsDataReturn {
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [licenses, setLicenses] = useState<LicenseRecord[]>([]);
   const [licenseRequests, setLicenseRequests] = useState<LicenseRequestRecord[]>([]);
@@ -32,21 +56,32 @@ export function useCardsData(): UseCardsDataReturn {
         employeeApi.get<LicenseRecord[]>("/license/all"),
         employeeApi.get<LicenseRequestRecord[]>("/license-request/all"),
       ]);
-      const resolvedStudents = Array.isArray(studentsResponse)
-        ? studentsResponse
-        : Array.isArray(studentsResponse?.data)
-          ? studentsResponse.data
-          : [];
 
-      setStudents(resolvedStudents);
-      setLicenses(licensesResponse);
-      setLicenseRequests(requestsResponse);
+      const resolvedStudents = normalizeArrayResponse<StudentRecord>(studentsResponse);
+      const resolvedLicenses = normalizeArrayResponse<LicenseRecord>(licensesResponse);
+      const resolvedRequests = normalizeArrayResponse<LicenseRequestRecord>(requestsResponse);
+
+      setLicenses(resolvedLicenses);
+
+      if (busId) {
+        const filteredRequests = resolvedRequests.filter(
+          (request) => resolveId(request.busId) === busId,
+        );
+        const busStudentIds = new Set(filteredRequests.map((request) => request.studentId));
+        const busStudents = resolvedStudents.filter((student) => busStudentIds.has(student._id));
+
+        setStudents(busStudents);
+        setLicenseRequests(filteredRequests);
+      } else {
+        setStudents(resolvedStudents);
+        setLicenseRequests(resolvedRequests);
+      }
     } catch {
       setError("Não foi possível carregar os dados de revisão de carteirinhas.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [busId]);
 
   useEffect(() => {
     reload();

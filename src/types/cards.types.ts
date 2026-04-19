@@ -40,6 +40,8 @@ export interface LicenseRequestRecord {
   licenseId: string | null;
   enrollmentPeriodId?: string | null;
   filaPosition?: number | null;
+  busId?: string | { _id: string } | null;
+  universityId?: string | { _id: string } | null;
   createdAt: string;
 }
 

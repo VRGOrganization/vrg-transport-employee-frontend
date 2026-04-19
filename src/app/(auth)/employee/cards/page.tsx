@@ -5,6 +5,7 @@ import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { EmployeeSideNav } from "@/components/layout/EmployeeSideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { useCardsData } from "@/components/hooks/useCardsData";
+import BusSelectorPanel from "@/components/buses/BusSelectorPanel";
 import { usePdfPrint } from "@/components/hooks/usePdfPrint";
 import { CardsPageHeader } from "@/components/cards/CardsPageHeader";
 import { CardsStatsRow } from "@/components/cards/CardsStatsRow";
@@ -16,6 +17,8 @@ import { useStudentSelection } from "@/components/hooks/useStudentSelection";
 
 export default function EmployeeCardsPage() {
   const { user, logout } = useEmployeeAuth();
+
+  const [selectedBusId, setSelectedBusId] = useState<string | null>(null);
 
   const {
     students,
@@ -29,13 +32,22 @@ export default function EmployeeCardsPage() {
     stats,
     reload,
   } =
-    useCardsData();
+    useCardsData(selectedBusId);
 
-  const { selected, currentLicenseRequest, selectStudent } = useStudentSelection(
-    licenses,
-    licenseRequests,
-
-  );
+  const {
+    selected,
+    selectedImages,
+    loadingSelected,
+    approvedLicensePreview,
+    currentLicense,
+    currentLicenseRequest,
+    pendingImagesByType,
+    profileImage,
+    enrollmentImage,
+    scheduleImage,
+    selectedLicensePreview,
+    selectStudent,
+  } = useStudentSelection(licenses, licenseRequests);
 
   const {
     pdfPreviewUrl,
@@ -78,29 +90,47 @@ export default function EmployeeCardsPage() {
             />
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr]">
-              <StudentListPanel
-                students={students}
-                licenseRequests={licenseRequests}
-                licensedStudentIds={licensedStudentIds}
-                pendingStudentIds={pendingStudentIds}
-                waitlistedStudentIds={waitlistedStudentIds}
-                selectedStudent={selected}
-                selectedForBatch={selectedForBatch}
-                printingBatch={printingBatch}
-                loading={loading}
-                error={error}
-                printableCardsByStudentId={printableCardsByStudentId}
-                onSelectStudent={selectStudent}
-                onToggleBatch={toggleBatchSelection}
-                onPrintBatch={() =>
-                  handlePrintBatch(printableCardsByStudentId, setApproveMessage)
-                }
-              />
+              <div>
+                {!selectedBusId ? (
+                  <BusSelectorPanel onChange={setSelectedBusId} className="mb-4" />
+                ) : (
+                  <>
+                    <BusSelectorPanel value={selectedBusId} onChange={setSelectedBusId} className="mb-4" />
+
+                    <StudentListPanel
+                      students={students}
+                      licenseRequests={licenseRequests}
+                      licensedStudentIds={licensedStudentIds}
+                      pendingStudentIds={pendingStudentIds}
+                      waitlistedStudentIds={waitlistedStudentIds}
+                      selectedStudent={selected}
+                      selectedForBatch={selectedForBatch}
+                      printingBatch={printingBatch}
+                      loading={loading}
+                      error={error}
+                      printableCardsByStudentId={printableCardsByStudentId}
+                      onSelectStudent={selectStudent}
+                      onToggleBatch={toggleBatchSelection}
+                      onPrintBatch={() =>
+                        handlePrintBatch(printableCardsByStudentId, setApproveMessage)
+                      }
+                      largeItems={true}
+                    />
+                  </>
+                )}
+              </div>
 
               <StudentDetailPanel
                 selected={selected}
-                clicenses={licenses}
-                licenseRequests={licenseRequests}
+                selectedImages={selectedImages}
+                loadingSelected={loadingSelected}
+                currentLicense={currentLicense}
+                currentLicenseRequest={currentLicenseRequest}
+                pendingImagesByType={pendingImagesByType}
+                profileImage={profileImage}
+                enrollmentImage={enrollmentImage}
+                scheduleImage={scheduleImage}
+                selectedLicensePreview={selectedLicensePreview}
                 onReload={reload}
                 onOpenRejectModal={() => setRejectModalOpen(true)}
                 printingSingle={printingSingle}

@@ -24,6 +24,7 @@ interface StudentListPanelProps {
   onSelectStudent: (student: StudentRecord) => void;
   onToggleBatch: (studentId: string) => void;
   onPrintBatch: () => void;
+  largeItems?: boolean;
 }
 
 export function StudentListPanel({
@@ -40,6 +41,7 @@ export function StudentListPanel({
   onSelectStudent,
   onToggleBatch,
   onPrintBatch,
+  largeItems = false,
 }: StudentListPanelProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<StudentFilter>("pending");
@@ -139,6 +141,7 @@ export function StudentListPanel({
                 isInBatch={selectedForBatch.includes(student._id)}
                 onSelect={onSelectStudent}
                 onToggleBatch={onToggleBatch}
+                large={largeItems}
               />
             );
           })}

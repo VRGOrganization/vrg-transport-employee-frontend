@@ -3,17 +3,24 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import type { Bus } from "@/types/university.types";
+import LinkUniversityModal from "./LinkUniversityModal";
+
+type SlotDisplay = { universityId: string; name?: string; acronym?: string; priorityOrder: number; filledSlots?: number };
 
 interface Props {
   open: boolean;
   initial?: Bus | null;
   onClose: () => void;
-  onSubmit: (data: { identifier: string; capacity: number }) => Promise<void>;
+  // capacity opcional (null = sem limite). Include universitySlots for persistence.
+  onSubmit: (data: { identifier: string; capacity?: number | null; universitySlots?: Array<{ universityId: string; priorityOrder: number }>; shift?: string }) => Promise<void>;
 }
 
 export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
   const [identifier, setIdentifier] = useState("");
   const [capacity, setCapacity] = useState("");
+  const [shift, setShift] = useState("");
+  const [slots, setSlots] = useState<SlotDisplay[]>([]);
+  const [linkOpen, setLinkOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -21,20 +28,87 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
     if (open) {
       setIdentifier(initial?.identifier ?? "");
       setCapacity(initial?.capacity?.toString() ?? "");
+      setShift(initial?.shift ?? "");
+      // hydrate slots from universitySlots or legacy universityIds
+      if (initial?.universitySlots && initial.universitySlots.length > 0) {
+        setSlots(
+          initial.universitySlots.map((s) => ({
+            universityId: typeof s.universityId === "string" ? s.universityId : s.universityId._id,
+            acronym: typeof s.universityId === "string" ? undefined : s.universityId.acronym,
+            name: typeof s.universityId === "string" ? undefined : s.universityId.name,
+            priorityOrder: s.priorityOrder,
+            filledSlots: s.filledSlots,
+          }))
+        );
+      } else if ((initial?.universityIds ?? []).length > 0) {
+        setSlots(
+          (initial?.universityIds ?? []).map((u, idx) => ({
+            universityId: typeof u === "string" ? u : u._id,
+            name: typeof u === "string" ? undefined : u.name,
+            acronym: typeof u === "string" ? undefined : u.acronym,
+            priorityOrder: idx + 1,
+          }))
+        );
+      } else {
+        setSlots([]);
+      }
+
       setError("");
     }
   }, [open, initial]);
 
   if (!open) return null;
 
+  const handleAddSlot = (id: string, name?: string, acronym?: string) => {
+    setSlots((prev) => [...prev, { universityId: id, name, acronym, priorityOrder: prev.length + 1 }]);
+  };
+
+  const handleRemove = (universityId: string) => {
+    setSlots((prev) => {
+      const filtered = prev.filter((s) => s.universityId !== universityId);
+      // reindex priorities
+      return filtered.map((s, idx) => ({ ...s, priorityOrder: idx + 1 }));
+    });
+  };
+
+  const handleMove = (universityId: string, direction: "up" | "down") => {
+    setSlots((prev) => {
+      const idx = prev.findIndex((s) => s.universityId === universityId);
+      if (idx === -1) return prev;
+      const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= prev.length) return prev;
+      const next = prev.slice();
+      const tmp = next[swapIdx];
+      next[swapIdx] = next[idx];
+      next[idx] = tmp;
+      return next.map((s, i) => ({ ...s, priorityOrder: i + 1 }));
+    });
+  };
+
+  const handleMoveUp = (id: string) => handleMove(id, "up");
+  const handleMoveDown = (id: string) => handleMove(id, "down");
+
   const handleSubmit = async () => {
     if (!identifier.trim()) { setError("O identificador é obrigatório."); return; }
-    const cap = parseInt(capacity, 10);
-    if (isNaN(cap) || cap < 1) { setError("Capacidade deve ser um número maior que zero."); return; }
+    let cap: number | undefined = undefined;
+    const trimmed = capacity.trim();
+    if (trimmed.length > 0) {
+      const parsed = parseInt(trimmed, 10);
+      if (Number.isNaN(parsed) || parsed < 1) { setError("Capacidade deve ser um número maior que zero ou vazia para sem limite."); return; }
+      cap = parsed;
+    }
+
     setLoading(true);
     setError("");
     try {
-      await onSubmit({ identifier: identifier.trim(), capacity: cap });
+      const payload: { identifier: string; capacity?: number | null; universitySlots?: Array<{ universityId: string; priorityOrder: number }>; shift?: string } = {
+        identifier: identifier.trim(),
+        capacity: cap ?? null,
+      };
+      if (slots.length > 0) payload.universitySlots = slots.map((s) => ({ universityId: s.universityId, priorityOrder: s.priorityOrder }));
+      if (shift && shift.length > 0) payload.shift = shift;
+
+      await onSubmit(payload);
       onClose();
     } catch (err: any) {
       setError(err?.message ?? "Erro ao salvar.");
@@ -75,6 +149,69 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
               className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Período principal do ônibus</label>
+            <select
+              value={shift}
+              onChange={(e) => setShift(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Nenhum</option>
+              <option value="Manhã">Manhã</option>
+              <option value="Tarde">Tarde</option>
+              <option value="Noite">Noite</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Faculdades vinculadas</label>
+            <div className="flex flex-col gap-2">
+              {slots.length === 0 ? (
+                <p className="text-xs text-slate-400 italic">Nenhuma faculdade vinculada</p>
+              ) : (
+                slots.map((s) => (
+                  <div key={s.universityId} className="flex items-center justify-between gap-3 py-1 px-2 rounded-lg border border-slate-100 dark:border-slate-700">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-md bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-sm font-medium text-blue-600">{s.acronym ?? s.name?.charAt(0) ?? "U"}</div>
+                      <div className="text-sm">
+                        <div className="font-medium text-slate-800 dark:text-slate-100">{s.acronym ?? s.name}</div>
+                        <div className="text-xxs text-slate-400">Prioridade P{s.priorityOrder}{s.filledSlots ? ` • ${s.filledSlots}` : ""}</div>
+                      </div>
+                    </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleMoveUp(s.universityId)}
+                            disabled={s.priorityOrder <= 1}
+                            className={cn(
+                              "p-1 rounded-md text-slate-500 hover:bg-slate-50",
+                              s.priorityOrder <= 1 ? "opacity-40 cursor-not-allowed" : ""
+                            )}
+                            title="Mover para cima"
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>arrow_upward</span>
+                          </button>
+                          <button
+                            onClick={() => handleMoveDown(s.universityId)}
+                            disabled={s.priorityOrder >= slots.length}
+                            className={cn(
+                              "p-1 rounded-md text-slate-500 hover:bg-slate-50",
+                              s.priorityOrder >= slots.length ? "opacity-40 cursor-not-allowed" : ""
+                            )}
+                            title="Mover para baixo"
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>arrow_downward</span>
+                          </button>
+                          <button onClick={() => handleRemove(s.universityId)} className="text-red-500 text-sm">Remover</button>
+                        </div>
+                  </div>
+                ))
+              )}
+              <div>
+                <button onClick={() => setLinkOpen(true)} className="mt-2 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 text-sm">Vincular faculdade</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {error && <p className="mt-3 text-sm text-red-500">{error}</p>}
@@ -97,6 +234,8 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
             {loading ? "Salvando..." : initial ? "Salvar" : "Cadastrar"}
           </button>
         </div>
+
+        <LinkUniversityModal open={linkOpen} currentSlots={slots.map((s) => s.universityId)} onClose={() => setLinkOpen(false)} onAdd={handleAddSlot} />
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { useCardsData } from "@/components/hooks/useCardsData";
+import BusSelectorPanel from "@/components/buses/BusSelectorPanel";
 import { usePdfPrint } from "@/components/hooks/usePdfPrint";
 import { CardsPageHeader } from "@/components/cards/CardsPageHeader";
 import { CardsStatsRow } from "@/components/cards/CardsStatsRow";
@@ -16,6 +17,8 @@ import { useStudentSelection } from "@/components/hooks/useStudentSelection";
 
 export default function AdminCardsPage() {
   const { user, logout } = useEmployeeAuth();
+
+  const [selectedBusId, setSelectedBusId] = useState<string | null>(null);
 
   const {
     students,
@@ -29,7 +32,7 @@ export default function AdminCardsPage() {
     stats,
     reload,
   } =
-    useCardsData();
+    useCardsData(selectedBusId);
 
   const {
     selected,
@@ -90,24 +93,35 @@ export default function AdminCardsPage() {
             />
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr]">
-              <StudentListPanel
-                students={students}
-                licenseRequests={licenseRequests}
-                licensedStudentIds={licensedStudentIds}
-                pendingStudentIds={pendingStudentIds}
-                waitlistedStudentIds={waitlistedStudentIds}
-                selectedStudent={selected}
-                selectedForBatch={selectedForBatch}
-                printingBatch={printingBatch}
-                loading={loading}
-                error={error}
-                printableCardsByStudentId={printableCardsByStudentId}
-                onSelectStudent={selectStudent}
-                onToggleBatch={toggleBatchSelection}
-                onPrintBatch={() =>
-                  handlePrintBatch(printableCardsByStudentId, setApproveMessage)
-                }
-              />
+              <div>
+                {!selectedBusId ? (
+                  <BusSelectorPanel onChange={setSelectedBusId} className="mb-4" />
+                ) : (
+                  <>
+                    <BusSelectorPanel value={selectedBusId} onChange={setSelectedBusId} className="mb-4" />
+
+                    <StudentListPanel
+                      students={students}
+                      licenseRequests={licenseRequests}
+                      licensedStudentIds={licensedStudentIds}
+                      pendingStudentIds={pendingStudentIds}
+                      waitlistedStudentIds={waitlistedStudentIds}
+                      selectedStudent={selected}
+                      selectedForBatch={selectedForBatch}
+                      printingBatch={printingBatch}
+                      loading={loading}
+                      error={error}
+                      printableCardsByStudentId={printableCardsByStudentId}
+                      onSelectStudent={selectStudent}
+                      onToggleBatch={toggleBatchSelection}
+                      onPrintBatch={() =>
+                        handlePrintBatch(printableCardsByStudentId, setApproveMessage)
+                      }
+                      largeItems={true}
+                    />
+                  </>
+                )}
+              </div>
 
               <StudentDetailPanel
                 selected={selected}

@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { universityApi } from "@/lib/universityApi";
 import type { Bus } from "@/types/university.types";
 
 interface Props {
@@ -13,6 +15,45 @@ interface Props {
 }
 
 export function BusTable({ buses, loading, onEdit, onDeactivate, onViewStudents, deactivatingId }: Props) {
+  const [universitiesMap, setUniversitiesMap] = useState<Record<string, { acronym?: string; name?: string }>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const collectAndLoad = async () => {
+      // collect university ids that are strings
+      const ids = new Set<string>();
+      buses.forEach((b) => {
+        const slots = (b.universitySlots ?? b.universityIds ?? []) as any[];
+        slots.forEach((s) => {
+          if (!s) return;
+          if (s.universityId && typeof s.universityId === "string") ids.add(s.universityId);
+          if (typeof s === "string") ids.add(s);
+          if (s._id && typeof s._id === "string" && !s.acronym && !s.name) ids.add(s._id);
+        });
+      });
+
+      if (ids.size === 0) return;
+
+      try {
+        const res = await universityApi.list();
+        const arr = Array.isArray(res) ? res : (res as any)?.data ?? [];
+        const map: Record<string, { acronym?: string; name?: string }> = {};
+        arr.forEach((u: any) => {
+          if (u && u._id) map[u._id] = { acronym: u.acronym, name: u.name };
+        });
+        if (!cancelled) setUniversitiesMap(map);
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    void collectAndLoad();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [buses]);
   if (loading) {
     return (
       <div className="flex flex-col gap-3">
@@ -49,13 +90,27 @@ export function BusTable({ buses, loading, onEdit, onDeactivate, onViewStudents,
                 </span>
               </div>
               <div>
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                  {bus.identifier}
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                  <span>{bus.identifier}</span>
+                  {bus.shift && (
+                    <span className="text-xxs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                      {bus.shift}
+                    </span>
+                  )}
                 </p>
-                <p className="text-xs text-slate-400">{bus.capacity} vagas</p>
+                <p className="text-xs text-slate-400">
+                  {bus.capacity == null
+                    ? "Sem limite"
+                    : `${bus.filledSlotsTotal ?? 0} / ${bus.capacity} vagas`}
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
+              {bus.waitlistedCount && bus.waitlistedCount > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 text-xs font-medium">
+                  Fila: {bus.waitlistedCount}
+                </span>
+              )}
               <button
                 onClick={() => onEdit(bus)}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
@@ -81,22 +136,45 @@ export function BusTable({ buses, loading, onEdit, onDeactivate, onViewStudents,
             <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">
               Faculdades
             </p>
-            {bus.universityIds.length === 0 ? (
+            {bus.universitySlots && bus.universitySlots.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {bus.universitySlots
+                  .slice()
+                  .sort((a, b) => (a.priorityOrder ?? 0) - (b.priorityOrder ?? 0))
+                  .map((u) => {
+                    const idKey = typeof u.universityId === "string" ? u.universityId : (u.universityId?._id ?? "");
+                    const display = typeof u.universityId === "string"
+                      ? universitiesMap[idKey]?.acronym ?? universitiesMap[idKey]?.name ?? idKey
+                      : (u.universityId?.acronym ?? u.universityId?.name ?? idKey);
+
+                    return (
+                      <span key={idKey} className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-xs font-medium text-blue-600 dark:text-blue-400">
+                        {display}
+                        <span className="ml-2 text-xxs text-slate-400">P{u.priorityOrder}{u.filledSlots != null ? ` • ${u.filledSlots}` : ""}</span>
+                      </span>
+                    );
+                  })}
+              </div>
+            ) : ( (bus.universityIds ?? []).length === 0 ? (
               <p className="text-xs text-slate-300 dark:text-slate-600 italic">
                 Nenhuma faculdade vinculada
               </p>
             ) : (
               <div className="flex flex-wrap gap-1.5">
-                {bus.universityIds.map((u) => (
-                  <span
-                    key={typeof u === "string" ? u : u._id}
-                    className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-xs font-medium text-blue-600 dark:text-blue-400"
-                  >
-                    {typeof u === "string" ? u : u.acronym}
-                  </span>
-                ))}
+                {(bus.universityIds ?? []).map((u) => {
+                  const idKey = typeof u === "string" ? u : u._id;
+                  const display = typeof u === "string" ? universitiesMap[idKey]?.acronym ?? universitiesMap[idKey]?.name ?? idKey : (u.acronym ?? u.name ?? idKey);
+                  return (
+                    <span
+                      key={idKey}
+                      className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-xs font-medium text-blue-600 dark:text-blue-400"
+                    >
+                      {display}
+                    </span>
+                  );
+                })}
               </div>
-            )}
+            ))}
           </div>
 
           {/* Botão de ver alunos */}

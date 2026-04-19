@@ -8,6 +8,7 @@ interface StudentListItemProps {
   isInBatch: boolean;
   onSelect: (student: StudentRecord) => void;
   onToggleBatch: (studentId: string) => void;
+  large?: boolean;
 }
 
 export function StudentListItem({
@@ -18,30 +19,40 @@ export function StudentListItem({
   isInBatch,
   onSelect,
   onToggleBatch,
+  large = false,
 }: StudentListItemProps) {
   const isPending = latestRequest?.status === "pending";
   const isWaitlisted = latestRequest?.status === "waitlisted";
   const isRejected = latestRequest?.status === "rejected";
   const isUpdateRequest = latestRequest?.type === "update";
 
+  const baseClass = large
+    ? `w-full rounded-xl border p-6 transition ${
+        isSelected ? "border-primary bg-primary/8" : "border-outline-variant bg-pink-50"
+      }`
+    : `w-full rounded-xl border p-3 transition ${
+        isSelected ? "border-primary bg-primary/10" : "border-outline-variant bg-surface hover:border-primary/40"
+      }`;
+
   return (
-    <div
-      className={`w-full rounded-xl border p-3 transition ${
-        isSelected
-          ? "border-primary bg-primary/10"
-          : "border-outline-variant bg-surface hover:border-primary/40"
-      }`}
-    >
-      <div className="flex items-center justify-between gap-3">
+    <div className={baseClass}>
+      <div className={large ? "flex items-center justify-between gap-6" : "flex items-center justify-between gap-3"}>
         <button
           onClick={() => onSelect(student)}
           className="min-w-0 flex-1 text-left"
         >
-          <p className="truncate font-semibold text-on-surface">{student.name}</p>
-          <p className="truncate text-xs text-on-surface-variant">{student.email}</p>
-          <p className="truncate text-xs text-on-surface-variant">
-            {student.institution ?? "Instituição não informada"}
-          </p>
+          <p className={large ? "truncate font-extrabold text-2xl text-on-surface" : "truncate font-semibold text-on-surface"}>{student.name}</p>
+          {!large && (
+            <>
+              <p className="truncate text-xs text-on-surface-variant">{student.email}</p>
+              <p className="truncate text-xs text-on-surface-variant">
+                {student.institution ?? "Instituição não informada"}
+              </p>
+            </>
+          )}
+          {large && (
+            <p className="mt-2 text-sm text-on-surface-variant">{student.institution ?? "Instituição não informada"} — {student.degree ?? ""}</p>
+          )}
         </button>
 
         <div className="flex items-center gap-2">

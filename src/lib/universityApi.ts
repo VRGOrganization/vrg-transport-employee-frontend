@@ -32,15 +32,27 @@ export const courseApi = {
 export const busApi = {
   list: () => employeeApi.get<Bus[]>("/bus"),
   listInactive: () => employeeApi.get<Bus[]>("/bus/inactive"),
-  create: (data: { identifier: string; capacity: number }) =>
+  // Lista com contagens de fila/pendentes por ônibus (anônimo)
+  listWithQueueCounts: () => employeeApi.get<Bus[]>("/bus/with-queue-counts"),
+  create: (data: { identifier: string; capacity?: number | null; shift?: string }) =>
     employeeApi.post<Bus>("/bus", data),
-  update: (id: string, data: Partial<{ identifier: string; capacity: number }>) =>
+  update: (id: string, data: Partial<{ identifier: string; capacity?: number | null; shift?: string }>) =>
     employeeApi.patch<Bus>(`/bus/${id}`, data),
   deactivate: (id: string) => employeeApi.delete<{ message: string }>(`/bus/${id}`),
   linkUniversity: (busId: string, universityId: string) =>
     employeeApi.patch<Bus>(`/bus/${busId}/link-university`, { universityId }),
   unlinkUniversity: (busId: string, universityId: string) =>
     employeeApi.patch<Bus>(`/bus/${busId}/unlink-university`, { universityId }),
+  // Busca alunos por identifier (legado)
   studentsByBus: (busIdentifier: string) =>
     employeeApi.get<BusStudent[]>(`/student/by-bus/${encodeURIComponent(busIdentifier)}`),
+  // Novo endpoint para buscar alunos por busId
+  studentsByBusId: (busId: string) =>
+    employeeApi.get<BusStudent[]>(`/student/by-bus-id/${encodeURIComponent(busId)}`),
+  // Atualiza a lista de universitySlots (substitui completamente)
+  updateUniversitySlots: (busId: string, slots: Array<{ universityId: string; priorityOrder: number }>) =>
+    employeeApi.patch<Bus>(`/bus/${busId}/university-slots`, { slots }),
+  // Liberar vagas do ônibus — query param `promote` aceita true/false
+  releaseSlots: (busId: string, promote?: boolean) =>
+    employeeApi.patch<unknown>(`/bus/${encodeURIComponent(busId)}/release-slots${promote === undefined ? "" : `?promote=${promote}`}`, undefined),
 };
