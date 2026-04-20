@@ -21,6 +21,8 @@ export interface UniversitySlot {
   universityId: string | { _id: string; name: string; acronym: string };
   priorityOrder: number;
   filledSlots?: number;
+  pendingCount?: number;
+  waitlistedCount?: number;
 }
 
 export interface Bus {
@@ -39,6 +41,7 @@ export interface Bus {
   shift?: string | null;
   // contadores expostos pela API de listagem com filas
   waitlistedCount?: number;
+  pendingCount?: number;
   filledSlotsTotal?: number;
 }
 

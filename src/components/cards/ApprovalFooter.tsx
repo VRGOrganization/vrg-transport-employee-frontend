@@ -16,6 +16,7 @@ interface ApprovalFooterProps {
   onApprove: () => void;
   onRejectOpen: () => void;
   onPrintSingle: () => void;
+  busLocked?: boolean;
 }
 
 export function ApprovalFooter({
@@ -31,6 +32,7 @@ export function ApprovalFooter({
   onApprove,
   onRejectOpen,
   onPrintSingle,
+  busLocked = false,
 }: ApprovalFooterProps) {
   const isPending = currentLicenseRequest?.status === "pending";
   const isWaitlisted = currentLicenseRequest?.status === "waitlisted";
@@ -49,9 +51,11 @@ export function ApprovalFooter({
           onChange={(e) => onBusChange(e.target.value)}
           placeholder="Ex.: 205"
           maxLength={10}
-          disabled={!isPending}
-          className="h-10 w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface outline-none focus:border-primary"
+          disabled={!isPending || busLocked}
+          readOnly={busLocked}
+          className={`h-10 w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface outline-none focus:border-primary ${busLocked ? 'opacity-80 cursor-not-allowed' : ''}`}
         />
+        {/* Mensagem de aviso removida conforme solicitado; campo permanece bloqueado quando `busLocked` for true. */}
         <p className="mt-1 text-[11px] text-on-surface-variant">
           Esse valor será usado no campo de ônibus da carteirinha.
         </p>

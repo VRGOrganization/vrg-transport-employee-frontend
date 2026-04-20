@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { EmployeeSideNav } from "@/components/layout/EmployeeSideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { useCardsData } from "@/components/hooks/useCardsData";
 import BusSelectorPanel from "@/components/buses/BusSelectorPanel";
+import { busApi } from "@/lib/universityApi";
 import { usePdfPrint } from "@/components/hooks/usePdfPrint";
 import { CardsPageHeader } from "@/components/cards/CardsPageHeader";
 import { CardsStatsRow } from "@/components/cards/CardsStatsRow";
@@ -19,6 +20,7 @@ export default function EmployeeCardsPage() {
   const { user, logout } = useEmployeeAuth();
 
   const [selectedBusId, setSelectedBusId] = useState<string | null>(null);
+  const [selectedBus, setSelectedBus] = useState(null);
 
   const {
     students,
@@ -33,6 +35,30 @@ export default function EmployeeCardsPage() {
     reload,
   } =
     useCardsData(selectedBusId);
+
+  // load selected bus details (universitySlots) so StudentListPanel can apply priority filtering
+  useEffect(() => {
+    let cancelled = false;
+    if (!selectedBusId) {
+      setSelectedBus(null);
+      return;
+    }
+
+    (async () => {
+      try {
+        const list = await busApi.list();
+        const arr = Array.isArray(list) ? list : (list as any)?.data ?? [];
+        const found = arr.find((b: any) => b._id === selectedBusId) ?? null;
+        if (!cancelled) setSelectedBus(found);
+      } catch (e) {
+        if (!cancelled) setSelectedBus(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBusId]);
 
   const {
     selected,
@@ -108,6 +134,7 @@ export default function EmployeeCardsPage() {
                       printingBatch={printingBatch}
                       loading={loading}
                       error={error}
+                      bus={selectedBus}
                       printableCardsByStudentId={printableCardsByStudentId}
                       onSelectStudent={selectStudent}
                       onToggleBatch={toggleBatchSelection}

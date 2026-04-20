@@ -9,6 +9,7 @@ interface StudentListItemProps {
   onSelect: (student: StudentRecord) => void;
   onToggleBatch: (studentId: string) => void;
   large?: boolean;
+  selectable?: boolean;
 }
 
 export function StudentListItem({
@@ -20,6 +21,7 @@ export function StudentListItem({
   onSelect,
   onToggleBatch,
   large = false,
+  selectable = true,
 }: StudentListItemProps) {
   const isPending = latestRequest?.status === "pending";
   const isWaitlisted = latestRequest?.status === "waitlisted";
@@ -34,12 +36,18 @@ export function StudentListItem({
         isSelected ? "border-primary bg-primary/10" : "border-outline-variant bg-surface hover:border-primary/40"
       }`;
 
+  const isSelectable = selectable;
+
   return (
     <div className={baseClass}>
       <div className={large ? "flex items-center justify-between gap-6" : "flex items-center justify-between gap-3"}>
         <button
-          onClick={() => onSelect(student)}
-          className="min-w-0 flex-1 text-left"
+          onClick={() => {
+            if (!isSelectable) return;
+            onSelect(student);
+          }}
+          aria-disabled={!isSelectable}
+          className={`min-w-0 flex-1 text-left ${!isSelectable ? "opacity-60 cursor-not-allowed" : ""}`}
         >
           <p className={large ? "truncate font-extrabold text-2xl text-on-surface" : "truncate font-semibold text-on-surface"}>{student.name}</p>
           {!large && (
@@ -95,6 +103,11 @@ export function StudentListItem({
           {isUpdateRequest && (
             <span className="rounded-full bg-secondary/15 px-2 py-1 text-[10px] font-semibold text-secondary">
               Alteração
+            </span>
+          )}
+          {!isSelectable && (
+            <span title="Apenas o primeiro da fila pode ser selecionado" className="ml-2 text-on-surface-variant text-xs">
+              🔒
             </span>
           )}
         </div>

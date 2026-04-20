@@ -52,7 +52,12 @@ export const busApi = {
   // Atualiza a lista de universitySlots (substitui completamente)
   updateUniversitySlots: (busId: string, slots: Array<{ universityId: string; priorityOrder: number }>) =>
     employeeApi.patch<Bus>(`/bus/${busId}/university-slots`, { slots }),
-  // Liberar vagas do ônibus — query param `promote` aceita true/false
-  releaseSlots: (busId: string, promote?: boolean) =>
-    employeeApi.patch<unknown>(`/bus/${encodeURIComponent(busId)}/release-slots${promote === undefined ? "" : `?promote=${promote}`}`, undefined),
+  // Liberar vagas do ônibus — query params `promote` (true/false) e `quantity` (número)
+  releaseSlots: (busId: string, promote?: boolean, quantity?: number) => {
+    const params: string[] = [];
+    if (promote !== undefined) params.push(`promote=${promote}`);
+    if (quantity !== undefined && quantity !== null) params.push(`quantity=${encodeURIComponent(String(quantity))}`);
+    const qs = params.length ? `?${params.join("&")}` : "";
+    return employeeApi.patch<unknown>(`/bus/${encodeURIComponent(busId)}/release-slots${qs}`, undefined);
+  },
 };

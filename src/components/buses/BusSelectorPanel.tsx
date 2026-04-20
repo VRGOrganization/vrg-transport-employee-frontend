@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { busApi, universityApi } from "@/lib/universityApi";
 import type { Bus } from "@/types/university.types";
+import BusReleaseModal from "./BusReleaseModal";
 
 interface BusSelectorPanelProps {
   value?: string | null;
@@ -21,6 +22,7 @@ export default function BusSelectorPanel({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [universitiesMap, setUniversitiesMap] = useState<Record<string, { acronym?: string; name?: string }>>({});
+  const [releaseOpen, setReleaseOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,8 +125,8 @@ export default function BusSelectorPanel({
                 </div>
 
                 <div className="text-xs text-on-surface-variant text-right">
+                  <div>{b.pendingCount ?? 0} pendentes · {b.waitlistedCount ?? 0} fila</div>
                   <div>{b.filledSlotsTotal ?? 0} ocupados</div>
-                  <div>{b.waitlistedCount ?? 0} fila</div>
                 </div>
               </button>
             );
@@ -144,20 +146,47 @@ export default function BusSelectorPanel({
                 </span>
               )}
             </div>
-            <div className="text-xs text-on-surface-variant">{selected ? `${selected.filledSlotsTotal ?? 0} ocupados · ${selected.waitlistedCount ?? 0} fila` : ""}</div>
+            <div className="text-xs text-on-surface-variant">{selected ? `${selected.pendingCount ?? 0} pendentes · ${selected.waitlistedCount ?? 0} fila` : ""}</div>
           </div>
 
-          <div>
-            <button
-              type="button"
-              onClick={() => onChange?.(null)}
-              className="rounded-md bg-surface-container-low px-3 py-2 text-sm hover:bg-surface-container transition"
-            >
-              Voltar
-            </button>
+          <div className="flex flex-col items-end gap-2">
+            <div>
+              <button
+                type="button"
+                onClick={() => onChange?.(null)}
+                className="rounded-md bg-surface-container-low px-3 py-2 text-sm hover:bg-surface-container transition"
+              >
+                Voltar
+              </button>
+            </div>
+            {selected?.waitlistedCount > 0 && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setReleaseOpen(true)}
+                  className="rounded-md bg-amber-50 px-3 py-2 text-sm hover:bg-amber-100 transition"
+                >
+                  Liberar vagas
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
+      <BusReleaseModal
+        open={releaseOpen}
+        bus={selected}
+        onClose={() => setReleaseOpen(false)}
+        onSuccess={async () => {
+          try {
+            const res = await busApi.listWithQueueCounts();
+            const data = Array.isArray(res) ? res : (res as any)?.data ?? [];
+            setBuses(data as Bus[]);
+          } catch (e) {
+            // ignore
+          }
+        }}
+      />
     </div>
   );
 }

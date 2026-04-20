@@ -1,7 +1,8 @@
 import { Eye } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ImageLightbox } from "@/components/cards/CardPageComponents";
 import { employeeApi } from "@/lib/employeeApi";
+import { busApi } from "@/lib/universityApi";
 import type {
   ImageRecord,
   LicenseRecord,
@@ -49,6 +50,7 @@ export function StudentDetailPanel({
   onPrintSingle,
 }: StudentDetailPanelProps) {
   const [selectedBus, setSelectedBus] = useState("");
+  const [busLocked, setBusLocked] = useState(false);
   const [approving, setApproving] = useState(false);
   const [approveMessage, setApproveMessage] = useState("");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -103,6 +105,63 @@ export function StudentDetailPanel({
     }
   };
 
+  // When the selected student or their latest license request changes, prefill
+  // the bus field if the request contains a busId (snapshot). In that case
+  // the field is locked and cannot be edited because the student is already
+  // associated with a bus.
+  useEffect(() => {
+    let cancelled = false;
+    setBusLocked(false);
+    setSelectedBus("");
+
+    async function resolveBus() {
+      const req = currentLicenseRequest;
+      if (!req) return;
+
+      const raw = req.busId as unknown;
+      if (!raw) return;
+
+      try {
+        // raw may be a string (objectId or identifier) or an object with _id
+        let id: string | null = null;
+        if (typeof raw === "string") {
+          id = raw;
+        } else if (typeof raw === "object" && raw !== null && "_id" in raw) {
+          id = (raw as any)._id as string;
+        }
+
+        // If id looks like an ObjectId (24 hex chars) try to find by _id
+        // otherwise, treat it as identifier and set directly.
+        if (id) {
+          const isObjectIdLike = /^[0-9a-fA-F]{24}$/.test(id);
+          if (isObjectIdLike) {
+            const buses = await busApi.list();
+            if (cancelled) return;
+            const found = (buses ?? []).find((b) => b._id === id);
+            if (found) {
+              setSelectedBus(found.identifier ?? "");
+              setBusLocked(true);
+              return;
+            }
+          } else {
+            // treat id as an identifier string
+            setSelectedBus(id);
+            setBusLocked(true);
+            return;
+          }
+        }
+      } catch {
+        // ignore and leave unlocked/default
+      }
+    }
+
+    void resolveBus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentLicenseRequest, selected]);
+
   if (!selected) {
     return (
       <section className="relative h-full min-h-0 rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 md:p-5 flex flex-col">
@@ -155,6 +214,7 @@ export function StudentDetailPanel({
           onApprove={handleApprove}
           onRejectOpen={onOpenRejectModal}
           onPrintSingle={onPrintSingle}
+            busLocked={busLocked}
         />
       </div>
 

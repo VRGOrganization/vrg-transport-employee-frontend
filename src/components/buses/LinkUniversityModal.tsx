@@ -79,12 +79,13 @@ export default function LinkUniversityModal({ open, currentSlots = [], onClose, 
 
         <div className="flex gap-3 mt-6">
           <button
+            type="button"
             onClick={onClose}
             className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
           >
             Cancelar
           </button>
-          <Button onClick={handleAdd} disabled={loading || universities.length === 0}>
+          <Button type="button" onClick={handleAdd} disabled={loading || universities.length === 0}>
             Vincular
           </Button>
         </div>

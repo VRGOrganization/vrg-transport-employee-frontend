@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EnrollmentPeriodModal } from "@/components/admin/EnrollmentPeriodModal";
-import { ReleaseConfirmModal } from "@/components/admin/ReleaseConfirmModal";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
@@ -74,11 +73,9 @@ export default function AdminEnrollmentPeriodPage() {
   const [periodSaving, setPeriodSaving] = useState(false);
   const [periodModalError, setPeriodModalError] = useState("");
 
-  const [releaseQuantity, setReleaseQuantity] = useState("1");
-  const [previewEntries, setPreviewEntries] = useState<WaitlistEntry[]>([]);
-  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [confirmLoading, setConfirmLoading] = useState(false);
-  const [confirmError, setConfirmError] = useState("");
+  // Nota: o fluxo de liberação por período foi removido. As liberações
+  // agora ocorrem por ônibus (patch /bus/:id/release-slots). Mantemos a
+  // exibição da fila, mas removemos o preview/confirm legados.
 
   const studentMap = useMemo(
     () => new Map(students.map((student) => [student._id, student])),
@@ -221,61 +218,7 @@ export default function AdminEnrollmentPeriodPage() {
     }
   };
 
-  const handlePreviewRelease = async () => {
-    if (!activePeriod) return;
-
-    const quantity = Number(releaseQuantity);
-    if (!Number.isInteger(quantity) || quantity < 1) {
-      setError("Informe uma quantidade válida para liberar vagas.");
-      return;
-    }
-
-    setConfirmError("");
-    setError("");
-
-    try {
-      const previewRequests = await employeeApi.post<LicenseRequestRecord[]>(
-        `/enrollment-period/${activePeriod._id}/release-slots`,
-        { quantity },
-      );
-
-      if (!previewRequests.length) {
-        setFeedback("Nenhuma solicitação elegível para promoção com a quantidade informada.");
-        return;
-      }
-
-      const mapped = previewRequests
-        .map(mapRequestToWaitlistEntry)
-        .sort((a, b) => a.filaPosition - b.filaPosition);
-
-      setPreviewEntries(mapped);
-      setConfirmModalOpen(true);
-    } catch (err: unknown) {
-      const apiError = err as { message?: string };
-      setError(apiError.message ?? "Falha ao gerar pré-visualização da liberação.");
-    }
-  };
-
-  const handleConfirmRelease = async () => {
-    if (!activePeriod || previewEntries.length === 0) return;
-
-    setConfirmLoading(true);
-    setConfirmError("");
-    try {
-      await employeeApi.post(`/enrollment-period/${activePeriod._id}/confirm-release`, {
-        requestIds: previewEntries.map((entry) => entry.request._id),
-      });
-      setConfirmModalOpen(false);
-      setPreviewEntries([]);
-      setFeedback("Liberação confirmada e notificações disparadas.");
-      await loadData();
-    } catch (err: unknown) {
-      const apiError = err as { message?: string };
-      setConfirmError(apiError.message ?? "Falha ao confirmar liberação de vagas.");
-    } finally {
-      setConfirmLoading(false);
-    }
-  };
+  // Note: preview/confirm release flow removed. Use the Bus UI for releases.
 
   return (
     <div className="flex min-h-screen bg-surface">
@@ -462,28 +405,9 @@ export default function AdminEnrollmentPeriodPage() {
                     </p>
                   </div>
 
-                  <div className="flex items-end gap-2">
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-on-surface-variant">
-                        Quantidade a liberar
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        step={1}
-                        value={releaseQuantity}
-                        onChange={(event) => setReleaseQuantity(event.target.value)}
-                        className="h-10 w-40 rounded-xl border border-outline-variant bg-surface px-3 text-sm text-on-surface"
-                      />
-                    </div>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => void handlePreviewRelease()}
-                      disabled={waitlistEntries.length === 0}
-                    >
-                      Pré-visualizar
-                    </Button>
+                  <div className="text-sm text-on-surface-variant">
+                    Liberação de vagas agora é feita por ônibus. Use a tela de Ônibus
+                    para liberar vagas por ônibus e promover a fila.
                   </div>
                 </div>
 
@@ -542,19 +466,7 @@ export default function AdminEnrollmentPeriodPage() {
         onSubmit={handleSavePeriod}
       />
 
-      <ReleaseConfirmModal
-        open={confirmModalOpen}
-        entries={previewEntries}
-        loading={confirmLoading}
-        error={confirmError}
-        onClose={() => {
-          if (confirmLoading) return;
-          setConfirmModalOpen(false);
-          setPreviewEntries([]);
-          setConfirmError("");
-        }}
-        onConfirm={handleConfirmRelease}
-      />
+      {/* Preview/confirm period-level release removed (use Bus UI) */}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { universityApi } from "@/lib/universityApi";
 import { cn } from "@/lib/utils";
 import type { Bus } from "@/types/university.types";
 import LinkUniversityModal from "./LinkUniversityModal";
@@ -56,6 +57,42 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
       setError("");
     }
   }, [open, initial]);
+
+  // If any slot is missing acronym/name (e.g. only have IDs), fetch universities to fill acronyms.
+  useEffect(() => {
+    if (!open) return;
+    // only run when there are slots with missing display data
+    const missing = slots.some((s) => !s.acronym && !s.name);
+    if (!missing) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await universityApi.list();
+        const arr = Array.isArray(res) ? res : (res as any)?.data ?? [];
+        const map: Record<string, { acronym?: string; name?: string }> = {};
+        arr.forEach((u: any) => {
+          if (u && u._id) map[u._id] = { acronym: u.acronym, name: u.name };
+        });
+        if (cancelled) return;
+        setSlots((prev) =>
+          prev.map((s) => ({
+            ...s,
+            acronym: s.acronym ?? map[s.universityId]?.acronym,
+            name: s.name ?? map[s.universityId]?.name,
+          }))
+        );
+      } catch (e) {
+        // ignore failures silently
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // only re-run when modal opens or slot list length changes
+  }, [open, slots.length]);
 
   if (!open) return null;
 
@@ -161,6 +198,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
               <option value="Manhã">Manhã</option>
               <option value="Tarde">Tarde</option>
               <option value="Noite">Noite</option>
+              <option value="Integral">Integral</option>
             </select>
           </div>
 
@@ -181,6 +219,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
                     </div>
                         <div className="flex items-center gap-2">
                           <button
+                            type="button"
                             onClick={() => handleMoveUp(s.universityId)}
                             disabled={s.priorityOrder <= 1}
                             className={cn(
@@ -192,6 +231,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
                             <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>arrow_upward</span>
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleMoveDown(s.universityId)}
                             disabled={s.priorityOrder >= slots.length}
                             className={cn(
@@ -202,13 +242,13 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
                           >
                             <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>arrow_downward</span>
                           </button>
-                          <button onClick={() => handleRemove(s.universityId)} className="text-red-500 text-sm">Remover</button>
+                          <button type="button" onClick={() => handleRemove(s.universityId)} className="text-red-500 text-sm">Remover</button>
                         </div>
                   </div>
                 ))
               )}
               <div>
-                <button onClick={() => setLinkOpen(true)} className="mt-2 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 text-sm">Vincular faculdade</button>
+                <button type="button" onClick={() => setLinkOpen(true)} className="mt-2 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 text-sm">Vincular faculdade</button>
               </div>
             </div>
           </div>
@@ -218,12 +258,14 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
 
         <div className="flex gap-3 mt-6">
           <button
+            type="button"
             onClick={onClose}
             className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
           >
             Cancelar
           </button>
           <button
+            type="button"
             onClick={handleSubmit}
             disabled={loading}
             className={cn(
