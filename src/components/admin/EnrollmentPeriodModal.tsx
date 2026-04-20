@@ -123,6 +123,9 @@ export function EnrollmentPeriodModal({
     return Math.max(periodFilled, minSlotsFromBuses ?? 0);
   }, [period, minSlotsFromBuses]);
 
+  const totalSlotsNumber = Number(form.totalSlots) || 0;
+  const showOverCapacityWarning = !loadingBusMin && (minSlotsFromBuses ?? 0) > 0 && totalSlotsNumber > (minSlotsFromBuses ?? 0);
+
   if (!open) return null;
 
   const setField = (field: keyof FormState, value: string) => {
@@ -246,7 +249,15 @@ export function EnrollmentPeriodModal({
                     <p className="mt-1 text-xs text-on-surface-variant">Carregando capacidades dos ônibus...</p>
                   ) : (
                     minSlotsFromBuses > 0 && (
-                      <p className="mt-1 text-xs text-on-surface-variant">Soma das capacidades dos ônibus: {minSlotsFromBuses} vagas.</p>
+                      <>
+                        {showOverCapacityWarning ? (
+                          <div className="mt-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                            A quantidade de vagas ({totalSlotsNumber}) é maior que a soma das capacidades dos ônibus ({minSlotsFromBuses}). Isso é permitido, mas verifique se é intencional.
+                          </div>
+                        ) : (
+                          <p className="mt-1 text-xs text-on-surface-variant">Soma das capacidades dos ônibus: {minSlotsFromBuses} vagas.</p>
+                        )}
+                      </>
                     )
                   )}
                 </>
