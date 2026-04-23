@@ -1,8 +1,7 @@
 import { Eye } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { ImageLightbox } from "@/components/cards/CardPageComponents";
 import { employeeApi } from "@/lib/employeeApi";
-import { busApi } from "@/lib/universityApi";
 import type {
   ImageRecord,
   LicenseRecord,
@@ -11,6 +10,7 @@ import type {
   PreviewItem,
   StudentRecord,
 } from "@/types/cards.types";
+import type { Bus } from "@/types/university.types";
 import { ApprovalFooter } from "./ApprovalFooter";
 import { DocumentsGrid } from "./DocumentsGrid";
 import { StudentInfoCard } from "./StudentInfoCard";
@@ -22,6 +22,7 @@ interface StudentDetailPanelProps {
   loadingSelected: boolean;
   currentLicense: LicenseRecord | null;
   currentLicenseRequest: LicenseRequestRecord | null;
+  selectedBus: Bus | null;
   pendingImagesByType: Partial<Record<PhotoType, string>>;
   profileImage: string | null;
   enrollmentImage: string | null;
@@ -39,6 +40,7 @@ export function StudentDetailPanel({
   loadingSelected,
   currentLicense,
   currentLicenseRequest,
+  selectedBus,
   pendingImagesByType,
   profileImage,
   enrollmentImage,
@@ -49,8 +51,6 @@ export function StudentDetailPanel({
   printingSingle,
   onPrintSingle,
 }: StudentDetailPanelProps) {
-  const [selectedBus, setSelectedBus] = useState("");
-  const [busLocked, setBusLocked] = useState(false);
   const [approving, setApproving] = useState(false);
   const [approveMessage, setApproveMessage] = useState("");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -82,9 +82,9 @@ export function StudentDetailPanel({
       setApproveMessage("Não é possível criar a carteirinha sem instituição no cadastro.");
       return;
     }
-    const normalized = selectedBus.trim();
+    const normalized = selectedBus?.identifier?.trim();
     if (!normalized) {
-      setApproveMessage("Defina a linha de ônibus antes de criar a carteirinha.");
+      setApproveMessage("Selecione um ônibus antes de criar a carteirinha.");
       return;
     }
     setApproving(true);
@@ -104,63 +104,6 @@ export function StudentDetailPanel({
       setApproving(false);
     }
   };
-
-  // When the selected student or their latest license request changes, prefill
-  // the bus field if the request contains a busId (snapshot). In that case
-  // the field is locked and cannot be edited because the student is already
-  // associated with a bus.
-  useEffect(() => {
-    let cancelled = false;
-    setBusLocked(false);
-    setSelectedBus("");
-
-    async function resolveBus() {
-      const req = currentLicenseRequest;
-      if (!req) return;
-
-      const raw = req.busId as unknown;
-      if (!raw) return;
-
-      try {
-        // raw may be a string (objectId or identifier) or an object with _id
-        let id: string | null = null;
-        if (typeof raw === "string") {
-          id = raw;
-        } else if (typeof raw === "object" && raw !== null && "_id" in raw) {
-          id = (raw as any)._id as string;
-        }
-
-        // If id looks like an ObjectId (24 hex chars) try to find by _id
-        // otherwise, treat it as identifier and set directly.
-        if (id) {
-          const isObjectIdLike = /^[0-9a-fA-F]{24}$/.test(id);
-          if (isObjectIdLike) {
-            const buses = await busApi.list();
-            if (cancelled) return;
-            const found = (buses ?? []).find((b) => b._id === id);
-            if (found) {
-              setSelectedBus(found.identifier ?? "");
-              setBusLocked(true);
-              return;
-            }
-          } else {
-            // treat id as an identifier string
-            setSelectedBus(id);
-            setBusLocked(true);
-            return;
-          }
-        }
-      } catch {
-        // ignore and leave unlocked/default
-      }
-    }
-
-    void resolveBus();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [currentLicenseRequest, selected]);
 
   if (!selected) {
     return (
@@ -205,16 +148,14 @@ export function StudentDetailPanel({
           currentLicense={currentLicense}
           currentLicenseRequest={currentLicenseRequest}
           selectedLicensePreview={selectedLicensePreview}
-          selectedBus={selectedBus}
+          selectedBusLabel={selectedBus?.identifier ?? ""}
           hasInstitution={!!selected.institution?.trim()}
           approving={approving}
           printingSingle={printingSingle}
           approveMessage={approveMessage}
-          onBusChange={setSelectedBus}
           onApprove={handleApprove}
           onRejectOpen={onOpenRejectModal}
           onPrintSingle={onPrintSingle}
-            busLocked={busLocked}
         />
       </div>
 

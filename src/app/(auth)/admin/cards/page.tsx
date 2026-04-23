@@ -15,12 +15,13 @@ import { StudentDetailPanel } from "@/components/cards/StudentDetailPanel";
 import { PdfPreviewModal } from "@/components/cards/PdfPreviewModal";
 import { RejectModal } from "@/components/cards/RejectModal";
 import { useStudentSelection } from "@/components/hooks/useStudentSelection";
+import type { Bus } from "@/types/university.types";
 
 export default function AdminCardsPage() {
   const { user, logout } = useEmployeeAuth();
 
   const [selectedBusId, setSelectedBusId] = useState<string | null>(null);
-  const [selectedBus, setSelectedBus] = useState(null);
+  const [selectedBus, setSelectedBus] = useState<Bus | null>(null);
 
   // load selected bus details (universitySlots) so StudentListPanel can apply priority filtering
   useEffect(() => {
@@ -58,7 +59,7 @@ export default function AdminCardsPage() {
     stats,
     reload,
   } =
-    useCardsData(selectedBusId);
+    useCardsData(selectedBus);
 
   const {
     selected,
@@ -125,27 +126,32 @@ export default function AdminCardsPage() {
                 ) : (
                   <>
                     <BusSelectorPanel value={selectedBusId} onChange={setSelectedBusId} className="mb-4" />
-
-                    <StudentListPanel
-                      students={students}
-                      licenseRequests={licenseRequests}
-                      licensedStudentIds={licensedStudentIds}
-                      pendingStudentIds={pendingStudentIds}
-                      waitlistedStudentIds={waitlistedStudentIds}
-                      selectedStudent={selected}
-                      bus={selectedBus}
-                      selectedForBatch={selectedForBatch}
-                      printingBatch={printingBatch}
-                      loading={loading}
-                      error={error}
-                      printableCardsByStudentId={printableCardsByStudentId}
-                      onSelectStudent={selectStudent}
-                      onToggleBatch={toggleBatchSelection}
-                      onPrintBatch={() =>
-                        handlePrintBatch(printableCardsByStudentId, setApproveMessage)
-                      }
-                      largeItems={true}
-                    />
+                    {!selectedBus ? (
+                      <div className="rounded-2xl border border-outline-variant bg-surface p-4 text-sm text-on-surface-variant">
+                        Carregando ônibus selecionado...
+                      </div>
+                    ) : (
+                      <StudentListPanel
+                        students={students}
+                        licenseRequests={licenseRequests}
+                        licensedStudentIds={licensedStudentIds}
+                        pendingStudentIds={pendingStudentIds}
+                        waitlistedStudentIds={waitlistedStudentIds}
+                        selectedStudent={selected}
+                        bus={selectedBus}
+                        selectedForBatch={selectedForBatch}
+                        printingBatch={printingBatch}
+                        loading={loading}
+                        error={error}
+                        printableCardsByStudentId={printableCardsByStudentId}
+                        onSelectStudent={selectStudent}
+                        onToggleBatch={toggleBatchSelection}
+                        onPrintBatch={() =>
+                          handlePrintBatch(printableCardsByStudentId, setApproveMessage)
+                        }
+                        largeItems={true}
+                      />
+                    )}
                   </>
                 )}
               </div>
@@ -156,6 +162,7 @@ export default function AdminCardsPage() {
                 loadingSelected={loadingSelected}
                 currentLicense={currentLicense}
                 currentLicenseRequest={currentLicenseRequest}
+                selectedBus={selectedBus}
                 pendingImagesByType={pendingImagesByType}
                 profileImage={profileImage}
                 enrollmentImage={enrollmentImage}

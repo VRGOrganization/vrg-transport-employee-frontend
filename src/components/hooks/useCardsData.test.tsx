@@ -17,7 +17,7 @@ describe("useCardsData", () => {
     getMock.mockReset();
   });
 
-  it("filtra pedidos pelo busId quando um ônibus é selecionado", async () => {
+  it("filtra pedidos pelo ônibus selecionado quando um ônibus é selecionado", async () => {
     getMock.mockImplementation((path: string) => {
       if (path === "/student") {
         return Promise.resolve([
@@ -45,8 +45,24 @@ describe("useCardsData", () => {
             licenseId: null,
             enrollmentPeriodId: "period-1",
             filaPosition: null,
-            busId: "bus-1",
+            busId: null,
+            accessBusIdentifiers: ["BUS-1"],
             createdAt: "2026-04-19T10:00:00.000Z",
+          },
+          {
+            _id: "request-1-approved",
+            studentId: "student-1",
+            type: "initial",
+            changedDocuments: [],
+            status: "approved",
+            rejectionReason: null,
+            rejectedAt: null,
+            licenseId: "license-1",
+            enrollmentPeriodId: "period-1",
+            filaPosition: null,
+            busId: { _id: "bus-1" },
+            accessBusIdentifiers: ["BUS-1", "BUS-2"],
+            createdAt: "2026-04-19T10:02:00.000Z",
           },
           {
             _id: "request-2",
@@ -59,7 +75,8 @@ describe("useCardsData", () => {
             licenseId: null,
             enrollmentPeriodId: "period-1",
             filaPosition: null,
-            busId: "bus-2",
+            busId: null,
+            accessBusIdentifiers: ["BUS-2"],
             createdAt: "2026-04-19T10:01:00.000Z",
           },
         ]);
@@ -68,7 +85,8 @@ describe("useCardsData", () => {
       return Promise.resolve([]);
     });
 
-    const { result } = renderHook(() => useCardsData("bus-1"));
+    const bus = { _id: "bus-1", identifier: "BUS-1" } as const;
+    const { result } = renderHook(() => useCardsData(bus as any));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -81,5 +99,49 @@ describe("useCardsData", () => {
     expect(result.current.pendingStudentIds.has("student-2")).toBe(false);
     expect(result.current.stats.pending).toBe(1);
     expect(result.current.stats.total).toBe(1);
+  });
+
+  it("nao mostra aprovacao de outro onibus quando o request aprovado pertence a um bus diferente", async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path === "/student") {
+        return Promise.resolve([
+          { _id: "student-1", name: "Aluno 1", email: "a@a.com", active: true },
+        ]);
+      }
+
+      if (path === "/license/all") {
+        return Promise.resolve([]);
+      }
+
+      if (path === "/license-request/all") {
+        return Promise.resolve([
+          {
+            _id: "request-approved",
+            studentId: "student-1",
+            type: "initial",
+            changedDocuments: [],
+            status: "approved",
+            rejectionReason: null,
+            rejectedAt: null,
+            licenseId: "license-1",
+            enrollmentPeriodId: "period-1",
+            filaPosition: null,
+            busId: { _id: "bus-2" },
+            accessBusIdentifiers: ["BUS-1", "BUS-2"],
+            createdAt: "2026-04-19T10:03:00.000Z",
+          },
+        ]);
+      }
+
+      return Promise.resolve([]);
+    });
+
+    const bus = { _id: "bus-1", identifier: "BUS-1" } as const;
+    const { result } = renderHook(() => useCardsData(bus as any));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.students).toHaveLength(0);
+    expect(result.current.licenseRequests).toHaveLength(0);
   });
 });

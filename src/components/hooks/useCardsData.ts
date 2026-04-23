@@ -6,6 +6,7 @@ import {
   StudentRecord,
   StudentsResponse,
 } from "@/types/cards.types";
+import type { Bus } from "@/types/university.types";
 
 interface UseCardsDataReturn {
   students: StudentRecord[];
@@ -40,7 +41,7 @@ function resolveId(value: unknown): string | null {
   return null;
 }
 
-export function useCardsData(busId?: string | null): UseCardsDataReturn {
+export function useCardsData(bus?: Bus | null): UseCardsDataReturn {
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [licenses, setLicenses] = useState<LicenseRecord[]>([]);
   const [licenseRequests, setLicenseRequests] = useState<LicenseRequestRecord[]>([]);
@@ -63,9 +64,22 @@ export function useCardsData(busId?: string | null): UseCardsDataReturn {
 
       setLicenses(resolvedLicenses);
 
-      if (busId) {
+      const busId = bus?._id ?? null;
+      const busIdentifier = bus?.identifier ?? null;
+
+      if (busId || busIdentifier) {
         const filteredRequests = resolvedRequests.filter(
-          (request) => resolveId(request.busId) === busId,
+          (request) => {
+            const requestBusId = resolveId(request.busId);
+            if (request.status === "approved") {
+              return requestBusId === busId;
+            }
+
+            return (
+              requestBusId === busId ||
+              (busIdentifier ? (request.accessBusIdentifiers ?? []).includes(busIdentifier) : false)
+            );
+          },
         );
         const busStudentIds = new Set(filteredRequests.map((request) => request.studentId));
         const busStudents = resolvedStudents.filter((student) => busStudentIds.has(student._id));
@@ -81,7 +95,7 @@ export function useCardsData(busId?: string | null): UseCardsDataReturn {
     } finally {
       setLoading(false);
     }
-  }, [busId]);
+  }, [bus]);
 
   useEffect(() => {
     reload();

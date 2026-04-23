@@ -159,7 +159,7 @@ export default function BusSelectorPanel({
                 Voltar
               </button>
             </div>
-            {selected?.waitlistedCount > 0 && (
+            {(selected?.waitlistedCount ?? 0) > 0 && (
               <div>
                 <button
                   type="button"

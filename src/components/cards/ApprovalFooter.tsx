@@ -7,36 +7,32 @@ interface ApprovalFooterProps {
   currentLicense: LicenseRecord | null;
   currentLicenseRequest: LicenseRequestRecord | null;
   selectedLicensePreview: string | null;
-  selectedBus: string;
+  selectedBusLabel: string;
   hasInstitution: boolean;
   approving: boolean;
   printingSingle: boolean;
   approveMessage: string;
-  onBusChange: (value: string) => void;
   onApprove: () => void;
   onRejectOpen: () => void;
   onPrintSingle: () => void;
-  busLocked?: boolean;
 }
 
 export function ApprovalFooter({
   currentLicense,
   currentLicenseRequest,
   selectedLicensePreview,
-  selectedBus,
+  selectedBusLabel,
   hasInstitution,
   approving,
   printingSingle,
   approveMessage,
-  onBusChange,
   onApprove,
   onRejectOpen,
   onPrintSingle,
-  busLocked = false,
 }: ApprovalFooterProps) {
   const isPending = currentLicenseRequest?.status === "pending";
   const isWaitlisted = currentLicenseRequest?.status === "waitlisted";
-  const canApprove = isPending && hasInstitution && !!selectedBus.trim();
+  const canApprove = isPending && hasInstitution && !!selectedBusLabel.trim();
   const canPrint =
     !!selectedLicensePreview && !isPdfDataUrl(selectedLicensePreview ?? "");
 
@@ -44,20 +40,13 @@ export function ApprovalFooter({
     <div className="border-t border-outline-variant bg-surface-container-lowest pt-3 pb-4 px-4 space-y-3">
       <div>
         <label className="mb-2 block text-sm font-semibold text-on-surface">
-          Linha de ônibus para a carteirinha
+          Ônibus selecionado
         </label>
-        <input
-          value={selectedBus}
-          onChange={(e) => onBusChange(e.target.value)}
-          placeholder="Ex.: 205"
-          maxLength={10}
-          disabled={!isPending || busLocked}
-          readOnly={busLocked}
-          className={`h-10 w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface outline-none focus:border-primary ${busLocked ? 'opacity-80 cursor-not-allowed' : ''}`}
-        />
-        {/* Mensagem de aviso removida conforme solicitado; campo permanece bloqueado quando `busLocked` for true. */}
+        <div className="flex h-10 items-center rounded-xl border border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface">
+          {selectedBusLabel || "Selecione um ônibus acima para continuar"}
+        </div>
         <p className="mt-1 text-[11px] text-on-surface-variant">
-          Esse valor será usado no campo de ônibus da carteirinha.
+          O ônibus vem do filtro selecionado na lista e não pode ser alterado neste painel.
         </p>
         {isWaitlisted && (
           <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-700">

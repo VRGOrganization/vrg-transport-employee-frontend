@@ -42,6 +42,7 @@ export interface LicenseRequestRecord {
   filaPosition?: number | null;
   busId?: string | { _id: string } | null;
   universityId?: string | { _id: string } | null;
+  accessBusIdentifiers?: string[];
   createdAt: string;
 }
 
