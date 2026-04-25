@@ -221,13 +221,13 @@ export default function AdminEnrollmentPeriodPage() {
   // Note: preview/confirm release flow removed. Use the Bus UI for releases.
 
   return (
-    <div className="flex min-h-screen bg-surface">
+    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
       <SideNav activePath="/admin/enrollment-period" onLogout={logout} />
 
-      <div className="ml-64 flex flex-1 flex-col">
+      <div className=" flex flex-1 flex-col">
         <TopBar user={user} />
 
-        <main className="mt-16 flex flex-1 flex-col bg-surface px-6 py-8 md:px-10">
+        <main className="flex flex-1 flex-col bg-surface px-6 py-8 md:px-10">
           <div className="mx-auto w-full max-w-7xl space-y-6">
             <header className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -470,3 +470,6 @@ export default function AdminEnrollmentPeriodPage() {
     </div>
   );
 }
+
+
+

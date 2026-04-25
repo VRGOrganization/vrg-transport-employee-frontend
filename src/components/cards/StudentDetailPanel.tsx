@@ -10,7 +10,7 @@ import type {
   PreviewItem,
   StudentRecord,
 } from "@/types/cards.types";
-import type { Bus } from "@/types/university.types";
+import type { BusRoute } from "@/types/university.types";
 import { ApprovalFooter } from "./ApprovalFooter";
 import { DocumentsGrid } from "./DocumentsGrid";
 import { StudentInfoCard } from "./StudentInfoCard";
@@ -22,7 +22,7 @@ interface StudentDetailPanelProps {
   loadingSelected: boolean;
   currentLicense: LicenseRecord | null;
   currentLicenseRequest: LicenseRequestRecord | null;
-  selectedBus: Bus | null;
+  selectedBusRoute: BusRoute | null;
   pendingImagesByType: Partial<Record<PhotoType, string>>;
   profileImage: string | null;
   enrollmentImage: string | null;
@@ -40,7 +40,7 @@ export function StudentDetailPanel({
   loadingSelected,
   currentLicense,
   currentLicenseRequest,
-  selectedBus,
+  selectedBusRoute,
   pendingImagesByType,
   profileImage,
   enrollmentImage,
@@ -82,9 +82,9 @@ export function StudentDetailPanel({
       setApproveMessage("Não é possível criar a carteirinha sem instituição no cadastro.");
       return;
     }
-    const normalized = selectedBus?.identifier?.trim();
-    if (!normalized) {
-      setApproveMessage("Selecione um ônibus antes de criar a carteirinha.");
+    const selectedRouteId = selectedBusRoute?._id?.trim();
+    if (!selectedRouteId) {
+      setApproveMessage("Selecione uma rota antes de criar a carteirinha.");
       return;
     }
     setApproving(true);
@@ -92,7 +92,7 @@ export function StudentDetailPanel({
     try {
       await employeeApi.patch(`/license-request/approve/${currentLicenseRequest._id}`, {
         institution: selected.institution,
-        bus: normalized,
+        busRouteId: selectedRouteId,
         ...(profileImage ? { photo: profileImage } : {}),
       });
       setApproveMessage("Carteirinha criada com sucesso.");
@@ -148,7 +148,7 @@ export function StudentDetailPanel({
           currentLicense={currentLicense}
           currentLicenseRequest={currentLicenseRequest}
           selectedLicensePreview={selectedLicensePreview}
-          selectedBusLabel={selectedBus?.identifier ?? ""}
+          selectedBusRouteLabel={selectedBusRoute?.lineNumber ?? ""}
           hasInstitution={!!selected.institution?.trim()}
           approving={approving}
           printingSingle={printingSingle}

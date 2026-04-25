@@ -10,14 +10,19 @@ export default function AdminInfoPage() {
   const { user } = useEmployeeAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
       <SideNav />
-      <TopBar user={user} />
 
-      <main className="ml-64 flex-1 p-8">
-        <StatsDashboard />
-      </main>
+      <div className="min-w-0 flex flex-col">
+        <TopBar user={user} />
 
+        <main className="flex-1 p-8">
+          <StatsDashboard />
+        </main>
+
+        <Footer />
+      </div>
     </div>
   );
 }
+

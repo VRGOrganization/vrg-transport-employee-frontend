@@ -7,7 +7,7 @@ interface ApprovalFooterProps {
   currentLicense: LicenseRecord | null;
   currentLicenseRequest: LicenseRequestRecord | null;
   selectedLicensePreview: string | null;
-  selectedBusLabel: string;
+  selectedBusRouteLabel: string;
   hasInstitution: boolean;
   approving: boolean;
   printingSingle: boolean;
@@ -21,7 +21,7 @@ export function ApprovalFooter({
   currentLicense,
   currentLicenseRequest,
   selectedLicensePreview,
-  selectedBusLabel,
+  selectedBusRouteLabel,
   hasInstitution,
   approving,
   printingSingle,
@@ -32,21 +32,20 @@ export function ApprovalFooter({
 }: ApprovalFooterProps) {
   const isPending = currentLicenseRequest?.status === "pending";
   const isWaitlisted = currentLicenseRequest?.status === "waitlisted";
-  const canApprove = isPending && hasInstitution && !!selectedBusLabel.trim();
-  const canPrint =
-    !!selectedLicensePreview && !isPdfDataUrl(selectedLicensePreview ?? "");
+  const canApprove = isPending && hasInstitution && !!selectedBusRouteLabel.trim();
+  const canPrint = !!selectedLicensePreview && !isPdfDataUrl(selectedLicensePreview ?? "");
 
   return (
     <div className="border-t border-outline-variant bg-surface-container-lowest pt-3 pb-4 px-4 space-y-3">
       <div>
         <label className="mb-2 block text-sm font-semibold text-on-surface">
-          Ônibus selecionado
+          Rota selecionada
         </label>
         <div className="flex h-10 items-center rounded-xl border border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface">
-          {selectedBusLabel || "Selecione um ônibus acima para continuar"}
+          {selectedBusRouteLabel || "Selecione uma rota acima para continuar"}
         </div>
         <p className="mt-1 text-[11px] text-on-surface-variant">
-          O ônibus vem do filtro selecionado na lista e não pode ser alterado neste painel.
+          A rota vem do catálogo selecionado acima e será usada na aprovação.
         </p>
         {isWaitlisted && (
           <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-700">

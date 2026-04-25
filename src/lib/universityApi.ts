@@ -1,5 +1,11 @@
 import { employeeApi } from "@/lib/employeeApi";
-import type { University, Course, Bus, BusStudent } from "@/types/university.types";
+import type {
+  University,
+  Course,
+  Bus,
+  BusStudent,
+  BusRoute,
+} from "@/types/university.types";
 
 // ── Universities ──────────────────────────────────────────────
 
@@ -60,4 +66,12 @@ export const busApi = {
     const qs = params.length ? `?${params.join("&")}` : "";
     return employeeApi.patch<unknown>(`/bus/${encodeURIComponent(busId)}/release-slots${qs}`, undefined);
   },
+};
+
+// â”€â”€ Bus Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+export const busRouteApi = {
+  list: () => employeeApi.get<BusRoute[]>("/bus-route"),
+  listInactive: () => employeeApi.get<BusRoute[]>("/bus-route/inactive"),
+  getById: (id: string) => employeeApi.get<BusRoute>(`/bus-route/${id}`),
 };

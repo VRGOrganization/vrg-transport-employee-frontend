@@ -56,3 +56,18 @@ export interface BusStudent {
   busId?: string;
   universityId?: string;
 }
+
+export interface BusRouteDestination {
+  name: string;
+  nameNormalized?: string;
+  active: boolean;
+}
+
+export interface BusRoute {
+  _id: string;
+  lineNumber: string;
+  destinations: BusRouteDestination[];
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

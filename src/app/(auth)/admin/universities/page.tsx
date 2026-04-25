@@ -109,13 +109,13 @@ export default function UniversitiesPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-surface">
+    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
       <SideNav activePath="/admin/universities" onLogout={logout} />
 
-      <div className="flex-1 ml-64 flex flex-col">
+      <div className="min-w-0 flex flex-col">
         <TopBar user={user} />
 
-        <main className="mt-16 p-8 min-h-[calc(100vh-4rem)]">
+        <main className="p-8 min-h-[calc(100vh-4rem)]">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -288,3 +288,5 @@ export default function UniversitiesPage() {
     </div>
   );
 }
+
+

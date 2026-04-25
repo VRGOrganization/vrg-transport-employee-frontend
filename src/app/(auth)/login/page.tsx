@@ -11,7 +11,7 @@ export default function EmployeeAdminLoginPage() {
           <EmployeeAdminLoginForm />
         </div>
         <div 
-        className="absolute bottom-0 left-0 w-full">
+        className="mt-auto w-full">
           <Footer/>
         </div>
       </main>
