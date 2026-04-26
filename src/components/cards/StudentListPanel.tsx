@@ -1,5 +1,5 @@
 import { Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import type {
   LicenseRequestRecord,
   PrintableCard,
@@ -48,6 +48,16 @@ export function StudentListPanel({
 }: StudentListPanelProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<StudentFilter>("pending");
+
+  // Clear search when filter is not 'all' to avoid stale queries
+  // and ensure search only applies when 'all' is active.
+  // Use effect to avoid calling setState during render.
+  useEffect(() => {
+    // keep search only when filter is 'all' or 'with-card' (Aprovados)
+    if (filter !== "all" && filter !== "with-card" && search) {
+      setSearch("");
+    }
+  }, [filter]);
 
   const cardRelatedStudentIds = useMemo(() => {
     const ids = new Set<string>();
@@ -113,7 +123,7 @@ export function StudentListPanel({
   }, [bus, licenseRequests, filter]);
 
   const filteredStudents = useMemo(() => {
-    const normalized = search.trim().toLowerCase();
+    const normalized = (filter === "all" || filter === "with-card") ? search.trim().toLowerCase() : "";
     return students
       .filter((s) => s.active)
       .filter((s) => {

@@ -6,7 +6,6 @@ import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { useCardsData } from "@/components/hooks/useCardsData";
 import BusSelectorPanel from "@/components/buses/BusSelectorPanel";
-import BusRouteSelectorPanel from "@/components/buses/BusRouteSelectorPanel";
 import { busApi } from "@/lib/universityApi";
 import { usePdfPrint } from "@/components/hooks/usePdfPrint";
 import { CardsPageHeader } from "@/components/cards/CardsPageHeader";
@@ -39,6 +38,7 @@ export default function AdminCardsPage() {
         const arr = Array.isArray(list) ? list : (list as any)?.data ?? [];
         const found = arr.find((b: any) => b._id === selectedBusId) ?? null;
         if (!cancelled) setSelectedBus(found);
+        if (!cancelled) setSelectedBusRoute(found as unknown as BusRoute);
       } catch {
         if (!cancelled) setSelectedBus(null);
       }
@@ -126,11 +126,7 @@ export default function AdminCardsPage() {
                       onChange={setSelectedBusId}
                       className="mb-4"
                     />
-                    <BusRouteSelectorPanel
-                      value={selectedBusRoute?._id ?? null}
-                      onChange={setSelectedBusRoute}
-                      className="mb-4"
-                    />
+                    {/* Rota para aprovação removida — usamos o ônibus selecionado como rota */}
                     {!selectedBus ? (
                       <div className="rounded-2xl border border-outline-variant bg-surface p-4 text-sm text-on-surface-variant">
                         Carregando ônibus selecionado...

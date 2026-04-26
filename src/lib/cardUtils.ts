@@ -104,7 +104,7 @@ export async function buildCardsPdfUrl(cards: PrintableCard[], _title: string): 
 
   const cardW = 171.2;
   const cardH = 53.98;
-  const cutLineGap = 1;
+  const cutLineGap = 3;
   const blockHeight = cardH + cutLineGap;
 
   const offsetX = (pageWidth - cardW) / 2;

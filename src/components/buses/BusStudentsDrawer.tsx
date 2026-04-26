@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { busApi } from "@/lib/universityApi";
+import { busApi, universityApi } from "@/lib/universityApi";
 import type { Bus, BusStudent } from "@/types/university.types";
 import { cn } from "@/lib/utils";
+import { Bus as BusIcon, Users, UserX, X } from "lucide-react";
 
 interface Props {
   bus: Bus | null;
@@ -22,6 +23,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [universityCache, setUniversityCache] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!bus) return;
@@ -33,12 +35,34 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
       .finally(() => setLoading(false));
   }, [bus]);
 
+  // preload acronyms for any university IDs present on the bus
+  useEffect(() => {
+    if (!bus) return;
+    const ids: string[] = [];
+    (bus.universitySlots ?? []).forEach((s) => {
+      if (typeof s.universityId === "string") ids.push(s.universityId);
+      else if (s.universityId?._id) ids.push(s.universityId._id);
+    });
+    (bus.universityIds ?? []).forEach((u: any) => {
+      if (typeof u === "string") ids.push(u);
+      else if (u?._id) ids.push(u._id);
+    });
+    const unique = Array.from(new Set(ids)).filter((i) => !!i && !universityCache[i]);
+    if (unique.length === 0) return;
+    Promise.all(unique.map((id) => universityApi.getById(id).then((u) => ({ id, acronym: u.acronym })).catch(() => ({ id, acronym: id })) ) )
+      .then((arr) => {
+        const next = { ...universityCache };
+        arr.forEach((r) => { next[r.id] = r.acronym; });
+        setUniversityCache(next);
+      });
+  }, [bus, setUniversityCache]);
+
   if (!bus) return null;
 
   const filledSlotsTotal = bus.filledSlotsTotal ?? students.length;
 
   const grouped = students.reduce((acc, s) => {
-    const key = s.universityId ?? "__unknown";
+    const key = typeof s.universityId === "string" ? s.universityId : (s.universityId?._id ?? "__unknown");
     if (!acc[key]) acc[key] = [];
     acc[key].push(s);
     return acc;
@@ -47,6 +71,22 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
   const orderedSlots = (bus.universitySlots ?? []).slice().sort((a, b) => (a.priorityOrder ?? 0) - (b.priorityOrder ?? 0));
   const unknownKey = "__unknown";
   const unknownStudents = grouped[unknownKey] ?? [];
+
+  function getAcronym(u: any) {
+    if (!u) return "";
+    if (typeof u === "string") {
+      // if cached, return
+      if (universityCache[u]) return universityCache[u];
+      // try find in slots where object present
+      const found = (bus.universitySlots ?? []).find(s => typeof s.universityId !== "string" && s.universityId._id === u);
+      if (found && typeof found.universityId !== "string") return found.universityId.acronym ?? u;
+      const found2 = (bus.universityIds ?? []).find((x: any) => typeof x !== "string" && x._id === u);
+      if (found2 && typeof found2 !== "string") return found2.acronym ?? u;
+      // fallback to raw id until cache resolves
+      return u;
+    }
+    return u.acronym ?? u._id ?? "";
+  }
 
   return (
     <>
@@ -63,9 +103,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <span className="material-symbols-outlined text-blue-600" style={{ fontSize: "20px" }}>
-                  directions_bus
-                </span>
+                <BusIcon className="text-blue-600 h-5 w-5" />
               </div>
                 <div>
                 <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -111,7 +149,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
                 onClick={onClose}
                 className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
-                <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>close</span>
+                <X className="h-5 w-5" />
               </button>
             </div>
           </div>
@@ -121,11 +159,11 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
           {(bus.universitySlots ?? []).length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {orderedSlots.map((s) => (
-                <span
+                  <span
                   key={typeof s.universityId === "string" ? s.universityId : s.universityId._id}
                   className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300"
                 >
-                  {typeof s.universityId === "string" ? s.universityId : s.universityId.acronym}
+                  {getAcronym(s.universityId)}
                   <span className="ml-2 text-xxs text-slate-400">P{s.priorityOrder}{s.filledSlots != null ? ` • ${s.filledSlots}` : ""}</span>
                 </span>
               ))}
@@ -137,7 +175,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
                   key={typeof u === "string" ? u : u._id}
                   className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300"
                 >
-                  {typeof u === "string" ? u : u.acronym}
+                  {getAcronym(u)}
                 </span>
               ))}
             </div>
@@ -147,9 +185,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
         {/* Contador */}
         <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-700/50">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-slate-400" style={{ fontSize: "18px" }}>
-              groups
-            </span>
+            <Users className="text-slate-400 h-4 w-4" />
             <p className="text-sm text-slate-600 dark:text-slate-400">
               <span className="font-bold text-slate-800 dark:text-slate-100 text-base">
                 {loading ? "—" : students.length}
@@ -169,7 +205,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
             </div>
           ) : students.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-300 dark:text-slate-600">
-              <span className="material-symbols-outlined text-5xl mb-3">person_off</span>
+              <UserX className="h-12 w-12 mb-3" />
               <p className="text-sm font-medium text-slate-400">Nenhum aluno neste ônibus</p>
             </div>
           ) : (
@@ -180,7 +216,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
                   const items = grouped[sid] ?? [];
                   return (
                     <div key={sid}>
-                      <h4 className="text-xs font-medium text-slate-500 mb-2">P{slot.priorityOrder} — {typeof slot.universityId === "string" ? slot.universityId : slot.universityId.acronym} ({items.length})</h4>
+                      <h4 className="text-xs font-medium text-slate-500 mb-2">P{slot.priorityOrder} — {getAcronym(slot.universityId)} ({items.length})</h4>
                       {items.length > 0 ? (
                         <ul className="space-y-2">
                           {items.map((student) => (
@@ -200,7 +236,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
                                 <p className="text-xs text-slate-400 truncate">{student.email}</p>
                               </div>
                               {student.shift && (
-                                <span className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                                <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
                                   {SHIFT_LABELS[student.shift] ?? student.shift}
                                 </span>
                               )}
@@ -236,7 +272,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
                           <p className="text-xs text-slate-400 truncate">{student.email}</p>
                         </div>
                         {student.shift && (
-                          <span className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                          <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
                             {SHIFT_LABELS[student.shift] ?? student.shift}
                           </span>
                         )}

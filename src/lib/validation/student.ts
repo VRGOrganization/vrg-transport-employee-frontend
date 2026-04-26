@@ -38,7 +38,7 @@ export const studentCreateSchema = studentBaseSchema
       .min(1, "Confirme a senha"),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "As senhas nao coincidem",
+    message: "As senhas não coincidem",
     path: ["confirmPassword"],
   });
 
