@@ -34,7 +34,7 @@ export default function AdminCardsPage() {
 
     (async () => {
       try {
-        const list = await busApi.list();
+        const list = await busApi.listWithQueueCounts();
         const arr = Array.isArray(list) ? list : (list as any)?.data ?? [];
         const found = arr.find((b: any) => b._id === selectedBusId) ?? null;
         if (!cancelled) setSelectedBus(found);
@@ -72,6 +72,8 @@ export default function AdminCardsPage() {
     profileImage,
     enrollmentImage,
     scheduleImage,
+    governmentImage,
+    proofOfResidenceImage,
     selectedLicensePreview,
     selectStudent,
   } = useStudentSelection(licenses, licenseRequests);
@@ -168,6 +170,8 @@ export default function AdminCardsPage() {
                 profileImage={profileImage}
                 enrollmentImage={enrollmentImage}
                 scheduleImage={scheduleImage}
+                governmentImage={governmentImage}
+                proofOfResidenceImage={proofOfResidenceImage}
                 selectedLicensePreview={selectedLicensePreview}
                 onReload={reload}
                 onOpenRejectModal={() => setRejectModalOpen(true)}

@@ -2,7 +2,9 @@ export type PhotoType =
   | "ProfilePhoto"
   | "EnrollmentProof"
   | "CourseSchedule"
-  | "LicenseImage";
+  | "LicenseImage"
+  | "GovernmentId"
+  | "ProofOfResidence";
 
 export interface StudentRecord {
   _id: string;
@@ -102,4 +104,6 @@ export const PHOTO_TYPE_LABELS: Record<PhotoType, string> = {
   EnrollmentProof: "Comprovante de Matrícula",
   CourseSchedule: "Grade Horária",
   LicenseImage: "Carteirinha",
+  GovernmentId: "Documento de identidade",
+  ProofOfResidence: "Comprovante de residência",
 };
