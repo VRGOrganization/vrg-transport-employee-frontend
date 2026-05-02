@@ -71,3 +71,23 @@ export interface BusRoute {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface BusQueueSummarySlot {
+  universityId: string;
+  priorityOrder: number;
+  filledSlots: number;
+  pendingCount: number;
+  waitlistedCount: number;
+}
+
+export interface BusQueueSummary {
+  _id: string;
+  identifier: string;
+  shift: string | null;
+  capacity: number | null;
+  filledSlotsTotal: number;
+  availableSlots: number | null;
+  pendingRequests: unknown[];
+  waitlistedRequests: unknown[];
+  universitySlots?: BusQueueSummarySlot[];
+}

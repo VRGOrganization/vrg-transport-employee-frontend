@@ -5,6 +5,7 @@ import type {
   Bus,
   BusStudent,
   BusRoute,
+  BusQueueSummary,
 } from "@/types/university.types";
 
 // ── Universities ──────────────────────────────────────────────
@@ -66,6 +67,12 @@ export const busApi = {
     const qs = params.length ? `?${params.join("&")}` : "";
     return employeeApi.patch<unknown>(`/bus/${encodeURIComponent(busId)}/release-slots${qs}`, undefined);
   },
+  // Resumo detalhado da fila de um ônibus (pendentes + waitlisted por universidade)
+  getQueueSummary: (busId: string) =>
+    employeeApi.get<BusQueueSummary>(`/bus/${busId}/queue-summary`),
+  // Recalcula filledSlots com base nos alunos reais (operação de manutenção)
+  resyncFilledSlots: (busId: string) =>
+    employeeApi.patch<Bus>(`/bus/${busId}/resync-filled-slots`, undefined),
 };
 
 // â”€â”€ Bus Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
