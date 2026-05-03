@@ -198,7 +198,6 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
               <option value="Manhã">Manhã</option>
               <option value="Tarde">Tarde</option>
               <option value="Noite">Noite</option>
-              <option value="Integral">Integral</option>
             </select>
           </div>
 

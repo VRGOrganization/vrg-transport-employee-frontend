@@ -249,66 +249,57 @@ export function EnrollmentPeriodModal({
     <>
       {/* FIX: Scoped styles — no more conflicting global selectors */}
       <style>{`
+        /* react-day-picker v9 CSS variables */
         .edp-picker {
           --rdp-accent-color: #003f87;
-          --rdp-background-color: #d7e2ff;
-          --rdp-accent-color-dark: #4d9ef5;
-          --rdp-background-color-dark: #1a3560;
+          --rdp-accent-background-color: #d7e2ff;
+          --rdp-day-height: 36px;
+          --rdp-day-width: 36px;
+          --rdp-day_button-height: 34px;
+          --rdp-day_button-width: 34px;
           width: 100%;
         }
 
-        /* Navigation and caption */
-        .edp-picker .rdp-nav { display: flex; align-items: center; gap: 4px; }
-        .edp-picker .rdp-caption_label { font-size: 14px; font-weight: 600; }
-
-        /* Months container — grid keeps months on a single row without overflow */
+        /* Months container — override fit-content and force grid layout */
         .edp-picker .rdp-months {
-          display: grid;
+          display: grid !important;
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 16px;
           width: 100%;
+          max-width: 100% !important;
         }
 
         /* Each month fills its grid cell */
         .edp-picker .rdp-month { width: 100%; min-width: 0; }
 
-        /* Day cells */
-        .edp-picker .rdp-day {
-          width: 36px;
-          height: 36px;
-          font-size: 13px;
-          border-radius: 50%;
-        }
-
-        /* Weekday headers */
-        .edp-picker .rdp-head_cell {
+        /* Weekday headers — v9 uses .rdp-weekday instead of .rdp-head_cell */
+        .edp-picker .rdp-weekday {
           font-size: 11px;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.04em;
-          width: 36px;
         }
 
-        /* Range middle days: square, not round */
-        .edp-picker .rdp-day_range_middle {
-          border-radius: 0 !important;
-        }
-
-        /* Table layout fix — prevent cells from overflowing */
-        .edp-picker table {
+        /* Table layout fix — v9 uses .rdp-month_grid instead of table */
+        .edp-picker .rdp-month_grid {
           border-collapse: collapse;
           table-layout: fixed;
           width: 100%;
         }
-        .edp-picker td,
-        .edp-picker th {
+        .edp-picker .rdp-month_grid td,
+        .edp-picker .rdp-month_grid th {
           padding: 1px;
           text-align: center;
         }
 
         @media (max-width: 640px) {
-          .edp-picker .rdp-day { width: 30px; height: 30px; font-size: 12px; }
-          .edp-picker .rdp-head_cell { width: 30px; font-size: 10px; }
+          .edp-picker {
+            --rdp-day-height: 30px;
+            --rdp-day-width: 30px;
+            --rdp-day_button-height: 28px;
+            --rdp-day_button-width: 28px;
+          }
+          .edp-picker .rdp-weekday { font-size: 10px; }
           .edp-picker .rdp-months { grid-template-columns: 1fr; gap: 8px; }
         }
       `}</style>
