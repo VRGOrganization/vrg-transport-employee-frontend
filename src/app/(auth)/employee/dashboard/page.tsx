@@ -1,99 +1,218 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { DashboardNav } from "@/components/layout/DashboardNav";
-import { DashboardCard } from "@/components/ui/DashboardCard";
-import { StatCard } from "@/components/ui/StatCard";
 import { employeeApi } from "@/lib/employeeApi";
+import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 
-interface StudentStats {
-  total: number;
-  withCard: number;
-  withoutCard: number;
-  queue: number;
+import { EmployeeSideNav } from "@/components/layout/EmployeeSideNav";
+import { TopBar } from "@/components/layout/TopBar";
+import { StudentTable } from "@/components/employee/StudentTable";
+import { Footer } from "@/components/layout/Footer";
+
+// ── Tipos ────────────────────────────────────────────────────────────────────
+
+export interface Student {
+  _id: string;
+  name: string;
+  email: string;
+  registrationId: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export default function EmployeeDashboard() {
+interface LicenseRecord {
+  _id: string;
+  studentId: string;
+}
+
+type StudentsResponse =
+  | Student[]
+  | {
+      data?: Student[];
+      total?: number;
+      page?: number;
+      limit?: number;
+    };
+
+interface DashboardStats {
+  activeStudents: number | null;
+  withCard: number | null;
+  pendingRequests: number | null;
+}
+
+// ── Página ───────────────────────────────────────────────────────────────────
+
+export default function EmployeeDashboardPage() {
   const { user, logout } = useEmployeeAuth();
-  const [stats, setStats] = useState<StudentStats | null>(null);
+
+  const [students, setStudents] = useState<Student[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({
+    activeStudents: null,
+    withCard: null,
+    pendingRequests: null,
+  });
+  const [loadingStudents, setLoadingStudents] = useState(true);
 
   useEffect(() => {
-    employeeApi
-      .get<StudentStats>("/student/stats")
-      .then(setStats)
-      .catch(() => {
-        // endpoint não disponível ainda — mantém stats nulas
-      });
+    const fetchAll = async () => {
+      const [studentsResult, licensesResult] = await Promise.allSettled([
+        employeeApi.get<StudentsResponse>("/student"),
+        employeeApi.get<LicenseRecord[]>("/license/all"),
+      ]);
+
+      if (studentsResult.status === "fulfilled") {
+        const resolvedStudents = Array.isArray(studentsResult.value)
+          ? studentsResult.value
+          : Array.isArray(studentsResult.value?.data)
+            ? studentsResult.value.data
+            : [];
+
+        const activeStudents = resolvedStudents.filter((s) => s.active);
+        setStudents(activeStudents);
+
+        const licensedIds =
+          licensesResult.status === "fulfilled"
+            ? new Set(licensesResult.value.map((l) => l.studentId))
+            : new Set<string>();
+
+        const withCard = activeStudents.filter((s) =>
+          licensedIds.has(s._id)
+        ).length;
+
+        const pending = activeStudents.filter(
+          (s) => !licensedIds.has(s._id)
+        ).length;
+
+        setStats({
+          activeStudents: activeStudents.length,
+          withCard,
+          pendingRequests: pending,
+        });
+      }
+
+      setLoadingStudents(false);
+    };
+
+    fetchAll();
   }, []);
 
-  return (
-    <div className="flex flex-col flex-1">
-      <DashboardNav user={user} onLogout={logout} />
+  const handleStudentDeleted = (id: string) => {
+    setStudents((prev) => prev.filter((s) => s._id !== id));
+    setStats((prev) => ({
+      ...prev,
+      activeStudents:
+        prev.activeStudents !== null ? prev.activeStudents - 1 : null,
+    }));
+  };
 
-      <main className="flex-1 bg-surface px-6 py-8 md:px-10">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-            <StatCard
-              icon="group"
-              label="Total de Alunos"
-              value={stats?.total ?? null}
+  return (
+    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
+      <EmployeeSideNav activePath="/employee/dashboard" onLogout={logout} />
+
+      <div className="min-w-0 flex flex-col">
+        <TopBar user={user} />
+
+        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)]">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <DashboardStatCard
+              icon="school"
+              label="Alunos Ativos"
+              value={stats.activeStudents}
+              badge="ESTATÍSTICA"
               accent="primary"
             />
-            <StatCard
+            <DashboardStatCard
               icon="badge"
               label="Com Carteirinha"
-              value={stats?.withCard ?? null}
-              accent="success"
+              value={stats.withCard}
+              badge="EMITIDAS"
+              accent="tertiary"
             />
-            <StatCard
-              icon="badge"
-              label="Sem Carteirinha"
-              value={stats?.withoutCard ?? null}
-              accent="error"
-            />
-            <StatCard
-              icon="hourglass_top"
-              label="Fila de Espera"
-              value={stats?.queue ?? null}
-              accent="warning"
+            <DashboardStatCard
+              icon="pending_actions"
+              label="Solicitações Pendentes"
+              value={stats.pendingRequests}
+              badge="URGENTE"
+              accent="secondary"
             />
           </div>
 
-          <div className="mb-8">
-            <h1 className="font-headline font-bold text-2xl text-on-surface">
-              Dashboard
-            </h1>
-            <p className="text-on-surface-variant mt-1">
-              Bem-vindo, <span className="font-medium text-on-surface">{user?.name}</span>
-              {user?.registrationId && (
-                <span className="ml-2 text-sm">· Matrícula: {user.registrationId}</span>
-              )}
-            </p>
-          </div>
+          {/* Student Table */}
+          <StudentTable
+            students={students}
+            loading={loadingStudents}
+            onDeleted={handleStudentDeleted}
+          />
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <DashboardCard
-              icon="school"
-              title="Gerenciar Estudantes"
-              description="Visualizar e editar cadastros de alunos matriculados."
-              href="/employee/students"
-            />
-            <DashboardCard
-              icon="id_card"
-              title="Gerenciar Carteirinha"
-              description="Emitir e revisar carteirinhas de transporte dos alunos."
-              href="/employee/cards"
-            />
-            <DashboardCard
-              icon="bar_chart"
-              title="Estatísticas de Aluno"
-              description="Acompanhar dados e relatórios sobre os alunos."
-              href="/employee/stats"
-            />
+          <div className="mt-auto w-full">
+            <Footer />
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
+
+// ── Stat Card interno ─────────────────────────────────────────────────────────
+
+interface DashboardStatCardProps {
+  icon: string;
+  label: string;
+  value: number | null;
+  badge: string;
+  accent: "primary" | "secondary" | "tertiary";
+}
+
+const accentMap = {
+  primary: {
+    border: "border-primary",
+    icon: "text-primary",
+    badge: "text-primary bg-primary-fixed",
+    value: "text-primary",
+  },
+  secondary: {
+    border: "border-secondary",
+    icon: "text-secondary",
+    badge: "text-on-secondary-container bg-secondary-fixed",
+    value: "text-secondary",
+  },
+  tertiary: {
+    border: "border-on-primary-fixed-variant",
+    icon: "text-on-primary-fixed-variant",
+    badge: "text-on-primary-fixed-variant bg-tertiary-fixed",
+    value: "text-on-primary-fixed-variant",
+  },
+};
+
+function DashboardStatCard({
+  icon,
+  label,
+  value,
+  badge,
+  accent,
+}: DashboardStatCardProps) {
+  const c = accentMap[accent];
+  return (
+    <div
+      className={`bg-surface-container-lowest p-6 rounded-xl border-l-4 ${c.border} shadow-sm hover:-translate-y-1 transition-transform duration-300`}
+    >
+      <div className="flex justify-between items-start mb-4">
+        <span className={`material-symbols-outlined ${c.icon} text-3xl`}>
+          {icon}
+        </span>
+        <span className={`text-xs font-bold ${c.badge} px-2 py-1 rounded`}>
+          {badge}
+        </span>
+      </div>
+      <p className="text-on-surface-variant text-sm font-medium mb-1">
+        {label}
+      </p>
+      <h3 className={`font-headline text-3xl font-extrabold ${c.value}`}>
+        {value === null ? "—" : value.toLocaleString("pt-BR")}
+      </h3>
+    </div>
+  );
+}
+

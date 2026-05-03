@@ -6,8 +6,7 @@ import {
   StudentFormErrors,
   EMPTY_STUDENT_ERRORS,
 } from "@/types/student";
-
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,64}$/;
+import { studentCreateSchema, studentEditSchema } from "@/lib/validation/student";
 
 interface UseStudentFormOptions {
   mode: "create" | "edit";
@@ -40,60 +39,28 @@ export function useStudentForm({ mode, initial }: UseStudentFormOptions) {
   const clearErrors = () => setErrors(EMPTY_STUDENT_ERRORS);
 
   const validate = (): boolean => {
-    const next = { ...EMPTY_STUDENT_ERRORS };
-    let valid = true;
+    const schema = mode === "create" ? studentCreateSchema : studentEditSchema;
+    const result = schema.safeParse(data);
 
-    if (!data.name.trim()) {
-      next.name = "Nome é obrigatório";
-      valid = false;
-    } else if (data.name.trim().length > 100) {
-      next.name = "Nome deve ter no máximo 100 caracteres";
-      valid = false;
+    if (result.success) {
+      setErrors(EMPTY_STUDENT_ERRORS);
+      return true;
     }
 
-    if (!data.email.trim()) {
-      next.email = "Email é obrigatório";
-      valid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-      next.email = "Email inválido";
-      valid = false;
-    }
-
-    if (!data.telephone.trim()) {
-      next.telephone = "Telefone é obrigatório";
-      valid = false;
-    }
-
-    if (!data.institution) {
-      next.institution = "Selecione uma instituição";
-      valid = false;
-    }
-
-    if (!data.shift) {
-      next.shift = "Selecione um turno";
-      valid = false;
-    }
-
-    if (mode === "create") {
-      if (!data.password) {
-        next.password = "Senha é obrigatória";
-        valid = false;
-      } else if (!PASSWORD_REGEX.test(data.password)) {
-        next.password = "Mínimo 8 caracteres com maiúsculas, minúsculas e números";
-        valid = false;
-      }
-
-      if (!data.confirmPassword) {
-        next.confirmPassword = "Confirme a senha";
-        valid = false;
-      } else if (data.password !== data.confirmPassword) {
-        next.confirmPassword = "As senhas não coincidem";
-        valid = false;
-      }
-    }
+    const flat = result.error.flatten().fieldErrors;
+    const next: StudentFormErrors = {
+      ...EMPTY_STUDENT_ERRORS,
+      name: flat.name?.[0] ?? "",
+      email: flat.email?.[0] ?? "",
+      telephone: flat.telephone?.[0] ?? "",
+      institution: flat.institution?.[0] ?? "",
+      shift: flat.shift?.[0] ?? "",
+      password: flat.password?.[0] ?? "",
+      confirmPassword: flat.confirmPassword?.[0] ?? "",
+    };
 
     setErrors(next);
-    return valid;
+    return false;
   };
 
   return { data, errors, loading, setLoading, onChange, setError, clearErrors, validate };

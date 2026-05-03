@@ -82,7 +82,7 @@ function EditStudentPageInner() {
 
   const handleToggleStatus = async () => {
     if (!student) return;
-    if (!student.active && !confirmDeactivate) {
+    if (student.active && !confirmDeactivate) {
       setConfirmDeactivate(true);
       return;
     }
@@ -106,11 +106,11 @@ function EditStudentPageInner() {
   // Loading skeleton
   if (fetchLoading) {
     return (
-      <div className="flex min-h-screen bg-surface">
+      <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
         <SideNav activePath="/admin/students" onLogout={logout} />
-        <div className="flex-1 ml-64 flex flex-col">
+        <div className="min-w-0 flex flex-col">
           <TopBar user={user} />
-          <main className="mt-16 p-8">
+          <main className="p-8">
             <div className="max-w-lg mx-auto space-y-4 animate-pulse">
               <div className="h-8 bg-surface-container-high rounded-xl w-1/2" />
               <div className="h-64 bg-surface-container-high rounded-2xl" />
@@ -124,11 +124,11 @@ function EditStudentPageInner() {
   // Fetch error
   if (fetchError) {
     return (
-      <div className="flex min-h-screen bg-surface">
+      <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
         <SideNav activePath="/admin/students" onLogout={logout} />
-        <div className="flex-1 ml-64 flex flex-col">
+        <div className="min-w-0 flex flex-col">
           <TopBar user={user} />
-          <main className="mt-16 p-8">
+          <main className="p-8">
             <div className="max-w-lg mx-auto flex flex-col items-center gap-4 py-16 text-center">
               <span className="material-symbols-outlined text-error" style={{ fontSize: "40px" }}>
                 error
@@ -145,13 +145,13 @@ function EditStudentPageInner() {
   }
 
   return (
-    <div className="flex min-h-screen bg-surface">
+    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
       <SideNav activePath="/admin/students" onLogout={logout} />
 
-      <div className="flex-1 ml-64 flex flex-col">
+      <div className="min-w-0 flex flex-col">
         <TopBar user={user} />
 
-        <main className="mt-16 p-8 bg-surface min-h-[calc(100vh-4rem)]">
+        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)]">
           <StudentFormLayout
             title="Editar Estudante"
             subtitle={`Atualize os dados de ${student?.name ?? "estudante"}`}
@@ -232,9 +232,10 @@ function EditStudentPageInner() {
             )}
           </StudentFormLayout>
 
-          <div className="mt-12 max-w-lg mx-auto">
+          <div className="mt-auto w-full">
             <Footer />
           </div>
+
         </main>
       </div>
     </div>
@@ -248,3 +249,5 @@ export default function EditStudentPage() {
     </Suspense>
   );
 }
+
+

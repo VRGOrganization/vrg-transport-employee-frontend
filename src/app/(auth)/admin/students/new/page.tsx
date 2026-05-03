@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
-import { Footer } from "@/components/layout/Footer";
 import { employeeApi } from "@/lib/employeeApi";
 
 import { StudentForm } from "@/components/students/StudentForm";
@@ -61,13 +60,13 @@ export default function NewStudentPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-surface">
+    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
       <SideNav activePath="/admin/students" onLogout={logout} />
 
-      <div className="flex-1 ml-64 flex flex-col">
+      <div className="min-w-0 flex flex-col">
         <TopBar user={user} />
 
-        <main className="mt-16 p-8 bg-surface min-h-[calc(100vh-4rem)]">
+        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)]">
           <StudentFormLayout
             title="Cadastrar Estudante"
             subtitle="Preencha os dados para criar uma nova conta de estudante"
@@ -100,3 +99,4 @@ export default function NewStudentPage() {
     </div>
   );
 }
+

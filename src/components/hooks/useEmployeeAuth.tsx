@@ -1,77 +1,131 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { employeeApi, setTokens, clearTokens } from "@/lib/employeeApi";
-import { EmployeeUser, EmployeeLoginCredentials } from "@/types/employeeAuth";
+import {
+  configureEmployeeApi,
+  resetEmployeeApiState,
+} from "@/lib/employeeApi";
+import {
+  EmployeeUser,
+  EmployeeLoginCredentials,
+} from "@/types/employeeAuth";
+import {
+  csrfBootstrapSchema,
+  employeeAuthResponseSchema,
+  employeeLoginRequestSchema,
+} from "@/lib/validation/auth";
 
 export function useEmployeeAuth() {
   const [user, setUser] = useState<EmployeeUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  const clearSession = useCallback(() => {
+    setUser(null);
+  }, []);
+
+  const handleUnauthorized = useCallback(() => {
+    clearSession();
+    router.push("/login");
+  }, [clearSession, router]);
+
+  useEffect(() => {
+    resetEmployeeApiState();
+    configureEmployeeApi({ onUnauthorized: handleUnauthorized });
+  }, [handleUnauthorized]);
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem("employee_access_token");
-        if (!token) return;
+        const response = await fetch("/api/auth/session", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
 
-        // Tenta buscar o perfil baseado no papel do usuário
-        // Como não temos um endpoint /me unificado, tentamos admin primeiro
-        try {
-          const adminData = await employeeApi.get<EmployeeUser>("/admin/me");
-          setUser({ ...adminData, role: "admin" });
-        } catch {
-          try {
-            const employeeData = await employeeApi.get<EmployeeUser>("/employee/me");
-            setUser({ ...employeeData, role: "employee" });
-          } catch {
-            clearTokens();
-          }
+        if (!response.ok) {
+          clearSession();
+          return;
         }
+
+        const payload = await response.json().catch(() => ({}));
+        const sessionResult = employeeAuthResponseSchema.safeParse(payload);
+
+        if (!sessionResult.success) {
+          clearSession();
+          return;
+        }
+
+        setUser(sessionResult.data.user);
       } catch {
-        clearTokens();
+        clearSession();
       } finally {
         setLoading(false);
       }
     };
 
-    checkAuth();
+    void checkAuth();
+  }, [clearSession]);
+
+  const getCsrfHeaders = useCallback(async (): Promise<Record<string, string>> => {
+    const response = await fetch("/api/auth/csrf", {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    const csrfResult = csrfBootstrapSchema.safeParse(payload);
+
+    if (!response.ok || !csrfResult.success) {
+      throw new Error("Não foi possível inicializar a proteção CSRF.");
+    }
+
+    return { [csrfResult.data.csrfHeaderName.trim()]: csrfResult.data.csrfToken };
   }, []);
 
   const login = async (credentials: EmployeeLoginCredentials) => {
     setLoading(true);
     try {
-      // Primeiro tenta login como admin
-      let response;
-      try {
-        response = await employeeApi.post<{
-          access_token: string;
-          refresh_token: string;
-          user: EmployeeUser;
-        }>("/auth/admin/login", {
-          username: credentials.login, // admin usa username
-          password: credentials.password,
-        });
-        response.user.role = "admin";
-      } catch (adminError) {
-        // Se falhar, tenta login como funcionário (com matrícula)
-        response = await employeeApi.post<{
-          access_token: string;
-          refresh_token: string;
-          user: EmployeeUser;
-        }>("/auth/employee/login", {
-          registrationId: credentials.login, // funcionário usa matrícula
-          password: credentials.password,
-        });
-        response.user.role = "employee";
+      const credentialsResult = employeeLoginRequestSchema.safeParse(credentials);
+      if (!credentialsResult.success) {
+        const firstIssue = credentialsResult.error.issues[0]?.message ?? "Credenciais invalidas";
+        return { success: false, error: firstIssue };
       }
 
-      setTokens(response.access_token, response.refresh_token);
-      setUser(response.user);
+      const csrfHeaders = await getCsrfHeaders();
 
-      // Redireciona baseado no papel
-      if (response.user.role === "admin") {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...csrfHeaders,
+        },
+        credentials: "include",
+        body: JSON.stringify(credentialsResult.data),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      const authResult = employeeAuthResponseSchema.safeParse(payload);
+
+      if (!response.ok || !authResult.success) {
+        const message =
+          typeof payload === "object" &&
+          payload !== null &&
+          "message" in payload &&
+          typeof (payload as { message?: unknown }).message === "string"
+            ? (payload as { message: string }).message
+            : "Credenciais invalidas";
+        return {
+          success: false,
+          error: message,
+        };
+      }
+
+      setUser(authResult.data.user);
+
+      if (authResult.data.user.role === "admin") {
         router.push("/admin/dashboard");
       } else {
         router.push("/employee/dashboard");
@@ -91,12 +145,17 @@ export function useEmployeeAuth() {
 
   const logout = async () => {
     try {
-      await employeeApi.post("/auth/logout", {});
+      const csrfHeaders = await getCsrfHeaders();
+
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+        headers: csrfHeaders,
+      });
     } catch {
       // ignora erro de logout
     } finally {
-      clearTokens();
-      setUser(null);
+      clearSession();
       router.push("/login");
     }
   };

@@ -12,6 +12,36 @@ export interface Student {
   updatedAt: string;
 }
 
+export interface ImageHistory {
+  _id: string;
+  studentId: string;
+  imageId: string;
+  photoType:
+    | "ProfilePhoto"
+    | "EnrollmentProof"
+    | "CourseSchedule"
+    | "LicenseImage"
+    | "GovernmentId"
+    | "ProofOfResidence";
+  photo3x4: string | null;
+  documentImage: string | null;
+  replacedAt: string;
+}
+
+export interface LicenseRequestRecord {
+  _id: string;
+  studentId: string;
+  type: "initial" | "update";
+  changedDocuments: string[];
+  status: "pending" | "approved" | "rejected" | "waitlisted";
+  rejectionReason: string | null;
+  rejectedAt: string | null;
+  licenseId: string | null;
+  enrollmentPeriodId?: string | null;
+  filaPosition?: number | null;
+  createdAt: string;
+}
+
 export interface StudentFormData {
   name: string;
   email: string;
