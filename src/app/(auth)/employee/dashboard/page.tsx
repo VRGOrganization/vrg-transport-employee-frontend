@@ -107,13 +107,13 @@ export default function EmployeeDashboardPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-surface">
+    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
       <EmployeeSideNav activePath="/employee/dashboard" onLogout={logout} />
 
-      <div className="flex-1 ml-64 flex flex-col">
+      <div className="min-w-0 flex flex-col">
         <TopBar user={user} />
 
-        <main className="mt-16 p-8 bg-surface min-h-[calc(100vh-4rem)]">
+        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)]">
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <DashboardStatCard
@@ -146,7 +146,7 @@ export default function EmployeeDashboardPage() {
             onDeleted={handleStudentDeleted}
           />
 
-          <div className="absolute bottom-0 left-0 w-full">
+          <div className="mt-auto w-full">
             <Footer />
           </div>
         </main>
@@ -215,3 +215,4 @@ function DashboardStatCard({
     </div>
   );
 }
+

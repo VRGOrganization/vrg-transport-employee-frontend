@@ -28,7 +28,7 @@ export function EmployeeSideNav({ activePath, onLogout }: EmployeeSideNavProps) 
   const currentPath = activePath ?? pathname;
 
   return (
-    <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-50 dark:bg-slate-950 flex flex-col py-6 z-40 border-r border-outline-variant/30">
+    <aside className="hidden h-dvh w-64 lg:sticky lg:top-0 bg-slate-50 dark:bg-slate-950 lg:flex flex-col py-6 border-r border-outline-variant/30">
       {/* Branding */}
       <div className="px-6 mb-10 flex items-center gap-3">
         <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">

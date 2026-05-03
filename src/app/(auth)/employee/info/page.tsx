@@ -14,7 +14,7 @@ export default function EmployeeInfoPage() {
       <SideNav />
       <TopBar user={user} />
 
-      <main className="ml-64 flex-1 p-8">
+      <main className="flex-1 p-8">
         <StatsDashboard />
       </main>
 
@@ -22,3 +22,4 @@ export default function EmployeeInfoPage() {
     </div>
   );
 }
+

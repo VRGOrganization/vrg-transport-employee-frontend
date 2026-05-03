@@ -7,12 +7,11 @@ interface ApprovalFooterProps {
   currentLicense: LicenseRecord | null;
   currentLicenseRequest: LicenseRequestRecord | null;
   selectedLicensePreview: string | null;
-  selectedBus: string;
+  selectedBusRouteLabel: string;
   hasInstitution: boolean;
   approving: boolean;
   printingSingle: boolean;
   approveMessage: string;
-  onBusChange: (value: string) => void;
   onApprove: () => void;
   onRejectOpen: () => void;
   onPrintSingle: () => void;
@@ -22,38 +21,31 @@ export function ApprovalFooter({
   currentLicense,
   currentLicenseRequest,
   selectedLicensePreview,
-  selectedBus,
+  selectedBusRouteLabel,
   hasInstitution,
   approving,
   printingSingle,
   approveMessage,
-  onBusChange,
   onApprove,
   onRejectOpen,
   onPrintSingle,
 }: ApprovalFooterProps) {
   const isPending = currentLicenseRequest?.status === "pending";
   const isWaitlisted = currentLicenseRequest?.status === "waitlisted";
-  const canApprove = isPending && hasInstitution && !!selectedBus.trim();
-  const canPrint =
-    !!selectedLicensePreview && !isPdfDataUrl(selectedLicensePreview ?? "");
+  const canApprove = isPending && hasInstitution && !!selectedBusRouteLabel.trim();
+  const canPrint = !!selectedLicensePreview && !isPdfDataUrl(selectedLicensePreview ?? "");
 
   return (
     <div className="border-t border-outline-variant bg-surface-container-lowest pt-3 pb-4 px-4 space-y-3">
       <div>
         <label className="mb-2 block text-sm font-semibold text-on-surface">
-          Linha de ônibus para a carteirinha
+          Rota selecionada
         </label>
-        <input
-          value={selectedBus}
-          onChange={(e) => onBusChange(e.target.value)}
-          placeholder="Ex.: 205"
-          maxLength={10}
-          disabled={!isPending}
-          className="h-10 w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface outline-none focus:border-primary"
-        />
+        <div className="flex h-10 items-center rounded-xl border border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface">
+          {selectedBusRouteLabel || "Selecione uma rota acima para continuar"}
+        </div>
         <p className="mt-1 text-[11px] text-on-surface-variant">
-          Esse valor será usado no campo de ônibus da carteirinha.
+          A rota vem do catálogo selecionado acima e será usada na aprovação.
         </p>
         {isWaitlisted && (
           <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-700">

@@ -2,7 +2,9 @@ export type PhotoType =
   | "ProfilePhoto"
   | "EnrollmentProof"
   | "CourseSchedule"
-  | "LicenseImage";
+  | "LicenseImage"
+  | "GovernmentId"
+  | "ProofOfResidence";
 
 export interface StudentRecord {
   _id: string;
@@ -40,6 +42,9 @@ export interface LicenseRequestRecord {
   licenseId: string | null;
   enrollmentPeriodId?: string | null;
   filaPosition?: number | null;
+  busId?: string | { _id: string } | null;
+  universityId?: string | { _id: string } | null;
+  accessBusIdentifiers?: string[];
   createdAt: string;
 }
 
@@ -99,4 +104,6 @@ export const PHOTO_TYPE_LABELS: Record<PhotoType, string> = {
   EnrollmentProof: "Comprovante de Matrícula",
   CourseSchedule: "Grade Horária",
   LicenseImage: "Carteirinha",
+  GovernmentId: "Documento de identidade",
+  ProofOfResidence: "Comprovante de residência",
 };

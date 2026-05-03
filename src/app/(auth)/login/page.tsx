@@ -39,19 +39,9 @@ export default function EmployeeAdminLoginPage() {
             </div>
           </div>
         </div>
-
-        {/* Main copy — pushed to bottom */}
-        <div className="relative z-10 mt-auto p-8 pb-10">
-          <p className="text-primary-fixed-dim text-xs font-bold uppercase tracking-widest mb-4">
-            Portal Interno
-          </p>
-          <h2 className="text-white text-3xl font-extrabold leading-tight mb-4">
-            Gestão do transporte<br />escolar municipal.
-          </h2>
-          <p className="text-primary-fixed-dim text-sm leading-relaxed max-w-xs">
-            Acesso restrito a funcionários e administradores da
-            Secretaria Municipal de Transportes.
-          </p>
+        <div 
+        className="mt-auto w-full">
+          <Footer/>
         </div>
       </aside>
 

@@ -26,6 +26,8 @@ function getPageTitle(pathname: string): string {
     "/employee/students": "Gerenciar Estudantes",
     "/employee/cards": "Gerenciar Carteirinhas",
     "/employee/info": "Estatísticas de Aluno",
+    "/admin/universities": "Gerenciar Instituições",
+    "/admin/buses": "Gerenciar Ônibus"
   };
 
   // Verifica se é uma rota dinâmica (ex: /admin/students/123)
@@ -43,15 +45,15 @@ export function TopBar({ user }: TopBarProps) {
   const pageTitle = getPageTitle(pathname);
 
   return (
-    <header className="fixed top-0 right-0 left-64 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm border-b border-outline-variant/30">
-      <div className="flex justify-between items-center px-8 py-3 h-16">
-        <h1 className="font-headline font-bold text-white text-lg">
+    <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm border-b border-outline-variant/30">
+      <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8 py-3 h-16">
+        <h1 className="font-headline font-bold text-gray-800 dark:text-white text-lg">
           {pageTitle}
         </h1>
 
         <div className="flex items-center gap-4">
           {user && (
-            <span className="text-sm font-medium text-slate-500 hidden md:block">
+            <span className="text-sm font-medium text-slate-500 hidden xl:block">
               {user.role === "admin" ? "Administrador" : "Funcionário"}: {user.name}
               {user.registrationId && (
                 <span className="ml-1">| Matrícula: {user.registrationId}</span>
