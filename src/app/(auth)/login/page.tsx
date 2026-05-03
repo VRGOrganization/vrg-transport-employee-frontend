@@ -39,10 +39,7 @@ export default function EmployeeAdminLoginPage() {
             </div>
           </div>
         </div>
-        <div 
-        className="mt-auto w-full">
-          <Footer/>
-        </div>
+        
       </aside>
 
       {/* RIGHT PANEL */}
