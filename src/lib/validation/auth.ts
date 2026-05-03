@@ -13,7 +13,7 @@ export const employeeLoginRequestSchema = z.object({
     .string({ error: "Senha e obrigatoria" })
     .min(6, "Senha deve ter no minimo 6 caracteres")
     .max(100, "Senha deve ter no maximo 100 caracteres"),
-  role: z.enum(["admin", "employee"], {
+    role: z.enum(["admin", "employee"], { 
     error: "Selecione um perfil de acesso",
   }),
 });
