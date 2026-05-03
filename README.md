@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VRG Transport Employee Frontend
 
-## Getting Started
+Frontend BFF para autenticação e painel de funcionários/admin.
 
-First, run the development server:
+## Pré-requisitos
+
+- Node.js 18+
+- npm
+
+## Instalação
+
+```bash
+npm install
+```
+
+## Configuração
+
+Crie o arquivo `.env` com base no `.env.example`.
+
+```bash
+cp .env.example .env
+```
+
+Exemplo mínimo:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1
+API_PROXY_TARGET=http://localhost:3000
+SERVICE_SECRET=<mesmo_valor_do_backend>
+
+SESSION_TTL_STAFF_DAYS=1
+SESSION_TTL_EMPLOYEE_DAYS=1
+SESSION_TTL_ADMIN_DAYS=1
+
+CSRF_COOKIE_NAME=csrf_token_local
+CSRF_HEADER_NAME=x-csrf-token-local
+```
+
+## Sessão por Role
+
+Ordem de resolução do TTL de cookie:
+
+1. `SESSION_TTL_ADMIN_DAYS` ou `SESSION_TTL_EMPLOYEE_DAYS` (por role).
+2. `SESSION_TTL_STAFF_DAYS` (fallback para staff).
+3. `SESSION_TTL_DAYS` (fallback legado).
+
+## Execução
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Aplicação local: `http://localhost:3002`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Testes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run test
+```

@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Inter, Manrope } from "next/font/google";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import "./globals.css";
@@ -16,7 +17,11 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "São Fidélis Transporte",
   description: "Sistema de transporte institucional para servidores",
-  viewport: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1.0,
 };
 
 export default function RootLayout({
@@ -25,27 +30,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
-        {/* Anti-FOUC: aplica classe dark antes da hidratação */}
-        <script dangerouslySetInnerHTML={{ __html: `
-          try {
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`try {
             var t = localStorage.getItem('theme') ||
               (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
             if (t === 'dark') document.documentElement.classList.add('dark');
-          } catch(e) {}
-        `}} />
+          } catch (e) {}`}
+        </Script>
       </head>
-      <body
-        className={`${inter.variable} ${manrope.variable} antialiased`}
-        suppressHydrationWarning
-      >
+      <body className={`${inter.variable} ${manrope.variable} antialiased`}>
         <ThemeProvider>
-          {children}
+          <div className="min-h-screen flex flex-col">
+            {children}
+          </div>
         </ThemeProvider>
       </body>
     </html>

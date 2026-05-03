@@ -3,26 +3,24 @@ export type EmployeeRole = "employee" | "admin";
 export interface EmployeeUser {
   id: string;
   name: string;
-  email: string;
+  identifier: string;
   role: EmployeeRole;
-  registrationId?: string; // apenas para funcionários
-  createdAt: Date;
-  updatedAt: Date;
+  registrationId?: string;
+  email?: string;
 }
 
 export interface EmployeeLoginCredentials {
-  login: string; 
+  login: string;
   password: string;
+  role: EmployeeRole;
 }
 
 export interface EmployeeAuthResponse {
+  ok: true;
   user: EmployeeUser;
-  access_token: string;
-  refresh_token: string;
 }
 
 export interface EmployeeApiError {
   message: string;
-  code: string;
   status: number;
 }

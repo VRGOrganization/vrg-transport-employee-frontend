@@ -2,14 +2,14 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { ButtonHTMLAttributes, forwardRef, useEffect, useState } from "react";
+import { ButtonHTMLAttributes, forwardRef, ReactNode } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "outline";
   size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
   loading?: boolean;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -27,15 +27,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    
     const isDisabled = disabled || loading;
-    
-    
-    const [isMounted, setIsMounted] = useState(false);
-    
-    useEffect(() => {
-      setIsMounted(true);
-    }, []);
 
     const variants = {
       primary: "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20",
@@ -49,26 +41,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       lg: "px-10 py-4 text-lg h-14",
     };
 
-    // Renderiza um placeholder durante a hidratação para evitar mismatch
-    if (!isMounted) {
-      return (
-        <button
-          ref={ref}
-          disabled={false}
-          className={cn(
-            "rounded-full font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2",
-            variants[variant],
-            sizes[size],
-            fullWidth && "w-full",
-            className
-          )}
-          {...props}
-        >
-          {icon && <span className="material-symbols-outlined text-2xl">{icon}</span>}
-          {children}
-        </button>
-      );
-    }
+    const renderIcon = () => {
+      if (!icon) return null;
+      if (typeof icon === "string") {
+        return <span className="material-symbols-outlined text-2xl">{icon}</span>;
+      }
+      return <span className="inline-flex items-center justify-center">{icon}</span>;
+    };
 
     return (
       <button
@@ -101,7 +80,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             />
           </svg>
         )}
-        {icon && <span className="material-symbols-outlined text-2xl">{icon}</span>}
+        {renderIcon()}
         {children}
       </button>
     );

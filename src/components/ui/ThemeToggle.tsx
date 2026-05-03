@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTheme } from "@/providers/ThemeProvider";
+import { Sun, Moon } from "lucide-react";
 
 interface ThemeToggleProps {
   className?: string;
@@ -8,6 +10,24 @@ interface ThemeToggleProps {
 
 export function ThemeToggle({ className = "" }: ThemeToggleProps) {
   const { theme, toggle } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <button
+        disabled
+        className={`p-2 rounded-full transition-colors opacity-70 ${className}`}
+        title="Alternar tema"
+        aria-label="Alternar tema"
+      >
+        <Moon size={20} />
+      </button>
+    );
+  }
 
   return (
     <button
@@ -16,9 +36,7 @@ export function ThemeToggle({ className = "" }: ThemeToggleProps) {
       title={theme === "dark" ? "Modo claro" : "Modo escuro"}
       aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
     >
-      <span className="material-symbols-outlined" style={{ fontSize: "20px", display: "block" }}>
-        {theme === "dark" ? "light_mode" : "dark_mode"}
-      </span>
+      {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
     </button>
   );
 }

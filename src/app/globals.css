@@ -1,155 +1,259 @@
 @import "tailwindcss";
 
+/* ════════════════════════════════════════
+   TOKENS DE DESIGN — light mode (padrão)
+   Acessíveis via Tailwind: bg-primary,
+   text-on-surface, border-outline, etc.
+   ════════════════════════════════════════ */
 @theme {
-  /* ── Cores primárias ── */
-  --color-primary: #003f87;
+
+  /* ── Primária ── */
+  --color-primary:           #003f87;
   --color-primary-container: #0056b3;
-  --color-primary-fixed: #d7e2ff;
+  --color-primary-fixed:     #d7e2ff;
   --color-primary-fixed-dim: #acc7ff;
+  --color-on-primary:        #ffffff;
 
-  /* ── Cores secundárias ── */
-  --color-secondary: #a33e00;
+  /* ── Secundária ── */
+  --color-secondary:           #a33e00;
   --color-secondary-container: #ff7f41;
-  --color-secondary-fixed: #ffdbcd;
+  --color-secondary-fixed:     #ffdbcd;
+  --color-on-secondary:        #ffffff;
 
-  /* ── Cores terciárias ── */
-  --color-tertiary: #08417e;
+  /* ── Terciária ── */
+  --color-tertiary:           #08417e;
   --color-tertiary-container: #2c5997;
+  --color-on-tertiary:        #ffffff;
 
   /* ── Superfícies ── */
-  --color-surface: #f8f9fa;
-  --color-surface-container-low: #f3f4f5;
+  --color-surface:                  #f8f9fa;
+  --color-surface-container-low:    #f3f4f5;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-high: #e7e8e9;
+  --color-surface-container-high:   #e7e8e9;
 
-  /* ── Texto sobre superfícies ── */
-  --color-on-surface: #191c1d;
+  /* ── Texto ── */
+  --color-on-surface:         #191c1d;
   --color-on-surface-variant: #424752;
+  --color-on-surface-muted:   #727784;
 
   /* ── Contornos ── */
-  --color-outline: #727784;
+  --color-outline:         #727784;
   --color-outline-variant: #c2c6d4;
 
-  /* ── Status: erro ── */
-  --color-error: #ba1a1a;
-  --color-error-container: #ffdad6;
-  --color-error-border: #fecaca;
+  /* ── Status ── */
+  --color-error:             #ba1a1a;
+  --color-error-container:   #ffdad6;
+  --color-error-border:      #fecaca;
+  --color-on-error:          #ffffff;
 
-  /* ── Status: sucesso ── */
-  --color-success: #16a34a;
+  --color-success:           #16a34a;
   --color-success-container: #f0fdf4;
-  --color-success-border: #bbf7d0;
-  --color-on-success: #15803d;
+  --color-success-border:    #bbf7d0;
+  --color-on-success:        #15803d;
 
-  /* ── Status: aviso ── */
-  --color-warning: #ca8a04;
+  --color-warning:           #ca8a04;
   --color-warning-container: #fefce8;
+  --color-warning-border:    #fde68a;
+  --color-on-warning:        #92400e;
 
-  /* ── Fontes ── */
+  --color-info:              #0369a1;
+  --color-info-container:    #e0f2fe;
+  --color-info-border:       #bae6fd;
+  --color-on-info:           #075985;
+
+  /* ── Tipografia ── */
   --font-headline: 'Manrope', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  --font-label: 'Inter', sans-serif;
+  --font-body:     'Inter', sans-serif;
+  --font-label:    'Inter', sans-serif;
 
   /* ── Espaçamentos extras ── */
   --spacing-18: 4.5rem;
   --spacing-22: 5.5rem;
 }
 
-/* ── Shadow tokens — light mode ── */
+/* ════════════════════════════════════════
+   SHADOW TOKENS — light mode
+   Usados via CSS var() nos componentes
+   ════════════════════════════════════════ */
 :root {
-  --shadow-primary: rgba(0, 63, 135, 0.25);
-  --shadow-primary-soft: rgba(0, 63, 135, 0.08);
+  --shadow-primary:         rgba(0, 63, 135, 0.25);
+  --shadow-primary-soft:    rgba(0, 63, 135, 0.08);
   --shadow-primary-overlay: rgba(0, 86, 179, 0.2);
-  --shadow-secondary: rgba(163, 62, 0, 0.25);
-  --shadow-tertiary: rgba(8, 65, 126, 0.25);
-  --shadow-border: rgba(194, 198, 212, 0.3);
+  --shadow-secondary:       rgba(163, 62, 0, 0.25);
+  --shadow-tertiary:        rgba(8, 65, 126, 0.25);
+  --shadow-border:          rgba(194, 198, 212, 0.3);
+  --shadow-input-focus:     0 0 0 4px rgba(0, 63, 135, 0.12);
+  --shadow-card:            0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover:      0 4px 12px rgba(0, 63, 135, 0.12), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-modal:           0 8px 32px rgba(0, 63, 135, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 /* ════════════════════════════════════════
-   Dark mode — Preto Profundo e Dourado
-   Ativar adicionando a classe .dark no <html>
+   DARK MODE
+   Ativar com classe .dark no <html>
    ════════════════════════════════════════ */
 .dark {
-  /* ── Cores primárias (azul → dourado âmbar) ── */
-  --color-primary: #d4a827;           /* dourado principal — 8.8:1 sobre surface */
-  --color-primary-container: #3d2c08; /* container escuro dourado — fundos tintados */
-  --color-primary-fixed: #261d06;     /* tint muito sutil — bg-primary/5, chips */
-  --color-primary-fixed-dim: #6b4e16; /* brilho reduzido — badges, sublinhados */
 
-  /* ── Cores secundárias (laranja ajustado para fundo escuro) ── */
-  --color-secondary: #e07030;         /* laranja vibrante — 4.5:1 com texto escuro */
-  --color-secondary-container: #3d1e09; /* container laranja escuro */
-  --color-secondary-fixed: #5c2d10;   /* fixed escuro */
+  /* ── Primária ── */
+  --color-primary:           #4d9ef5;
+  --color-primary-container: #0f2948;
+  --color-primary-fixed:     #1a3560;
+  --color-primary-fixed-dim: #7ab8f8;
+  --color-on-primary:        #0a1e38;
 
-  /* ── Cores terciárias (azul elétrico/safira) ── */
-  --color-tertiary: #4d9ef5;          /* safira vibrante no fundo escuro */
-  --color-tertiary-container: #0f2948; /* container azul profundo */
+  /* ── Secundária ── */
+  --color-secondary:           #f4855a;
+  --color-secondary-container: #3d1a0a;
+  --color-secondary-fixed:     #5c280f;
+  --color-on-secondary:        #1f0d06;
 
-  /* ── Superfícies — hierarquia de elevação via luminosidade ── */
-  --color-surface-container-lowest: #080809; /* ① mais escuro — fundos afundados, header frosted */
-  --color-surface: #0d0d11;                  /* ② base — fundo da página */
-  --color-surface-container-low: #14141b;    /* ③ cards, skeletons */
-  --color-surface-container-high: #1d1d28;   /* ④ mais claro — modais, ícones elevados */
+  /* ── Terciária ── */
+  --color-tertiary:           #5ba8f5;
+  --color-tertiary-container: #0d2545;
+  --color-on-tertiary:        #0a1e38;
 
-  /* ── Texto sobre superfícies ── */
-  --color-on-surface: #e8e9ea;        /* branco suave quente — 15:1 sobre surface */
-  --color-on-surface-variant: #9a9890; /* cinza médio com leve tom quente */
+  /* ── Superfícies ── */
+  --color-surface:                  #131720;
+  --color-surface-container-low:    #1a1f2e;
+  --color-surface-container-lowest: #0e1117;
+  --color-surface-container-high:   #232a3b;
+
+  /* ── Texto ── */
+  --color-on-surface:         #e8eaf0;
+  --color-on-surface-variant: #8b95a8;
+  --color-on-surface-muted:   #4d6080;
 
   /* ── Contornos ── */
-  --color-outline: #2e3040;           /* visível, sutil — separadores, bordas de input */
-  --color-outline-variant: #1c1e28;   /* quase invisível — divisores internos */
+  --color-outline:         #3a5070;
+  --color-outline-variant: #1e2840;
 
-  /* ── Status: erro (vermelho vibrante escuro) ── */
-  --color-error: #ff6b6b;             /* vermelho claro saturado — legível no escuro */
-  --color-error-container: #2d0d0d;   /* container vermelho escuro */
-  --color-error-border: #5c1a1a;      /* borda tintada */
+  /* ── Status ── */
+  --color-error:             #ff7b7b;
+  --color-error-container:   #2d0d0d;
+  --color-error-border:      #5c1a1a;
+  --color-on-error:          #1a0000;
 
-  /* ── Status: sucesso (verde esmeralda) ── */
-  --color-success: #4ade80;           /* verde vibrante */
-  --color-success-container: #0d2218; /* container verde escuro */
-  --color-success-border: #1a5c30;    /* borda verde */
-  --color-on-success: #86efac;        /* texto sobre container de sucesso */
+  --color-success:           #4ade80;
+  --color-success-container: #0a2416;
+  --color-success-border:    #1a5c30;
+  --color-on-success:        #86efac;
 
-  /* ── Status: aviso (âmbar) ── */
-  --color-warning: #fbbf24;           /* âmbar saturado */
-  --color-warning-container: #2a1e04; /* container âmbar escuro */
+  --color-warning:           #fbbf24;
+  --color-warning-container: #231a02;
+  --color-warning-border:    #5c3d08;
+  --color-on-warning:        #fde68a;
 
-  /* ── Glows (sombras viram brilhos no fundo escuro) ── */
-  --shadow-primary: rgba(212, 168, 39, 0.32);  /* glow dourado */
-  --shadow-primary-soft: rgba(212, 168, 39, 0.09); /* glow ultra sutil */
-  --shadow-primary-overlay: rgba(212, 168, 39, 0.20); /* overlay gradiente */
-  --shadow-secondary: rgba(224, 112, 48, 0.28); /* glow laranja */
-  --shadow-tertiary: rgba(77, 158, 245, 0.25);  /* glow safira */
-  --shadow-border: rgba(255, 255, 255, 0.07);   /* borda luminosa sutil */
+  --color-info:              #4d9ef5;
+  --color-info-container:    #0f2948;
+  --color-info-border:       #1e3d6e;
+  --color-on-info:           #7ab8f8;
+
+  /* ── Shadows viram glows ── */
+  --shadow-primary:         rgba(77, 158, 245, 0.28);
+  --shadow-primary-soft:    rgba(77, 158, 245, 0.08);
+  --shadow-primary-overlay: rgba(77, 158, 245, 0.18);
+  --shadow-secondary:       rgba(244, 133, 90, 0.28);
+  --shadow-tertiary:        rgba(91, 168, 245, 0.22);
+  --shadow-border:          rgba(255, 255, 255, 0.06);
+  --shadow-input-focus:     0 0 0 4px rgba(77, 158, 245, 0.12);
+  --shadow-card:            0 1px 4px rgba(0, 0, 0, 0.4);
+  --shadow-card-hover:      0 4px 16px rgba(77, 158, 245, 0.14), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --shadow-modal:           0 8px 40px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
-/* NÃO coloque * { margin: 0; padding: 0 } — o Tailwind Preflight já faz isso corretamente */
+/* ════════════════════════════════════════
+   RESETS MÍNIMOS DO BROWSER
+   Apenas o que o Tailwind Preflight
+   não cobre ou cobre de forma insuficiente
+   ════════════════════════════════════════ */
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
 
 body {
-  background: var(--color-surface);
-  color: var(--color-on-surface);
   font-family: var(--font-body);
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
   min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-headline);
 }
 
+/* Reset de inputs — estilização fica nos componentes */
+input,
+textarea,
+select {
+  font-family: var(--font-body);
+  outline: none;
+  border: none;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Material Symbols */
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  line-height: 1;
+  user-select: none;
 }
+
+/* Autofill — neutraliza estilos injetados pelo browser */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 9999px var(--color-surface-container-low) inset !important;
+  -webkit-text-fill-color: var(--color-on-surface) !important;
+  caret-color: var(--color-on-surface);
+  transition: background-color 99999s ease-in-out 0s;
+}
+
+/* Seleção de texto */
+::selection {
+  background-color: var(--color-primary-fixed);
+  color: var(--color-primary);
+}
+
+.dark ::selection {
+  background-color: var(--color-primary-container);
+  color: var(--color-primary-fixed-dim);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-surface-container-low); }
+::-webkit-scrollbar-thumb { background: var(--color-outline); border-radius: 9999px; }
+
+/* ════════════════════════════════════════
+   UTILITÁRIOS
+   Apenas o que não é expressável
+   diretamente com classes Tailwind
+   ════════════════════════════════════════ */
 
 .bg-mesh {
   background-color: var(--color-surface);
-  background-image: radial-gradient(at 0% 0%, var(--color-primary-fixed) 0px, transparent 50%),
-                    radial-gradient(at 100% 100%, var(--color-secondary-fixed) 0px, transparent 50%);
+  background-image:
+    radial-gradient(at 0% 0%, var(--color-primary-fixed) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, var(--color-secondary-fixed) 0px, transparent 50%);
 }
 
-.bg-surface {
-  background-color: var(--color-surface);
-}
-
-.text-primary-fixed-dim {
-  color: var(--color-primary-fixed-dim);
+.dark .bg-mesh {
+  background-image:
+    radial-gradient(at 0% 0%, var(--color-primary-fixed) 0px, transparent 55%),
+    radial-gradient(at 100% 100%, var(--color-secondary-container) 0px, transparent 55%);
 }
