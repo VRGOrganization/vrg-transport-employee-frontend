@@ -12,7 +12,7 @@ export default function AdminEmployeeEditPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <SideNav />
       <TopBar user={user} />
-      <main className="ml-64 flex-1 p-8">
+      <main className="flex-1 p-8">
         <div className="flex flex-col items-center justify-center h-64 gap-4 text-gray-500">
           <span className="material-icons text-6xl">edit</span>
           <h1 className="text-2xl font-semibold">Editar Funcionário</h1>
@@ -23,3 +23,5 @@ export default function AdminEmployeeEditPage() {
     </div>
   );
 }
+
+

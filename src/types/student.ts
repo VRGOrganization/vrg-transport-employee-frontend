@@ -16,7 +16,13 @@ export interface ImageHistory {
   _id: string;
   studentId: string;
   imageId: string;
-  photoType: "ProfilePhoto" | "EnrollmentProof" | "CourseSchedule" | "LicenseImage";
+  photoType:
+    | "ProfilePhoto"
+    | "EnrollmentProof"
+    | "CourseSchedule"
+    | "LicenseImage"
+    | "GovernmentId"
+    | "ProofOfResidence";
   photo3x4: string | null;
   documentImage: string | null;
   replacedAt: string;

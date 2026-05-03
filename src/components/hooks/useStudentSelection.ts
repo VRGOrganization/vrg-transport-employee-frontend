@@ -23,6 +23,8 @@ interface UseStudentSelectionReturn {
   profileImage: string | null;
   enrollmentImage: string | null;
   scheduleImage: string | null;
+  governmentImage: string | null;
+  proofOfResidenceImage: string | null;
   selectedLicensePreview: string | null;
   selectStudent: (student: StudentRecord) => Promise<void>;
   clearSelection: () => void;
@@ -69,11 +71,13 @@ licenseRequests: LicenseRequestRecord[],
     }
 
     const parsePhotoType = (raw: string): PhotoType | null => {
-      const normalized = raw.trim().toLowerCase();
+      const normalized = raw.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
       if (normalized === "profilephoto") return "ProfilePhoto";
       if (normalized === "enrollmentproof") return "EnrollmentProof";
       if (normalized === "courseschedule") return "CourseSchedule";
       if (normalized === "licenseimage") return "LicenseImage";
+      if (normalized === "governmentid") return "GovernmentId";
+      if (normalized === "proofofresidence") return "ProofOfResidence";
       return null;
     };
 
@@ -104,6 +108,18 @@ licenseRequests: LicenseRequestRecord[],
   const scheduleImage = normalizeMediaSource(
     pendingImagesByType.CourseSchedule ??
       selectedImages.find((img) => img.photoType === "CourseSchedule")?.documentImage ??
+      null,
+  );
+
+  const governmentImage = normalizeMediaSource(
+    pendingImagesByType.GovernmentId ??
+      selectedImages.find((img) => img.photoType === "GovernmentId")?.documentImage ??
+      null,
+  );
+
+  const proofOfResidenceImage = normalizeMediaSource(
+    pendingImagesByType.ProofOfResidence ??
+      selectedImages.find((img) => img.photoType === "ProofOfResidence")?.documentImage ??
       null,
   );
 
@@ -176,6 +192,8 @@ licenseRequests: LicenseRequestRecord[],
     profileImage,
     enrollmentImage,
     scheduleImage,
+    governmentImage,
+    proofOfResidenceImage,
     selectedLicensePreview,
     selectStudent,
     clearSelection,

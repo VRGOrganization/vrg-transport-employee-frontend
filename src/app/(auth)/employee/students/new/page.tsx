@@ -60,13 +60,13 @@ export default function EmployeeNewStudentPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-surface">
+    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
       <EmployeeSideNav activePath="/employee/students" onLogout={logout} />
 
-      <div className="flex-1 ml-64 flex flex-col">
+      <div className="min-w-0 flex flex-col">
         <TopBar user={user} />
 
-        <main className="mt-16 p-8 bg-surface min-h-[calc(100vh-4rem)]">
+        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)]">
           <StudentFormLayout
             title="Cadastrar Estudante"
             subtitle="Preencha os dados para criar uma nova conta de estudante"
@@ -94,7 +94,7 @@ export default function EmployeeNewStudentPage() {
             )}
           </StudentFormLayout>
 
-          <div className="absolute bottom-0 left-0 w-full">
+          <div className="mt-auto w-full">
             <Footer />
           </div>
         </main>
@@ -102,3 +102,4 @@ export default function EmployeeNewStudentPage() {
     </div>
   );
 }
+

@@ -47,7 +47,9 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${manrope.variable} antialiased`}>
         <ThemeProvider>
-          {children}
+          <div className="min-h-screen flex flex-col">
+            {children}
+          </div>
         </ThemeProvider>
       </body>
     </html>

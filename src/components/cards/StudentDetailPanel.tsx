@@ -10,6 +10,7 @@ import type {
   PreviewItem,
   StudentRecord,
 } from "@/types/cards.types";
+import type { BusRoute, Bus } from "@/types/university.types";
 import { ApprovalFooter } from "./ApprovalFooter";
 import { DocumentsGrid } from "./DocumentsGrid";
 import { StudentInfoCard } from "./StudentInfoCard";
@@ -21,10 +22,13 @@ interface StudentDetailPanelProps {
   loadingSelected: boolean;
   currentLicense: LicenseRecord | null;
   currentLicenseRequest: LicenseRequestRecord | null;
+  selectedBusRoute: BusRoute | Bus | null;
   pendingImagesByType: Partial<Record<PhotoType, string>>;
   profileImage: string | null;
   enrollmentImage: string | null;
   scheduleImage: string | null;
+  governmentImage: string | null;
+  proofOfResidenceImage: string | null;
   selectedLicensePreview: string | null;
   onReload: () => Promise<void>;
   onOpenRejectModal: () => void;
@@ -38,17 +42,19 @@ export function StudentDetailPanel({
   loadingSelected,
   currentLicense,
   currentLicenseRequest,
+  selectedBusRoute,
   pendingImagesByType,
   profileImage,
   enrollmentImage,
   scheduleImage,
+  governmentImage,
+  proofOfResidenceImage,
   selectedLicensePreview,
   onReload,
   onOpenRejectModal,
   printingSingle,
   onPrintSingle,
 }: StudentDetailPanelProps) {
-  const [selectedBus, setSelectedBus] = useState("");
   const [approving, setApproving] = useState(false);
   const [approveMessage, setApproveMessage] = useState("");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -58,12 +64,14 @@ export function StudentDetailPanel({
       { title: "Foto 3x4", dataUrl: profileImage },
       { title: "Comprovante de Matrícula", dataUrl: enrollmentImage },
       { title: "Imagem da Grade Horária", dataUrl: scheduleImage },
+      { title: "Documento de identidade", dataUrl: governmentImage },
+      { title: "Comprovante de residência", dataUrl: proofOfResidenceImage },
     ];
     if (selectedLicensePreview) {
       base.push({ title: "Preview da Carteirinha", dataUrl: selectedLicensePreview });
     }
     return base;
-  }, [profileImage, enrollmentImage, scheduleImage, selectedLicensePreview]);
+  }, [profileImage, enrollmentImage, scheduleImage, governmentImage, proofOfResidenceImage, selectedLicensePreview]);
 
   const availablePreviewIndexes = useMemo(
     () => previewItems.map((item, i) => (item.dataUrl ? i : -1)).filter((i) => i >= 0),
@@ -80,9 +88,9 @@ export function StudentDetailPanel({
       setApproveMessage("Não é possível criar a carteirinha sem instituição no cadastro.");
       return;
     }
-    const normalized = selectedBus.trim();
-    if (!normalized) {
-      setApproveMessage("Defina a linha de ônibus antes de criar a carteirinha.");
+    const selectedBusIdentifier = (selectedBusRoute as any)?.identifier ?? (selectedBusRoute as any)?.lineNumber ?? null;
+    if (!selectedBusIdentifier) {
+      setApproveMessage("Selecione uma rota antes de criar a carteirinha.");
       return;
     }
     setApproving(true);
@@ -90,7 +98,7 @@ export function StudentDetailPanel({
     try {
       await employeeApi.patch(`/license-request/approve/${currentLicenseRequest._id}`, {
         institution: selected.institution,
-        bus: normalized,
+        bus: selectedBusIdentifier,
         ...(profileImage ? { photo: profileImage } : {}),
       });
       setApproveMessage("Carteirinha criada com sucesso.");
@@ -146,12 +154,11 @@ export function StudentDetailPanel({
           currentLicense={currentLicense}
           currentLicenseRequest={currentLicenseRequest}
           selectedLicensePreview={selectedLicensePreview}
-          selectedBus={selectedBus}
+          selectedBusRouteLabel={(selectedBusRoute as any)?.lineNumber ?? (selectedBusRoute as any)?.identifier ?? ""}
           hasInstitution={!!selected.institution?.trim()}
           approving={approving}
           printingSingle={printingSingle}
           approveMessage={approveMessage}
-          onBusChange={setSelectedBus}
           onApprove={handleApprove}
           onRejectOpen={onOpenRejectModal}
           onPrintSingle={onPrintSingle}
