@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Pencil, Trash2, ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
 import { EmployeeModal } from "@/components/admin/EmployeeModal";
 
 export interface Employee {
@@ -30,11 +31,11 @@ function getInitials(name: string) {
 }
 
 const avatarColors = [
-  "bg-blue-100 text-primary",
-  "bg-orange-100 text-secondary",
-  "bg-teal-100 text-tertiary",
-  "bg-purple-100 text-purple-700",
-  "bg-green-100 text-green-700",
+  "bg-primary-fixed text-primary",
+  "bg-secondary-fixed text-secondary",
+  "bg-primary-fixed-dim text-tertiary",
+  "bg-info-container text-on-info",
+  "bg-success-container text-on-success",
 ];
 
 export function EmployeeTable({ employees, loading, onUpdated, onDeleted }: EmployeeTableProps) {
@@ -70,7 +71,7 @@ export function EmployeeTable({ employees, loading, onUpdated, onDeleted }: Empl
             href="/admin/employees/new"
             className="bg-secondary text-white px-6 py-2 rounded-xl font-bold hover:bg-secondary/90 active:scale-95 transition-all flex items-center gap-2 text-sm"
           >
-            <span className="material-symbols-outlined text-sm">add</span>
+            <UserPlus className="w-4 h-4" />
             Novo Funcionário
           </Link>
         </div>
@@ -123,13 +124,13 @@ export function EmployeeTable({ employees, loading, onUpdated, onDeleted }: Empl
                   return (
                     <tr
                       key={emp._id}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors cursor-pointer"
+                      className="hover:bg-surface-container-low transition-colors cursor-pointer"
                       onClick={() => setSelectedEmployee(emp)}
                     >
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-4">
                           <div
-                            className={`w-10 h-10 rounded-full ${colorClass} flex items-center justify-center font-bold text-sm flex-shrink-0`}
+                            className={`w-10 h-10 rounded-full ${colorClass} flex items-center justify-center font-bold text-sm shrink-0`}
                           >
                             {getInitials(emp.name)}
                           </div>
@@ -143,18 +144,14 @@ export function EmployeeTable({ employees, loading, onUpdated, onDeleted }: Empl
                           className="p-2 text-primary hover:bg-primary-fixed rounded-lg transition-colors inline-flex"
                           title="Editar"
                         >
-                          <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
-                            edit
-                          </span>
+                          <Pencil className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => setSelectedEmployee(emp)}
                           className="p-2 text-error hover:bg-error-container rounded-lg transition-colors inline-flex ml-2"
                           title="Desativar"
                         >
-                          <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
-                            delete
-                          </span>
+                          <Trash2 className="w-5 h-5" />
                         </button>
                       </td>
                     </tr>
@@ -176,9 +173,7 @@ export function EmployeeTable({ employees, loading, onUpdated, onDeleted }: Empl
               disabled={page === 1}
               className="w-10 h-10 rounded-lg flex items-center justify-center border border-outline-variant hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
-                chevron_left
-              </span>
+              <ChevronLeft className="w-5 h-5" />
             </button>
 
             {Array.from({ length: totalPages }).map((_, i) => (
@@ -200,9 +195,7 @@ export function EmployeeTable({ employees, loading, onUpdated, onDeleted }: Empl
               disabled={page === totalPages}
               className="w-10 h-10 rounded-lg flex items-center justify-center border border-outline-variant hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
-                chevron_right
-              </span>
+              <ChevronRight className="w-5 h-5" />
             </button>
           </div>
         </div>

@@ -4,7 +4,7 @@
 function Skeleton({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`bg-gray-100 animate-pulse rounded-lg ${className}`}
+      className={`bg-surface-container-high animate-pulse rounded-lg ${className}`}
       aria-hidden="true"
     />
   );

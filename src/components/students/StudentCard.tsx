@@ -1,3 +1,4 @@
+import { Pencil } from "lucide-react";
 import { Student } from "@/types/student";
 
 function getInitials(name: string) {
@@ -29,7 +30,7 @@ export function StudentCard({ student, onClick, onEdit }: StudentCardProps) {
       <button onClick={onClick} className="flex items-center gap-4 flex-1 min-w-0 text-left cursor-pointer">
         {/* Avatar */}
         <div
-          className={`w-12 h-12 rounded-full flex items-center justify-center font-headline font-bold text-sm flex-shrink-0 ${
+          className={`w-12 h-12 rounded-full flex items-center justify-center font-headline font-bold text-sm shrink-0 ${
             isInactive ? "bg-outline-variant text-on-surface-variant" : "bg-primary text-white"
           }`}
         >
@@ -42,10 +43,10 @@ export function StudentCard({ student, onClick, onEdit }: StudentCardProps) {
             <p className="font-semibold text-on-surface truncate">{student.name}</p>
             {student.shift && (
               <span
-                className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
+                className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
                   student.shift === "diurno"
-                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                    : "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
+                    ? "bg-info-container text-info"
+                    : "bg-primary-fixed text-primary"
                 }`}
               >
                 {student.shift === "diurno" ? "Diurno" : "Noturno"}
@@ -67,11 +68,9 @@ export function StudentCard({ student, onClick, onEdit }: StudentCardProps) {
           onEdit();
         }}
         title="Editar estudante"
-        className="flex-shrink-0 p-2 rounded-xl text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors"
+        className="shrink-0 p-2 rounded-xl text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors"
       >
-        <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
-          edit
-        </span>
+        <Pencil className="w-5 h-5" />
       </button>
     </div>
   );
@@ -80,13 +79,13 @@ export function StudentCard({ student, onClick, onEdit }: StudentCardProps) {
 export function StudentCardSkeleton() {
   return (
     <div className="flex items-center gap-4 bg-surface-container-lowest border border-outline-variant rounded-2xl p-5">
-      <div className="w-12 h-12 rounded-full bg-surface-container-high animate-pulse flex-shrink-0" />
+      <div className="w-12 h-12 rounded-full bg-surface-container-high animate-pulse shrink-0" />
       <div className="flex-1 space-y-2">
         <div className="h-4 bg-surface-container-high rounded animate-pulse w-3/4" />
         <div className="h-3 bg-surface-container-high rounded animate-pulse w-1/2" />
         <div className="h-3 bg-surface-container-high rounded animate-pulse w-1/3" />
       </div>
-      <div className="w-8 h-8 rounded-xl bg-surface-container-high animate-pulse flex-shrink-0" />
+      <div className="w-8 h-8 rounded-xl bg-surface-container-high animate-pulse shrink-0" />
     </div>
   );
 }

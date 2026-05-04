@@ -4,22 +4,27 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
+import {
+  LayoutDashboard, Info, CalendarDays, Users, GraduationCap,
+  IdCard, Building2, Bus, LogOut,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 interface NavItem {
-  icon: string;
+  icon: LucideIcon;
   label: string;
   href: string;
 }
 
 const navItems: NavItem[] = [
-  { icon: "dashboard", label: "Painel", href: "/admin/dashboard" },
-  { icon: "info", label: "Informações", href: "/admin/info" },
-  { icon: "event", label: "Período de Inscrição", href: "/admin/enrollment-period" },
-  { icon: "group", label: "Funcionários", href: "/admin/employees" },
-  { icon: "school", label: "Estudantes", href: "/admin/students" },
-  { icon: "badge", label: "Carteirinhas", href: "/admin/cards" },
-  { icon: "account_balance", label: "Instituições", href: "/admin/universities" },
-  { icon: "directions_bus", label: "Frota", href: "/admin/buses" },
+  { icon: LayoutDashboard, label: "Painel",               href: "/admin/dashboard"        },
+  { icon: Info,            label: "Informações",           href: "/admin/info"             },
+  { icon: CalendarDays,    label: "Período de Inscrição",  href: "/admin/enrollment-period"},
+  { icon: Users,           label: "Funcionários",          href: "/admin/employees"        },
+  { icon: GraduationCap,   label: "Estudantes",            href: "/admin/students"         },
+  { icon: IdCard,          label: "Carteirinhas",          href: "/admin/cards"            },
+  { icon: Building2,       label: "Instituições",          href: "/admin/universities"     },
+  { icon: Bus,             label: "Frota",                 href: "/admin/buses"            },
 ];
 
 interface SideNavProps {
@@ -43,10 +48,8 @@ export function SideNav({ activePath, onLogout }: SideNavProps) {
 
       {/* Branding */}
       <div className="px-5 py-5 flex items-center gap-3 border-b border-outline-variant/20">
-        <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
-          <span className="material-symbols-outlined text-white" style={{ fontSize: "18px" }}>
-            directions_bus
-          </span>
+        <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shrink-0">
+          <Bus className="w-4.5 h-4.5 text-white" />
         </div>
         <div>
           <p className="text-sm font-extrabold text-on-surface leading-tight">Transporte</p>
@@ -63,6 +66,7 @@ export function SideNav({ activePath, onLogout }: SideNavProps) {
           {navItems.map((item) => {
             const isActive =
               currentPath === item.href || currentPath.startsWith(item.href + "/");
+            const Icon = item.icon;
             return (
               <li key={item.href}>
                 <Link
@@ -74,15 +78,12 @@ export function SideNav({ activePath, onLogout }: SideNavProps) {
                       : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
                   )}
                 >
-                  <span
+                  <Icon
                     className={cn(
-                      "material-symbols-outlined transition-colors",
+                      "w-5 h-5 transition-colors",
                       isActive ? "text-primary" : "text-on-surface-variant"
                     )}
-                    style={{ fontSize: "20px" }}
-                  >
-                    {item.icon}
-                  </span>
+                  />
                   <span>{item.label}</span>
                 </Link>
               </li>
@@ -94,7 +95,7 @@ export function SideNav({ activePath, onLogout }: SideNavProps) {
       {/* User footer */}
       <div className="px-4 py-4 border-t border-outline-variant/20">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0">
             {user?.name ? getInitials(user.name) : "A"}
           </div>
           <div className="flex-1 min-w-0">
@@ -107,12 +108,10 @@ export function SideNav({ activePath, onLogout }: SideNavProps) {
           </div>
           <button
             onClick={onLogout}
-            className="p-2 rounded-lg text-on-surface-variant hover:text-error hover:bg-error-container transition-colors flex-shrink-0"
+            className="p-2 rounded-lg text-on-surface-variant hover:text-error hover:bg-error-container transition-colors shrink-0"
             title="Sair"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
-              logout
-            </span>
+            <LogOut className="w-4.5 h-4.5" />
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { X } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 import type { DateRange } from "react-day-picker";
 import { ptBR } from "react-day-picker/locale";
@@ -251,8 +252,19 @@ export function EnrollmentPeriodModal({
       <style>{`
         /* react-day-picker v9 CSS variables */
         .edp-picker {
-          --rdp-accent-color: #003f87;
-          --rdp-accent-background-color: #d7e2ff;
+          --rdp-accent-color: var(--color-primary);
+          --rdp-accent-background-color: var(--color-info-container);
+          --rdp-range_middle-background-color: var(--color-info-container);
+          --rdp-range_middle-color: var(--color-on-info);
+          --rdp-range_start-color: var(--color-on-primary);
+          --rdp-range_end-color: var(--color-on-primary);
+          --rdp-range_start-date-background-color: var(--color-primary);
+          --rdp-range_end-date-background-color: var(--color-primary);
+          --rdp-day_button-border: 1px solid transparent;
+          --rdp-selected-border: 1px solid var(--color-primary);
+          --rdp-disabled-opacity: 0.45;
+          --rdp-outside-opacity: 1;
+          --rdp-today-color: var(--color-primary);
           --rdp-day-height: 36px;
           --rdp-day-width: 36px;
           --rdp-day_button-height: 34px;
@@ -278,6 +290,50 @@ export function EnrollmentPeriodModal({
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.04em;
+          color: var(--color-on-surface-variant);
+          opacity: 1;
+        }
+
+        .edp-picker .rdp-month_caption {
+          color: var(--color-on-surface);
+        }
+
+        .edp-picker .rdp-button_previous,
+        .edp-picker .rdp-button_next {
+          color: var(--color-primary);
+        }
+
+        .edp-picker .rdp-day_button {
+          color: var(--color-on-surface);
+          border-radius: 9999px;
+          transition: background-color 120ms ease, color 120ms ease;
+        }
+
+        .edp-picker .rdp-day_button:hover:not(:disabled) {
+          background-color: var(--color-surface-container-high);
+          color: var(--color-on-surface);
+        }
+
+        .edp-picker .rdp-outside .rdp-day_button {
+          color: var(--color-on-surface-muted);
+        }
+
+        .edp-picker .rdp-disabled .rdp-day_button {
+          color: var(--color-outline);
+        }
+
+        .edp-picker .rdp-selected {
+          font-size: inherit;
+          font-weight: 600;
+        }
+
+        .edp-picker .rdp-range_middle .rdp-day_button {
+          color: var(--color-on-info);
+        }
+
+        .edp-picker .rdp-range_start .rdp-day_button,
+        .edp-picker .rdp-range_end .rdp-day_button {
+          color: var(--color-on-primary);
         }
 
         /* Table layout fix — v9 uses .rdp-month_grid instead of table */
@@ -325,7 +381,7 @@ export function EnrollmentPeriodModal({
               className="rounded-md p-1 text-on-surface-variant hover:bg-surface-container"
               aria-label="Fechar modal"
             >
-              <span className="material-symbols-outlined">close</span>
+              <X className="w-5 h-5" />
             </button>
           </div>
 
@@ -403,7 +459,7 @@ export function EnrollmentPeriodModal({
                 ) : (
                   minSlotsFromBuses > 0 &&
                   (showOverCapacityWarning ? (
-                    <div className="mt-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                    <div className="mt-1 rounded-md border border-warning bg-warning-container px-3 py-2 text-sm text-on-warning">
                       A quantidade de vagas ({totalSlotsNumber}) é maior que a
                       soma das capacidades dos ônibus ({minSlotsFromBuses}).
                       Isso é permitido, mas verifique se é intencional.

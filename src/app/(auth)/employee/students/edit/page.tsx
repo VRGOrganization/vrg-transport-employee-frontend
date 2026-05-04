@@ -155,7 +155,7 @@ function EditStudentPageInner() {
       <div className="min-w-0 flex flex-col">
         <TopBar user={user} />
 
-        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)]">
+        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
           <StudentFormLayout
             title="Editar Estudante"
             subtitle={`Atualize os dados de ${student?.name ?? "estudante"}`}
@@ -256,5 +256,4 @@ export default function EmployeeEditStudentPage() {
     </Suspense>
   );
 }
-
 

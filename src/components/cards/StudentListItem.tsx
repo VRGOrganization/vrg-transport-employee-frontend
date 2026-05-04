@@ -30,7 +30,7 @@ export function StudentListItem({
 
   const baseClass = large
     ? `w-full rounded-xl border p-6 transition ${
-        isSelected ? "border-primary bg-primary/8" : "border-outline-variant bg-pink-50"
+        isSelected ? "border-primary bg-primary/8" : "border-outline-variant bg-surface-container-lowest"
       }`
     : `w-full rounded-xl border p-3 transition ${
         isSelected ? "border-primary bg-primary/10" : "border-outline-variant bg-surface hover:border-primary/40"
@@ -81,7 +81,7 @@ export function StudentListItem({
               hasCard
                 ? "bg-success/15 text-success"
                 : isWaitlisted
-                  ? "bg-amber-100 text-amber-700"
+                  ? "bg-warning-container text-on-warning"
                 : isPending
                   ? "bg-warning/20 text-warning"
                   : isRejected

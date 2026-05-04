@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { X, ArrowLeft, ArrowRight, Mail, Badge, Calendar, RefreshCw, UserX, Info } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { employeeApi } from "@/lib/employeeApi";
@@ -63,12 +65,10 @@ function formatDate(dateStr: string) {
   });
 }
 
-function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+function InfoRow({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3 py-3 border-b border-outline-variant last:border-0">
-      <span className="material-symbols-outlined text-on-surface-variant shrink-0" style={{ fontSize: "18px" }}>
-        {icon}
-      </span>
+      <Icon className="w-4.5 h-4.5 text-on-surface-variant shrink-0" />
       <div className="min-w-0">
         <p className="text-xs text-on-surface-variant">{label}</p>
         <p className="text-sm font-medium text-on-surface truncate">{value}</p>
@@ -237,7 +237,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
                 onClick={onClose}
                 className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
               >
-                <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>close</span>
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -255,10 +255,10 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
               </div>
 
               <div className="rounded-xl border border-outline-variant px-4">
-                <InfoRow icon="mail" label="Email" value={employee.email} />
-                <InfoRow icon="badge" label="Matrícula" value={employee.registrationId} />
-                <InfoRow icon="calendar_today" label="Cadastrado em" value={formatDate(employee.createdAt)} />
-                <InfoRow icon="update" label="Atualizado em" value={formatDate(employee.updatedAt)} />
+                <InfoRow icon={Mail} label="Email" value={employee.email} />
+                <InfoRow icon={Badge} label="Matrícula" value={employee.registrationId} />
+                <InfoRow icon={Calendar} label="Cadastrado em" value={formatDate(employee.createdAt)} />
+                <InfoRow icon={RefreshCw} label="Atualizado em" value={formatDate(employee.updatedAt)} />
               </div>
             </div>
 
@@ -277,14 +277,14 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
                   onClick={() => setView("delete-confirm")}
                   className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full border-2 border-error text-error hover:bg-error/10 transition-colors"
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>person_off</span>
+                  <UserX className="w-4.5 h-4.5" />
                   Desativar
                 </button>
               </div>
             ) : (
               <div className="px-6 py-5">
                 <div className="flex items-center gap-2 justify-center text-sm text-on-surface-variant bg-surface-container-high rounded-xl py-3">
-                  <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>info</span>
+                  <Info className="w-4 h-4" />
                   Este funcionário está desativado e não tem acesso ao sistema
                 </div>
               </div>
@@ -300,7 +300,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
                 onClick={() => { setErrors(emptyErrors); setView("info"); }}
                 className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
               >
-                <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>arrow_back</span>
+                <ArrowLeft className="w-5 h-5" />
               </button>
               <h2 className="font-headline font-semibold text-lg text-on-surface flex-1">
                 Editar Funcionário
@@ -371,7 +371,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
                 onClick={() => setView("edit")}
                 className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
               >
-                <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>arrow_back</span>
+                <ArrowLeft className="w-5 h-5" />
               </button>
               <h2 className="font-headline font-semibold text-lg text-on-surface flex-1">
                 Confirmar alterações
@@ -389,7 +389,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
                     <p className="text-xs text-on-surface-variant font-medium mb-1">{c.label}</p>
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-error line-through">{c.from}</span>
-                      <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: "14px" }}>arrow_forward</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-on-surface-variant" />
                       <span className="text-success font-medium">{c.to}</span>
                     </div>
                   </div>
@@ -419,16 +419,14 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
                 onClick={() => setView("info")}
                 className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
               >
-                <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>close</span>
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="px-6 pb-6">
               <div className="flex flex-col items-center gap-3 py-4 text-center mb-5">
                 <div className="p-4 bg-error/10 rounded-full">
-                  <span className="material-symbols-outlined text-error" style={{ fontSize: "36px" }}>
-                    person_off
-                  </span>
+                  <UserX className="w-9 h-9 text-error" />
                 </div>
                 <p className="text-sm text-on-surface-variant max-w-xs">
                   O funcionário <span className="font-semibold text-on-surface">{employee.name}</span> perderá
@@ -457,7 +455,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
                   ) : (
-                    <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>person_off</span>
+                    <UserX className="w-4.5 h-4.5" />
                   )}
                   Sim, desativar
                 </button>

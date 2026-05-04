@@ -66,7 +66,10 @@ export default function NewStudentPage() {
       <div className="min-w-0 flex flex-col">
         <TopBar user={user} />
 
-        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)]">
+        <main className="px-6 py-5 bg-surface flex flex-col gap-5">
+          <div className="mx-auto w-full  space-y-6">
+
+        
           <StudentFormLayout
             title="Cadastrar Estudante"
             subtitle="Preencha os dados para criar uma nova conta de estudante"
@@ -80,7 +83,6 @@ export default function NewStudentPage() {
                 backLabel="Ver estudantes"
                 onReset={handleReset}
                 resetLabel="Novo cadastro"
-                resetIcon="person_add"
               />
             ) : (
               <StudentForm
@@ -93,8 +95,9 @@ export default function NewStudentPage() {
               />
             )}
           </StudentFormLayout>
-          
+           </div>
         </main>
+       
       </div>
     </div>
   );

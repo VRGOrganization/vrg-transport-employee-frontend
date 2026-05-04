@@ -66,7 +66,7 @@ export default function EmployeeNewStudentPage() {
       <div className="min-w-0 flex flex-col">
         <TopBar user={user} />
 
-        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)]">
+        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
           <StudentFormLayout
             title="Cadastrar Estudante"
             subtitle="Preencha os dados para criar uma nova conta de estudante"
@@ -102,4 +102,3 @@ export default function EmployeeNewStudentPage() {
     </div>
   );
 }
-
