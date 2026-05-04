@@ -73,6 +73,7 @@ export default function BusSelectorPanel({
   }, []);
 
   const selected = buses.find((b) => b._id === value) ?? null;
+  const selectedAssignments = ((selected?.universitySlots ?? selected?.universityIds ?? []) as any[]);
 
   return (
     <div className={`${className ?? ""} rounded-2xl border border-outline-variant bg-surface-container-lowest p-4`}>
@@ -149,9 +150,9 @@ export default function BusSelectorPanel({
             <div className="text-xs text-on-surface-variant">{selected ? `${selected.pendingCount ?? 0} pendentes · ${selected.waitlistedCount ?? 0} fila` : ""}</div>
 
             {/* Faculdades vinculadas ao ônibus (chips) */}
-            {(selected?.universitySlots ?? selected?.universityIds ?? []).length > 0 && (
+            {selectedAssignments.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">
-                {((selected.universitySlots ?? selected.universityIds ?? []) as any[]).map((s: any, idx: number) => {
+                {selectedAssignments.map((s: any, idx: number) => {
                   const uid = typeof s.universityId === "string" ? s.universityId : (s.universityId?._id ?? s._id);
                   const label = (typeof s.universityId === "string")
                     ? (universitiesMap[uid]?.acronym ?? universitiesMap[uid]?.name ?? uid)
