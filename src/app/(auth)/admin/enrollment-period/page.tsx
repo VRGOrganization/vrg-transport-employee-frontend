@@ -227,8 +227,8 @@ export default function AdminEnrollmentPeriodPage() {
       <div className="flex flex-1 flex-col">
         <TopBar user={user} />
 
-        <main className="flex flex-1 flex-col bg-surface px-6 py-8 md:px-10">
-          <div className="mx-auto w-full max-w-7xl space-y-6">
+        <main className="px-6 py-5 bg-surface flex flex-col gap-5">
+          <div className="mx-auto w-full  space-y-6">
             <header className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h1 className="text-2xl font-bold text-on-surface">Período de Inscrição</h1>

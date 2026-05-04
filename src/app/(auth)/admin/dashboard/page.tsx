@@ -260,28 +260,25 @@ export default function AdminDashboardPage() {
               icon={GraduationCap}
               label="Alunos ativos"
               value={stats.activeStudents}
-              subInfo={{ text: "+12 esta semana", positive: true }}
+             
             />
             <DashboardStatCard
               icon={Users}
               label="Funcionários"
               value={stats.activeEmployees}
-              subInfo={{
-                text: `${stats.inactiveEmployees ?? "…"} desativados`,
-                positive: false,
-              }}
+            
             />
             <DashboardStatCard
               icon={ClipboardList}
               label="Solicitações pendentes"
               value={stats.pendingStudents}
-              subInfo={{ text: "Aguardando verificação", positive: false, warning: true }}
+              
             />
             <DashboardStatCard
               icon={Bus}
               label="Frota em operação"
               value={stats.fleetLabel ?? "—"}
-              subInfo={{ text: "2 em manutenção", positive: false }}
+             
             />
           </div>
 

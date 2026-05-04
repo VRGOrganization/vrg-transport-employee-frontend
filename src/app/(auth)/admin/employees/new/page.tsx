@@ -166,9 +166,9 @@ export default function RegisterEmployeePage() {
       <SideNav activePath="/admin/employees" onLogout={logout} />
       <div className="min-w-0 flex flex-col">
         <TopBar user={user} />
-        <main className="flex-1 bg-surface px-6 py-8 md:px-10 flex flex-col">
-          <div className="max-w-lg mx-auto">
-            <div className="mb-6 flex items-center gap-3">
+        <main className="mx-auto w-full  space-y-6">
+          <div className="">
+            <div className="mt-6 flex items-center gap-3">
               <Link
                 href="/admin/employees"
                 className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
@@ -186,7 +186,7 @@ export default function RegisterEmployeePage() {
               </div>
             </div>
 
-            <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-sm">
+            <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-sm mt-5 ml-10 mr-10">
               {success ? (
                 <div className="flex flex-col items-center gap-5 py-6 text-center">
                   <div className="p-4 bg-success/10 rounded-full">
@@ -320,7 +320,7 @@ export default function RegisterEmployeePage() {
             </div>
           </div>
           <div className="mt-auto w-full">
-            <Footer />
+           
           </div>
         </main>
       </div>
