@@ -88,7 +88,7 @@ export default function EmployeeStudentsPage() {
       <div className="min-w-0 flex flex-col">
         <TopBar user={user} />
 
-        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)]">
+        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
           <div className="max-w-3xl mx-auto">
 
             {/* Header */}
@@ -183,4 +183,3 @@ export default function EmployeeStudentsPage() {
     </div>
   );
 }
-

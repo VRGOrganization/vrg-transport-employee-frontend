@@ -113,7 +113,7 @@ export default function EmployeeDashboardPage() {
       <div className="min-w-0 flex flex-col">
         <TopBar user={user} />
 
-        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)]">
+        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <DashboardStatCard
@@ -215,4 +215,3 @@ function DashboardStatCard({
     </div>
   );
 }
-

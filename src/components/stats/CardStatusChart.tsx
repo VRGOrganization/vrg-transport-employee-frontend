@@ -80,8 +80,8 @@ export function CardStatusChart({
     total > 0 ? `${Math.round((n / total) * 100)}%` : "0%";
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-5">
-      <p className="text-xs font-medium text-gray-400 mb-4 tracking-wide uppercase">
+    <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5">
+      <p className="text-xs font-medium text-on-surface-muted mb-4 tracking-wide uppercase">
         Status das carteirinhas
       </p>
 
@@ -108,10 +108,10 @@ export function CardStatusChart({
         ].map(({ label, value, color }) => (
           <span
             key={label}
-            className="flex items-center gap-1.5 text-xs text-gray-500"
+            className="flex items-center gap-1.5 text-xs text-on-surface-variant"
           >
             <span
-              className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
+              className="w-2.5 h-2.5 rounded-sm shrink-0"
               style={{ background: color }}
             />
             {label} {pct(value)}

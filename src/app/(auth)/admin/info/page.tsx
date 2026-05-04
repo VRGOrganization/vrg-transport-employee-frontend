@@ -20,7 +20,6 @@ export default function AdminInfoPage() {
           <StatsDashboard />
         </main>
 
-        <Footer />
       </div>
     </div>
   );

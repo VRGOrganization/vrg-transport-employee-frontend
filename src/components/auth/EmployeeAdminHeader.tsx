@@ -22,7 +22,7 @@ export function EmployeeAdminHeader() {
           Portal Interno
         </h1>
 
-        <p className="text-primary-fixed-dim text-sm max-w-[260px] leading-relaxed font-medium">
+        <p className="text-primary-fixed-dim text-sm max-w-65 leading-relaxed font-medium">
           Acesso exclusivo para servidores e administradores.
         </p>
       </div>

@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import type { Bus, University } from "@/types/university.types";
+import { Bus, Plus, X, Hourglass, Unlink } from "lucide-react";
+import type { Bus as BusType, University } from "@/types/university.types";
 import { busApi } from "@/lib/universityApi";
 
 interface Props {
   university: University;
-  allBuses: Bus[];
+  allBuses: BusType[];
   onBusesChanged: () => void;
 }
 
@@ -62,17 +63,15 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+        <h3 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wide">
           Ônibus vinculados ({linkedBuses.length})
         </h3>
         {availableBuses.length > 0 && (
           <button
             onClick={() => setLinking((v) => !v)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-success hover:bg-success/90 text-white text-xs font-medium rounded-lg transition-colors"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-              {linking ? "close" : "add"}
-            </span>
+            {linking ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
             {linking ? "Cancelar" : "Vincular ônibus"}
           </button>
         )}
@@ -83,7 +82,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
           <select
             value={selectedBusId}
             onChange={(e) => setSelectedBusId(e.target.value)}
-            className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="flex-1 px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-success"
           >
             <option value="">Selecione um ônibus</option>
             {availableBuses.map((bus) => (
@@ -98,8 +97,8 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
             className={cn(
               "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
               !selectedBusId || !!loadingId
-                ? "bg-emerald-200 text-white cursor-not-allowed"
-                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                ? "bg-success/50 text-white cursor-not-allowed"
+                : "bg-success hover:bg-success/90 text-white"
             )}
           >
             Vincular
@@ -108,8 +107,8 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
       )}
 
       {linkedBuses.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-8 text-slate-400">
-          <span className="material-symbols-outlined text-4xl mb-2">directions_bus</span>
+        <div className="flex flex-col items-center justify-center py-8 text-on-surface-muted">
+          <Bus className="w-10 h-10 mb-2" />
           <p className="text-sm">Nenhum ônibus vinculado</p>
           {allBuses.length === 0 && (
             <p className="text-xs mt-1 text-center">
@@ -122,28 +121,27 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
           {linkedBuses.map((bus) => (
             <li
               key={bus._id}
-              className="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50 group"
+              className="flex items-center justify-between px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant group"
             >
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-emerald-500" style={{ fontSize: "18px" }}>
-                  directions_bus
-                </span>
+                <Bus className="w-4.5 h-4.5 text-success" />
                 <div>
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                  <p className="text-sm font-medium text-on-surface">
                     {bus.identifier}
                   </p>
-                  <p className="text-xs text-slate-400">{bus.capacity} vagas</p>
+                  <p className="text-xs text-on-surface-muted">{bus.capacity} vagas</p>
                 </div>
               </div>
               <button
                 onClick={() => handleUnlink(bus._id)}
                 disabled={loadingId === bus._id}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-all"
                 title="Desvincular"
               >
-                <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                  {loadingId === bus._id ? "hourglass_empty" : "link_off"}
-                </span>
+                {loadingId === bus._id
+                  ? <Hourglass className="w-4 h-4" />
+                  : <Unlink className="w-4 h-4" />
+                }
               </button>
             </li>
           ))}

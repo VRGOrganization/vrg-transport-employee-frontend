@@ -1,3 +1,4 @@
+import { User, Badge, Calendar, Clock } from "lucide-react";
 import { DashboardStatCard } from "@/components/cards/DashboardStatCard";
 
 interface CardsStatsRowProps {
@@ -11,28 +12,28 @@ export function CardsStatsRow({ total, withCard, pending, waitlisted }: CardsSta
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
       <DashboardStatCard
-        icon="person"
+        icon={User}
         label="Alunos ativos"
         value={total}
         badge="Total"
         accent="primary"
       />
       <DashboardStatCard
-        icon="badge"
+        icon={Badge}
         label="Carteirinhas criadas"
         value={withCard}
         badge="Emitidas"
         accent="secondary"
       />
       <DashboardStatCard
-        icon="calendar_month"
+        icon={Calendar}
         label="Pendentes de aprovação"
         value={pending}
         badge="Pendentes"
         accent="tertiary"
       />
       <DashboardStatCard
-        icon="schedule"
+        icon={Clock}
         label="Na fila de espera"
         value={waitlisted}
         badge="Fila"

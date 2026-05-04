@@ -9,6 +9,7 @@ import type { Bus } from "@/types/university.types";
 import { BusTable } from "@/components/buses/BusTable";
 import { BusFormModal } from "@/components/buses/BusFormModal";
 import { BusStudentsDrawer } from "@/components/buses/BusStudentsDrawer";
+import { Bus as BusIcon, Armchair, Building2, Unlink } from "lucide-react";
 import { DashboardStatCard } from "@/components/cards/DashboardStatCard";
 
 export default function BusesPage() {
@@ -100,21 +101,21 @@ export default function BusesPage() {
           {!loading && buses.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
               <DashboardStatCard
-                icon="directions_bus"
+                icon={BusIcon}
                 label="Ônibus Ativos"
                 value={buses.length}
                 badge="FROTA"
                 accent="primary"
               />
               <DashboardStatCard
-                icon="event_seat"
+                icon={Armchair}
                 label="Total de Vagas"
                 value={buses.reduce((acc, b) => acc + (b.capacity ?? 0), 0)}
                 badge="CAPACIDADE"
                 accent="secondary"
               />
               <DashboardStatCard
-                icon="account_balance"
+                icon={Building2}
                 label="Faculdades Cobertas"
                 value={
                   new Set(
@@ -127,7 +128,7 @@ export default function BusesPage() {
                 accent="tertiary"
               />
               <DashboardStatCard
-                icon="link_off"
+                icon={Unlink}
                 label="Sem Vínculo"
                 value={buses.filter((b) => (b.universitySlots ?? []).length === 0).length}
                 badge="ATENÇÃO"

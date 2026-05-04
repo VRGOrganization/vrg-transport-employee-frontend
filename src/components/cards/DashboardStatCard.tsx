@@ -1,3 +1,6 @@
+import type { LucideIcon } from "lucide-react";
+import { ArrowUpRight, TrendingUp, AlertTriangle } from "lucide-react";
+
 interface SubInfo {
   text: string;
   positive: boolean;
@@ -7,7 +10,7 @@ interface SubInfo {
 type Accent = "primary" | "secondary" | "tertiary";
 
 interface DashboardStatCardProps {
-  icon: string;
+  icon: LucideIcon;
   label: string;
   value: number | string | null;
   badge?: string;
@@ -31,7 +34,7 @@ const accentStyles: Record<Accent, { icon: string; badge: string }> = {
 };
 
 export function DashboardStatCard({
-  icon,
+  icon: Icon,
   label,
   value,
   badge,
@@ -46,15 +49,15 @@ export function DashboardStatCard({
         : value;
 
   const subInfoColor = subInfo?.warning
-    ? "text-amber-500"
+    ? "text-warning"
     : subInfo?.positive
-      ? "text-emerald-600"
+      ? "text-success"
       : "text-on-surface-variant";
 
-  const subInfoIcon = subInfo?.warning
-    ? "warning"
+  const SubInfoIcon = subInfo?.warning
+    ? AlertTriangle
     : subInfo?.positive
-      ? "trending_up"
+      ? TrendingUp
       : null;
 
   const accentStyle = accentStyles[accent];
@@ -63,17 +66,13 @@ export function DashboardStatCard({
     <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm p-6 hover:shadow-md transition-shadow duration-200">
       {/* Top row: icon + status badge */}
       <div className="flex items-start justify-between mb-4">
-        <span className={`material-symbols-outlined ${accentStyle.icon}`} style={{ fontSize: "22px" }}>
-          {icon}
-        </span>
+        <Icon className={`w-5.5 h-5.5 ${accentStyle.icon}`} />
         {badge ? (
           <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wide ${accentStyle.badge}`}>
             {badge}
           </span>
         ) : (
-          <span className="material-symbols-outlined text-on-surface-variant/40" style={{ fontSize: "18px" }}>
-            arrow_outward
-          </span>
+          <ArrowUpRight className="w-4.5 h-4.5 text-on-surface-variant/40" />
         )}
       </div>
 
@@ -88,11 +87,7 @@ export function DashboardStatCard({
       {/* SubInfo */}
       {subInfo && (
         <p className={`text-xs font-medium flex items-center gap-1 ${subInfoColor}`}>
-          {subInfoIcon && (
-            <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>
-              {subInfoIcon}
-            </span>
-          )}
+          {SubInfoIcon && <SubInfoIcon className="w-3.5 h-3.5" />}
           {subInfo.text}
         </p>
       )}
