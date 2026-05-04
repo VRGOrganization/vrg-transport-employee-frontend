@@ -62,9 +62,9 @@
   --color-on-info:           #075985;
 
   /* ── Tipografia ── */
-  --font-headline: 'Manrope', sans-serif;
-  --font-body:     'Inter', sans-serif;
-  --font-label:    'Inter', sans-serif;
+  --font-headline: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-body:     "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-label:    "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
   /* ── Espaçamentos extras ── */
   --spacing-18: 4.5rem;

@@ -54,7 +54,13 @@ export interface BusStudent {
   degree?: string;
   // agora o backend pode retornar `busId` e `universityId`
   busId?: string;
-  universityId?: string;
+  universityId?:
+    | string
+    | {
+        _id: string;
+        name?: string;
+        acronym?: string;
+      };
 }
 
 export interface BusRouteDestination {
