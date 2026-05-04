@@ -109,7 +109,7 @@ export default function EmployeeCardsPage() {
 
         <main className="bg-surface flex flex-col flex-1 px-6 py-8 md:px-10">
           <div className="max-w-7xl mx-auto w-full space-y-6">
-            <CardsPageHeader onRefresh={reload} backHref="/employee/dashboard" />
+            <CardsPageHeader onRefresh={reload} />
 
             <CardsStatsRow
               total={stats.total}
@@ -209,5 +209,4 @@ export default function EmployeeCardsPage() {
     </div>
   );
 }
-
 

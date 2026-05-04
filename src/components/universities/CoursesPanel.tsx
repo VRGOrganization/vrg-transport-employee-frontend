@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { Plus, GraduationCap, BookOpen, Pencil, Ban, Hourglass } from "lucide-react";
 import type { Course, University } from "@/types/university.types";
 import { courseApi } from "@/lib/universityApi";
 import { CourseFormModal } from "./CourseFormModal";
@@ -41,56 +41,55 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+        <h3 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wide">
           Cursos ({courses.length})
         </h3>
         <button
           onClick={() => setCreating(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-medium rounded-lg transition-colors"
         >
-          <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>add</span>
+          <Plus className="w-3.5 h-3.5" />
           Novo curso
         </button>
       </div>
 
       {courses.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-          <span className="material-symbols-outlined text-4xl mb-2">school</span>
+        <div className="flex flex-col items-center justify-center py-10 text-on-surface-muted">
+          <GraduationCap className="w-10 h-10 mb-2" />
           <p className="text-sm">Nenhum curso cadastrado</p>
-          <p className="text-xs mt-1">Clique em "Novo curso" para começar</p>
+          <p className="text-xs mt-1">Clique em &quot;Novo curso&quot; para começar</p>
         </div>
       ) : (
         <ul className="space-y-2">
           {courses.map((course) => (
             <li
               key={course._id}
-              className="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50 group"
+              className="flex items-center justify-between px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant group"
             >
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-blue-500" style={{ fontSize: "18px" }}>
-                  menu_book
-                </span>
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                <BookOpen className="w-4.5 h-4.5 text-info" />
+                <span className="text-sm font-medium text-on-surface">
                   {course.name}
                 </span>
               </div>
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => setEditing(course)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                  className="p-1.5 rounded-lg text-on-surface-muted hover:text-info hover:bg-info-container transition-colors"
                   title="Editar"
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>edit</span>
+                  <Pencil className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDeactivate(course._id)}
                   disabled={deactivating === course._id}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  className="p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-colors"
                   title="Desativar"
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                    {deactivating === course._id ? "hourglass_empty" : "block"}
-                  </span>
+                  {deactivating === course._id
+                    ? <Hourglass className="w-4 h-4" />
+                    : <Ban className="w-4 h-4" />
+                  }
                 </button>
               </div>
             </li>

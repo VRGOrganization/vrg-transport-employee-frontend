@@ -14,6 +14,7 @@ import { StudentForm } from "@/components/students/StudentForm";
 import { StudentFormLayout } from "@/components/students/StudentFormLayout";
 import { SuccessBanner } from "@/components/students/SuccessBanner";
 import { useStudentForm } from "@/components/hooks/useStudentForm";
+import { AlertCircle, UserCheck, UserX } from "lucide-react";
 
 function EditStudentPageInner() {
   const { user, logout } = useEmployeeAuth();
@@ -130,9 +131,7 @@ function EditStudentPageInner() {
           <TopBar user={user} />
           <main className="p-8">
             <div className="max-w-lg mx-auto flex flex-col items-center gap-4 py-16 text-center">
-              <span className="material-symbols-outlined text-error" style={{ fontSize: "40px" }}>
-                error
-              </span>
+              <AlertCircle className="w-10 h-10 text-error" />
               <p className="text-on-surface-variant">{fetchError}</p>
               <Button variant="outline" size="sm" onClick={() => window.history.back()}>
                 Voltar
@@ -151,7 +150,7 @@ function EditStudentPageInner() {
       <div className="min-w-0 flex flex-col">
         <TopBar user={user} />
 
-        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)]">
+        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
           <StudentFormLayout
             title="Editar Estudante"
             subtitle={`Atualize os dados de ${student?.name ?? "estudante"}`}
@@ -175,7 +174,7 @@ function EditStudentPageInner() {
                     <div className="flex items-center gap-2">
                       <span
                         className={`w-2.5 h-2.5 rounded-full ${
-                          student.active ? "bg-green-500" : "bg-slate-300"
+                          student.active ? "bg-success" : "bg-surface-container-high"
                         }`}
                       />
                       <span className="text-sm font-medium text-on-surface-variant">
@@ -211,9 +210,7 @@ function EditStudentPageInner() {
                             : "text-success hover:bg-success-container"
                         }`}
                       >
-                        <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                          {student.active ? "person_off" : "person_check"}
-                        </span>
+                        {student.active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                         {student.active ? "Desativar" : "Reativar"}
                       </button>
                     )}
@@ -249,5 +246,3 @@ export default function EditStudentPage() {
     </Suspense>
   );
 }
-
-

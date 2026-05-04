@@ -41,7 +41,7 @@ export function TopBar({ user }: TopBarProps) {
   const pageTitle = getPageTitle(pathname);
  
   return (
-    <header className="fixed top-0 right-0 left-64 z-30 h-16 bg-surface-container-lowest/90 backdrop-blur-md border-b border-outline-variant/30">
+    <header className="sticky top-0 z-30 h-16 bg-surface-container-lowest/90 backdrop-blur-md border-b border-outline-variant/30">
       <div className="flex items-center justify-between h-full px-8">
  
         {/* Left: page title */}
@@ -67,7 +67,7 @@ export function TopBar({ user }: TopBarProps) {
                 {user?.role === "admin" ? "Administradora" : "Funcionária"}
               </p>
             </div>
-            <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold text-sm flex-shrink-0">
+            <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold text-sm shrink-0">
               {user?.name ? getInitials(user.name) : "A"}
             </div>
           </div>

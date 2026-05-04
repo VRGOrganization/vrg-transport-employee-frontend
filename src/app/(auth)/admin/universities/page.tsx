@@ -10,6 +10,7 @@ import { UniversityTable } from "@/components/universities/UniversityTable";
 import { CoursesPanel } from "@/components/universities/CoursesPanel";
 import { LinkedBusesPanel } from "@/components/universities/LinkedBusesPanel";
 import { UniversityFormModal } from "@/components/universities/UniversityFormModal";
+import { Plus, MapPin, BookOpen, Bus as BusIcon, Building2, AlertCircle, X } from "lucide-react";
 
 type DetailTab = "courses" | "buses";
 
@@ -122,21 +123,21 @@ export default function UniversitiesPage() {
               <h1 className="text-2xl font-bold text-on-surface">
                 Gerenciamento de Instituições
               </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              <p className="text-sm text-on-surface-variant mt-1">
                 Cadastre faculdades, gerencie cursos e vincule ônibus
               </p>
             </div>
             <button
               onClick={() => setCreating(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+              className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>add</span>
+              <Plus className="w-4.5 h-4.5" />
               Nova Faculdade
             </button>
           </div>
 
           {error && (
-            <div className="mb-6 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl text-sm text-red-600 dark:text-red-400">
+            <div className="mb-6 px-4 py-3 bg-error-container border border-error/30 rounded-xl text-sm text-error">
               {error}
             </div>
           )}
@@ -145,12 +146,12 @@ export default function UniversitiesPage() {
           <div className="flex gap-6 items-start">
 
             {/* Coluna esquerda — lista de faculdades */}
-            <div className="w-96 shrink-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm p-5">
+            <div className="w-96 shrink-0 bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm p-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
+                <h2 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wide">
                   Faculdades ativas
                 </h2>
-                <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">
+                <span className="text-xs bg-info-container text-info px-2 py-0.5 rounded-full font-medium">
                   {universities.length}
                 </span>
               </div>
@@ -168,30 +169,28 @@ export default function UniversitiesPage() {
 
             {/* Coluna direita — painel de detalhes */}
             {selected ? (
-              <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm">
+              <div className="flex-1 bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm">
                 {/* Cabeçalho do painel */}
-                <div className="px-6 pt-6 pb-0 border-b border-slate-100 dark:border-slate-700/50">
+                <div className="px-6 pt-6 pb-0 border-b border-outline-variant">
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                      <h2 className="text-lg font-bold text-on-surface">
                         {selected.acronym}
-                        <span className="ml-2 text-base font-normal text-slate-400">·</span>
-                        <span className="ml-2 text-base font-normal text-slate-500 dark:text-slate-400">
+                        <span className="ml-2 text-base font-normal text-on-surface-muted">·</span>
+                        <span className="ml-2 text-base font-normal text-on-surface-variant">
                           {selected.name}
                         </span>
                       </h2>
-                      <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
-                        <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>
-                          location_on
-                        </span>
+                      <p className="text-xs text-on-surface-muted mt-0.5 flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5" />
                         {selected.address}
                       </p>
                     </div>
                     <button
                       onClick={() => setSelected(null)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      className="p-1.5 rounded-lg text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors"
                     >
-                      <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>close</span>
+                      <X className="w-4.5 h-4.5" />
                     </button>
                   </div>
 
@@ -203,18 +202,18 @@ export default function UniversitiesPage() {
                         onClick={() => setActiveTab(tab)}
                         className={`px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
                           activeTab === tab
-                            ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                            : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                            ? "border-primary text-primary"
+                            : "border-transparent text-on-surface-variant hover:text-on-surface"
                         }`}
                       >
                         {tab === "courses" ? (
                           <span className="flex items-center gap-1.5">
-                            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>menu_book</span>
+                            <BookOpen className="w-4 h-4" />
                             Cursos
                           </span>
                         ) : (
                           <span className="flex items-center gap-1.5">
-                            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>directions_bus</span>
+                            <BusIcon className="w-4 h-4" />
                             Ônibus
                           </span>
                         )}
@@ -229,16 +228,16 @@ export default function UniversitiesPage() {
                     loadingCourses ? (
                       <div className="flex flex-col gap-2">
                         {[...Array(3)].map((_, i) => (
-                          <div key={i} className="h-12 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                          <div key={i} className="h-12 rounded-xl bg-surface-container-high animate-pulse" />
                         ))}
                       </div>
                     ) : coursesError ? (
                       <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
-                        <span className="material-symbols-outlined text-red-400 text-4xl">error</span>
-                        <p className="text-sm text-red-500 dark:text-red-400">{coursesError}</p>
+                        <AlertCircle className="w-10 h-10 text-error" />
+                        <p className="text-sm text-error">{coursesError}</p>
                         <button
                           onClick={() => loadCourses(selected._id)}
-                          className="mt-1 text-xs text-blue-600 hover:underline"
+                          className="mt-1 text-xs text-primary hover:underline"
                         >
                           Tentar novamente
                         </button>
@@ -262,10 +261,10 @@ export default function UniversitiesPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center py-24 text-slate-300 dark:text-slate-600">
-                <span className="material-symbols-outlined text-6xl mb-4">account_balance</span>
-                <p className="text-sm font-medium text-slate-400">Selecione uma faculdade</p>
-                <p className="text-xs text-slate-300 dark:text-slate-600 mt-1">
+              <div className="flex-1 flex flex-col items-center justify-center py-24 text-on-surface-muted">
+                <Building2 className="w-16 h-16 mb-4 text-on-surface-muted/40" />
+                <p className="text-sm font-medium text-on-surface-variant">Selecione uma faculdade</p>
+                <p className="text-xs text-on-surface-muted mt-1">
                   para gerenciar seus cursos e ônibus
                 </p>
               </div>
@@ -288,5 +287,3 @@ export default function UniversitiesPage() {
     </div>
   );
 }
-
-

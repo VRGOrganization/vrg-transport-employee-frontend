@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { CheckCircle2, UserX } from "lucide-react";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
@@ -88,20 +89,11 @@ export default function StudentsPage() {
       <div className="min-w-0 flex flex-col">
         <TopBar user={user} />
 
-        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)]">
+        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
           <div className="max-w-3xl mx-auto">
 
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
-              <Link
-                href="/admin/dashboard"
-                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-                title="Voltar ao painel"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
-                  arrow_back
-                </span>
-              </Link>
               <div className="flex-1">
                 <h1 className="font-headline font-bold text-2xl text-on-surface">
                   Estudantes
@@ -132,9 +124,7 @@ export default function StudentsPage() {
                       : "text-on-surface-variant hover:text-on-surface"
                   }`}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                    {t === "active" ? "check_circle" : "person_off"}
-                  </span>
+                  {t === "active" ? <CheckCircle2 className="w-4 h-4" /> : <UserX className="w-4 h-4" />}
                   {t === "active" ? "Ativos" : "Desativados"}
                 </button>
               ))}
@@ -185,4 +175,3 @@ export default function StudentsPage() {
     </div>
   );
 }
-

@@ -48,25 +48,25 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit }: Props)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
-        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-5">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+        <h2 className="text-lg font-bold text-on-surface mb-5">
           {initial ? "Editar Faculdade" : "Nova Faculdade"}
         </h2>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+            <label className="block text-sm font-medium text-on-surface-variant mb-1">
               Nome completo
             </label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex: Universidade Federal Fluminense"
-              className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+            <label className="block text-sm font-medium text-on-surface-variant mb-1">
               Sigla
             </label>
             <input
@@ -74,30 +74,30 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit }: Props)
               onChange={(e) => setAcronym(e.target.value.toUpperCase())}
               placeholder="Ex: UFF"
               maxLength={20}
-              className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+              className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary uppercase"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+            <label className="block text-sm font-medium text-on-surface-variant mb-1">
               Endereço
             </label>
             <input
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Ex: Rua Miguel de Frias, 9 - Niterói"
-              className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         </div>
 
         {error && (
-          <p className="mt-3 text-sm text-red-500">{error}</p>
+          <p className="mt-3 text-sm text-error">{error}</p>
         )}
 
         <div className="flex gap-3 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            className="flex-1 px-4 py-2.5 rounded-lg border border-outline-variant text-on-surface-variant text-sm font-medium hover:bg-surface-container-low transition-colors"
           >
             Cancelar
           </button>
@@ -107,8 +107,8 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit }: Props)
             className={cn(
               "flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
               loading
-                ? "bg-blue-300 cursor-not-allowed text-white"
-                : "bg-blue-600 hover:bg-blue-700 text-white"
+                ? "bg-primary/50 cursor-not-allowed text-white"
+                : "bg-primary hover:bg-primary/90 text-white"
             )}
           >
             {loading ? "Salvando..." : initial ? "Salvar alterações" : "Cadastrar"}

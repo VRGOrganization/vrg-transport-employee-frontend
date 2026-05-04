@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { employeeApi } from "@/lib/employeeApi";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
+import { GraduationCap, Users, ClipboardList, Bus, Calendar, Download, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { Footer } from "@/components/layout/Footer";
@@ -64,12 +65,12 @@ interface UserRow {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const avatarColors = [
-  "bg-blue-100 text-blue-700",
-  "bg-orange-100 text-orange-700",
-  "bg-teal-100 text-teal-700",
-  "bg-purple-100 text-purple-700",
-  "bg-green-100 text-green-700",
-  "bg-rose-100 text-rose-700",
+  "bg-primary-fixed text-primary",
+  "bg-secondary-fixed text-secondary",
+  "bg-tertiary-container text-tertiary",
+  "bg-info-container text-on-info",
+  "bg-success-container text-on-success",
+  "bg-warning-container text-on-warning",
 ];
 
 function getInitials(name: string) {
@@ -223,13 +224,13 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-surface">
+    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
       <SideNav activePath="/admin/dashboard" onLogout={logout} />
 
-      <div className="flex-1 ml-64 flex flex-col">
+      <div className="min-w-0 flex flex-col">
         <TopBar user={user} />
 
-        <main className="mt-16 px-6 py-5 bg-surface flex flex-col gap-5">
+        <main className="px-6 py-5 bg-surface flex flex-col gap-5">
 
           {/* ── Page header ──────────────────────────────────── */}
           <div className="flex items-center justify-between">
@@ -243,11 +244,11 @@ export default function AdminDashboardPage() {
             </div>
             <div className="flex items-center gap-2">
               <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors">
-                <span className="material-symbols-outlined text-sm">calendar_month</span>
+                <Calendar className="w-4 h-4" />
                 {monthLabel}
               </button>
               <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors">
-                <span className="material-symbols-outlined text-sm">download</span>
+                <Download className="w-4 h-4" />
                 Exportar
               </button>
             </div>
@@ -256,13 +257,13 @@ export default function AdminDashboardPage() {
           {/* ── Stat cards ───────────────────────────────────── */}
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             <DashboardStatCard
-              icon="school"
+              icon={GraduationCap}
               label="Alunos ativos"
               value={stats.activeStudents}
               subInfo={{ text: "+12 esta semana", positive: true }}
             />
             <DashboardStatCard
-              icon="group"
+              icon={Users}
               label="Funcionários"
               value={stats.activeEmployees}
               subInfo={{
@@ -271,13 +272,13 @@ export default function AdminDashboardPage() {
               }}
             />
             <DashboardStatCard
-              icon="pending_actions"
+              icon={ClipboardList}
               label="Solicitações pendentes"
               value={stats.pendingStudents}
               subInfo={{ text: "Aguardando verificação", positive: false, warning: true }}
             />
             <DashboardStatCard
-              icon="directions_bus"
+              icon={Bus}
               label="Frota em operação"
               value={stats.fleetLabel ?? "—"}
               subInfo={{ text: "2 em manutenção", positive: false }}
@@ -297,9 +298,7 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-2 flex-wrap">
                 {/* Search input */}
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" style={{ fontSize: "16px" }}>
-                    search
-                  </span>
+                  <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
                   <input
                     type="text"
                     value={search}
@@ -312,7 +311,7 @@ export default function AdminDashboardPage() {
                       onClick={() => handleSearch("")}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors"
                     >
-                      <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>close</span>
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
@@ -371,7 +370,7 @@ export default function AdminDashboardPage() {
                           <tr key={row.id} className="hover:bg-surface-container-low/50 transition-colors">
                             <td className="px-6 py-3">
                               <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 ${avatarColors[idx % avatarColors.length]}`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${avatarColors[idx % avatarColors.length]}`}>
                                   {getInitials(row.name)}
                                 </div>
                                 <span className="text-sm font-medium text-on-surface">{row.name}</span>
@@ -405,7 +404,7 @@ export default function AdminDashboardPage() {
                   disabled={page === 1}
                   className="w-7 h-7 rounded-lg flex items-center justify-center border border-outline-variant hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>chevron_left</span>
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
                 {Array.from({ length: totalPages }).map((_, i) => (
                   <button
@@ -425,7 +424,7 @@ export default function AdminDashboardPage() {
                   disabled={page === totalPages}
                   className="w-7 h-7 rounded-lg flex items-center justify-center border border-outline-variant hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>chevron_right</span>
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>

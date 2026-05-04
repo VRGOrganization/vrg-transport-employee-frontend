@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ArrowUp, ArrowDown } from "lucide-react";
 import { universityApi } from "@/lib/universityApi";
 import { cn } from "@/lib/utils";
 import type { Bus } from "@/types/university.types";
@@ -12,7 +13,6 @@ interface Props {
   open: boolean;
   initial?: Bus | null;
   onClose: () => void;
-  // capacity opcional (null = sem limite). Include universitySlots for persistence.
   onSubmit: (data: { identifier: string; capacity?: number | null; universitySlots?: Array<{ universityId: string; priorityOrder: number }>; shift?: string }) => Promise<void>;
 }
 
@@ -30,7 +30,6 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
       setIdentifier(initial?.identifier ?? "");
       setCapacity(initial?.capacity?.toString() ?? "");
       setShift(initial?.shift ?? "");
-      // hydrate slots from universitySlots or legacy universityIds
       if (initial?.universitySlots && initial.universitySlots.length > 0) {
         setSlots(
           initial.universitySlots.map((s) => ({
@@ -53,20 +52,16 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
       } else {
         setSlots([]);
       }
-
       setError("");
     }
   }, [open, initial]);
 
-  // If any slot is missing acronym/name (e.g. only have IDs), fetch universities to fill acronyms.
   useEffect(() => {
     if (!open) return;
-    // only run when there are slots with missing display data
     const missing = slots.some((s) => !s.acronym && !s.name);
     if (!missing) return;
 
     let cancelled = false;
-
     (async () => {
       try {
         const res = await universityApi.list();
@@ -83,15 +78,11 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
             name: s.name ?? map[s.universityId]?.name,
           }))
         );
-      } catch (e) {
-        // ignore failures silently
+      } catch {
+        // ignore
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
-    // only re-run when modal opens or slot list length changes
+    return () => { cancelled = true; };
   }, [open, slots.length]);
 
   if (!open) return null;
@@ -103,7 +94,6 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
   const handleRemove = (universityId: string) => {
     setSlots((prev) => {
       const filtered = prev.filter((s) => s.universityId !== universityId);
-      // reindex priorities
       return filtered.map((s, idx) => ({ ...s, priorityOrder: idx + 1 }));
     });
   };
@@ -121,9 +111,6 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
       return next.map((s, i) => ({ ...s, priorityOrder: i + 1 }));
     });
   };
-
-  const handleMoveUp = (id: string) => handleMove(id, "up");
-  const handleMoveDown = (id: string) => handleMove(id, "down");
 
   const handleSubmit = async () => {
     if (!identifier.trim()) { setError("O identificador é obrigatório."); return; }
@@ -156,25 +143,25 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
-        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-5">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
+        <h2 className="text-lg font-bold text-on-surface mb-5">
           {initial ? "Editar Ônibus" : "Novo Ônibus"}
         </h2>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+            <label className="block text-sm font-medium text-on-surface-variant mb-1">
               Identificador
             </label>
             <input
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               placeholder="Ex: Ônibus 03"
-              className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+            <label className="block text-sm font-medium text-on-surface-variant mb-1">
               Capacidade de passageiros
             </label>
             <input
@@ -183,16 +170,16 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
               value={capacity}
               onChange={(e) => setCapacity(e.target.value)}
               placeholder="Ex: 48"
-              className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Período principal do ônibus</label>
+            <label className="block text-sm font-medium text-on-surface-variant mb-1">Período principal do ônibus</label>
             <select
               value={shift}
               onChange={(e) => setShift(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">Nenhum</option>
               <option value="Manhã">Manhã</option>
@@ -202,64 +189,64 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Faculdades vinculadas</label>
+            <label className="block text-sm font-medium text-on-surface-variant mb-2">Faculdades vinculadas</label>
             <div className="flex flex-col gap-2">
               {slots.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">Nenhuma faculdade vinculada</p>
+                <p className="text-xs text-on-surface-muted italic">Nenhuma faculdade vinculada</p>
               ) : (
                 slots.map((s) => (
-                  <div key={s.universityId} className="flex items-center justify-between gap-3 py-1 px-2 rounded-lg border border-slate-100 dark:border-slate-700">
+                  <div key={s.universityId} className="flex items-center justify-between gap-3 py-1 px-2 rounded-lg border border-outline-variant">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-md bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-sm font-medium text-blue-600">{s.acronym ?? s.name?.charAt(0) ?? "U"}</div>
+                      <div className="w-8 h-8 rounded-md bg-info-container flex items-center justify-center text-sm font-medium text-info">{s.acronym ?? s.name?.charAt(0) ?? "U"}</div>
                       <div className="text-sm">
-                        <div className="font-medium text-slate-800 dark:text-slate-100">{s.acronym ?? s.name}</div>
-                        <div className="text-xxs text-slate-400">Prioridade P{s.priorityOrder}{s.filledSlots ? ` • ${s.filledSlots}` : ""}</div>
+                        <div className="font-medium text-on-surface">{s.acronym ?? s.name}</div>
+                        <div className="text-xxs text-on-surface-muted">Prioridade P{s.priorityOrder}{s.filledSlots ? ` • ${s.filledSlots}` : ""}</div>
                       </div>
                     </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleMoveUp(s.universityId)}
-                            disabled={s.priorityOrder <= 1}
-                            className={cn(
-                              "p-1 rounded-md text-slate-500 hover:bg-slate-50",
-                              s.priorityOrder <= 1 ? "opacity-40 cursor-not-allowed" : ""
-                            )}
-                            title="Mover para cima"
-                          >
-                            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>arrow_upward</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleMoveDown(s.universityId)}
-                            disabled={s.priorityOrder >= slots.length}
-                            className={cn(
-                              "p-1 rounded-md text-slate-500 hover:bg-slate-50",
-                              s.priorityOrder >= slots.length ? "opacity-40 cursor-not-allowed" : ""
-                            )}
-                            title="Mover para baixo"
-                          >
-                            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>arrow_downward</span>
-                          </button>
-                          <button type="button" onClick={() => handleRemove(s.universityId)} className="text-red-500 text-sm">Remover</button>
-                        </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleMove(s.universityId, "up")}
+                        disabled={s.priorityOrder <= 1}
+                        className={cn(
+                          "p-1 rounded-md text-on-surface-variant hover:bg-surface-container-low",
+                          s.priorityOrder <= 1 ? "opacity-40 cursor-not-allowed" : ""
+                        )}
+                        title="Mover para cima"
+                      >
+                        <ArrowUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMove(s.universityId, "down")}
+                        disabled={s.priorityOrder >= slots.length}
+                        className={cn(
+                          "p-1 rounded-md text-on-surface-variant hover:bg-surface-container-low",
+                          s.priorityOrder >= slots.length ? "opacity-40 cursor-not-allowed" : ""
+                        )}
+                        title="Mover para baixo"
+                      >
+                        <ArrowDown className="w-4 h-4" />
+                      </button>
+                      <button type="button" onClick={() => handleRemove(s.universityId)} className="text-error text-sm">Remover</button>
+                    </div>
                   </div>
                 ))
               )}
               <div>
-                <button type="button" onClick={() => setLinkOpen(true)} className="mt-2 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 text-sm">Vincular faculdade</button>
+                <button type="button" onClick={() => setLinkOpen(true)} className="mt-2 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-fixed text-primary text-sm">Vincular faculdade</button>
               </div>
             </div>
           </div>
         </div>
 
-        {error && <p className="mt-3 text-sm text-red-500">{error}</p>}
+        {error && <p className="mt-3 text-sm text-error">{error}</p>}
 
         <div className="flex gap-3 mt-6">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            className="flex-1 px-4 py-2.5 rounded-lg border border-outline-variant text-on-surface-variant text-sm font-medium hover:bg-surface-container-low transition-colors"
           >
             Cancelar
           </button>
@@ -269,7 +256,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
             disabled={loading}
             className={cn(
               "flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
-              loading ? "bg-blue-300 cursor-not-allowed text-white" : "bg-blue-600 hover:bg-blue-700 text-white"
+              loading ? "bg-primary/50 cursor-not-allowed text-white" : "bg-primary hover:bg-primary/90 text-white"
             )}
           >
             {loading ? "Salvando..." : initial ? "Salvar" : "Cadastrar"}

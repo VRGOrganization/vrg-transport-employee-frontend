@@ -224,7 +224,7 @@ export default function AdminEnrollmentPeriodPage() {
     <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
       <SideNav activePath="/admin/enrollment-period" onLogout={logout} />
 
-      <div className=" flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col">
         <TopBar user={user} />
 
         <main className="flex flex-1 flex-col bg-surface px-6 py-8 md:px-10">
@@ -368,9 +368,9 @@ export default function AdminEnrollmentPeriodPage() {
                               className={`rounded-full px-2 py-1 text-xs font-semibold ${
                                 period.active
                                   ? "bg-success/15 text-success"
-                                  : "bg-slate-200 text-slate-700"
-                              }`}
-                            >
+                                  : "bg-surface-container-high text-on-surface-variant"
+                               }`}
+                             >
                               {period.active ? "ABERTO" : "ENCERRADO"}
                             </span>
                           </td>
@@ -470,6 +470,5 @@ export default function AdminEnrollmentPeriodPage() {
     </div>
   );
 }
-
 
 

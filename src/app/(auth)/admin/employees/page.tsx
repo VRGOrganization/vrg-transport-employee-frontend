@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { ChevronRight, CheckCircle2, UserX, AlertCircle, Users } from "lucide-react";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
@@ -53,12 +54,7 @@ function EmployeeCard({
           Mat. {employee.registrationId}
         </p>
       </div>
-      <span
-        className="material-symbols-outlined text-outline-variant shrink-0"
-        style={{ fontSize: "18px" }}
-      >
-        chevron_right
-      </span>
+      <ChevronRight className="w-4.5 h-4.5 text-outline-variant shrink-0" />
     </button>
   );
 }
@@ -149,23 +145,11 @@ export default function EmployeesPage() {
         <TopBar user={user} />
 
         {/* Page Content */}
-        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)]">
+        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
           <div className="max-w-3xl mx-auto">
 
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
-              <Link
-                href="/admin/dashboard"
-                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-                title="Voltar ao painel"
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: "20px" }}
-                >
-                  arrow_back
-                </span>
-              </Link>
               <div className="flex-1">
                 <h1 className="font-headline font-bold text-2xl text-on-surface">
                   Funcionários
@@ -197,12 +181,7 @@ export default function EmployeesPage() {
                       : "text-on-surface-variant hover:text-on-surface"
                   }`}
                 >
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontSize: "16px" }}
-                  >
-                    {t === "active" ? "check_circle" : "person_off"}
-                  </span>
+                  {t === "active" ? <CheckCircle2 className="w-4 h-4" /> : <UserX className="w-4 h-4" />}
                   {t === "active" ? "Ativos" : "Desativados"}
                 </button>
               ))}
@@ -211,12 +190,7 @@ export default function EmployeesPage() {
             {/* Error state */}
             {error && (
               <div className="flex flex-col items-center gap-3 py-16 text-center">
-                <span
-                  className="material-symbols-outlined text-error"
-                  style={{ fontSize: "40px" }}
-                >
-                  error
-                </span>
+                <AlertCircle className="w-10 h-10 text-error" />
                 <p className="text-on-surface-variant">{error}</p>
                 <Button
                   variant="outline"
@@ -241,12 +215,7 @@ export default function EmployeesPage() {
             {!loading && !error && displayed.length === 0 && (
               <div className="flex flex-col items-center gap-4 py-16 text-center">
                 <div className="p-5 bg-surface-container-high rounded-full">
-                  <span
-                    className="material-symbols-outlined text-on-surface-variant"
-                    style={{ fontSize: "36px" }}
-                  >
-                    {tab === "active" ? "group" : "person_off"}
-                  </span>
+                  {tab === "active" ? <Users className="w-9 h-9 text-on-surface-variant" /> : <UserX className="w-9 h-9 text-on-surface-variant" />}
                 </div>
                 <div>
                   <p className="font-semibold text-on-surface">
@@ -302,4 +271,3 @@ export default function EmployeesPage() {
     </div>
   );
 }
-

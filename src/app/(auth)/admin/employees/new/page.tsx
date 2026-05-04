@@ -4,10 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { DashboardNav } from "@/components/layout/DashboardNav";
+import { SideNav } from "@/components/layout/SideNav";
+import { TopBar } from "@/components/layout/TopBar";
+import { Footer } from "@/components/layout/Footer";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { employeeApi } from "@/lib/employeeApi";
+import {
+  ArrowLeft,
+  Badge,
+  CheckCircle2,
+  Lock,
+  Mail,
+  User,
+  UserPlus,
+} from "lucide-react";
 
 interface FormData {
   name: string;
@@ -151,170 +162,168 @@ export default function RegisterEmployeePage() {
   };
 
   return (
-    <div className="flex flex-col flex-1">
-      <DashboardNav user={user} onLogout={logout} />
-
-      <main className="flex-1 bg-surface px-6 py-8 md:px-10">
-        <div className="max-w-lg mx-auto">
-          <div className="mb-6 flex items-center gap-3">
-            <Link
-              href="/admin/employees"
-              className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-              title="Voltar ao painel"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
-                arrow_back
-              </span>
-            </Link>
-            <div>
-              <h1 className="font-headline font-bold text-2xl text-on-surface">
-                Cadastrar Funcionário
-              </h1>
-              <p className="text-sm text-on-surface-variant">
-                Preencha os dados para criar uma nova conta de funcionário
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-sm">
-            {success ? (
-              <div className="flex flex-col items-center gap-5 py-6 text-center">
-                <div className="p-4 bg-success/10 rounded-full">
-                  <span
-                    className="material-symbols-outlined text-success"
-                    style={{ fontSize: "40px" }}
-                  >
-                    check_circle
-                  </span>
-                </div>
-                <div>
-                  <h2 className="font-headline font-semibold text-lg text-on-surface">
-                    Funcionário cadastrado!
-                  </h2>
-                  <p className="text-sm text-on-surface-variant mt-1">
-                    A conta de <span className="font-medium">{formData.name}</span> foi
-                    criada com sucesso.
-                  </p>
-                </div>
-                <div className="flex gap-3 w-full">
-                  <Button
-                    variant="outline"
-                    size="md"
-                    fullWidth
-                    icon="arrow_back"
-                    onClick={() => router.push("/admin/dashboard")}
-                  >
-                    Painel
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="md"
-                    fullWidth
-                    icon="person_add"
-                    onClick={handleNewRegistration}
-                  >
-                    Novo cadastro
-                  </Button>
-                </div>
+    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
+      <SideNav activePath="/admin/employees" onLogout={logout} />
+      <div className="min-w-0 flex flex-col">
+        <TopBar user={user} />
+        <main className="flex-1 bg-surface px-6 py-8 md:px-10 flex flex-col">
+          <div className="max-w-lg mx-auto">
+            <div className="mb-6 flex items-center gap-3">
+              <Link
+                href="/admin/employees"
+                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                title="Voltar ao painel"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+              <div>
+                <h1 className="font-headline font-bold text-2xl text-on-surface">
+                  Cadastrar Funcionário
+                </h1>
+                <p className="text-sm text-on-surface-variant">
+                  Preencha os dados para criar uma nova conta de funcionário
+                </p>
               </div>
-            ) : (
-              <>
-                {errors.general && (
-                  <div className="mb-5 bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3">
-                    {errors.general}
-                  </div>
-                )}
+            </div>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-                      Nome completo
-                    </label>
-                    <Input
-                      type="text"
-                      icon="person"
-                      placeholder="Maria da Silva"
-                      value={formData.name}
-                      onChange={set("name")}
-                      error={errors.name}
-                    />
+            <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-sm">
+              {success ? (
+                <div className="flex flex-col items-center gap-5 py-6 text-center">
+                  <div className="p-4 bg-success/10 rounded-full">
+                    <CheckCircle2 className="w-10 h-10 text-success" />
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-                      Email
-                    </label>
-                    <Input
-                      type="email"
-                      icon="mail"
-                      placeholder="funcionario@empresa.com"
-                      value={formData.email}
-                      onChange={set("email")}
-                      error={errors.email}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-                      Matrícula
-                    </label>
-                    <Input
-                      type="text"
-                      icon="badge"
-                      placeholder="MAT123456"
-                      value={formData.registrationId}
-                      onChange={set("registrationId")}
-                      error={errors.registrationId}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-                      Senha
-                    </label>
-                    <Input
-                      type="password"
-                      icon="lock"
-                      placeholder="••••••••"
-                      value={formData.password}
-                      onChange={set("password")}
-                      error={errors.password}
-                    />
-                    <p className="text-xs text-on-surface-variant ml-1">
-                      Mínimo 8 caracteres com maiúsculas, minúsculas e números
+                  <div>
+                    <h2 className="font-headline font-semibold text-lg text-on-surface">
+                      Funcionário cadastrado!
+                    </h2>
+                    <p className="text-sm text-on-surface-variant mt-1">
+                      A conta de <span className="font-medium">{formData.name}</span> foi
+                      criada com sucesso.
                     </p>
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-                      Confirmar senha
-                    </label>
-                    <Input
-                      type="password"
-                      icon="lock"
-                      placeholder="••••••••"
-                      value={formData.confirmPassword}
-                      onChange={set("confirmPassword")}
-                      error={errors.confirmPassword}
-                    />
+                  <div className="flex gap-3 w-full">
+                    <Button
+                      variant="outline"
+                      size="md"
+                      fullWidth
+                      icon={<ArrowLeft className="w-4 h-4" />}
+                      onClick={() => router.push("/admin/dashboard")}
+                    >
+                      Painel
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="md"
+                      fullWidth
+                      icon={<UserPlus className="w-4 h-4" />}
+                      onClick={handleNewRegistration}
+                    >
+                      Novo cadastro
+                    </Button>
                   </div>
+                </div>
+              ) : (
+                <>
+                  {errors.general && (
+                    <div className="mb-5 bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3">
+                      {errors.general}
+                    </div>
+                  )}
 
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="lg"
-                    fullWidth
-                    loading={loading}
-                    icon="person_add"
-                  >
-                    Cadastrar Funcionário
-                  </Button>
-                </form>
-              </>
-            )}
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
+                        Nome completo
+                      </label>
+                      <Input
+                        type="text"
+                        icon={<User className="w-5 h-5" />}
+                        placeholder="Maria da Silva"
+                        value={formData.name}
+                        onChange={set("name")}
+                        error={errors.name}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
+                        Email
+                      </label>
+                      <Input
+                        type="email"
+                        icon={<Mail className="w-5 h-5" />}
+                        placeholder="funcionario@empresa.com"
+                        value={formData.email}
+                        onChange={set("email")}
+                        error={errors.email}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
+                        Matrícula
+                      </label>
+                      <Input
+                        type="text"
+                        icon={<Badge className="w-5 h-5" />}
+                        placeholder="MAT123456"
+                        value={formData.registrationId}
+                        onChange={set("registrationId")}
+                        error={errors.registrationId}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
+                        Senha
+                      </label>
+                      <Input
+                        type="password"
+                        icon={<Lock className="w-5 h-5" />}
+                        placeholder="••••••••"
+                        value={formData.password}
+                        onChange={set("password")}
+                        error={errors.password}
+                      />
+                      <p className="text-xs text-on-surface-variant ml-1">
+                        Mínimo 8 caracteres com maiúsculas, minúsculas e números
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
+                        Confirmar senha
+                      </label>
+                      <Input
+                        type="password"
+                        icon={<Lock className="w-5 h-5" />}
+                        placeholder="••••••••"
+                        value={formData.confirmPassword}
+                        onChange={set("confirmPassword")}
+                        error={errors.confirmPassword}
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="lg"
+                      fullWidth
+                      loading={loading}
+                      icon={<UserPlus className="w-4 h-4" />}
+                    >
+                      Cadastrar Funcionário
+                    </Button>
+                  </form>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      </main>
+          <div className="mt-auto w-full">
+            <Footer />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

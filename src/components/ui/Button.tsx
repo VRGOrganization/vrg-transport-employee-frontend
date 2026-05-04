@@ -43,9 +43,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const renderIcon = () => {
       if (!icon) return null;
-      if (typeof icon === "string") {
-        return <span className="material-symbols-outlined text-2xl">{icon}</span>;
-      }
       return <span className="inline-flex items-center justify-center">{icon}</span>;
     };
 

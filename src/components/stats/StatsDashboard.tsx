@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { useStudentStats } from "@/components/hooks/useStudentStats";
 import { MetricCard } from "@/components/stats/MetricCard";
 import { CardStatusChart } from "@/components/stats/CardStatusChart";
@@ -33,14 +34,12 @@ export function StatsDashboard() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4 text-gray-400">
-        <span className="material-icons text-5xl text-red-300">
-          error_outline
-        </span>
+      <div className="flex flex-col items-center justify-center h-64 gap-4 text-on-surface-muted">
+        <AlertCircle className="w-12 h-12 text-error" />
         <p className="text-sm text-center max-w-xs">{error}</p>
         <button
           onClick={refetch}
-          className="text-sm text-blue-500 hover:text-blue-600 underline underline-offset-2 transition-colors"
+          className="text-sm text-info hover:text-info/80 underline underline-offset-2 transition-colors"
         >
           Tentar novamente
         </button>
@@ -65,23 +64,23 @@ export function StatsDashboard() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
-          <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-0.5">
+          <p className="text-xs text-on-surface-muted font-medium uppercase tracking-wide mb-0.5">
             Painel de Informações
           </p>
-          <h1 className="text-xl font-medium text-gray-800">
+          <h1 className="text-xl font-medium text-on-surface">
             Estatísticas de Alunos
           </h1>
         </div>
         <div className="flex items-center gap-2.5">
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-on-surface-muted">
             Gerado em {formatDate(stats.generatedAt)}
           </span>
           <button
             onClick={refetch}
             title="Atualizar estatísticas"
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
+            className="p-1.5 rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-muted hover:text-on-surface-variant"
           >
-            <span className="material-icons text-base">refresh</span>
+            <RefreshCw className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -97,22 +96,19 @@ export function StatsDashboard() {
           label="Carteirinha emitida"
           value={stats.studentsWithCard}
           subtitle={`${pctCard}% do total`}
-          dotColor="#639922"
-          valueColor="#3B6D11"
+          accentColor="success"
         />
         <MetricCard
           label="Solicitação pendente"
           value={stats.studentsWithPendingRequest}
           subtitle={`${pctPending}% do total`}
-          dotColor="#EF9F27"
-          valueColor="#BA7517"
+          accentColor="warning"
         />
         <MetricCard
           label="Sem solicitação"
           value={stats.studentsWithoutCard}
           subtitle={`${pctWithout}% do total`}
-          dotColor="#E24B4A"
-          valueColor="#A32D2D"
+          accentColor="error"
         />
       </div>
 
@@ -124,8 +120,8 @@ export function StatsDashboard() {
           withoutCard={stats.studentsWithoutCard}
         />
 
-        <div className="bg-white border border-gray-100 rounded-xl p-5">
-          <p className="text-xs font-medium text-gray-400 mb-4 tracking-wide uppercase">
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5">
+          <p className="text-xs font-medium text-on-surface-muted mb-4 tracking-wide uppercase">
             Uso do transporte
           </p>
           <TransportRing
