@@ -59,16 +59,23 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
 
   if (!bus) return null;
 
+  const busSlots = bus.universitySlots ?? [];
+  const busUniversityIds = bus.universityIds ?? [];
   const filledSlotsTotal = bus.filledSlotsTotal ?? students.length;
 
   const grouped = students.reduce((acc, s) => {
-    const key = typeof s.universityId === "string" ? s.universityId : (s.universityId?._id ?? "__unknown");
+    const key =
+      typeof s.universityId === "string"
+        ? s.universityId
+        : (s.universityId?._id ?? "__unknown");
     if (!acc[key]) acc[key] = [];
     acc[key].push(s);
     return acc;
   }, {} as Record<string, BusStudent[]>);
 
-  const orderedSlots = (bus.universitySlots ?? []).slice().sort((a, b) => (a.priorityOrder ?? 0) - (b.priorityOrder ?? 0));
+  const orderedSlots = busSlots
+    .slice()
+    .sort((a, b) => (a.priorityOrder ?? 0) - (b.priorityOrder ?? 0));
   const unknownKey = "__unknown";
   const unknownStudents = grouped[unknownKey] ?? [];
 
@@ -78,9 +85,11 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
       // if cached, return
       if (universityCache[u]) return universityCache[u];
       // try find in slots where object present
-      const found = (bus.universitySlots ?? []).find(s => typeof s.universityId !== "string" && s.universityId._id === u);
+      const found = busSlots.find(
+        (s) => typeof s.universityId !== "string" && s.universityId._id === u
+      );
       if (found && typeof found.universityId !== "string") return found.universityId.acronym ?? u;
-      const found2 = (bus.universityIds ?? []).find((x: any) => typeof x !== "string" && x._id === u);
+      const found2 = busUniversityIds.find((x: any) => typeof x !== "string" && x._id === u);
       if (found2 && typeof found2 !== "string") return found2.acronym ?? u;
       // fallback to raw id until cache resolves
       return u;

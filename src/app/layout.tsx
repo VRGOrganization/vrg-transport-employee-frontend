@@ -1,18 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Inter, Manrope } from "next/font/google";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  variable: "--font-manrope",
-});
 
 export const metadata: Metadata = {
   title: "São Fidélis Transporte",
@@ -45,7 +34,7 @@ export default function RootLayout({
           } catch (e) {}`}
         </Script>
       </head>
-      <body className={`${inter.variable} ${manrope.variable} antialiased`}>
+      <body className="antialiased">
         <ThemeProvider>
           <div className="min-h-screen flex flex-col">
             {children}
