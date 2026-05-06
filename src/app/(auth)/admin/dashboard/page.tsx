@@ -127,14 +127,16 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [employeesResult, studentsResult, activePeriodResult] =
+      const [employeesResult, studentsResult, activePeriodResult, requestsResult] =
         await Promise.allSettled([
           employeeApi.get<Employee[]>("/employee"),
           employeeApi.get<StudentsResponse>("/student"),
           employeeApi.get<EnrollmentPeriodRecord>("/enrollment-period/active"),
+          employeeApi.get<any[]>("/license-request/all"),
         ]);
 
       const rows: UserRow[] = [];
+      let resolvedStudents: StudentRecord[] = [];
 
       if (employeesResult.status === "fulfilled") {
         const all = employeesResult.value;
@@ -156,23 +158,20 @@ export default function AdminDashboardPage() {
       }
 
       if (studentsResult.status === "fulfilled") {
-        const resolved: StudentRecord[] = Array.isArray(studentsResult.value)
+        resolvedStudents = Array.isArray(studentsResult.value)
           ? studentsResult.value
           : Array.isArray((studentsResult.value as { data?: StudentRecord[] }).data)
             ? ((studentsResult.value as { data: StudentRecord[] }).data ?? [])
             : [];
 
-        // pendingStudents = alunos com status PENDING (aguardando verificação de e-mail)
-        const pendingStudents = resolved.filter((s) => s.status === "PENDING");
-        const activeStudents = resolved.filter((s) => s.status === "ACTIVE" && s.active);
+        const activeStudents = resolvedStudents.filter((s) => s.status === "ACTIVE" && s.active);
 
         setStats((prev) => ({
           ...prev,
           activeStudents: activeStudents.length,
-          pendingStudents: pendingStudents.length,
         }));
 
-        for (const stu of resolved) {
+        for (const stu of resolvedStudents) {
           rows.push({
             id: stu._id,
             name: stu.name,
@@ -182,6 +181,24 @@ export default function AdminDashboardPage() {
             createdAt: stu.createdAt,
           });
         }
+      }
+
+      // Calcula solicitações pendentes de aprovação (mesma lógica de /admin/cards)
+      if (requestsResult.status === "fulfilled") {
+        const requests = requestsResult.value;
+        const pendingStudentIds = new Set(
+          requests
+            .filter((r: any) => r.status === "pending")
+            .map((r: any) => (typeof r.studentId === "object" ? r.studentId?._id : r.studentId))
+            .filter(Boolean)
+        );
+
+        const pendingCount = resolvedStudents.filter((s) => s.active && pendingStudentIds.has(s._id)).length;
+        
+        setStats((prev) => ({
+          ...prev,
+          pendingStudents: pendingCount,
+        }));
       }
 
       if (activePeriodResult.status === "fulfilled") {
