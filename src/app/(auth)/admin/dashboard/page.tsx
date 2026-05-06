@@ -260,25 +260,25 @@ export default function AdminDashboardPage() {
               icon={GraduationCap}
               label="Alunos ativos"
               value={stats.activeStudents}
-             
+              href="/admin/students"
             />
             <DashboardStatCard
               icon={Users}
               label="Funcionários"
               value={stats.activeEmployees}
-            
+              href="/admin/employees"
             />
             <DashboardStatCard
               icon={ClipboardList}
               label="Solicitações pendentes"
               value={stats.pendingStudents}
-              
+              href="/admin/cards"
             />
             <DashboardStatCard
               icon={Bus}
               label="Frota em operação"
               value={stats.fleetLabel ?? "—"}
-             
+              href="/admin/buses"
             />
           </div>
 

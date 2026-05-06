@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { ArrowUpRight, TrendingUp, AlertTriangle } from "lucide-react";
+import Link from "next/link";
 
 interface SubInfo {
   text: string;
@@ -16,6 +17,7 @@ interface DashboardStatCardProps {
   badge?: string;
   accent?: Accent;
   subInfo?: SubInfo;
+  href?: string;
 }
 
 const accentStyles: Record<Accent, { icon: string; badge: string }> = {
@@ -40,6 +42,7 @@ export function DashboardStatCard({
   badge,
   accent = "primary",
   subInfo,
+  href,
 }: DashboardStatCardProps) {
   const displayValue =
     typeof value === "number"
@@ -71,6 +74,14 @@ export function DashboardStatCard({
           <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wide ${accentStyle.badge}`}>
             {badge}
           </span>
+        ) : href ? (
+          <Link
+            href={href}
+            aria-label={`Ir para ${label}`}
+            className="rounded-lg p-1 -m-1 text-on-surface-variant/40 hover:text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all duration-200"
+          >
+            <ArrowUpRight className="w-4.5 h-4.5" />
+          </Link>
         ) : (
           <ArrowUpRight className="w-4.5 h-4.5 text-on-surface-variant/40" />
         )}
