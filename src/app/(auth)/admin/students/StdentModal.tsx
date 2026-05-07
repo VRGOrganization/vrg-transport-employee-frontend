@@ -47,14 +47,22 @@ export function StudentModal({
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const handleClose = () => {
+    if (success) {
+      onUpdated(student);
+    } else {
+      onClose();
+    }
+  };
+
   // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  }, [handleClose]);
 
   const onChange = (field: keyof FormData, value: string) => {
     setData((prev) => ({ ...prev, [field]: value }));
@@ -135,7 +143,7 @@ export function StudentModal({
     /* Backdrop */
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
       {/* Panel */}
       <div className="relative w-full max-w-md bg-surface rounded-2xl shadow-2xl border border-outline-variant/30 overflow-hidden">
@@ -147,7 +155,7 @@ export function StudentModal({
             <p className="text-xs text-on-surface-variant mt-0.5">{student.email}</p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
           >
             <X className="w-4 h-4" />
@@ -167,7 +175,7 @@ export function StudentModal({
               </p>
             </div>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="mt-2 px-5 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-90 transition-opacity"
             >
               Fechar
@@ -322,7 +330,7 @@ export function StudentModal({
             <div className="px-6 py-4 border-t border-outline-variant/20 flex items-center justify-end gap-3">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleClose}
                 className="px-4 py-2 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
               >
                 Cancelar

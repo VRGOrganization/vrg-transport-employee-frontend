@@ -110,21 +110,18 @@ export default function StudentsPage() {
   /* ── Modal callbacks ──────────────────────────────────────────────── */
 
   const handleUpdated = (updated: Student) => {
-    setActive((prev) => prev.map((s) => (s._id === updated._id ? updated : s)));
     setSelected(null);
+    loadTab(tab);
   };
 
   const handleDeactivated = (id: string) => {
-    const removed = active.find((s) => s._id === id);
-    setActive((prev) => prev.filter((s) => s._id !== id));
-    if (removed) setInactive((prev) => [{ ...removed, active: false }, ...prev]);
     setSelected(null);
+    loadTab(tab);
   };
 
   const handleReactivated = (updated: Student) => {
-    setInactive((prev) => prev.filter((s) => s._id !== updated._id));
-    setActive((prev) => [{ ...updated, active: true }, ...prev]);
     setSelected(null);
+    loadTab(tab);
   };
 
   /* ── Derived state ────────────────────────────────────────────────── */

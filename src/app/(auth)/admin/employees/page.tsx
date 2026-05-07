@@ -81,15 +81,13 @@ export default function EmployeesPage() {
   };
 
   const handleUpdated = (updated: Employee) => {
-    setActive((prev) => prev.map((e) => (e._id === updated._id ? updated : e)));
     setSelected(null);
+    loadTab(tab);
   };
 
   const handleDeleted = (id: string) => {
-    const removed = active.find((e) => e._id === id);
-    setActive((prev) => prev.filter((e) => e._id !== id));
-    if (removed) setInactive((prev) => [{ ...removed, active: false }, ...prev]);
     setSelected(null);
+    loadTab(tab);
   };
 
   const handleSearch = (v: string) => { setSearch(v); setPage(1); };
