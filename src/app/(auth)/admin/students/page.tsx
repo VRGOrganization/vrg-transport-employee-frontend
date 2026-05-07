@@ -10,6 +10,7 @@ import { employeeApi } from "@/lib/employeeApi";
 import { Student } from "@/types/student";
 import { StudentModal } from "./StdentModal";
 import { StudentInfoModal } from "./info/StudentInfoModal";
+import { StudentCardModal } from "./StudentCardModal";
 
 
 type Tab = "active" | "inactive";
@@ -51,6 +52,7 @@ export default function StudentsPage() {
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Student | null>(null);
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
+  const [viewingCardStudent, setViewingCardStudent] = useState<Student | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -386,7 +388,7 @@ export default function StudentsPage() {
                               {openDropdownId === student._id && (
                                 <>
                                   <div className="fixed inset-0 z-10" onClick={() => setOpenDropdownId(null)}></div>
-                                  <div className="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                                  <div className="absolute right-0 mt-2 w-36 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                                     <button
                                       onClick={() => {
                                         setViewingStudent(student);
@@ -406,6 +408,16 @@ export default function StudentsPage() {
                                     >
                                       <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
                                       Editar
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setViewingCardStudent(student);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
+                                    >
+                                      <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>badge</span>
+                                      Carteirinha
                                     </button>
                                   </div>
                                 </>
@@ -521,6 +533,14 @@ export default function StudentsPage() {
         <StudentInfoModal
           student={viewingStudent}
           onClose={() => setViewingStudent(null)}
+        />
+      )}
+
+      {/* Card Modal */}
+      {viewingCardStudent && (
+        <StudentCardModal
+          student={viewingCardStudent}
+          onClose={() => setViewingCardStudent(null)}
         />
       )}
     </div>
