@@ -48,6 +48,7 @@ export interface StudentFormData {
   telephone: string;
   institution: string;
   shift: "diurno" | "noturno" | "";
+  cpf: string;
   password: string;
   confirmPassword: string;
 }
@@ -58,6 +59,7 @@ export interface StudentFormErrors {
   telephone: string;
   institution: string;
   shift: string;
+  cpf: string;
   password: string;
   confirmPassword: string;
   general: string;
@@ -69,6 +71,7 @@ export const EMPTY_STUDENT_ERRORS: StudentFormErrors = {
   telephone: "",
   institution: "",
   shift: "",
+  cpf: "",
   password: "",
   confirmPassword: "",
   general: "",

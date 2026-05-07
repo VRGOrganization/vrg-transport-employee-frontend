@@ -52,6 +52,7 @@ export default function StudentsPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(10);
+  const [isMounted, setIsMounted] = useState(false);
 
   const resolveStudents = (payload: StudentsResponse): Student[] => {
     if (Array.isArray(payload)) return payload;
@@ -85,6 +86,7 @@ export default function StudentsPage() {
   );
 
   useEffect(() => {
+    setIsMounted(true);
     loadTab("active");
   }, [loadTab]);
 
@@ -362,7 +364,9 @@ export default function StudentsPage() {
                             </span>
                           </td>
                           <td className="px-4 py-3.5 text-xs text-on-surface-variant text-right">
-                            {new Date(student.createdAt).toLocaleDateString("pt-BR")}
+                            {isMounted 
+                              ? new Date(student.createdAt).toLocaleDateString("pt-BR")
+                              : "—"}
                           </td>
                           <td className="px-4 py-3.5 text-right">
                             <button
@@ -421,7 +425,8 @@ export default function StudentsPage() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setPage(1)}
-                    disabled={page === 1}
+                    disabled={loading || page <= 1}
+                    suppressHydrationWarning
                     className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Primeira página"
                   >
@@ -431,7 +436,8 @@ export default function StudentsPage() {
                   </button>
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
+                    disabled={loading || page <= 1}
+                    suppressHydrationWarning
                     className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
@@ -443,7 +449,8 @@ export default function StudentsPage() {
                   </span>
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
+                    disabled={loading || page >= totalPages}
+                    suppressHydrationWarning
                     className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
@@ -452,7 +459,8 @@ export default function StudentsPage() {
                   </button>
                   <button
                     onClick={() => setPage(totalPages)}
-                    disabled={page === totalPages}
+                    disabled={loading || page >= totalPages}
+                    suppressHydrationWarning
                     className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Última página"
                   >

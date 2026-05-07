@@ -23,23 +23,14 @@ const studentBaseSchema = z.object({
   shift: z
     .string({ error: "Selecione um turno" })
     .refine((value) => value === "diurno" || value === "noturno", "Selecione um turno"),
-  password: z.string(),
-  confirmPassword: z.string(),
+  cpf: z
+    .string({ error: "CPF e obrigatorio" })
+    .trim()
+    .regex(/^\d{11}$/, "CPF deve conter 11 digitos"),
+  password: z.string().optional(),
+  confirmPassword: z.string().optional(),
 });
 
-export const studentCreateSchema = studentBaseSchema
-  .extend({
-    password: z
-      .string({ error: "Senha e obrigatoria" })
-      .min(1, "Senha e obrigatoria")
-      .regex(PASSWORD_REGEX, "Minimo 8 caracteres com maiusculas, minusculas e numeros"),
-    confirmPassword: z
-      .string({ error: "Confirme a senha" })
-      .min(1, "Confirme a senha"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "As senhas não coincidem",
-    path: ["confirmPassword"],
-  });
+export const studentCreateSchema = studentBaseSchema;
 
 export const studentEditSchema = studentBaseSchema;

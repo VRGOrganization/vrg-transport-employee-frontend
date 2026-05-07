@@ -71,33 +71,27 @@ export function StudentForm({
 
 
       
+      {/* CPF */}
+      <Input
+        label="CPF (apenas números)"
+        type="text"
+        icon="badge"
+        placeholder="12345678909"
+        value={data.cpf}
+        onChange={(e) => onChange("cpf", e.target.value)}
+        error={errors.cpf}
+        disabled={isEdit}
+      />
 
-      {/* Password fields — only on create */}
+      {/* Info message — only on create */}
       {!isEdit && (
-        <>
-          <Input
-            label="Senha"
-            type="password"
-            icon="lock"
-            placeholder="••••••••"
-            value={data.password}
-            onChange={(e) => onChange("password", e.target.value)}
-            error={errors.password}
-          />
-          <p className="text-xs text-on-surface-variant -mt-3 ml-1">
-            Mínimo 8 caracteres com maiúsculas, minúsculas e números
+        <div className="bg-surface-container-high rounded-xl p-4 border border-outline-variant">
+          <p className="text-xs text-on-surface-variant italic">
+            * Por motivos de segurança, a senha não é definida pelo administrador. 
+            O estudante receberá um e-mail de boas-vindas com um link para definir sua própria senha 
+            assim que o cadastro for concluído.
           </p>
-
-          <Input
-            label="Confirmar senha"
-            type="password"
-            icon="lock"
-            placeholder="••••••••"
-            value={data.confirmPassword}
-            onChange={(e) => onChange("confirmPassword", e.target.value)}
-            error={errors.confirmPassword}
-          />
-        </>
+        </div>
       )}
 
       <Button
@@ -106,7 +100,7 @@ export function StudentForm({
         size="lg"
         fullWidth
         loading={loading}
-        icon={isEdit ? "save" : "person_add"}
+        icon={isEdit ? "save" : ""}
       >
         {isEdit ? "Salvar alterações" : "Cadastrar Estudante"}
       </Button>
