@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
-import { Footer } from "@/components/layout/Footer";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { employeeApi } from "@/lib/employeeApi";
@@ -14,7 +13,6 @@ import {
   ArrowLeft,
   Badge,
   CheckCircle2,
-  Lock,
   Mail,
   User,
   UserPlus,
@@ -24,27 +22,19 @@ interface FormData {
   name: string;
   email: string;
   registrationId: string;
-  password: string;
-  confirmPassword: string;
 }
 
 interface FormErrors {
   name: string;
   email: string;
   registrationId: string;
-  password: string;
-  confirmPassword: string;
   general: string;
 }
-
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,64}$/;
 
 const emptyErrors: FormErrors = {
   name: "",
   email: "",
   registrationId: "",
-  password: "",
-  confirmPassword: "",
   general: "",
 };
 
@@ -56,8 +46,6 @@ export default function RegisterEmployeePage() {
     name: "",
     email: "",
     registrationId: "",
-    password: "",
-    confirmPassword: "",
   });
   const [errors, setErrors] = useState<FormErrors>(emptyErrors);
   const [loading, setLoading] = useState(false);
@@ -65,7 +53,7 @@ export default function RegisterEmployeePage() {
 
   const set = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+    if (errors[field as keyof FormErrors]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const validate = (): boolean => {
@@ -93,23 +81,6 @@ export default function RegisterEmployeePage() {
       valid = false;
     }
 
-    if (!formData.password) {
-      next.password = "Senha é obrigatória";
-      valid = false;
-    } else if (!PASSWORD_REGEX.test(formData.password)) {
-      next.password =
-        "Mínimo 8 caracteres com letras maiúsculas, minúsculas e números";
-      valid = false;
-    }
-
-    if (!formData.confirmPassword) {
-      next.confirmPassword = "Confirme a senha";
-      valid = false;
-    } else if (formData.password !== formData.confirmPassword) {
-      next.confirmPassword = "As senhas não coincidem";
-      valid = false;
-    }
-
     setErrors(next);
     return valid;
   };
@@ -124,7 +95,6 @@ export default function RegisterEmployeePage() {
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         registrationId: formData.registrationId.trim(),
-        password: formData.password,
       });
       setSuccess(true);
     } catch (err: unknown) {
@@ -156,7 +126,7 @@ export default function RegisterEmployeePage() {
   };
 
   const handleNewRegistration = () => {
-    setFormData({ name: "", email: "", registrationId: "", password: "", confirmPassword: "" });
+    setFormData({ name: "", email: "", registrationId: "" });
     setErrors(emptyErrors);
     setSuccess(false);
   };
@@ -166,9 +136,9 @@ export default function RegisterEmployeePage() {
       <SideNav activePath="/admin/employees" onLogout={logout} />
       <div className="min-w-0 flex flex-col">
         <TopBar user={user} />
-        <main className="mx-auto w-full  space-y-6">
+        <main className="mx-auto w-full space-y-6">
           <div className="">
-            <div className="mt-6 flex items-center gap-3">
+            <div className="mt-6 flex items-center gap-3 ml-10">
               <Link
                 href="/admin/employees"
                 className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
@@ -181,7 +151,7 @@ export default function RegisterEmployeePage() {
                   Cadastrar Funcionário
                 </h1>
                 <p className="text-sm text-on-surface-variant">
-                  Preencha os dados para criar uma nova conta de funcionário
+                  Preencha os dados básicos. O funcionário receberá um e-mail para definir sua senha.
                 </p>
               </div>
             </div>
@@ -198,7 +168,7 @@ export default function RegisterEmployeePage() {
                     </h2>
                     <p className="text-sm text-on-surface-variant mt-1">
                       A conta de <span className="font-medium">{formData.name}</span> foi
-                      criada com sucesso.
+                      criada com sucesso. Um e-mail de definição de senha foi enviado para <span className="font-medium">{formData.email}</span>.
                     </p>
                   </div>
                   <div className="flex gap-3 w-full">
@@ -273,54 +243,25 @@ export default function RegisterEmployeePage() {
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-                        Senha
-                      </label>
-                      <Input
-                        type="password"
-                        icon={<Lock className="w-5 h-5" />}
-                        placeholder="••••••••"
-                        value={formData.password}
-                        onChange={set("password")}
-                        error={errors.password}
-                      />
-                      <p className="text-xs text-on-surface-variant ml-1">
-                        Mínimo 8 caracteres com maiúsculas, minúsculas e números
+                    <div className="pt-2">
+                      <p className="text-xs text-on-surface-variant italic mb-4">
+                        * Por motivos de segurança, a senha será definida pelo próprio funcionário através de um link enviado por e-mail após o cadastro.
                       </p>
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        size="lg"
+                        fullWidth
+                        loading={loading}
+                        icon={<UserPlus className="w-4 h-4" />}
+                      >
+                        Cadastrar Funcionário
+                      </Button>
                     </div>
-
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-                        Confirmar senha
-                      </label>
-                      <Input
-                        type="password"
-                        icon={<Lock className="w-5 h-5" />}
-                        placeholder="••••••••"
-                        value={formData.confirmPassword}
-                        onChange={set("confirmPassword")}
-                        error={errors.confirmPassword}
-                      />
-                    </div>
-
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      size="lg"
-                      fullWidth
-                      loading={loading}
-                      icon={<UserPlus className="w-4 h-4" />}
-                    >
-                      Cadastrar Funcionário
-                    </Button>
                   </form>
                 </>
               )}
             </div>
-          </div>
-          <div className="mt-auto w-full">
-           
           </div>
         </main>
       </div>
