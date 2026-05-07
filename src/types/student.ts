@@ -8,6 +8,7 @@ export interface Student {
   shift?: "diurno" | "noturno";
   active: boolean;
   emailVerified?: boolean;
+  schedule?: { day: string; period: string }[];
   createdAt: string;
   updatedAt: string;
 }

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { employeeApi } from "@/lib/employeeApi";
 import { Student } from "@/types/student";
 import { StudentModal } from "./StdentModal";
+import { StudentInfoModal } from "./info/StudentInfoModal";
 
 
 type Tab = "active" | "inactive";
@@ -49,6 +50,8 @@ export default function StudentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Student | null>(null);
+  const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(10);
@@ -365,19 +368,49 @@ export default function StudentsPage() {
                               ? new Date(student.createdAt).toLocaleDateString("pt-BR")
                               : "—"}
                           </td>
-                          <td className="px-4 py-3.5 text-right">
-                            <button
-                              onClick={() => setSelected(student)}
-                              className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
-                              title="Editar estudante"
-                            >
-                              <span
-                                className="material-symbols-outlined"
-                                style={{ fontSize: "18px" }}
+                          <td className="px-4 py-3.5 text-right relative">
+                            <div className="relative inline-block text-left">
+                              <button
+                                onClick={() => setOpenDropdownId(openDropdownId === student._id ? null : student._id)}
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
+                                title="Ações"
                               >
-                                edit
-                              </span>
-                            </button>
+                                <span
+                                  className="material-symbols-outlined"
+                                  style={{ fontSize: "18px" }}
+                                >
+                                  more_vert
+                                </span>
+                              </button>
+                              
+                              {openDropdownId === student._id && (
+                                <>
+                                  <div className="fixed inset-0 z-10" onClick={() => setOpenDropdownId(null)}></div>
+                                  <div className="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                                    <button
+                                      onClick={() => {
+                                        setViewingStudent(student);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
+                                    >
+                                      <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>visibility</span>
+                                      Ver
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setSelected(student);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
+                                    >
+                                      <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
+                                      Editar
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -480,6 +513,14 @@ export default function StudentsPage() {
           onUpdated={handleUpdated}
           onDeactivated={handleDeactivated}
           onReactivated={handleReactivated}
+        />
+      )}
+
+      {/* Info Modal */}
+      {viewingStudent && (
+        <StudentInfoModal
+          student={viewingStudent}
+          onClose={() => setViewingStudent(null)}
         />
       )}
     </div>
