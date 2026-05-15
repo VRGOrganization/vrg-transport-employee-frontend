@@ -59,19 +59,30 @@ export function StudentDetailPanel({
   const [approveMessage, setApproveMessage] = useState("");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  const previewItems = useMemo<PreviewItem[]>(() => {
+  const licensePreviewItems = useMemo<PreviewItem[]>(() => {
     const base: PreviewItem[] = [
       { title: "Foto 3x4", dataUrl: profileImage },
       { title: "Comprovante de Matrícula", dataUrl: enrollmentImage },
       { title: "Imagem da Grade Horária", dataUrl: scheduleImage },
-      { title: "Documento de identidade", dataUrl: governmentImage },
-      { title: "Comprovante de residência", dataUrl: proofOfResidenceImage },
     ];
     if (selectedLicensePreview) {
       base.push({ title: "Preview da Carteirinha", dataUrl: selectedLicensePreview });
     }
     return base;
-  }, [profileImage, enrollmentImage, scheduleImage, governmentImage, proofOfResidenceImage, selectedLicensePreview]);
+  }, [profileImage, enrollmentImage, scheduleImage, selectedLicensePreview]);
+
+  const personalPreviewItems = useMemo<PreviewItem[]>(
+    () => [
+      { title: "Documento de identidade", dataUrl: governmentImage },
+      { title: "Comprovante de residência", dataUrl: proofOfResidenceImage },
+    ],
+    [governmentImage, proofOfResidenceImage],
+  );
+
+  const previewItems = useMemo(
+    () => [...licensePreviewItems, ...personalPreviewItems],
+    [licensePreviewItems, personalPreviewItems],
+  );
 
   const availablePreviewIndexes = useMemo(
     () => previewItems.map((item, i) => (item.dataUrl ? i : -1)).filter((i) => i >= 0),
@@ -144,7 +155,8 @@ export function StudentDetailPanel({
           )}
 
           <DocumentsGrid
-            items={previewItems}
+            licenseItems={licensePreviewItems}
+            personalItems={personalPreviewItems}
             loadingImages={loadingSelected}
             onOpenLightbox={setLightboxIndex}
           />
