@@ -31,6 +31,11 @@ const studentBaseSchema = z.object({
   confirmPassword: z.string().optional(),
 });
 
-export const studentCreateSchema = studentBaseSchema;
+export const studentCreateSchema = studentBaseSchema.extend({
+  password: z
+    .string({ error: "Senha e obrigatoria" })
+    .regex(PASSWORD_REGEX, { error: "Senha deve conter maiuscula, minuscula e numero" }),
+  confirmPassword: z.string().optional(),
+});
 
 export const studentEditSchema = studentBaseSchema;

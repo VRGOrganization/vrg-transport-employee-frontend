@@ -8,6 +8,15 @@ const pathnameState = vi.hoisted(() => ({ value: "/admin/dashboard" }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => pathnameState.value,
+  useRouter: () => ({ push: vi.fn(), back: vi.fn(), replace: vi.fn() }),
+}));
+
+vi.mock("@/components/hooks/useEmployeeAuth", () => ({
+  useEmployeeAuth: () => ({
+    user: { name: "Admin Teste", registrationId: "ADM001" },
+    loading: false,
+    logout: vi.fn(),
+  }),
 }));
 
 vi.mock("next/link", () => ({
@@ -27,7 +36,7 @@ describe("Side navigation por perfil", () => {
     const onLogout = vi.fn();
     render(<SideNav onLogout={onLogout} />);
 
-    expect(screen.getByText("Gerenciar Funcionário")).toBeInTheDocument();
+    expect(screen.getByText("Funcionários")).toBeInTheDocument();
     expect(screen.getByText("Período de Inscrição")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /sair/i }));
