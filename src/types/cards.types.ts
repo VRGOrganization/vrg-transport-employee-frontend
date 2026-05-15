@@ -81,15 +81,12 @@ export interface PreviewItem {
 
 export type StudentFilter = "pending" | "waitlisted" | "all" | "with-card";
 
-export const REJECTION_REASONS = [
-  "Foto inadequada ou ilegível",
-  "Comprovante de matrícula inválido",
-  "Grade horária não corresponde aos documentos",
-  "Documentos ilegíveis ou corrompidos",
-  "Informações inconsistentes",
-] as const;
+export interface RejectionReasonConfig {
+  id: string;
+  label: string;
+}
 
-export type RejectionReason = (typeof REJECTION_REASONS)[number];
+export type RejectionReason = string;
 
 export const DAY_LABELS: Record<string, string> = {
   SEG: "Segunda",

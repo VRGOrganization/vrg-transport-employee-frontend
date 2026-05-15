@@ -1,11 +1,10 @@
 import { XCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { employeeApi } from "@/lib/employeeApi";
-import {
-  REJECTION_REASONS,
-  type LicenseRequestRecord,
-  type RejectionReason,
+import type {
+  LicenseRequestRecord,
+  RejectionReasonConfig,
 } from "@/types/cards.types";
 
 interface RejectModalProps {
@@ -21,20 +20,39 @@ export function RejectModal({
   onSuccess,
   onReload,
 }: RejectModalProps) {
-  const [selectedReason, setSelectedReason] = useState<RejectionReason | "">("");
+  const [reasons, setReasons] = useState<RejectionReasonConfig[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [customMessage, setCustomMessage] = useState("");
   const [rejecting, setRejecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  useEffect(() => {
+    employeeApi
+      .get<RejectionReasonConfig[]>("/license-request/rejection-reasons")
+      .then(setReasons)
+      .catch(() => setReasons([]));
+  }, []);
+
+  const toggleReason = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const handleReject = async () => {
-    if (!selectedReason) {
-      setErrorMessage("Selecione um motivo de recusa.");
+    if (selectedIds.size === 0) {
+      setErrorMessage("Selecione ao menos um motivo de recusa.");
       return;
     }
     setRejecting(true);
     setErrorMessage("");
     try {
       await employeeApi.patch(`/license-request/reject/${currentLicenseRequest._id}`, {
-        reason: selectedReason,
+        reasons: Array.from(selectedIds),
+        ...(customMessage.trim() ? { customRejectionMessage: customMessage.trim() } : {}),
       });
       onSuccess("Carteirinha recusada. O aluno foi notificado por e-mail.");
       await onReload();
@@ -62,25 +80,43 @@ export function RejectModal({
           </div>
           <div>
             <h2 className="font-bold text-on-surface text-base">Recusar carteirinha</h2>
-            <p className="text-xs text-on-surface-variant">Selecione o motivo da recusa</p>
+            <p className="text-xs text-on-surface-variant">Selecione os motivos da recusa</p>
           </div>
         </div>
 
         <div className="space-y-2">
-          {REJECTION_REASONS.map((reason) => (
-            <button
-              key={reason}
-              type="button"
-              onClick={() => setSelectedReason(reason)}
-              className={`w-full text-left px-4 py-3 rounded-xl text-sm border transition-all ${
-                selectedReason === reason
+          {reasons.map((reason) => (
+            <label
+              key={reason.id}
+              className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm border transition-all cursor-pointer ${
+                selectedIds.has(reason.id)
                   ? "border-error bg-error/10 text-error font-medium"
                   : "border-outline-variant bg-surface-container-low text-on-surface hover:border-error/40"
               }`}
             >
-              {reason}
-            </button>
+              <input
+                type="checkbox"
+                className="accent-error"
+                checked={selectedIds.has(reason.id)}
+                onChange={() => toggleReason(reason.id)}
+              />
+              {reason.label}
+            </label>
           ))}
+        </div>
+
+        <div>
+          <label className="block text-xs text-on-surface-variant mb-1">
+            Observação adicional (opcional)
+          </label>
+          <textarea
+            className="w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface resize-none focus:outline-none focus:border-primary"
+            rows={3}
+            maxLength={300}
+            placeholder="Observação adicional para o aluno…"
+            value={customMessage}
+            onChange={(e) => setCustomMessage(e.target.value)}
+          />
         </div>
 
         {errorMessage && <p className="text-xs text-error">{errorMessage}</p>}
@@ -98,7 +134,7 @@ export function RejectModal({
             variant="primary"
             size="md"
             loading={rejecting}
-            disabled={!selectedReason || rejecting}
+            disabled={selectedIds.size === 0 || rejecting}
             onClick={handleReject}
             className="flex-1 bg-error hover:bg-error/90"
           >
