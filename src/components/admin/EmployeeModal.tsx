@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, ArrowLeft, ArrowRight, Mail, Badge, Calendar, RefreshCw, UserX, Info } from "lucide-react";
+import { X, ArrowLeft, ArrowRight, Mail, Badge, Calendar, RefreshCw, UserX, Info, CheckCircle2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -24,7 +24,7 @@ interface Props {
   onDeleted: (id: string) => void;
 }
 
-type ModalView = "info" | "edit" | "edit-confirm" | "delete-confirm";
+type ModalView = "info" | "edit" | "edit-confirm" | "delete-confirm" | "activate-confirm";
 
 interface EditForm {
   name: string;
@@ -220,6 +220,19 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
     }
   };
 
+  const handleConfirmActivate = async () => {
+    setLoading(true);
+    try {
+      const updated = await employeeApi.patch<Employee>(`/employee/${employee._id}/activate`, {});
+      onUpdated(updated);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setDeleteError(error.message ?? "Erro ao reativar funcionário");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
@@ -282,11 +295,21 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
                 </button>
               </div>
             ) : (
-              <div className="px-6 py-5">
+              <div className="flex flex-col gap-3 px-6 py-5">
                 <div className="flex items-center gap-2 justify-center text-sm text-on-surface-variant bg-surface-container-high rounded-xl py-3">
                   <Info className="w-4 h-4" />
-                  Este funcionário está desativado e não tem acesso ao sistema
+                  Este funcionário está desativado
                 </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  fullWidth
+                  className="bg-success hover:bg-success/90 border-none text-white"
+                  icon="check"
+                  onClick={() => setView("activate-confirm")}
+                >
+                  Reativar Funcionário
+                </Button>
               </div>
             )}
           </>
@@ -459,6 +482,58 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
                   )}
                   Sim, desativar
                 </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── ACTIVATE CONFIRM ── */}
+        {view === "activate-confirm" && (
+          <>
+            <div className="flex items-center justify-between px-6 pt-6 pb-4">
+              <h2 className="font-headline font-semibold text-lg text-on-surface">
+                Reativar funcionário?
+              </h2>
+              <button
+                onClick={() => setView("info")}
+                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="px-6 pb-6">
+              <div className="flex flex-col items-center gap-3 py-4 text-center mb-5">
+                <div className="p-4 bg-success/10 rounded-full">
+                  <CheckCircle2 className="w-9 h-9 text-success" />
+                </div>
+                <p className="text-sm text-on-surface-variant max-w-xs">
+                  O funcionário <span className="font-semibold text-on-surface">{employee.name}</span> recuperará
+                  acesso ao sistema imediatamente.
+                </p>
+              </div>
+
+              {deleteError && (
+                <div className="bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3 mb-4">
+                  {deleteError}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <Button variant="outline" size="sm" fullWidth onClick={() => setView("info")}>
+                  Cancelar
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  fullWidth
+                  className="bg-success hover:bg-success/90 border-none text-white"
+                  loading={loading}
+                  icon="check"
+                  onClick={handleConfirmActivate}
+                >
+                  Sim, reativar
+                </Button>
               </div>
             </div>
           </>

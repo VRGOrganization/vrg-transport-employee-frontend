@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { employeeApi } from "@/lib/employeeApi";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { GraduationCap, Users, ClipboardList, Bus, Calendar, Download, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { GraduationCap, Users, ClipboardList, Bus, Calendar, Download, Search, X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { universityApi, busApi } from "@/lib/universityApi";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { Footer } from "@/components/layout/Footer";
@@ -124,17 +125,20 @@ export default function AdminDashboardPage() {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<"Todos" | "Aluno" | "Funcionário">("Todos");
   const [search, setSearch] = useState("");
+  const [exportLoading, setExportLoading] = useState(false);
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [employeesResult, studentsResult, activePeriodResult] =
+      const [employeesResult, studentsResult, activePeriodResult, requestsResult] =
         await Promise.allSettled([
           employeeApi.get<Employee[]>("/employee"),
           employeeApi.get<StudentsResponse>("/student"),
           employeeApi.get<EnrollmentPeriodRecord>("/enrollment-period/active"),
+          employeeApi.get<any[]>("/license-request/all"),
         ]);
 
       const rows: UserRow[] = [];
+      let resolvedStudents: StudentRecord[] = [];
 
       if (employeesResult.status === "fulfilled") {
         const all = employeesResult.value;
@@ -156,23 +160,20 @@ export default function AdminDashboardPage() {
       }
 
       if (studentsResult.status === "fulfilled") {
-        const resolved: StudentRecord[] = Array.isArray(studentsResult.value)
+        resolvedStudents = Array.isArray(studentsResult.value)
           ? studentsResult.value
           : Array.isArray((studentsResult.value as { data?: StudentRecord[] }).data)
             ? ((studentsResult.value as { data: StudentRecord[] }).data ?? [])
             : [];
 
-        // pendingStudents = alunos com status PENDING (aguardando verificação de e-mail)
-        const pendingStudents = resolved.filter((s) => s.status === "PENDING");
-        const activeStudents = resolved.filter((s) => s.status === "ACTIVE" && s.active);
+        const activeStudents = resolvedStudents.filter((s) => s.status === "ACTIVE" && s.active);
 
         setStats((prev) => ({
           ...prev,
           activeStudents: activeStudents.length,
-          pendingStudents: pendingStudents.length,
         }));
 
-        for (const stu of resolved) {
+        for (const stu of resolvedStudents) {
           rows.push({
             id: stu._id,
             name: stu.name,
@@ -182,6 +183,24 @@ export default function AdminDashboardPage() {
             createdAt: stu.createdAt,
           });
         }
+      }
+
+      // Calcula solicitações pendentes de aprovação (mesma lógica de /admin/cards)
+      if (requestsResult.status === "fulfilled") {
+        const requests = requestsResult.value;
+        const pendingStudentIds = new Set(
+          requests
+            .filter((r: any) => r.status === "pending")
+            .map((r: any) => (typeof r.studentId === "object" ? r.studentId?._id : r.studentId))
+            .filter(Boolean)
+        );
+
+        const pendingCount = resolvedStudents.filter((s) => s.active && pendingStudentIds.has(s._id)).length;
+        
+        setStats((prev) => ({
+          ...prev,
+          pendingStudents: pendingCount,
+        }));
       }
 
       if (activePeriodResult.status === "fulfilled") {
@@ -223,6 +242,67 @@ export default function AdminDashboardPage() {
     setPage(1);
   };
 
+  const handleExport = async () => {
+    setExportLoading(true);
+    try {
+      const [studentsRes, employeesRes, busesRes, universitiesRes] = await Promise.all([
+        employeeApi.get<StudentsResponse>("/student"),
+        employeeApi.get<Employee[]>("/employee"),
+        busApi.list(),
+        universityApi.list(),
+      ]);
+
+      const students = Array.isArray(studentsRes) ? studentsRes : (studentsRes as any).data ?? [];
+      const employees = Array.isArray(employeesRes) ? employeesRes : [];
+      const buses = Array.isArray(busesRes) ? busesRes : [];
+      const universities = Array.isArray(universitiesRes) ? universitiesRes : [];
+
+      let csv = "sep=,\n"; // Indica ao Excel o separador
+
+      // --- Alunos ---
+      csv += "--- ALUNOS ---\n";
+      csv += "ID,Nome,Email,Ativo,Status,Data Cadastro\n";
+      students.forEach((s: any) => {
+        csv += `"${s._id}","${s.name}","${s.email}","${s.active ? "Sim" : "Não"}","${s.status}","${new Date(s.createdAt).toLocaleString("pt-BR")}"\n`;
+      });
+
+      // --- Funcionários ---
+      csv += "\n--- FUNCIONÁRIOS ---\n";
+      csv += "ID,Nome,Email,Matrícula,Ativo,Data Cadastro\n";
+      employees.forEach((e: any) => {
+        csv += `"${e._id}","${e.name}","${e.email}","${e.registrationId ?? ""}","${e.active ? "Sim" : "Não"}","${new Date(e.createdAt).toLocaleString("pt-BR")}"\n`;
+      });
+
+      // --- Ônibus ---
+      csv += "\n--- FROTA (ÔNIBUS) ---\n";
+      csv += "ID,Identificador,Capacidade,Vagas Preenchidas,Ativo\n";
+      buses.forEach((b: any) => {
+        csv += `"${b._id}","${b.identifier}","${b.capacity ?? "N/A"}","${b.filledSlots ?? 0}","${b.active ? "Sim" : "Não"}"\n`;
+      });
+
+      // --- Instituições ---
+      csv += "\n--- INSTITUIÇÕES (UNIVERSIDADES) ---\n";
+      csv += "ID,Nome,Sigla,Endereço,Ativo\n";
+      universities.forEach((u: any) => {
+        csv += `"${u._id}","${u.name}","${u.acronym ?? ""}","${u.address ?? ""}","${u.active ? "Sim" : "Não"}"\n`;
+      });
+
+      const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `exportacao_sistema_${new Date().toISOString().split("T")[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error("Erro ao exportar dados:", err);
+      alert("Erro ao exportar dados. Tente novamente.");
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
       <SideNav activePath="/admin/dashboard" onLogout={logout} />
@@ -247,9 +327,13 @@ export default function AdminDashboardPage() {
                 <Calendar className="w-4 h-4" />
                 {monthLabel}
               </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors">
-                <Download className="w-4 h-4" />
-                Exportar
+              <button 
+                onClick={handleExport}
+                disabled={exportLoading}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors disabled:opacity-50 disabled:cursor-wait"
+              >
+                {exportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {exportLoading ? "Exportando..." : "Exportar"}
               </button>
             </div>
           </div>
@@ -260,25 +344,25 @@ export default function AdminDashboardPage() {
               icon={GraduationCap}
               label="Alunos ativos"
               value={stats.activeStudents}
-             
+              href="/admin/students"
             />
             <DashboardStatCard
               icon={Users}
               label="Funcionários"
               value={stats.activeEmployees}
-            
+              href="/admin/employees"
             />
             <DashboardStatCard
               icon={ClipboardList}
               label="Solicitações pendentes"
               value={stats.pendingStudents}
-              
+              href="/admin/cards"
             />
             <DashboardStatCard
               icon={Bus}
               label="Frota em operação"
               value={stats.fleetLabel ?? "—"}
-             
+              href="/admin/buses"
             />
           </div>
 

@@ -20,6 +20,7 @@ export function useStudentForm({ mode, initial }: UseStudentFormOptions) {
     telephone: initial?.telephone ?? "",
     institution: initial?.institution ?? "",
     shift: initial?.shift ?? "",
+    cpf: initial?.cpf ?? "",
     password: "",
     confirmPassword: "",
   });
@@ -55,6 +56,7 @@ export function useStudentForm({ mode, initial }: UseStudentFormOptions) {
       telephone: flat.telephone?.[0] ?? "",
       institution: flat.institution?.[0] ?? "",
       shift: flat.shift?.[0] ?? "",
+      cpf: flat.cpf?.[0] ?? "",
       password: flat.password?.[0] ?? "",
       confirmPassword: flat.confirmPassword?.[0] ?? "",
     };

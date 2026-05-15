@@ -29,16 +29,23 @@ export default function NewStudentPage() {
         name: data.name.trim(),
         email: data.email.trim().toLowerCase(),
         telephone: data.telephone.trim(),
+        cpf: data.cpf.replace(/\D/g, ""),
         institution: data.institution,
         shift: data.shift,
-        password: data.password,
       });
       setCreatedName(data.name.trim());
       setSuccess(true);
     } catch (err: unknown) {
       const error = err as { message?: string; status?: number };
       if (error.status === 409) {
-        setError("email", "Este email já está cadastrado no sistema");
+        const msg = error.message?.toLowerCase() ?? "";
+        if (msg.includes("email")) {
+          setError("email", "Este email já está cadastrado");
+        } else if (msg.includes("cpf")) {
+          setError("cpf", "Este CPF já está cadastrado");
+        } else {
+          setError("general", error.message ?? "Dados já cadastrados");
+        }
       } else {
         setError("general", error.message ?? "Erro ao cadastrar estudante");
       }
@@ -53,6 +60,7 @@ export default function NewStudentPage() {
     onChange("name", "");
     onChange("email", "");
     onChange("telephone", "");
+    onChange("cpf", "");
     onChange("institution", "");
     onChange("shift", "");
     onChange("password", "");
@@ -78,7 +86,7 @@ export default function NewStudentPage() {
             {success ? (
               <SuccessBanner
                 title="Estudante cadastrado!"
-                description={`A conta de ${createdName} foi criada com sucesso.`}
+                description={`A conta de ${createdName} foi criada com sucesso. Um e-mail para definição de senha foi enviado.`}
                 backHref="/admin/students"
                 backLabel="Ver estudantes"
                 onReset={handleReset}

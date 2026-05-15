@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { employeeApi } from "@/lib/employeeApi";
 import { Student } from "@/types/student";
 import { StudentModal } from "./StdentModal";
+import { StudentInfoModal } from "./info/StudentInfoModal";
+import { StudentCardModal } from "./StudentCardModal";
 
 
 type Tab = "active" | "inactive";
@@ -49,9 +51,13 @@ export default function StudentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Student | null>(null);
+  const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
+  const [viewingCardStudent, setViewingCardStudent] = useState<Student | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(10);
+  const [isMounted, setIsMounted] = useState(false);
 
   const resolveStudents = (payload: StudentsResponse): Student[] => {
     if (Array.isArray(payload)) return payload;
@@ -85,6 +91,7 @@ export default function StudentsPage() {
   );
 
   useEffect(() => {
+    setIsMounted(true);
     loadTab("active");
   }, [loadTab]);
 
@@ -108,21 +115,18 @@ export default function StudentsPage() {
   /* ── Modal callbacks ──────────────────────────────────────────────── */
 
   const handleUpdated = (updated: Student) => {
-    setActive((prev) => prev.map((s) => (s._id === updated._id ? updated : s)));
     setSelected(null);
+    loadTab(tab);
   };
 
   const handleDeactivated = (id: string) => {
-    const removed = active.find((s) => s._id === id);
-    setActive((prev) => prev.filter((s) => s._id !== id));
-    if (removed) setInactive((prev) => [{ ...removed, active: false }, ...prev]);
     setSelected(null);
+    loadTab(tab);
   };
 
   const handleReactivated = (updated: Student) => {
-    setInactive((prev) => prev.filter((s) => s._id !== updated._id));
-    setActive((prev) => [{ ...updated, active: true }, ...prev]);
     setSelected(null);
+    loadTab(tab);
   };
 
   /* ── Derived state ────────────────────────────────────────────────── */
@@ -362,21 +366,63 @@ export default function StudentsPage() {
                             </span>
                           </td>
                           <td className="px-4 py-3.5 text-xs text-on-surface-variant text-right">
-                            {new Date(student.createdAt).toLocaleDateString("pt-BR")}
+                            {isMounted 
+                              ? new Date(student.createdAt).toLocaleDateString("pt-BR")
+                              : "—"}
                           </td>
-                          <td className="px-4 py-3.5 text-right">
-                            <button
-                              onClick={() => setSelected(student)}
-                              className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
-                              title="Editar estudante"
-                            >
-                              <span
-                                className="material-symbols-outlined"
-                                style={{ fontSize: "18px" }}
+                          <td className="px-4 py-3.5 text-right relative">
+                            <div className="relative inline-block text-left">
+                              <button
+                                onClick={() => setOpenDropdownId(openDropdownId === student._id ? null : student._id)}
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
+                                title="Ações"
                               >
-                                edit
-                              </span>
-                            </button>
+                                <span
+                                  className="material-symbols-outlined"
+                                  style={{ fontSize: "18px" }}
+                                >
+                                  more_vert
+                                </span>
+                              </button>
+                              
+                              {openDropdownId === student._id && (
+                                <>
+                                  <div className="fixed inset-0 z-10" onClick={() => setOpenDropdownId(null)}></div>
+                                  <div className="absolute right-0 mt-2 w-36 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                                    <button
+                                      onClick={() => {
+                                        setViewingStudent(student);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
+                                    >
+                                      <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>visibility</span>
+                                      Ver
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setSelected(student);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
+                                    >
+                                      <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
+                                      Editar
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setViewingCardStudent(student);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
+                                    >
+                                      <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>badge</span>
+                                      Carteirinha
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -421,7 +467,8 @@ export default function StudentsPage() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setPage(1)}
-                    disabled={page === 1}
+                    disabled={loading || page <= 1}
+                    suppressHydrationWarning
                     className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Primeira página"
                   >
@@ -431,7 +478,8 @@ export default function StudentsPage() {
                   </button>
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
+                    disabled={loading || page <= 1}
+                    suppressHydrationWarning
                     className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
@@ -443,7 +491,8 @@ export default function StudentsPage() {
                   </span>
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
+                    disabled={loading || page >= totalPages}
+                    suppressHydrationWarning
                     className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
@@ -452,7 +501,8 @@ export default function StudentsPage() {
                   </button>
                   <button
                     onClick={() => setPage(totalPages)}
-                    disabled={page === totalPages}
+                    disabled={loading || page >= totalPages}
+                    suppressHydrationWarning
                     className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Última página"
                   >
@@ -475,6 +525,22 @@ export default function StudentsPage() {
           onUpdated={handleUpdated}
           onDeactivated={handleDeactivated}
           onReactivated={handleReactivated}
+        />
+      )}
+
+      {/* Info Modal */}
+      {viewingStudent && (
+        <StudentInfoModal
+          student={viewingStudent}
+          onClose={() => setViewingStudent(null)}
+        />
+      )}
+
+      {/* Card Modal */}
+      {viewingCardStudent && (
+        <StudentCardModal
+          student={viewingCardStudent}
+          onClose={() => setViewingCardStudent(null)}
         />
       )}
     </div>

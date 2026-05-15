@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Pencil, Trash2, ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
+import { Pencil, Trash2, ChevronLeft, ChevronRight, UserPlus, CheckCircle2 } from "lucide-react";
 import { EmployeeModal } from "@/components/admin/EmployeeModal";
 
 export interface Employee {
@@ -146,13 +146,23 @@ export function EmployeeTable({ employees, loading, onUpdated, onDeleted }: Empl
                         >
                           <Pencil className="w-5 h-5" />
                         </button>
-                        <button
-                          onClick={() => setSelectedEmployee(emp)}
-                          className="p-2 text-error hover:bg-error-container rounded-lg transition-colors inline-flex ml-2"
-                          title="Desativar"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
+                        {emp.active ? (
+                          <button
+                            onClick={() => setSelectedEmployee(emp)}
+                            className="p-2 text-error hover:bg-error-container rounded-lg transition-colors inline-flex ml-2"
+                            title="Desativar"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setSelectedEmployee(emp)}
+                            className="p-2 text-success hover:bg-success-container rounded-lg transition-colors inline-flex ml-2"
+                            title="Reativar"
+                          >
+                            <CheckCircle2 className="w-5 h-5" />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
