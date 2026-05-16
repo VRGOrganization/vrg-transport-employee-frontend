@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import {
   getBackendApiBaseUrl,
@@ -7,12 +7,10 @@ import {
   ROLE_COOKIE_NAME,
   SID_COOKIE_NAME,
 } from "@/lib/server/bff-auth";
-import { validateCsrfToken } from "@/lib/server/csrf";
-import { checkRateLimit } from "@/lib/server/rate-limit";
+import { withAuthRouteGuards } from "@/lib/server/route-helpers";
 import {
   backendSessionPayloadSchema,
   employeeLoginRequestSchema,
-  getFieldErrors,
 } from "@/lib/validation/auth";
 
 async function tryLogin(url: string, body: unknown): Promise<Response> {
@@ -51,40 +49,33 @@ function isUpstreamConnectivityError(error: unknown): boolean {
   return true;
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const xff = request.headers.get("x-forwarded-for") ?? "";
-    const clientIp = xff.split(",")[0]?.trim() || "unknown";
-
-    if (!checkRateLimit(`login:${clientIp}`, 3, 300000)) {
-      return NextResponse.json(
-        { message: "Muitas tentativas. Tente novamente em 5 minutos." },
-        { status: 429 },
-      );
-    }
-
-    if (!(await validateCsrfToken(request))) {
-      return NextResponse.json({ message: "Invalid CSRF token" }, { status: 403 });
-    }
-
-    const rawBody = await request.json();
-    const bodyResult = employeeLoginRequestSchema.safeParse(rawBody);
-
-    if (!bodyResult.success) {
-      const fieldErrors = getFieldErrors(bodyResult.error);
-      const firstError = Object.values(fieldErrors)[0] ?? "Dados de login invalidos.";
-      return NextResponse.json({ message: firstError, errors: fieldErrors }, { status: 400 });
-    }
-
-    const { login, password, role } = bodyResult.data;
-
+export const POST = withAuthRouteGuards({
+  rateLimitKey: "login",
+  rateLimitMax: 3,
+  rateLimitWindowMs: 300_000,
+  schema: employeeLoginRequestSchema,
+  handler: async ({ login, password, role }): Promise<NextResponse> => {
     const base = getBackendApiBaseUrl();
     const endpoint = role === "admin" ? "/auth/admin/login" : "/auth/employee/login";
     const payload = role === "admin"
       ? { username: login, password }
       : { registrationId: login, password };
 
-    const upstream = await tryLogin(`${base}${endpoint}`, payload);
+    let upstream: Response;
+    try {
+      upstream = await tryLogin(`${base}${endpoint}`, payload);
+    } catch (error) {
+      if (isUpstreamConnectivityError(error)) {
+        return NextResponse.json(
+          {
+            message:
+              "Não foi possível conectar ao backend de autenticação. Verifique se a API está rodando e acessível.",
+          },
+          { status: 503 },
+        );
+      }
+      throw error;
+    }
 
     const data = await upstream.json().catch(() => ({}));
 
@@ -139,22 +130,5 @@ export async function POST(request: NextRequest) {
     });
 
     return response;
-  } catch (error) {
-    console.error("[BFF][auth/login] error:", error);
-
-    if (isUpstreamConnectivityError(error)) {
-      return NextResponse.json(
-        {
-          message:
-            "Não foi possível conectar ao backend de autenticação. Verifique se a API está rodando e acessível.",
-        },
-        { status: 503 },
-      );
-    }
-
-    return NextResponse.json(
-      { message: "Erro ao processar login. Tente novamente." },
-      { status: 500 },
-    );
-  }
-}
+  },
+});
