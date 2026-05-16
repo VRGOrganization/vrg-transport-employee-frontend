@@ -14,7 +14,8 @@ import { StudentForm } from "@/components/students/StudentForm";
 import { StudentFormLayout } from "@/components/students/StudentFormLayout";
 import { SuccessBanner } from "@/components/students/SuccessBanner";
 import { useStudentForm } from "@/components/hooks/useStudentForm";
-import { AlertCircle, UserCheck, UserX, X, CheckCircle2 } from "lucide-react";
+import { AlertCircle, UserCheck, UserX, CheckCircle2 } from "lucide-react";
+import { BottomSheet } from "@/components/ui/BottomSheet";
 
 function EditStudentPageInner() {
   const { user, logout } = useEmployeeAuth();
@@ -212,105 +213,73 @@ function EditStudentPageInner() {
       </div>
 
       {/* ── MODALS ── */}
-      {modalView === "deactivate" && (
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={(e) => e.target === e.currentTarget && setModalView(null)}
-        >
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 pt-6 pb-4">
-              <h2 className="font-headline font-semibold text-lg text-on-surface">
-                Desativar estudante?
-              </h2>
-              <button
-                onClick={() => setModalView(null)}
-                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="px-6 pb-6">
-              <div className="flex flex-col items-center gap-3 py-4 text-center mb-5">
-                <div className="p-4 bg-error/10 rounded-full">
-                  <UserX className="w-9 h-9 text-error" />
-                </div>
-                <p className="text-sm text-on-surface-variant max-w-xs">
-                  O estudante <span className="font-semibold text-on-surface">{student?.name}</span> perderá
-                  acesso ao sistema imediatamente. O cadastro poderá ser reativado posteriormente.
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" size="sm" fullWidth onClick={() => setModalView(null)}>
-                  Cancelar
-                </Button>
-                <button
-                  disabled={statusLoading}
-                  onClick={confirmToggleStatus}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full bg-error text-white hover:bg-error/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {statusLoading ? (
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                  ) : (
-                    <UserX className="w-4.5 h-4.5" />
-                  )}
-                  Sim, desativar
-                </button>
-              </div>
-            </div>
+      <BottomSheet
+        open={modalView === "deactivate"}
+        onClose={() => setModalView(null)}
+        title="Desativar estudante?"
+        actions={
+          <div className="flex gap-3">
+            <Button variant="outline" size="sm" fullWidth onClick={() => setModalView(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              fullWidth
+              className="bg-error hover:bg-error/90 border-none text-white font-bold"
+              loading={statusLoading}
+              icon={<UserX className="w-4 h-4" />}
+              onClick={confirmToggleStatus}
+            >
+              Sim, desativar
+            </Button>
           </div>
+        }
+      >
+        <div className="flex flex-col items-center gap-3 py-4 text-center">
+          <div className="p-4 bg-error/10 rounded-full">
+            <UserX className="w-9 h-9 text-error" />
+          </div>
+          <p className="text-sm text-on-surface-variant max-w-xs">
+            O estudante <span className="font-semibold text-on-surface">{student?.name}</span> perderá
+            acesso ao sistema imediatamente. O cadastro poderá ser reativado posteriormente.
+          </p>
         </div>
-      )}
+      </BottomSheet>
 
-      {modalView === "activate" && (
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={(e) => e.target === e.currentTarget && setModalView(null)}
-        >
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 pt-6 pb-4">
-              <h2 className="font-headline font-semibold text-lg text-on-surface">
-                Reativar estudante?
-              </h2>
-              <button
-                onClick={() => setModalView(null)}
-                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="px-6 pb-6">
-              <div className="flex flex-col items-center gap-3 py-4 text-center mb-5">
-                <div className="p-4 bg-success/10 rounded-full">
-                  <CheckCircle2 className="w-9 h-9 text-success" />
-                </div>
-                <p className="text-sm text-on-surface-variant max-w-xs">
-                  O estudante <span className="font-semibold text-on-surface">{student?.name}</span> recuperará
-                  acesso ao sistema imediatamente.
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" size="sm" fullWidth onClick={() => setModalView(null)}>
-                  Cancelar
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  fullWidth
-                  className="bg-success hover:bg-success/90 border-none text-white"
-                  loading={statusLoading}
-                  icon="check"
-                  onClick={confirmToggleStatus}
-                >
-                  Sim, reativar
-                </Button>
-              </div>
-            </div>
+      <BottomSheet
+        open={modalView === "activate"}
+        onClose={() => setModalView(null)}
+        title="Reativar estudante?"
+        actions={
+          <div className="flex gap-3">
+            <Button variant="outline" size="sm" fullWidth onClick={() => setModalView(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              fullWidth
+              className="bg-success hover:bg-success/90 border-none text-white"
+              loading={statusLoading}
+              icon="check"
+              onClick={confirmToggleStatus}
+            >
+              Sim, reativar
+            </Button>
           </div>
+        }
+      >
+        <div className="flex flex-col items-center gap-3 py-4 text-center">
+          <div className="p-4 bg-success/10 rounded-full">
+            <CheckCircle2 className="w-9 h-9 text-success" />
+          </div>
+          <p className="text-sm text-on-surface-variant max-w-xs">
+            O estudante <span className="font-semibold text-on-surface">{student?.name}</span> recuperará
+            acesso ao sistema imediatamente.
+          </p>
         </div>
-      )}
+      </BottomSheet>
     </div>
   );
 }

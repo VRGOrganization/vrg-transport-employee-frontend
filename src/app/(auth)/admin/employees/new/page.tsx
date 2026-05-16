@@ -2,21 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { StatusBanner } from "@/components/ui/StatusBanner";
+import { ResultState } from "@/components/ui/ResultState";
 import { employeeApi } from "@/lib/employeeApi";
-import {
-  ArrowLeft,
-  Badge,
-  CheckCircle2,
-  Mail,
-  User,
-  UserPlus,
-} from "lucide-react";
+import { ArrowLeft, Badge, CheckCircle2, Mail, User, UserPlus } from "lucide-react";
 
 interface FormData {
   name: string;
@@ -138,66 +133,49 @@ export default function RegisterEmployeePage() {
         <TopBar user={user} />
         <main className="mx-auto w-full space-y-6">
           <div className="">
-            <div className="mt-6 flex items-center gap-3 ml-10">
-              <Link
-                href="/admin/employees"
-                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-                title="Voltar ao painel"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
-              <div>
-                <h1 className="font-headline font-bold text-2xl text-on-surface">
-                  Cadastrar Funcionário
-                </h1>
-                <p className="text-sm text-on-surface-variant">
-                  Preencha os dados básicos. O funcionário receberá um e-mail para definir sua senha.
-                </p>
-              </div>
-            </div>
+            <PageHeader
+              back="/admin/employees"
+              title="Cadastrar Funcionário"
+              subtitle="Preencha os dados básicos. O funcionário receberá um e-mail para definir sua senha."
+              className="mt-6 ml-10"
+            />
 
-            <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-sm mt-5 ml-10 mr-10">
+            <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-sm ml-10 mr-10">
               {success ? (
-                <div className="flex flex-col items-center gap-5 py-6 text-center">
-                  <div className="p-4 bg-success/10 rounded-full">
-                    <CheckCircle2 className="w-10 h-10 text-success" />
-                  </div>
-                  <div>
-                    <h2 className="font-headline font-semibold text-lg text-on-surface">
-                      Funcionário cadastrado!
-                    </h2>
-                    <p className="text-sm text-on-surface-variant mt-1">
-                      A conta de <span className="font-medium">{formData.name}</span> foi
-                      criada com sucesso. Um e-mail de definição de senha foi enviado para <span className="font-medium">{formData.email}</span>.
-                    </p>
-                  </div>
-                  <div className="flex gap-3 w-full">
-                    <Button
-                      variant="outline"
-                      size="md"
-                      fullWidth
-                      icon={<ArrowLeft className="w-4 h-4" />}
-                      onClick={() => router.push("/admin/dashboard")}
-                    >
-                      Painel
-                    </Button>
-                    <Button
-                      variant="primary"
-                      size="md"
-                      fullWidth
-                      icon={<UserPlus className="w-4 h-4" />}
-                      onClick={handleNewRegistration}
-                    >
-                      Novo cadastro
-                    </Button>
-                  </div>
-                </div>
+                <ResultState
+                  variant="success"
+                  icon={CheckCircle2}
+                  title="Funcionário cadastrado!"
+                  description={`A conta de ${formData.name} foi criada com sucesso. Um e-mail de definição de senha foi enviado para ${formData.email}.`}
+                  size="md"
+                  className="py-6"
+                  actions={
+                    <>
+                      <Button
+                        variant="outline"
+                        size="md"
+                        fullWidth
+                        icon={<ArrowLeft className="w-4 h-4" />}
+                        onClick={() => router.push("/admin/dashboard")}
+                      >
+                        Painel
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="md"
+                        fullWidth
+                        icon={<UserPlus className="w-4 h-4" />}
+                        onClick={handleNewRegistration}
+                      >
+                        Novo cadastro
+                      </Button>
+                    </>
+                  }
+                />
               ) : (
                 <>
                   {errors.general && (
-                    <div className="mb-5 bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3">
-                      {errors.general}
-                    </div>
+                    <StatusBanner variant="error" className="mb-5">{errors.general}</StatusBanner>
                   )}
 
                   <form onSubmit={handleSubmit} className="space-y-5">

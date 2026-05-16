@@ -5,6 +5,7 @@ import { X, ArrowLeft, ArrowRight, Mail, Badge, Calendar, RefreshCw, UserX, Info
 import type { LucideIcon } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { StatusBanner } from "@/components/ui/StatusBanner";
 import { employeeApi } from "@/lib/employeeApi";
 
 export interface Employee {
@@ -332,9 +333,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
 
             <form onSubmit={handleEditSubmit} className="px-6 pb-6 space-y-4">
               {errors.general && (
-                <div className="bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3">
-                  {errors.general}
-                </div>
+                <StatusBanner variant="error">{errors.general}</StatusBanner>
               )}
 
               <div className="space-y-1.5">
@@ -458,9 +457,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
               </div>
 
               {deleteError && (
-                <div className="bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3 mb-4">
-                  {deleteError}
-                </div>
+                <StatusBanner variant="error" className="mb-4">{deleteError}</StatusBanner>
               )}
 
               <div className="flex gap-3">
@@ -514,9 +511,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
               </div>
 
               {deleteError && (
-                <div className="bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3 mb-4">
-                  {deleteError}
-                </div>
+                <StatusBanner variant="error" className="mb-4">{deleteError}</StatusBanner>
               )}
 
               <div className="flex gap-3">
