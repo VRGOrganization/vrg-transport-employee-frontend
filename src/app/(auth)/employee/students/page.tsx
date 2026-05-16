@@ -8,6 +8,7 @@ import { EmployeeSideNav } from "@/components/layout/EmployeeSideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { employeeApi } from "@/lib/employeeApi";
 
 import { Student } from "@/types/student";
@@ -91,34 +92,16 @@ export default function EmployeeStudentsPage() {
         <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
           <div className="max-w-3xl mx-auto">
 
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
-              <Link
-                href="/employee/dashboard"
-                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-                title="Voltar ao painel"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
-                  arrow_back
-                </span>
-              </Link>
-              <div className="flex-1">
-                <h1 className="font-headline font-bold text-2xl text-on-surface">
-                  Estudantes
-                </h1>
-                {!loading && !error && (
-                  <p className="text-sm text-on-surface-variant">
-                    {count} {count === 1 ? "estudante" : "estudantes"}{" "}
-                    {tab === "active" ? "ativos" : "desativados"}
-                  </p>
-                )}
-              </div>
-              <Link href="/employee/students/new">
-                <Button variant="primary" size="sm" icon="person_add">
-                  Adicionar
-                </Button>
-              </Link>
-            </div>
+            <PageHeader
+              title="Estudantes"
+              subtitle={!loading && !error ? `${count} ${count === 1 ? "estudante" : "estudantes"} ${tab === "active" ? "ativos" : "desativados"}` : undefined}
+              back="/employee/dashboard"
+              rightSlot={
+                <Link href="/employee/students/new">
+                  <Button variant="primary" size="sm" icon="person_add">Adicionar</Button>
+                </Link>
+              }
+            />
 
             {/* Tabs */}
             <div className="flex gap-1 bg-surface-container-high p-1 rounded-xl mb-5 w-fit">

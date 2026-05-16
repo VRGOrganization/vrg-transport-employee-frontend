@@ -2,11 +2,13 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { AlertCircle } from "lucide-react";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { EmployeeSideNav } from "@/components/layout/EmployeeSideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
+import { ResultState } from "@/components/ui/ResultState";
 import { employeeApi } from "@/lib/employeeApi";
 
 import { Student } from "@/types/student";
@@ -129,17 +131,19 @@ function EditStudentPageInner() {
         <div className="min-w-0 flex flex-col">
           <TopBar user={user} />
           <main className="p-8">
-            <div className="max-w-lg mx-auto flex flex-col items-center gap-4 py-16 text-center">
-              <span
-                className="material-symbols-outlined text-error"
-                style={{ fontSize: "40px" }}
-              >
-                error
-              </span>
-              <p className="text-on-surface-variant">{fetchError}</p>
-              <Button variant="outline" size="sm" onClick={() => window.history.back()}>
-                Voltar
-              </Button>
+            <div className="max-w-lg mx-auto py-16">
+              <ResultState
+                variant="error"
+                icon={AlertCircle}
+                title="Erro ao carregar"
+                description={fetchError}
+                size="sm"
+                actions={
+                  <Button variant="outline" size="sm" onClick={() => window.history.back()}>
+                    Voltar
+                  </Button>
+                }
+              />
             </div>
           </main>
         </div>

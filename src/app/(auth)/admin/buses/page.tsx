@@ -10,6 +10,7 @@ import { BusTable } from "@/components/buses/BusTable";
 import { BusFormModal } from "@/components/buses/BusFormModal";
 import { BusStudentsDrawer } from "@/components/buses/BusStudentsDrawer";
 import { Bus as BusIcon, Armchair, Building2, Unlink } from "lucide-react";
+import { StatusBanner } from "@/components/ui/StatusBanner";
 import { DashboardStatCard } from "@/components/cards/DashboardStatCard";
 
 export default function BusesPage() {
@@ -138,9 +139,7 @@ export default function BusesPage() {
           )}
 
           {error && (
-            <div className="mb-6 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl text-sm text-red-600 dark:text-red-400">
-              {error}
-            </div>
+            <StatusBanner variant="error" className="mb-6">{error}</StatusBanner>
           )}
 
           <BusTable

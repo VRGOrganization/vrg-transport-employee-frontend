@@ -6,6 +6,7 @@ import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/Button";
+import { StatusBanner } from "@/components/ui/StatusBanner";
 import { employeeApi } from "@/lib/employeeApi";
 import type {
   LicenseRequestRecord,
@@ -241,17 +242,8 @@ export default function AdminEnrollmentPeriodPage() {
               </Button>
             </header>
 
-            {feedback && (
-              <div className="rounded-xl border border-success/40 bg-success/10 px-4 py-3 text-sm text-success">
-                {feedback}
-              </div>
-            )}
-
-            {error && (
-              <div className="rounded-xl border border-error/40 bg-error/10 px-4 py-3 text-sm text-error">
-                {error}
-              </div>
-            )}
+            {feedback && <StatusBanner variant="success">{feedback}</StatusBanner>}
+            {error && <StatusBanner variant="error">{error}</StatusBanner>}
 
             <section className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-5">
               <div className="mb-4 flex items-center justify-between">

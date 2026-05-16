@@ -6,6 +6,8 @@ import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/Button";
+import { ResultState } from "@/components/ui/ResultState";
+import { AlertCircle, GraduationCap, UserX } from "lucide-react";
 import { employeeApi } from "@/lib/employeeApi";
 import { Student } from "@/types/student";
 import { StudentModal } from "./StdentModal";
@@ -291,38 +293,39 @@ export default function StudentsPage() {
                     : error
                     ? (
                       <tr>
-                        <td colSpan={7} className="px-4 py-16 text-center">
-                          <div className="flex flex-col items-center gap-3">
-                            <span className="material-symbols-outlined text-error text-4xl">
-                              error
-                            </span>
-                            <p className="text-on-surface-variant text-sm">{error}</p>
-                            <button
-                              onClick={() => loadTab(tab)}
-                              className="text-xs text-primary hover:underline font-medium"
-                            >
-                              Tentar novamente
-                            </button>
-                          </div>
+                        <td colSpan={7} className="px-4 py-16">
+                          <ResultState
+                            variant="error"
+                            icon={AlertCircle}
+                            title="Erro ao carregar"
+                            description={error}
+                            size="sm"
+                            actions={
+                              <Button variant="outline" size="sm" onClick={() => loadTab(tab)}>
+                                Tentar novamente
+                              </Button>
+                            }
+                          />
                         </td>
                       </tr>
                     )
                     : paginated.length === 0
                     ? (
                       <tr>
-                        <td colSpan={7} className="px-4 py-16 text-center">
-                          <div className="flex flex-col items-center gap-3">
-                            <span className="material-symbols-outlined text-on-surface-variant text-4xl">
-                              {tab === "active" ? "school" : "person_off"}
-                            </span>
-                            <p className="text-on-surface-variant text-sm">
-                              {search
+                        <td colSpan={7} className="px-4 py-16">
+                          <ResultState
+                            variant="neutral"
+                            icon={tab === "active" ? GraduationCap : UserX}
+                            title={tab === "active" ? "Nenhum estudante ativo" : "Nenhum estudante desativado"}
+                            description={
+                              search
                                 ? "Nenhum estudante encontrado para esta busca."
                                 : tab === "active"
-                                ? "Nenhum estudante ativo."
-                                : "Nenhum estudante desativado."}
-                            </p>
-                          </div>
+                                ? "Adicione o primeiro estudante ao sistema."
+                                : "Estudantes desativados aparecerão aqui."
+                            }
+                            size="sm"
+                          />
                         </td>
                       </tr>
                     )
