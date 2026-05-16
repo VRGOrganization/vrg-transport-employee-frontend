@@ -1,6 +1,5 @@
 import { EmployeeAdminLoginForm } from "@/components/auth/EmployeeAdminLoginForm";
-import { Footer } from "@/components/layout/Footer";
-import Link from "next/link";
+import { AuthPageShell } from "@/components/layout/AuthPageShell";
 
 export default function EmployeeAdminLoginPage() {
   return (
@@ -39,30 +38,16 @@ export default function EmployeeAdminLoginPage() {
             </div>
           </div>
         </div>
-        
       </aside>
 
       {/* RIGHT PANEL */}
-      <main className="flex-1 flex flex-col bg-surface">
-        <div className="flex-1 flex items-center justify-center px-8 py-12">
-          <div className="w-full max-w-md">
-            {/* Eyebrow */}
-            <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
-              Acessar Conta
-            </p>
-            <h1 className="text-3xl font-extrabold text-on-surface tracking-tight mb-2">
-              Entrar no sistema
-            </h1>
-            <p className="text-sm text-on-surface-variant mb-8">
-              Use sua matrícula ou e-mail institucional.
-            </p>
-
-            <EmployeeAdminLoginForm />
-          </div>
-        </div>
-
-        <Footer />
-      </main>
+      <AuthPageShell
+        eyebrow="Acessar Conta"
+        title="Entrar no sistema"
+        subtitle="Use sua matrícula ou e-mail institucional."
+      >
+        <EmployeeAdminLoginForm />
+      </AuthPageShell>
     </>
   );
 }

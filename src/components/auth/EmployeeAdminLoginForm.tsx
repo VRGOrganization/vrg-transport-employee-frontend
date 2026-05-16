@@ -4,70 +4,32 @@ import { useState } from "react";
 import { ArrowRight, Lock, Hash } from "lucide-react";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
+import { StatusBanner } from "@/components/ui/StatusBanner";
 import { useEmployeeAuth } from "../hooks/useEmployeeAuth";
-import {
-  employeeLoginRequestSchema,
-  getFieldErrors,
-} from "@/lib/validation/auth";
+import { useZodForm } from "@/components/hooks/useZodForm";
+import { employeeLoginRequestSchema } from "@/lib/validation/auth";
 import Link from "next/link";
 
+type Role = "admin" | "employee";
+
 export function EmployeeAdminLoginForm() {
-  const { login, loading } = useEmployeeAuth();
-  const [formData, setFormData] = useState({
-    login: "",
-    password: "",
-    rememberMe: false,
-    role: "employee" as "admin" | "employee",
+  const { login } = useEmployeeAuth();
+  const [rememberMe, setRememberMe] = useState(false);
+
+  const { values, errors, generalError, loading, setValue, handleSubmit } = useZodForm({
+    schema: employeeLoginRequestSchema,
+    initialValues: { login: "", password: "", role: "employee" as Role },
+    onSubmit: async (v) => {
+      const result = await login({ login: v.login, password: v.password, role: v.role });
+      if (result.success) return { success: true as const };
+      return { success: false as const, error: result.error ?? "Credenciais inválidas" };
+    },
   });
-  const [errors, setErrors] = useState({
-    login: "",
-    password: "",
-    role: "",
-    general: "",
-  });
-
-  const validateForm = () => {
-    const result = employeeLoginRequestSchema.safeParse(formData);
-
-    if (result.success) {
-      setErrors({ login: "", password: "", role: "", general: "" });
-      return true;
-    }
-
-    const fieldErrors = getFieldErrors(result.error);
-    setErrors({
-      login: fieldErrors.login ?? "",
-      password: fieldErrors.password ?? "",
-      role: fieldErrors.role ?? "",
-      general: "",
-    });
-    return false;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    const result = await login({
-      login: formData.login,
-      password: formData.password,
-      role: formData.role,
-    });
-
-    if (!result.success) {
-      setErrors((prev) => ({
-        ...prev,
-        general: result.error ?? "Credenciais inválidas",
-      }));
-    }
-  };
 
   return (
     <div className="space-y-5">
-      {errors.general && (
-        <div className="bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3">
-          {errors.general}
-        </div>
+      {generalError && (
+        <StatusBanner variant="error">{generalError}</StatusBanner>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -81,10 +43,10 @@ export function EmployeeAdminLoginForm() {
               <button
                 key={r}
                 type="button"
-                onClick={() => setFormData({ ...formData, role: r })}
+                onClick={() => setValue("role", r)}
                 className={[
                   "h-10 rounded-lg text-sm font-semibold transition-all duration-150",
-                  formData.role === r
+                  values.role === r
                     ? "bg-primary text-on-primary shadow-sm"
                     : "text-on-surface-variant hover:text-on-surface",
                 ].join(" ")}
@@ -107,10 +69,8 @@ export function EmployeeAdminLoginForm() {
             type="text"
             icon={<Hash size={18} />}
             placeholder="email@dominio.com ou MAT123456"
-            value={formData.login}
-            onChange={(e) =>
-              setFormData({ ...formData, login: e.target.value })
-            }
+            value={values.login}
+            onChange={(e) => setValue("login", e.target.value)}
             error={errors.login}
           />
         </div>
@@ -132,10 +92,8 @@ export function EmployeeAdminLoginForm() {
             type="password"
             icon={<Lock size={18} />}
             placeholder="••••••••"
-            value={formData.password}
-            onChange={(e) =>
-              setFormData({ ...formData, password: e.target.value })
-            }
+            value={values.password}
+            onChange={(e) => setValue("password", e.target.value)}
             error={errors.password}
           />
         </div>
@@ -144,10 +102,8 @@ export function EmployeeAdminLoginForm() {
         <label className="flex items-center gap-2.5 cursor-pointer select-none group">
           <input
             type="checkbox"
-            checked={formData.rememberMe}
-            onChange={(e) =>
-              setFormData({ ...formData, rememberMe: e.target.checked })
-            }
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
             className="w-4 h-4 rounded border-outline accent-primary cursor-pointer"
           />
           <span className="text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">
