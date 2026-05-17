@@ -39,7 +39,7 @@ export function StudentInfoModal({ student, onClose }: StudentInfoModalProps) {
             onClick={onClose}
             className="absolute top-4 right-4 text-on-primary hover:bg-black/20 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>close</span>
+            <span className="material-symbols-outlined text-xl">close</span>
           </button>
           
           <div className="w-24 h-24 rounded-full bg-surface flex items-center justify-center shadow-lg border-4 border-surface mb-4">
@@ -62,7 +62,7 @@ export function StudentInfoModal({ student, onClose }: StudentInfoModalProps) {
             {/* Contact Info */}
             <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30 shadow-sm">
               <div className="flex items-center gap-3 mb-1">
-                <span className="material-symbols-outlined text-primary" style={{ fontSize: "20px" }}>mail</span>
+                <span className="material-symbols-outlined text-xl text-primary">mail</span>
                 <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">E-mail</p>
               </div>
               <p className="text-on-surface font-medium ml-8">{student.email}</p>
@@ -70,7 +70,7 @@ export function StudentInfoModal({ student, onClose }: StudentInfoModalProps) {
 
             <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30 shadow-sm">
               <div className="flex items-center gap-3 mb-1">
-                <span className="material-symbols-outlined text-primary" style={{ fontSize: "20px" }}>phone</span>
+                <span className="material-symbols-outlined text-xl text-primary">phone</span>
                 <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Telefone</p>
               </div>
               <p className="text-on-surface font-medium ml-8">{student.telephone || "Não informado"}</p>
@@ -79,7 +79,7 @@ export function StudentInfoModal({ student, onClose }: StudentInfoModalProps) {
             {/* Academic Info */}
             <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30 shadow-sm">
               <div className="flex items-center gap-3 mb-1">
-                <span className="material-symbols-outlined text-primary" style={{ fontSize: "20px" }}>account_balance</span>
+                <span className="material-symbols-outlined text-xl text-primary">account_balance</span>
                 <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Instituição</p>
               </div>
               <p className="text-on-surface font-medium ml-8">{student.institution || "Não informada"}</p>
@@ -87,7 +87,7 @@ export function StudentInfoModal({ student, onClose }: StudentInfoModalProps) {
 
             <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30 shadow-sm">
               <div className="flex items-center gap-3 mb-1">
-                <span className="material-symbols-outlined text-primary" style={{ fontSize: "20px" }}>schedule</span>
+                <span className="material-symbols-outlined text-xl text-primary">schedule</span>
                 <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Turno</p>
               </div>
               <p className="text-on-surface font-medium ml-8 capitalize">{student.shift || "Não informado"}</p>
@@ -97,7 +97,7 @@ export function StudentInfoModal({ student, onClose }: StudentInfoModalProps) {
             <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30 shadow-sm md:col-span-2 flex justify-between items-center">
               <div>
                 <div className="flex items-center gap-3 mb-1">
-                  <span className="material-symbols-outlined text-primary" style={{ fontSize: "20px" }}>calendar_today</span>
+                  <span className="material-symbols-outlined text-xl text-primary">calendar_today</span>
                   <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Data de Cadastro</p>
                 </div>
                 <p className="text-on-surface font-medium ml-8">
@@ -120,7 +120,7 @@ export function StudentInfoModal({ student, onClose }: StudentInfoModalProps) {
             {/* Schedule Info */}
             <div className="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 shadow-sm md:col-span-2 mt-2">
               <div className="flex items-center gap-3 mb-4">
-                <span className="material-symbols-outlined text-primary" style={{ fontSize: "22px" }}>calendar_month</span>
+                <span className="material-symbols-outlined text-[22px] text-primary">calendar_month</span>
                 <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Grade de Horários</p>
               </div>
               {student.schedule && student.schedule.length > 0 ? (
@@ -130,7 +130,7 @@ export function StudentInfoModal({ student, onClose }: StudentInfoModalProps) {
                       key={`${item.day}-${item.period}-${index}`}
                       className="flex items-center gap-1.5 rounded-lg bg-primary/10 border border-primary/20 px-3 py-1.5 text-sm font-semibold text-primary shadow-sm"
                     >
-                      <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>schedule</span>
+                      <span className="material-symbols-outlined text-base">schedule</span>
                       {DAY_LABELS[item.day] ?? item.day} · {item.period}
                     </span>
                   ))}

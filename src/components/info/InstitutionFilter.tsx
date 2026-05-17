@@ -38,10 +38,7 @@ export function InstitutionFilter({ value, onChange }: InstitutionFilterProps) {
             </option>
           ))}
         </select>
-        <span
-          className="material-symbols-outlined absolute right-3 top-2.5 text-primary pointer-events-none"
-          style={{ fontSize: "20px" }}
-        >
+        <span className="material-symbols-outlined text-xl absolute right-3 top-2.5 text-primary pointer-events-none">
           expand_more
         </span>
       </div>

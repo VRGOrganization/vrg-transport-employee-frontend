@@ -220,10 +220,7 @@ function EditStudentPageInner() {
                             : "text-success hover:bg-success-container"
                         }`}
                       >
-                        <span
-                          className="material-symbols-outlined"
-                          style={{ fontSize: "16px" }}
-                        >
+                        <span className="material-symbols-outlined text-base">
                           {student.active ? "person_off" : "person_check"}
                         </span>
                         {student.active ? "Desativar" : "Reativar"}

@@ -162,7 +162,7 @@ export default function EmployeesPage() {
                         : "text-on-surface-variant hover:text-on-surface",
                     ].join(" ")}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>
+                    <span className="material-symbols-outlined text-sm">
                       {t === "active" ? "check_circle" : "person_off"}
                     </span>
                     {t === "active" ? "Ativos" : "Desativados"}
@@ -173,8 +173,7 @@ export default function EmployeesPage() {
               {/* Search */}
               <div className="relative">
                 <span
-                  className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
-                  style={{ fontSize: "16px" }}
+                  className="material-symbols-outlined text-base absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
                 >
                   search
                 </span>
@@ -190,7 +189,7 @@ export default function EmployeesPage() {
                     onClick={() => handleSearch("")}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: "15px" }}>close</span>
+                    <span className="material-symbols-outlined text-[15px]">close</span>
                   </button>
                 )}
               </div>
@@ -297,7 +296,7 @@ export default function EmployeesPage() {
                                   className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
                                   title="Editar funcionário"
                                 >
-                                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
+                                  <span className="material-symbols-outlined text-lg">edit</span>
                                 </button>
                               </td>
                             </tr>
@@ -345,7 +344,7 @@ export default function EmployeesPage() {
                     className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Primeira página"
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>first_page</span>
+                    <span className="material-symbols-outlined text-base">first_page</span>
                   </button>
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}

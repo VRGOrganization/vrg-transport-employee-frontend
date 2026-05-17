@@ -14,7 +14,7 @@ export function DashboardNav({ user, onLogout }: DashboardNavProps) {
   return (
     <nav className="bg-primary text-white px-6 py-4 flex items-center justify-between shadow-md flex-shrink-0">
       <div className="flex items-center gap-3">
-        <span className="material-symbols-outlined" style={{ fontSize: "28px" }}>
+        <span className="material-symbols-outlined text-[28px]">
           directions_bus
         </span>
         <span className="font-headline font-semibold text-lg tracking-wide">
@@ -43,7 +43,7 @@ export function DashboardNav({ user, onLogout }: DashboardNavProps) {
           className="flex items-center gap-1.5 text-sm text-white/80 hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors"
           title="Sair"
         >
-          <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
+          <span className="material-symbols-outlined text-lg">
             logout
           </span>
           <span className="hidden sm:block">Sair</span>

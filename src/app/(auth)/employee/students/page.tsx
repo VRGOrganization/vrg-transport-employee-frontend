@@ -115,7 +115,7 @@ export default function EmployeeStudentsPage() {
                       : "text-on-surface-variant hover:text-on-surface"
                   }`}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
+                  <span className="material-symbols-outlined text-base">
                     {t === "active" ? "check_circle" : "person_off"}
                   </span>
                   {t === "active" ? "Ativos" : "Desativados"}

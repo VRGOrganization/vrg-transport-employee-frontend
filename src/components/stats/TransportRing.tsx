@@ -22,7 +22,7 @@ export function TransportRing({ totalUsing, totalStudents }: TransportRingProps)
           width="88"
           height="88"
           viewBox="0 0 88 88"
-          style={{ transform: "rotate(-90deg)" }}
+          className="-rotate-90"
           aria-hidden="true"
         >
           <circle cx="44" cy="44" r={radius} fill="none" stroke="#F3F4F6" strokeWidth="9" />

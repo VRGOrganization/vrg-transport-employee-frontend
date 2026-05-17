@@ -118,8 +118,7 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
                 <img
                   src={image}
                   alt="Carteirinha"
-                  className="w-full h-auto object-contain rounded-lg"
-                  style={{ maxHeight: "70vh" }}
+                  className="w-full h-auto object-contain rounded-lg max-h-[70vh]"
                 />
               </div>
             ) : null}

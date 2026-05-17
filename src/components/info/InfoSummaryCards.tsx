@@ -43,7 +43,7 @@ function InfoCard({ card }: { card: SummaryCard }) {
     >
       <div className="flex justify-between items-start mb-4">
         <div className={`p-2 rounded-lg ${iconBgMap[accent]}`}>
-          <span className="material-symbols-outlined" style={{ fontSize: "22px" }}>
+          <span className="material-symbols-outlined text-[22px]">
             {card.icon}
           </span>
         </div>

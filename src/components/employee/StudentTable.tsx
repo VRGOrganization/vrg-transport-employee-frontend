@@ -164,10 +164,7 @@ export function StudentTable({
                           className="p-2 text-primary hover:bg-primary-fixed rounded-lg transition-colors inline-flex"
                           title="Editar"
                         >
-                          <span
-                            className="material-symbols-outlined"
-                            style={{ fontSize: "20px" }}
-                          >
+                          <span className="material-symbols-outlined text-xl">
                             edit
                           </span>
                         </button>
@@ -176,10 +173,7 @@ export function StudentTable({
                           className="p-2 text-error hover:bg-error-container rounded-lg transition-colors inline-flex ml-2"
                           title="Desativar"
                         >
-                          <span
-                            className="material-symbols-outlined"
-                            style={{ fontSize: "20px" }}
-                          >
+                          <span className="material-symbols-outlined text-xl">
                             delete
                           </span>
                         </button>
@@ -204,10 +198,7 @@ export function StudentTable({
               disabled={page === 1}
               className="w-10 h-10 rounded-lg flex items-center justify-center border border-outline-variant hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: "20px" }}
-              >
+              <span className="material-symbols-outlined text-xl">
                 chevron_left
               </span>
             </button>
@@ -231,10 +222,7 @@ export function StudentTable({
               disabled={page === totalPages}
               className="w-10 h-10 rounded-lg flex items-center justify-center border border-outline-variant hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: "20px" }}
-              >
+              <span className="material-symbols-outlined text-xl">
                 chevron_right
               </span>
             </button>

@@ -116,17 +116,17 @@ export default function StudentsPage() {
 
   /* ── Modal callbacks ──────────────────────────────────────────────── */
 
-  const handleUpdated = (updated: Student) => {
+  const handleUpdated = (_updated: Student) => {
     setSelected(null);
     loadTab(tab);
   };
 
-  const handleDeactivated = (id: string) => {
+  const handleDeactivated = (_id: string) => {
     setSelected(null);
     loadTab(tab);
   };
 
-  const handleReactivated = (updated: Student) => {
+  const handleReactivated = (_updated: Student) => {
     setSelected(null);
     loadTab(tab);
   };
@@ -199,10 +199,7 @@ export default function StudentsPage() {
                         : "text-on-surface-variant hover:text-on-surface",
                     ].join(" ")}
                   >
-                    <span
-                      className="material-symbols-outlined"
-                      style={{ fontSize: "14px" }}
-                    >
+                    <span className="material-symbols-outlined text-sm">
                       {t === "active" ? "check_circle" : "person_off"}
                     </span>
                     {t === "active" ? "Ativos" : "Desativados"}
@@ -212,10 +209,7 @@ export default function StudentsPage() {
 
               {/* Search */}
               <div className="relative">
-                <span
-                  className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
-                  style={{ fontSize: "16px" }}
-                >
+                <span className="material-symbols-outlined text-base absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">
                   search
                 </span>
                 <input
@@ -230,10 +224,7 @@ export default function StudentsPage() {
                     onClick={() => handleSearch("")}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
                   >
-                    <span
-                      className="material-symbols-outlined"
-                      style={{ fontSize: "15px" }}
-                    >
+                    <span className="material-symbols-outlined text-[15px]">
                       close
                     </span>
                   </button>
@@ -380,10 +371,7 @@ export default function StudentsPage() {
                                 className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
                                 title="Ações"
                               >
-                                <span
-                                  className="material-symbols-outlined"
-                                  style={{ fontSize: "18px" }}
-                                >
+                                <span className="material-symbols-outlined text-lg">
                                   more_vert
                                 </span>
                               </button>
@@ -399,7 +387,7 @@ export default function StudentsPage() {
                                       }}
                                       className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
                                     >
-                                      <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>visibility</span>
+                                      <span className="material-symbols-outlined text-lg">visibility</span>
                                       Ver
                                     </button>
                                     <button
@@ -409,7 +397,7 @@ export default function StudentsPage() {
                                       }}
                                       className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
                                     >
-                                      <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
+                                      <span className="material-symbols-outlined text-lg">edit</span>
                                       Editar
                                     </button>
                                     <button
@@ -419,7 +407,7 @@ export default function StudentsPage() {
                                       }}
                                       className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
                                     >
-                                      <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>badge</span>
+                                      <span className="material-symbols-outlined text-lg">badge</span>
                                       Carteirinha
                                     </button>
                                   </div>
@@ -475,9 +463,7 @@ export default function StudentsPage() {
                     className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Primeira página"
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                      first_page
-                    </span>
+                    <span className="material-symbols-outlined text-base">first_page</span>
                   </button>
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -485,9 +471,7 @@ export default function StudentsPage() {
                     suppressHydrationWarning
                     className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                      chevron_left
-                    </span>
+                    <span className="material-symbols-outlined text-base">chevron_left</span>
                   </button>
                   <span className="text-xs px-2">
                     Página {page} de {totalPages}
@@ -498,9 +482,7 @@ export default function StudentsPage() {
                     suppressHydrationWarning
                     className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                      chevron_right
-                    </span>
+                    <span className="material-symbols-outlined text-base">chevron_right</span>
                   </button>
                   <button
                     onClick={() => setPage(totalPages)}
@@ -509,9 +491,7 @@ export default function StudentsPage() {
                     className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Última página"
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                      last_page
-                    </span>
+                    <span className="material-symbols-outlined text-base">last_page</span>
                   </button>
                 </div>
               </div>

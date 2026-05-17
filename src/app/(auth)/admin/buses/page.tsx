@@ -91,7 +91,7 @@ export default function BusesPage() {
               onClick={() => setCreating(true)}
               className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
+              <span className="material-symbols-outlined text-lg">
                 add
               </span>
               Novo Ônibus
