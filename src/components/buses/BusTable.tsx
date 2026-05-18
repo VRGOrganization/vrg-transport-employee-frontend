@@ -18,7 +18,7 @@ export function BusTable({ buses, loading, onEdit, onDeactivate, onViewStudents,
   const [universitiesMap, setUniversitiesMap] = useState<Record<string, { acronym?: string; name?: string }>>({});
 
   useEffect(() => {
-    let cancelled = false;
+    const mountState = { cancelled: false };
 
     const collectAndLoad = async () => {
       const ids = new Set<string>();
@@ -40,14 +40,14 @@ export function BusTable({ buses, loading, onEdit, onDeactivate, onViewStudents,
         arr.forEach((u) => {
           if (u && u._id) map[u._id] = { acronym: u.acronym, name: u.name };
         });
-        if (!cancelled) setUniversitiesMap(map);
+        if (!mountState.cancelled) setUniversitiesMap(map);
       } catch {
         // ignore
       }
     };
 
     void collectAndLoad();
-    return () => { cancelled = true; };
+    return () => { mountState.cancelled = true; };
   }, [buses]);
 
   if (loading) {

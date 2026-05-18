@@ -19,13 +19,13 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    const mountState = { cancelled: false };
     async function fetchLicense() {
       try {
         const license = await http.get<LicenseRecord>(
           `/license/searchByStudent/${student._id}`
         );
-        if (cancelled) return;
+        if (mountState.cancelled) return;
         const img = extractLicenseImage(license);
         if (img) {
           setImage(img);
@@ -33,19 +33,19 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
           setError("A carteirinha ainda não foi gerada ou não possui imagem.");
         }
       } catch (err: any) {
-        if (cancelled) return;
+        if (mountState.cancelled) return;
         setError(
           err.status === 404
             ? "A carteirinha deste aluno ainda não foi solicitada ou aprovada."
             : "Falha ao carregar carteirinha."
         );
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!mountState.cancelled) setLoading(false);
       }
     }
     fetchLicense();
     return () => {
-      cancelled = true;
+      mountState.cancelled = true;
     };
   }, [student._id]);
 

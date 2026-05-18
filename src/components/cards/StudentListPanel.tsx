@@ -160,20 +160,20 @@ export function StudentListPanel({
   const selectableStudentIds = useMemo(() => {
     try {
       if (filter === "pending") {
-        let pendings = licenseRequests.filter((r) => r.status === "pending");
-        if (priorityFilteredStudentIds) {
-          pendings = pendings.filter((p) => priorityFilteredStudentIds.has(p.studentId));
-        }
+        const initialPendings = licenseRequests.filter((r) => r.status === "pending");
+        const pendings = priorityFilteredStudentIds
+          ? initialPendings.filter((p) => priorityFilteredStudentIds.has(p.studentId))
+          : initialPendings;
         if (pendings.length === 0) return new Set<string>();
         pendings.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         return new Set([pendings[0].studentId]);
       }
 
       if (filter === "waitlisted") {
-        let waitlisted = licenseRequests.filter((r) => r.status === "waitlisted");
-        if (priorityFilteredStudentIds) {
-          waitlisted = waitlisted.filter((w) => priorityFilteredStudentIds.has(w.studentId));
-        }
+        const initialWaitlisted = licenseRequests.filter((r) => r.status === "waitlisted");
+        const waitlisted = priorityFilteredStudentIds
+          ? initialWaitlisted.filter((w) => priorityFilteredStudentIds.has(w.studentId))
+          : initialWaitlisted;
         if (waitlisted.length === 0) return new Set<string>();
         waitlisted.sort((a, b) => {
           const pa = typeof a.filaPosition === "number" ? a.filaPosition : Number.MAX_VALUE;

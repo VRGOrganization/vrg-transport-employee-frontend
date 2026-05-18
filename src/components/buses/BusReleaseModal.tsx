@@ -40,21 +40,18 @@ export default function BusReleaseModal({ open, bus, onClose, onSuccess }: BusRe
 
   const preview = useMemo(() => {
     const q = quantity ?? totalWaitlisted ?? 0;
-    let remaining = Math.max(0, Math.floor(q));
     const plan: Array<{ universityAcronym?: string; priorityOrder: number; promote: number; waitlistedCount: number }> = [];
-    for (const slot of waitlistedByPriority) {
-      if (remaining <= 0) break;
+    waitlistedByPriority.reduce((remaining, slot) => {
+      if (remaining <= 0) return 0;
       const avail = slot.waitlistedCount || 0;
-      if (avail <= 0) continue;
+      if (avail <= 0) return remaining;
       if (avail <= remaining) {
         plan.push({ universityAcronym: slot.universityAcronym, priorityOrder: slot.priorityOrder, promote: avail, waitlistedCount: avail });
-        remaining -= avail;
-        continue;
+        return remaining - avail;
       }
       plan.push({ universityAcronym: slot.universityAcronym, priorityOrder: slot.priorityOrder, promote: remaining, waitlistedCount: avail });
-      remaining = 0;
-      break;
-    }
+      return 0;
+    }, Math.max(0, Math.floor(q)));
     return plan;
   }, [quantity, totalWaitlisted, waitlistedByPriority]);
 

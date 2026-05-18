@@ -15,7 +15,6 @@ export function getInitials(name: string): string {
 }
 
 export function deterministicAvatarColor(seed: string): string {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  const h = Array.from(seed).reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) | 0, 0);
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }

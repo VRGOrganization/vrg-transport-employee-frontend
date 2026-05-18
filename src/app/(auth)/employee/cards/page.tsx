@@ -35,7 +35,7 @@ export default function EmployeeCardsPage() {
   } = useCardsData(selectedBus);
 
   useEffect(() => {
-    let cancelled = false;
+    const mountState = { cancelled: false };
     setSelectedBusRoute(null);
     if (!selectedBusId) {
       setSelectedBus(null);
@@ -46,15 +46,15 @@ export default function EmployeeCardsPage() {
       try {
         const arr = await busApi.list();
         const found = arr.find((b) => b._id === selectedBusId) ?? null;
-        if (!cancelled) setSelectedBus(found);
-        if (!cancelled) setSelectedBusRoute(found as unknown as BusRoute);
+        if (!mountState.cancelled) setSelectedBus(found);
+        if (!mountState.cancelled) setSelectedBusRoute(found as unknown as BusRoute);
       } catch {
-        if (!cancelled) setSelectedBus(null);
+        if (!mountState.cancelled) setSelectedBus(null);
       }
     })();
 
     return () => {
-      cancelled = true;
+      mountState.cancelled = true;
     };
   }, [selectedBusId]);
 

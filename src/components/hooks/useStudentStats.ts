@@ -44,7 +44,7 @@ export function useStudentStats(): UseStudentStatsResult {
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    let cancelled = false;
+    const mountState = { cancelled: false };
 
     async function load() {
       setLoading(true);
@@ -59,7 +59,7 @@ export function useStudentStats(): UseStudentStatsResult {
           http.get<LicenseRequestRecord[]>("/license-request/all"),
         ]);
 
-        if (cancelled) return;
+        if (mountState.cancelled) return;
 
         // Normalização dos dados brutos
         const allStudents = normalizeArrayResponse<StudentRecord>(studentsRes);
@@ -150,11 +150,11 @@ export function useStudentStats(): UseStudentStatsResult {
 
         setStats(finalStats);
       } catch (err) {
-        if (!cancelled) {
+        if (!mountState.cancelled) {
           setError(err instanceof Error ? err.message : "Erro ao carregar estatísticas");
         }
       } finally {
-        if (!cancelled) {
+        if (!mountState.cancelled) {
           setLoading(false);
         }
       }
@@ -163,7 +163,7 @@ export function useStudentStats(): UseStudentStatsResult {
     load();
 
     return () => {
-      cancelled = true;
+      mountState.cancelled = true;
     };
   }, [tick]);
 

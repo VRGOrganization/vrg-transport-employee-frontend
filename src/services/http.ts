@@ -4,14 +4,16 @@ import type { ApiError } from "@/types/api";
 
 export const API_BASE_URL = "/api/v1";
 
-let onUnauthorized: (() => void) | null = null;
+const httpState = {
+  onUnauthorized: null as (() => void) | null
+};
 
 export function configureHttp(opts: { onUnauthorized: () => void }) {
-  onUnauthorized = opts.onUnauthorized;
+  httpState.onUnauthorized = opts.onUnauthorized;
 }
 
 export function resetHttpState(): void {
-  onUnauthorized = null;
+  httpState.onUnauthorized = null;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -29,7 +31,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const data = await res.json().catch(() => ({}));
 
   if (res.status === 401) {
-    onUnauthorized?.();
+    httpState.onUnauthorized?.();
   }
 
   if (!res.ok) {

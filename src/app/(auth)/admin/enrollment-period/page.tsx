@@ -110,15 +110,11 @@ export default function AdminEnrollmentPeriodPage() {
     setLoading(true);
     setError("");
     try {
-      let resolvedActive: EnrollmentPeriod | null = null;
-      try {
-        resolvedActive = await enrollmentPeriodService.getActive();
-      } catch (err: unknown) {
+      const resolvedActive: EnrollmentPeriod | null = await enrollmentPeriodService.getActive().catch((err: unknown) => {
         const apiError = err as { status?: number };
-        if (apiError.status !== 404) {
-          throw err;
-        }
-      }
+        if (apiError.status !== 404) throw err;
+        return null;
+      });
 
       const [periodsResponse, studentsResponse] = await Promise.all([
         enrollmentPeriodService.list(),

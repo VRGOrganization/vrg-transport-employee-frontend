@@ -120,31 +120,30 @@ export function EnrollmentPeriodModal({
 
   useEffect(() => {
     if (!open) return;
-    let cancelled = false;
+    const mountState = { cancelled: false };
 
     const load = async () => {
       setLoadingBusMin(true);
       try {
         const buses = await busApi.list();
-        if (cancelled) return;
-        let sum = 0;
-        if (Array.isArray(buses)) {
-          for (const b of buses) {
-            const cap = (b as any)?.capacity;
-            if (typeof cap === "number" && cap > 0) sum += cap;
-          }
-        }
-        if (!cancelled) setMinSlotsFromBuses(sum);
+        if (mountState.cancelled) return;
+        const sum = Array.isArray(buses) 
+          ? buses.reduce((acc, b: any) => {
+              const cap = b?.capacity;
+              return typeof cap === "number" && cap > 0 ? acc + cap : acc;
+            }, 0)
+          : 0;
+        if (!mountState.cancelled) setMinSlotsFromBuses(sum);
       } catch (e) {
-        if (!cancelled) setMinSlotsFromBuses(0);
+        if (!mountState.cancelled) setMinSlotsFromBuses(0);
       } finally {
-        if (!cancelled) setLoadingBusMin(false);
+        if (!mountState.cancelled) setLoadingBusMin(false);
       }
     };
 
     void load();
     return () => {
-      cancelled = true;
+      mountState.cancelled = true;
     };
   }, [open]);
 

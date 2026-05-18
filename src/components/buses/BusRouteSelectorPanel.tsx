@@ -30,24 +30,24 @@ export default function BusRouteSelectorPanel({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    let cancelled = false;
+    const mountState = { cancelled: false };
 
     const load = async () => {
       setLoading(true);
       setError("");
       try {
         const data = await busRouteApi.list();
-        if (!cancelled) setRoutes(data);
+        if (!mountState.cancelled) setRoutes(data);
       } catch (err) {
-        if (!cancelled) setError("Não foi possível carregar as rotas");
+        if (!mountState.cancelled) setError("Não foi possível carregar as rotas");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!mountState.cancelled) setLoading(false);
       }
     };
 
     void load();
     return () => {
-      cancelled = true;
+      mountState.cancelled = true;
     };
   }, []);
 

@@ -94,28 +94,23 @@ function EditEmployeeContent() {
 
   const validate = (): boolean => {
     const next = { ...emptyErrors };
-    let valid = true;
 
     if (!formData.name.trim()) {
       next.name = "Nome é obrigatório";
-      valid = false;
     }
 
     if (!formData.email.trim()) {
       next.email = "Email é obrigatório";
-      valid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       next.email = "Email inválido";
-      valid = false;
     }
 
     if (!formData.registrationId.trim()) {
       next.registrationId = "Matrícula é obrigatória";
-      valid = false;
     }
 
     setErrors(next);
-    return valid;
+    return Object.values(next).every((msg) => msg === "");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

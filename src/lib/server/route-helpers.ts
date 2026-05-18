@@ -47,7 +47,6 @@ export function withAuthRouteGuards<TInput = void, TOutput = unknown>(
         }
       }
 
-      let input: TInput = undefined as TInput;
       if (opts.schema) {
         const rawBody = await request.json().catch(() => ({}));
         const result = opts.schema.safeParse(rawBody);
@@ -55,10 +54,10 @@ export function withAuthRouteGuards<TInput = void, TOutput = unknown>(
           const { message, errors } = extractFirstError(result.error);
           return NextResponse.json({ message, errors }, { status: 400 });
         }
-        input = result.data;
+        return await opts.handler(result.data, request);
       }
 
-      return await opts.handler(input, request);
+      return await opts.handler(undefined as TInput, request);
     } catch (error) {
       console.error("[BFF][route-helpers] error:", error);
       return NextResponse.json({ message: "Erro interno do servidor." }, { status: 500 });

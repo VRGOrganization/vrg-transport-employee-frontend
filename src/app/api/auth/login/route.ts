@@ -61,21 +61,26 @@ export const POST = withAuthRouteGuards({
       ? { username: login, password }
       : { registrationId: login, password };
 
-    let upstream: Response;
-    try {
-      upstream = await tryLogin(`${base}${endpoint}`, payload);
-    } catch (error) {
-      if (isUpstreamConnectivityError(error)) {
-        return NextResponse.json(
-          {
-            message:
-              "Não foi possível conectar ao backend de autenticação. Verifique se a API está rodando e acessível.",
-          },
-          { status: 503 },
-        );
-      }
-      throw error;
-    }
+    const upstreamResult = await tryLogin(`${base}${endpoint}`, payload)
+      .then((res) => ({ type: "success" as const, res }))
+      .catch((error) => {
+        if (isUpstreamConnectivityError(error)) {
+          return {
+            type: "error" as const,
+            response: NextResponse.json(
+              {
+                message:
+                  "Não foi possível conectar ao backend de autenticação. Verifique se a API está rodando e acessível.",
+              },
+              { status: 503 },
+            ),
+          };
+        }
+        throw error;
+      });
+
+    if (upstreamResult.type === "error") return upstreamResult.response;
+    const upstream = upstreamResult.res;
 
     const data = await upstream.json().catch(() => ({}));
 

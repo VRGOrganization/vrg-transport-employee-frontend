@@ -105,7 +105,7 @@ export default function AdminDashboardPage() {
         ]);
 
       const rows: UserRow[] = [];
-      let resolvedStudents: StudentRecord[] = [];
+      const resolvedStudents: StudentRecord[] = studentsResult.status === "fulfilled" ? resolvePaginated(studentsResult.value) : [];
 
       if (employeesResult.status === "fulfilled") {
         const all = employeesResult.value;
@@ -127,8 +127,6 @@ export default function AdminDashboardPage() {
       }
 
       if (studentsResult.status === "fulfilled") {
-        resolvedStudents = resolvePaginated(studentsResult.value);
-
         const activeStudents = resolvedStudents.filter((s) => s.status === "ACTIVE" && s.active);
 
         setStats((prev) => ({
@@ -220,35 +218,37 @@ export default function AdminDashboardPage() {
       const buses = Array.isArray(busesRes) ? busesRes : [];
       const universities = Array.isArray(universitiesRes) ? universitiesRes : [];
 
-      let csv = "sep=,\n"; // Indica ao Excel o separador
+      const csvRows = ["sep=,"];
 
       // --- Alunos ---
-      csv += "--- ALUNOS ---\n";
-      csv += "Nome,Email,Ativo,Status,Data Cadastro\n";
+      csvRows.push("--- ALUNOS ---");
+      csvRows.push("Nome,Email,Ativo,Status,Data Cadastro");
       students.forEach((s: any) => {
-        csv += `"${s.name}","${s.email}","${s.active ? "Sim" : "Não"}","${s.status}","${new Date(s.createdAt).toLocaleString("pt-BR")}"\n`;
+        csvRows.push(`"${s.name}","${s.email}","${s.active ? "Sim" : "Não"}","${s.status}","${new Date(s.createdAt).toLocaleString("pt-BR")}"`);
       });
 
       // --- Funcionários ---
-      csv += "\n--- FUNCIONÁRIOS ---\n";
-      csv += "Nome,Email,Matrícula,Ativo,Data Cadastro\n";
+      csvRows.push("\n--- FUNCIONÁRIOS ---");
+      csvRows.push("Nome,Email,Matrícula,Ativo,Data Cadastro");
       employees.forEach((e: any) => {
-        csv += `"${e.name}","${e.email}","${e.registrationId ?? ""}","${e.active ? "Sim" : "Não"}","${new Date(e.createdAt).toLocaleString("pt-BR")}"\n`;
+        csvRows.push(`"${e.name}","${e.email}","${e.registrationId ?? ""}","${e.active ? "Sim" : "Não"}","${new Date(e.createdAt).toLocaleString("pt-BR")}"`);
       });
 
       // --- Ônibus ---
-      csv += "\n--- FROTA (ÔNIBUS) ---\n";
-      csv += "Identificador,Capacidade,Vagas Preenchidas,Ativo\n";
+      csvRows.push("\n--- FROTA (ÔNIBUS) ---");
+      csvRows.push("Identificador,Capacidade,Vagas Preenchidas,Ativo");
       buses.forEach((b: any) => {
-        csv += `"${b.identifier}","${b.capacity ?? "N/A"}","${b.filledSlots ?? 0}","${b.active ? "Sim" : "Não"}"\n`;
+        csvRows.push(`"${b.identifier}","${b.capacity ?? "N/A"}","${b.filledSlots ?? 0}","${b.active ? "Sim" : "Não"}"`);
       });
 
       // --- Instituições ---
-      csv += "\n--- INSTITUIÇÕES (UNIVERSIDADES) ---\n";
-      csv += "Nome,Sigla,Endereço,Ativo\n";
+      csvRows.push("\n--- INSTITUIÇÕES (UNIVERSIDADES) ---");
+      csvRows.push("Nome,Sigla,Endereço,Ativo");
       universities.forEach((u: any) => {
-        csv += `"${u.name}","${u.acronym ?? ""}","${u.address ?? ""}","${u.active ? "Sim" : "Não"}"\n`;
+        csvRows.push(`"${u.name}","${u.acronym ?? ""}","${u.address ?? ""}","${u.active ? "Sim" : "Não"}"`);
       });
+
+      const csv = csvRows.join("\n") + "\n";
 
       const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
