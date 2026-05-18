@@ -1,3 +1,5 @@
+"use client";
+
 import { PageShell } from "@/components/shell/PageShell";
 import { EMPLOYEE_NAV_ITEMS, EMPLOYEE_BRAND } from "@/components/shell/navConfig";
 
