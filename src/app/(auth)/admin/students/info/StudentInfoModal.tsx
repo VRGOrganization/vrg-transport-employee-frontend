@@ -1,16 +1,11 @@
 import { useEffect, useState } from "react";
 import { Student } from "@/types/student";
 import { DAY_LABELS } from "@/types/cards.types";
+import { getInitials } from "@/lib/utils/string";
 
 interface StudentInfoModalProps {
   student: Student;
   onClose: () => void;
-}
-
-function getInitials(name: string) {
-  const parts = name.trim().split(" ");
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 export function StudentInfoModal({ student, onClose }: StudentInfoModalProps) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { employeeApi } from "@/lib/employeeApi";
+import { http } from "@/services/http";
 import { Student } from "@/types/student";
 import { LicenseRecord } from "@/types/cards.types";
 import { extractLicenseImage, buildCardsPdfUrl } from "@/lib/cardUtils";
@@ -22,7 +22,7 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
     let cancelled = false;
     async function fetchLicense() {
       try {
-        const license = await employeeApi.get<LicenseRecord>(
+        const license = await http.get<LicenseRecord>(
           `/license/searchByStudent/${student._id}`
         );
         if (cancelled) return;

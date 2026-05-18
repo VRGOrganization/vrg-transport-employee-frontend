@@ -1,18 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { SideNav } from "@/components/layout/SideNav";
-import { TopBar } from "@/components/layout/TopBar";
-import { employeeApi } from "@/lib/employeeApi";
-
+import { studentService } from "@/services/studentService";
 import { StudentForm } from "@/components/students/StudentForm";
 import { StudentFormLayout } from "@/components/students/StudentFormLayout";
 import { SuccessBanner } from "@/components/students/SuccessBanner";
 import { useStudentForm } from "@/components/hooks/useStudentForm";
 
 export default function NewStudentPage() {
-  const { user, logout } = useEmployeeAuth();
   const [success, setSuccess] = useState(false);
   const [createdName, setCreatedName] = useState("");
 
@@ -25,7 +20,7 @@ export default function NewStudentPage() {
 
     setLoading(true);
     try {
-      await employeeApi.post("/student", {
+      await studentService.create({
         name: data.name.trim(),
         email: data.email.trim().toLowerCase(),
         telephone: data.telephone.trim(),
@@ -68,17 +63,9 @@ export default function NewStudentPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-      <SideNav activePath="/admin/students" onLogout={logout} />
-
-      <div className="min-w-0 flex flex-col">
-        <TopBar user={user} />
-
-        <main className="px-6 py-5 bg-surface flex flex-col gap-5">
-          <div className="mx-auto w-full  space-y-6">
-
-        
-          <StudentFormLayout
+    <main className="px-6 py-5 bg-surface flex flex-col gap-5">
+      <div className="mx-auto w-full space-y-6">
+        <StudentFormLayout
             title="Cadastrar Estudante"
             subtitle="Preencha os dados para criar uma nova conta de estudante"
             backHref="/admin/students"
@@ -102,12 +89,9 @@ export default function NewStudentPage() {
                 onSubmit={handleSubmit}
               />
             )}
-          </StudentFormLayout>
-           </div>
-        </main>
-       
+        </StudentFormLayout>
       </div>
-    </div>
+    </main>
   );
 }
 
