@@ -3,30 +3,17 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { EmployeeSideNav } from "@/components/layout/EmployeeSideNav";
-import { TopBar } from "@/components/layout/TopBar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { employeeApi } from "@/lib/employeeApi";
-
+import { studentService } from "@/services/studentService";
 import { Student } from "@/types/student";
 import { StudentCard, StudentCardSkeleton } from "@/components/students/StudentCard";
 import { StudentListEmpty } from "@/components/students/StudentListEmpty";
 
 type Tab = "active" | "inactive";
-type StudentsResponse =
-  | Student[]
-  | {
-      data?: Student[];
-      total?: number;
-      page?: number;
-      limit?: number;
-    };
 
 export default function EmployeeStudentsPage() {
-  const { user, logout } = useEmployeeAuth();
   const router = useRouter();
 
   const [tab, setTab] = useState<Tab>("active");
@@ -35,19 +22,12 @@ export default function EmployeeStudentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const resolveStudents = (payload: StudentsResponse): Student[] => {
-    if (Array.isArray(payload)) return payload;
-    return Array.isArray(payload?.data) ? payload.data : [];
-  };
-
   const fetchActive = useCallback(async () => {
-    const data = await employeeApi.get<StudentsResponse>('/student');
-    setActive(resolveStudents(data));
+    setActive(await studentService.list());
   }, []);
 
   const fetchInactive = useCallback(async () => {
-    const data = await employeeApi.get<Student[]>("/student/inactive");
-    setInactive(data);
+    setInactive(await studentService.listInactive());
   }, []);
 
   const loadTab = useCallback(
@@ -83,13 +63,7 @@ export default function EmployeeStudentsPage() {
   const count = displayed.length;
 
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-      <EmployeeSideNav activePath="/employee/students" onLogout={logout} />
-
-      <div className="min-w-0 flex flex-col">
-        <TopBar user={user} />
-
-        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
+    <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
           <div className="max-w-3xl mx-auto">
 
             <PageHeader
@@ -161,8 +135,6 @@ export default function EmployeeStudentsPage() {
           <div className="mt-auto w-full">
             <Footer />
           </div>
-        </main>
-      </div>
-    </div>
+    </main>
   );
 }

@@ -35,10 +35,9 @@ export function BusTable({ buses, loading, onEdit, onDeactivate, onViewStudents,
       if (ids.size === 0) return;
 
       try {
-        const res = await universityApi.list();
-        const arr = Array.isArray(res) ? res : (res as any)?.data ?? [];
+        const arr = await universityApi.list();
         const map: Record<string, { acronym?: string; name?: string }> = {};
-        arr.forEach((u: any) => {
+        arr.forEach((u) => {
           if (u && u._id) map[u._id] = { acronym: u.acronym, name: u.name };
         });
         if (!cancelled) setUniversitiesMap(map);

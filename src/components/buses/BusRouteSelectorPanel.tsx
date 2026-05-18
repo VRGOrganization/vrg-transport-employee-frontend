@@ -36,9 +36,8 @@ export default function BusRouteSelectorPanel({
       setLoading(true);
       setError("");
       try {
-        const res = await busRouteApi.list();
-        const data = Array.isArray(res) ? res : (res as any)?.data ?? [];
-        if (!cancelled) setRoutes(data as BusRoute[]);
+        const data = await busRouteApi.list();
+        if (!cancelled) setRoutes(data);
       } catch (err) {
         if (!cancelled) setError("Não foi possível carregar as rotas");
       } finally {

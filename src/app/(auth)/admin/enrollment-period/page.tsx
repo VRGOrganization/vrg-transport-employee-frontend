@@ -2,12 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EnrollmentPeriodModal } from "@/components/admin/EnrollmentPeriodModal";
-import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { SideNav } from "@/components/layout/SideNav";
-import { TopBar } from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/Button";
 import { StatusBanner } from "@/components/ui/StatusBanner";
-import { employeeApi } from "@/lib/employeeApi";
+import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
+import { http } from "@/services/http";
 import type {
   LicenseRequestRecord,
   StudentRecord,
@@ -58,8 +56,6 @@ function buildFallbackStudent(studentId: string): StudentRecord {
 }
 
 export default function AdminEnrollmentPeriodPage() {
-  const { user, logout } = useEmployeeAuth();
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -116,7 +112,7 @@ export default function AdminEnrollmentPeriodPage() {
     try {
       let resolvedActive: EnrollmentPeriod | null = null;
       try {
-        resolvedActive = await employeeApi.get<EnrollmentPeriod>("/enrollment-period/active");
+        resolvedActive = await enrollmentPeriodService.getActive();
       } catch (err: unknown) {
         const apiError = err as { status?: number };
         if (apiError.status !== 404) {
@@ -125,8 +121,8 @@ export default function AdminEnrollmentPeriodPage() {
       }
 
       const [periodsResponse, studentsResponse] = await Promise.all([
-        employeeApi.get<EnrollmentPeriod[]>("/enrollment-period"),
-        employeeApi.get<StudentsResponse>("/student"),
+        enrollmentPeriodService.list(),
+        http.get<StudentsResponse>("/student"),
       ]);
 
       const sortedPeriods = [...periodsResponse].sort(
@@ -139,7 +135,7 @@ export default function AdminEnrollmentPeriodPage() {
       setStudents(normalizeStudents(studentsResponse));
 
       if (resolvedActive?._id) {
-        const queue = await employeeApi.get<LicenseRequestRecord[]>(
+        const queue = await http.get<LicenseRequestRecord[]>(
           `/enrollment-period/${resolvedActive._id}/waitlist`,
         );
         setWaitlistRequests(queue);
@@ -176,10 +172,10 @@ export default function AdminEnrollmentPeriodPage() {
     setPeriodModalError("");
     try {
       if (editingPeriod) {
-        await employeeApi.patch<EnrollmentPeriod>(`/enrollment-period/${editingPeriod._id}`, payload);
+        await enrollmentPeriodService.update(editingPeriod._id, payload);
         setFeedback("Período atualizado com sucesso.");
       } else {
-        await employeeApi.post<EnrollmentPeriod>("/enrollment-period", payload);
+        await enrollmentPeriodService.create(payload);
         setFeedback("Novo período aberto com sucesso.");
       }
       setModalOpen(false);
@@ -199,7 +195,7 @@ export default function AdminEnrollmentPeriodPage() {
     if (!confirmed) return;
 
     try {
-      await employeeApi.patch(`/enrollment-period/${activePeriod._id}/close`, {});
+      await enrollmentPeriodService.close(activePeriod._id);
       setFeedback("Período encerrado com sucesso.");
       await loadData();
     } catch (err: unknown) {
@@ -210,7 +206,7 @@ export default function AdminEnrollmentPeriodPage() {
 
   const handleReopen = async (periodId: string) => {
     try {
-      await employeeApi.patch(`/enrollment-period/${periodId}/reopen`, {});
+      await enrollmentPeriodService.reopen(periodId);
       setFeedback("Período reaberto com sucesso.");
       await loadData();
     } catch (err: unknown) {
@@ -222,13 +218,8 @@ export default function AdminEnrollmentPeriodPage() {
   // Note: preview/confirm release flow removed. Use the Bus UI for releases.
 
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-      <SideNav activePath="/admin/enrollment-period" onLogout={logout} />
-
-      <div className="flex flex-1 flex-col">
-        <TopBar user={user} />
-
-        <main className="px-6 py-5 bg-surface flex flex-col gap-5">
+    <>
+      <main className="px-6 py-5 bg-surface flex flex-col gap-5">
           <div className="mx-auto w-full  space-y-6">
             <header className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -443,7 +434,6 @@ export default function AdminEnrollmentPeriodPage() {
             )}
           </div>
         </main>
-      </div>
 
       <EnrollmentPeriodModal
         open={modalOpen}
@@ -459,7 +449,7 @@ export default function AdminEnrollmentPeriodPage() {
       />
 
       {/* Preview/confirm period-level release removed (use Bus UI) */}
-    </div>
+    </>
   );
 }
 

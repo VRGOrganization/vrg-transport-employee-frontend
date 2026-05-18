@@ -2,17 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-
-// Reutiliza o tipo Student já exportado pela página de dashboard
-export interface Student {
-  _id: string;
-  name: string;
-  email: string;
-  registrationId: string;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { Student } from "@/types/student";
+import { getInitials, AVATAR_COLORS } from "@/lib/utils/string";
 
 interface StudentTableProps {
   students: Student[];
@@ -21,20 +12,6 @@ interface StudentTableProps {
 }
 
 const PAGE_SIZE = 5;
-
-function getInitials(name: string) {
-  const parts = name.trim().split(" ");
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-const avatarColors = [
-  "bg-blue-100 text-primary",
-  "bg-orange-100 text-secondary",
-  "bg-teal-100 text-tertiary",
-  "bg-purple-100 text-purple-700",
-  "bg-green-100 text-green-700",
-];
 
 export function StudentTable({
   students,
@@ -124,7 +101,7 @@ export function StudentTable({
                 </tr>
               ) : (
                 paginated.map((student, idx) => {
-                  const colorClass = avatarColors[idx % avatarColors.length];
+                  const colorClass = AVATAR_COLORS[idx % AVATAR_COLORS.length];
                   return (
                     <tr
                       key={student._id}
@@ -151,7 +128,7 @@ export function StudentTable({
 
                       {/* Matrícula — coluna extra relevante para alunos */}
                       <td className="px-8 py-5 text-on-surface-variant font-mono text-sm">
-                        {student.registrationId}
+                        {student.registrationNumber ?? "—"}
                       </td>
 
                       {/* Ações */}

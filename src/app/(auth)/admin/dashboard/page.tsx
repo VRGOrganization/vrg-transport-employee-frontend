@@ -1,26 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { employeeApi } from "@/lib/employeeApi";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
+import { employeeService } from "@/services/employeeService";
+import { http } from "@/services/http";
 import { GraduationCap, Users, ClipboardList, Bus, Calendar, Download, Search, X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { universityApi, busApi } from "@/lib/universityApi";
-import { SideNav } from "@/components/layout/SideNav";
-import { TopBar } from "@/components/layout/TopBar";
-import { Footer } from "@/components/layout/Footer";
 import { DashboardStatCard } from "@/components/cards/DashboardStatCard";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { resolvePaginated, type Paginated } from "@/types/api";
+import { getInitials, AVATAR_COLORS } from "@/lib/utils/string";
+import { getGreeting } from "@/lib/utils/date";
 
-export interface Employee {
-  _id: string;
-  name: string;
-  email: string;
-  registrationId: string;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface StudentRecord {
   _id: string;
@@ -32,10 +24,6 @@ interface StudentRecord {
   status: "PENDING" | "ACTIVE";
   createdAt: string;
 }
-
-type StudentsResponse =
-  | StudentRecord[]
-  | { data?: StudentRecord[]; total?: number; page?: number; limit?: number };
 
 interface EnrollmentPeriodRecord {
   _id: string;
@@ -65,27 +53,6 @@ interface UserRow {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const avatarColors = [
-  "bg-primary-fixed text-primary",
-  "bg-secondary-fixed text-secondary",
-  "bg-tertiary-container text-tertiary",
-  "bg-info-container text-on-info",
-  "bg-success-container text-on-success",
-  "bg-warning-container text-on-warning",
-];
-
-function getInitials(name: string) {
-  const parts = name.trim().split(" ");
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-function getGreeting(name: string) {
-  const hour = new Date().getHours();
-  const g = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-  return `${g}, ${name.split(" ")[0]}`;
-}
-
 function getTodayLabel() {
   return new Date().toLocaleDateString("pt-BR", {
     weekday: "long",
@@ -110,7 +77,7 @@ const PAGE_SIZE = 8;
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AdminDashboardPage() {
-  const { user, logout } = useEmployeeAuth();
+  const { user } = useEmployeeAuth();
 
   const [stats, setStats] = useState<DashboardStats>({
     activeStudents: null,
@@ -131,10 +98,10 @@ export default function AdminDashboardPage() {
     const fetchAll = async () => {
       const [employeesResult, studentsResult, activePeriodResult, requestsResult] =
         await Promise.allSettled([
-          employeeApi.get<Employee[]>("/employee"),
-          employeeApi.get<StudentsResponse>("/student"),
-          employeeApi.get<EnrollmentPeriodRecord>("/enrollment-period/active"),
-          employeeApi.get<any[]>("/license-request/all"),
+          employeeService.list(),
+          http.get<Paginated<StudentRecord>>("/student").then(resolvePaginated),
+          http.get<EnrollmentPeriodRecord>("/enrollment-period/active"),
+          http.get<unknown[]>("/license-request/all"),
         ]);
 
       const rows: UserRow[] = [];
@@ -160,11 +127,7 @@ export default function AdminDashboardPage() {
       }
 
       if (studentsResult.status === "fulfilled") {
-        resolvedStudents = Array.isArray(studentsResult.value)
-          ? studentsResult.value
-          : Array.isArray((studentsResult.value as { data?: StudentRecord[] }).data)
-            ? ((studentsResult.value as { data: StudentRecord[] }).data ?? [])
-            : [];
+        resolvedStudents = resolvePaginated(studentsResult.value);
 
         const activeStudents = resolvedStudents.filter((s) => s.status === "ACTIVE" && s.active);
 
@@ -246,14 +209,14 @@ export default function AdminDashboardPage() {
     setExportLoading(true);
     try {
       const [studentsRes, employeesRes, busesRes, universitiesRes] = await Promise.all([
-        employeeApi.get<StudentsResponse>("/student"),
-        employeeApi.get<Employee[]>("/employee"),
+        http.get<Paginated<StudentRecord>>("/student").then(resolvePaginated),
+        employeeService.list(),
         busApi.list(),
         universityApi.list(),
       ]);
 
-      const students = Array.isArray(studentsRes) ? studentsRes : (studentsRes as any).data ?? [];
-      const employees = Array.isArray(employeesRes) ? employeesRes : [];
+      const students = studentsRes;
+      const employees = employeesRes;
       const buses = Array.isArray(busesRes) ? busesRes : [];
       const universities = Array.isArray(universitiesRes) ? universitiesRes : [];
 
@@ -304,19 +267,13 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-      <SideNav activePath="/admin/dashboard" onLogout={logout} />
-
-      <div className="min-w-0 flex flex-col">
-        <TopBar user={user} />
-
-        <main className="px-6 py-5 bg-surface flex flex-col gap-5">
+    <main className="px-6 py-5 bg-surface flex flex-col gap-5">
 
           {/* ── Page header ──────────────────────────────────── */}
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-extrabold text-on-surface tracking-tight">
-                {user?.name ? getGreeting(user.name) : "Bom dia"}
+                {user?.name ? getGreeting(user.name.split(" ")[0]) : "Bom dia"}
               </h1>
               <p className="text-xs text-on-surface-variant mt-0.5">
                 {getTodayLabel()} · {stats.pendingStudents ?? "…"} itens precisam da sua atenção hoje.
@@ -451,7 +408,7 @@ export default function AdminDashboardPage() {
                           <tr key={row.id} className="hover:bg-surface-container-low/50 transition-colors">
                             <td className="px-6 py-3">
                               <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${avatarColors[idx % avatarColors.length]}`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${AVATAR_COLORS[idx % AVATAR_COLORS.length]}`}>
                                   {getInitials(row.name)}
                                 </div>
                                 <span className="text-sm font-medium text-on-surface">{row.name}</span>
@@ -511,8 +468,6 @@ export default function AdminDashboardPage() {
             </div>
           </section>
 
-        </main>
-      </div>
-    </div>
+    </main>
   );
 }

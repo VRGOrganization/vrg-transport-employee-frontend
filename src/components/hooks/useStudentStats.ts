@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { StudentDashboardStats } from "@/types/student-stats";
-import { employeeApi } from "@/lib/employeeApi";
+import { http } from "@/services/http";
 import {
   LicenseRecord,
   LicenseRequestRecord,
@@ -53,10 +53,10 @@ export function useStudentStats(): UseStudentStatsResult {
       try {
         // Buscamos os dados do dashboard (para gráficos de transporte) e dados brutos em paralelo
         const [dashboardData, studentsRes, licensesRes, requestsRes] = await Promise.all([
-          employeeApi.get<StudentDashboardStats>("/student/stats/dashboard"),
-          employeeApi.get<StudentsResponse>("/student"),
-          employeeApi.get<LicenseRecord[]>("/license/all"),
-          employeeApi.get<LicenseRequestRecord[]>("/license-request/all"),
+          http.get<StudentDashboardStats>("/student/stats/dashboard"),
+          http.get<StudentsResponse>("/student"),
+          http.get<LicenseRecord[]>("/license/all"),
+          http.get<LicenseRequestRecord[]>("/license-request/all"),
         ]);
 
         if (cancelled) return;
