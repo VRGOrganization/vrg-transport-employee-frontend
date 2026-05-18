@@ -1,6 +1,5 @@
 import { z } from "zod";
-
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,64}$/;
+import { PASSWORD_REGEX } from "@/lib/constants";
 
 const studentBaseSchema = z.object({
   name: z
