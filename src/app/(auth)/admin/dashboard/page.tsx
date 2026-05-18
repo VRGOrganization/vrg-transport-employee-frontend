@@ -224,30 +224,30 @@ export default function AdminDashboardPage() {
 
       // --- Alunos ---
       csv += "--- ALUNOS ---\n";
-      csv += "ID,Nome,Email,Ativo,Status,Data Cadastro\n";
+      csv += "Nome,Email,Ativo,Status,Data Cadastro\n";
       students.forEach((s: any) => {
-        csv += `"${s._id}","${s.name}","${s.email}","${s.active ? "Sim" : "Não"}","${s.status}","${new Date(s.createdAt).toLocaleString("pt-BR")}"\n`;
+        csv += `"${s.name}","${s.email}","${s.active ? "Sim" : "Não"}","${s.status}","${new Date(s.createdAt).toLocaleString("pt-BR")}"\n`;
       });
 
       // --- Funcionários ---
       csv += "\n--- FUNCIONÁRIOS ---\n";
-      csv += "ID,Nome,Email,Matrícula,Ativo,Data Cadastro\n";
+      csv += "Nome,Email,Matrícula,Ativo,Data Cadastro\n";
       employees.forEach((e: any) => {
-        csv += `"${e._id}","${e.name}","${e.email}","${e.registrationId ?? ""}","${e.active ? "Sim" : "Não"}","${new Date(e.createdAt).toLocaleString("pt-BR")}"\n`;
+        csv += `"${e.name}","${e.email}","${e.registrationId ?? ""}","${e.active ? "Sim" : "Não"}","${new Date(e.createdAt).toLocaleString("pt-BR")}"\n`;
       });
 
       // --- Ônibus ---
       csv += "\n--- FROTA (ÔNIBUS) ---\n";
-      csv += "ID,Identificador,Capacidade,Vagas Preenchidas,Ativo\n";
+      csv += "Identificador,Capacidade,Vagas Preenchidas,Ativo\n";
       buses.forEach((b: any) => {
-        csv += `"${b._id}","${b.identifier}","${b.capacity ?? "N/A"}","${b.filledSlots ?? 0}","${b.active ? "Sim" : "Não"}"\n`;
+        csv += `"${b.identifier}","${b.capacity ?? "N/A"}","${b.filledSlots ?? 0}","${b.active ? "Sim" : "Não"}"\n`;
       });
 
       // --- Instituições ---
       csv += "\n--- INSTITUIÇÕES (UNIVERSIDADES) ---\n";
-      csv += "ID,Nome,Sigla,Endereço,Ativo\n";
+      csv += "Nome,Sigla,Endereço,Ativo\n";
       universities.forEach((u: any) => {
-        csv += `"${u._id}","${u.name}","${u.acronym ?? ""}","${u.address ?? ""}","${u.active ? "Sim" : "Não"}"\n`;
+        csv += `"${u.name}","${u.acronym ?? ""}","${u.address ?? ""}","${u.active ? "Sim" : "Não"}"\n`;
       });
 
       const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
