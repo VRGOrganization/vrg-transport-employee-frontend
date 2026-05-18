@@ -2,15 +2,12 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { SideNav } from "@/components/layout/SideNav";
-import { TopBar } from "@/components/layout/TopBar";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { BottomSheet } from "@/components/ui/BottomSheet";
-import { employeeApi } from "@/lib/employeeApi";
+import { employeeService } from "@/services/employeeService";
 import {
   Badge,
   CheckCircle2,
@@ -22,13 +19,7 @@ import {
   UserX,
 } from "lucide-react";
 
-interface Employee {
-  _id: string;
-  name: string;
-  email: string;
-  registrationId: string;
-  active: boolean;
-}
+import type { Employee } from "@/types/employee";
 
 interface FormData {
   name: string;
@@ -51,7 +42,6 @@ const emptyErrors: FormErrors = {
 };
 
 function EditEmployeeContent() {
-  const { user, logout } = useEmployeeAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
@@ -79,7 +69,7 @@ function EditEmployeeContent() {
 
     const fetchEmployee = async () => {
       try {
-        const data = await employeeApi.get<Employee>(`/employee/${id}`);
+        const data = await employeeService.getById(id!);
         setEmployee(data);
         setFormData({
           name: data.name,
@@ -134,7 +124,7 @@ function EditEmployeeContent() {
 
     setSaving(true);
     try {
-      await employeeApi.patch(`/employee/${id}`, {
+      await employeeService.update(id!, {
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         registrationId: formData.registrationId.trim(),
@@ -155,7 +145,7 @@ function EditEmployeeContent() {
   const handleDeactivate = async () => {
     setDeactivating(true);
     try {
-      await employeeApi.delete(`/employee/${id}`);
+      await employeeService.deactivate(id!);
       router.push("/admin/employees");
     } catch (err: unknown) {
       const error = err as { message?: string };
@@ -172,7 +162,7 @@ function EditEmployeeContent() {
   const handleActivate = async () => {
     setActivating(true);
     try {
-      await employeeApi.patch(`/employee/${id}/activate`, {});
+      await employeeService.reactivate(id!);
       router.push("/admin/employees");
     } catch (err: unknown) {
       const error = err as { message?: string };
@@ -195,11 +185,8 @@ function EditEmployeeContent() {
   }
 
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-      <SideNav activePath="/admin/employees" onLogout={logout} />
-      <div className="min-w-0 flex flex-col">
-        <TopBar user={user} />
-        <main className="mx-auto w-full space-y-6 max-w-4xl pb-10">
+    <>
+    <main className="mx-auto w-full space-y-6 max-w-4xl pb-10">
           <div className="px-6 lg:px-10">
             <PageHeader
               back="/admin/employees"
@@ -331,8 +318,6 @@ function EditEmployeeContent() {
             </div>
           </div>
         </main>
-      </div>
-
       {/* Deactivation Modal */}
       <BottomSheet
         open={showDeleteConfirm}
@@ -402,7 +387,7 @@ function EditEmployeeContent() {
           </p>
         </div>
       </BottomSheet>
-    </div>
+    </>
   );
 }
 

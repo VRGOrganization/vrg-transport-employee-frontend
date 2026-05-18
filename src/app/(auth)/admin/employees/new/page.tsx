@@ -2,15 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { SideNav } from "@/components/layout/SideNav";
-import { TopBar } from "@/components/layout/TopBar";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { ResultState } from "@/components/ui/ResultState";
-import { employeeApi } from "@/lib/employeeApi";
+import { employeeService } from "@/services/employeeService";
+import { employeeCreateSchema } from "@/lib/validation/employee";
 import { ArrowLeft, Badge, CheckCircle2, Mail, User, UserPlus } from "lucide-react";
 
 interface FormData {
@@ -34,7 +32,6 @@ const emptyErrors: FormErrors = {
 };
 
 export default function RegisterEmployeePage() {
-  const { user, logout } = useEmployeeAuth();
   const router = useRouter();
 
   const [formData, setFormData] = useState<FormData>({
@@ -52,32 +49,18 @@ export default function RegisterEmployeePage() {
   };
 
   const validate = (): boolean => {
-    const next = { ...emptyErrors };
-    let valid = true;
-
-    if (!formData.name.trim()) {
-      next.name = "Nome é obrigatório";
-      valid = false;
-    } else if (formData.name.trim().length > 100) {
-      next.name = "Nome deve ter no máximo 100 caracteres";
-      valid = false;
+    const result = employeeCreateSchema.safeParse(formData);
+    if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors;
+      setErrors((prev) => ({
+        ...prev,
+        name: fieldErrors.name?.[0] ?? "",
+        email: fieldErrors.email?.[0] ?? "",
+        registrationId: fieldErrors.registrationId?.[0] ?? "",
+      }));
+      return false;
     }
-
-    if (!formData.email.trim()) {
-      next.email = "Email é obrigatório";
-      valid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      next.email = "Email inválido";
-      valid = false;
-    }
-
-    if (!formData.registrationId.trim()) {
-      next.registrationId = "Matrícula é obrigatória";
-      valid = false;
-    }
-
-    setErrors(next);
-    return valid;
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,7 +69,7 @@ export default function RegisterEmployeePage() {
 
     setLoading(true);
     try {
-      await employeeApi.post("/employee", {
+      await employeeService.create({
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         registrationId: formData.registrationId.trim(),
@@ -127,11 +110,7 @@ export default function RegisterEmployeePage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-      <SideNav activePath="/admin/employees" onLogout={logout} />
-      <div className="min-w-0 flex flex-col">
-        <TopBar user={user} />
-        <main className="mx-auto w-full space-y-6">
+    <main className="mx-auto w-full space-y-6">
           <div className="">
             <PageHeader
               back="/admin/employees"
@@ -242,7 +221,5 @@ export default function RegisterEmployeePage() {
             </div>
           </div>
         </main>
-      </div>
-    </div>
   );
 }
