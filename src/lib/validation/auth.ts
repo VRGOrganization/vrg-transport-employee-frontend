@@ -52,6 +52,8 @@ export const backendSessionPayloadSchema = z.object({
 export const backendMeSchema = z.object({
   userId: z.string().min(1),
   userType: z.enum(["admin", "employee", "student"]),
+  name: z.string().optional(),
+  identifier: z.string().optional(),
 });
 
 export const backendUserDetailSchema = z.object({
