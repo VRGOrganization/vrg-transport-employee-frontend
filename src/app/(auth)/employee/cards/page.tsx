@@ -98,7 +98,7 @@ export default function EmployeeCardsPage() {
   return (
     <>
       <main className="bg-surface flex flex-col flex-1 px-6 py-8 md:px-10">
-          <div className="max-w-7xl mx-auto w-full space-y-6">
+          <div className="mx-auto w-full space-y-6">
             <CardsPageHeader onRefresh={reload} />
 
             <CardsStatsRow

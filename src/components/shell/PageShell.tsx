@@ -16,9 +16,9 @@ export function PageShell({ brand, navItems, showUserFooter, children }: PageShe
   const { user, logout } = useEmployeeAuth();
 
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
+    <div className="min-h-screen w-full bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
       <SideNav brand={brand} items={navItems} onLogout={logout} showUserFooter={showUserFooter} />
-      <div className="min-w-0 flex flex-col">
+      <div className="min-w-0 w-full flex flex-col">
         <TopBar user={user} />
         {children}
       </div>

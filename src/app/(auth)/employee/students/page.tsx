@@ -64,7 +64,7 @@ export default function EmployeeStudentsPage() {
 
   return (
     <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
-          <div className="max-w-3xl mx-auto">
+          <div className="w-full">
 
             <PageHeader
               title="Estudantes"
