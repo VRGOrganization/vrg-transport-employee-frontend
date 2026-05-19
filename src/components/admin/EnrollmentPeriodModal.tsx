@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { X } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 import type { DateRange } from "react-day-picker";
 import { ptBR } from "react-day-picker/locale";
 import "react-day-picker/dist/style.css";
 import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 import { busApi } from "@/lib/universityApi";
 import type { EnrollmentPeriod } from "@/types/enrollmentPeriod";
 
@@ -120,31 +120,30 @@ export function EnrollmentPeriodModal({
 
   useEffect(() => {
     if (!open) return;
-    let cancelled = false;
+    const mountState = { cancelled: false };
 
     const load = async () => {
       setLoadingBusMin(true);
       try {
         const buses = await busApi.list();
-        if (cancelled) return;
-        let sum = 0;
-        if (Array.isArray(buses)) {
-          for (const b of buses) {
-            const cap = (b as any)?.capacity;
-            if (typeof cap === "number" && cap > 0) sum += cap;
-          }
-        }
-        if (!cancelled) setMinSlotsFromBuses(sum);
+        if (mountState.cancelled) return;
+        const sum = Array.isArray(buses) 
+          ? buses.reduce((acc, b: any) => {
+              const cap = b?.capacity;
+              return typeof cap === "number" && cap > 0 ? acc + cap : acc;
+            }, 0)
+          : 0;
+        if (!mountState.cancelled) setMinSlotsFromBuses(sum);
       } catch (e) {
-        if (!cancelled) setMinSlotsFromBuses(0);
+        if (!mountState.cancelled) setMinSlotsFromBuses(0);
       } finally {
-        if (!cancelled) setLoadingBusMin(false);
+        if (!mountState.cancelled) setLoadingBusMin(false);
       }
     };
 
     void load();
     return () => {
-      cancelled = true;
+      mountState.cancelled = true;
     };
   }, [open]);
 
@@ -158,8 +157,6 @@ export function EnrollmentPeriodModal({
     !loadingBusMin &&
     (minSlotsFromBuses ?? 0) > 0 &&
     totalSlotsNumber > (minSlotsFromBuses ?? 0);
-
-  if (!open) return null;
 
   const setField = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -247,10 +244,13 @@ export function EnrollmentPeriodModal({
   };
 
   return (
-    <>
-      {/* FIX: Scoped styles — no more conflicting global selectors */}
+    <Modal
+      open={open}
+      onClose={loading ? () => {} : onClose}
+      size="lg"
+      title={period ? "Editar período de inscrição" : "Abrir novo período de inscrição"}
+    >
       <style>{`
-        /* react-day-picker v9 CSS variables */
         .edp-picker {
           --rdp-accent-color: var(--color-primary);
           --rdp-accent-background-color: var(--color-info-container);
@@ -271,8 +271,6 @@ export function EnrollmentPeriodModal({
           --rdp-day_button-width: 34px;
           width: 100%;
         }
-
-        /* Months container — override fit-content and force grid layout */
         .edp-picker .rdp-months {
           display: grid !important;
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -280,250 +278,137 @@ export function EnrollmentPeriodModal({
           width: 100%;
           max-width: 100% !important;
         }
-
-        /* Each month fills its grid cell */
         .edp-picker .rdp-month { width: 100%; min-width: 0; }
-
-        /* Weekday headers — v9 uses .rdp-weekday instead of .rdp-head_cell */
         .edp-picker .rdp-weekday {
-          font-size: 11px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-          color: var(--color-on-surface-variant);
-          opacity: 1;
+          font-size: 11px; font-weight: 600; text-transform: uppercase;
+          letter-spacing: 0.04em; color: var(--color-on-surface-variant); opacity: 1;
         }
-
-        .edp-picker .rdp-month_caption {
-          color: var(--color-on-surface);
-        }
-
-        .edp-picker .rdp-button_previous,
-        .edp-picker .rdp-button_next {
-          color: var(--color-primary);
-        }
-
+        .edp-picker .rdp-month_caption { color: var(--color-on-surface); }
+        .edp-picker .rdp-button_previous, .edp-picker .rdp-button_next { color: var(--color-primary); }
         .edp-picker .rdp-day_button {
-          color: var(--color-on-surface);
-          border-radius: 9999px;
+          color: var(--color-on-surface); border-radius: 9999px;
           transition: background-color 120ms ease, color 120ms ease;
         }
-
         .edp-picker .rdp-day_button:hover:not(:disabled) {
-          background-color: var(--color-surface-container-high);
-          color: var(--color-on-surface);
+          background-color: var(--color-surface-container-high); color: var(--color-on-surface);
         }
-
-        .edp-picker .rdp-outside .rdp-day_button {
-          color: var(--color-on-surface-muted);
-        }
-
-        .edp-picker .rdp-disabled .rdp-day_button {
-          color: var(--color-outline);
-        }
-
-        .edp-picker .rdp-selected {
-          font-size: inherit;
-          font-weight: 600;
-        }
-
-        .edp-picker .rdp-range_middle .rdp-day_button {
-          color: var(--color-on-info);
-        }
-
+        .edp-picker .rdp-outside .rdp-day_button { color: var(--color-on-surface-muted); }
+        .edp-picker .rdp-disabled .rdp-day_button { color: var(--color-outline); }
+        .edp-picker .rdp-selected { font-size: inherit; font-weight: 600; }
+        .edp-picker .rdp-range_middle .rdp-day_button { color: var(--color-on-info); }
         .edp-picker .rdp-range_start .rdp-day_button,
-        .edp-picker .rdp-range_end .rdp-day_button {
-          color: var(--color-on-primary);
-        }
-
-        /* Table layout fix — v9 uses .rdp-month_grid instead of table */
-        .edp-picker .rdp-month_grid {
-          border-collapse: collapse;
-          table-layout: fixed;
-          width: 100%;
-        }
-        .edp-picker .rdp-month_grid td,
-        .edp-picker .rdp-month_grid th {
-          padding: 1px;
-          text-align: center;
-        }
-
+        .edp-picker .rdp-range_end .rdp-day_button { color: var(--color-on-primary); }
+        .edp-picker .rdp-month_grid { border-collapse: collapse; table-layout: fixed; width: 100%; }
+        .edp-picker .rdp-month_grid td, .edp-picker .rdp-month_grid th { padding: 1px; text-align: center; }
         @media (max-width: 640px) {
-          .edp-picker {
-            --rdp-day-height: 30px;
-            --rdp-day-width: 30px;
-            --rdp-day_button-height: 28px;
-            --rdp-day_button-width: 28px;
-          }
+          .edp-picker { --rdp-day-height: 30px; --rdp-day-width: 30px; --rdp-day_button-height: 28px; --rdp-day_button-width: 28px; }
           .edp-picker .rdp-weekday { font-size: 10px; }
           .edp-picker .rdp-months { grid-template-columns: 1fr; gap: 8px; }
         }
       `}</style>
 
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-        onClick={(event) => {
-          if (event.currentTarget === event.target && !loading) onClose();
-        }}
-      >
-        {/* FIX: max-w widened to accommodate two-month calendar */}
-        <div className="w-full max-w-2xl rounded-2xl bg-surface p-6 shadow-xl">
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-on-surface">
-              {period
-                ? "Editar período de inscrição"
-                : "Abrir novo período de inscrição"}
-            </h2>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="rounded-md p-1 text-on-surface-variant hover:bg-surface-container"
-              aria-label="Fechar modal"
-            >
-              <X className="w-5 h-5" />
-            </button>
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-on-surface">Período</label>
+          <div className="rounded-xl border border-outline-variant bg-surface-container-low p-3">
+            <DayPicker
+              className="edp-picker"
+              mode="range"
+              selected={range}
+              onSelect={handleRangeSelect}
+              numberOfMonths={months}
+              locale={ptBR}
+            />
+            <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
+              <div className="text-sm text-on-surface-variant">
+                <span>Início: <strong>{formatDisplayDate(form.startDate)}</strong></span>
+                {"  ·  "}
+                <span>Fim: <strong>{formatDisplayDate(form.endDate)}</strong></span>
+              </div>
+              <button
+                type="button"
+                className="rounded-xl border border-outline-variant px-3 py-1 text-sm text-on-surface-variant hover:bg-surface-container"
+                onClick={() => handleRangeSelect(undefined)}
+              >
+                Limpar datas
+              </button>
+            </div>
+          </div>
+          {errors.startDate && <p className="mt-1 text-xs text-error">{errors.startDate}</p>}
+          {errors.endDate && <p className="mt-1 text-xs text-error">{errors.endDate}</p>}
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-on-surface">
+              Quantidade de vagas
+            </label>
+            <input
+              type="number"
+              min={Math.max(minAllowedSlots, 1)}
+              step={1}
+              value={form.totalSlots}
+              onChange={(event) => setField("totalSlots", event.target.value)}
+              className="h-10 w-full rounded-xl border-2 border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Ex: 100"
+            />
+            {errors.totalSlots ? (
+              <p className="mt-1 text-xs text-error">{errors.totalSlots}</p>
+            ) : loadingBusMin ? (
+              <p className="mt-1 text-xs text-on-surface-variant">Carregando capacidades dos ônibus...</p>
+            ) : (
+              minSlotsFromBuses > 0 &&
+              (showOverCapacityWarning ? (
+                <div className="mt-1 rounded-md border border-warning bg-warning-container px-3 py-2 text-sm text-on-warning">
+                  A quantidade de vagas ({totalSlotsNumber}) é maior que a soma das capacidades dos
+                  ônibus ({minSlotsFromBuses}). Isso é permitido, mas verifique se é intencional.
+                </div>
+              ) : (
+                <p className="mt-1 text-xs text-on-surface-variant">
+                  Soma das capacidades dos ônibus: {minSlotsFromBuses} vagas.
+                </p>
+              ))
+            )}
           </div>
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            {/* Calendar section — full width, no grid column constraint */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-on-surface">
-                Período
-              </label>
-              <div className="rounded-xl border border-outline-variant bg-surface-container-low p-3">
-                <DayPicker
-                  className="edp-picker"
-                  mode="range"
-                  selected={range}
-                  onSelect={handleRangeSelect}
-                  numberOfMonths={months}
-                  locale={ptBR}
-                />
-
-                <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
-                  <div className="text-sm text-on-surface-variant">
-                    <span>
-                      Início: {" "}
-                      <strong>{formatDisplayDate(form.startDate)}</strong>
-                    </span>
-                    {"  ·  "}
-                    <span>
-                      Fim: {" "}
-                      <strong>{formatDisplayDate(form.endDate)}</strong>
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    className="rounded-xl border border-outline-variant px-3 py-1 text-sm text-on-surface-variant hover:bg-surface-container"
-                    onClick={() => handleRangeSelect(undefined)}
-                  >
-                    Limpar datas
-                  </button>
-                </div>
-              </div>
-
-              {errors.startDate && (
-                <p className="mt-1 text-xs text-error">{errors.startDate}</p>
-              )}
-              {errors.endDate && (
-                <p className="mt-1 text-xs text-error">{errors.endDate}</p>
-              )}
-            </div>
-
-            {/* Slots + validity side by side */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-on-surface">
-                  Quantidade de vagas
-                </label>
-                <input
-                  type="number"
-                  min={Math.max(minAllowedSlots, 1)}
-                  step={1}
-                  value={form.totalSlots}
-                  onChange={(event) =>
-                    setField("totalSlots", event.target.value)
-                  }
-                  className="h-10 w-full rounded-xl border-2 border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Ex: 100"
-                />
-                {errors.totalSlots ? (
-                  <p className="mt-1 text-xs text-error">
-                    {errors.totalSlots}
-                  </p>
-                ) : loadingBusMin ? (
-                  <p className="mt-1 text-xs text-on-surface-variant">
-                    Carregando capacidades dos ônibus...
-                  </p>
-                ) : (
-                  minSlotsFromBuses > 0 &&
-                  (showOverCapacityWarning ? (
-                    <div className="mt-1 rounded-md border border-warning bg-warning-container px-3 py-2 text-sm text-on-warning">
-                      A quantidade de vagas ({totalSlotsNumber}) é maior que a
-                      soma das capacidades dos ônibus ({minSlotsFromBuses}).
-                      Isso é permitido, mas verifique se é intencional.
-                    </div>
-                  ) : (
-                    <p className="mt-1 text-xs text-on-surface-variant">
-                      Soma das capacidades dos ônibus: {minSlotsFromBuses}{" "}
-                      vagas.
-                    </p>
-                  ))
-                )}
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-on-surface">
-                  Validade da carteirinha (meses)
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={form.licenseValidityMonths}
-                  onChange={(event) =>
-                    setField("licenseValidityMonths", event.target.value)
-                  }
-                  className="h-10 w-full rounded-xl border-2 border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Ex: 6"
-                />
-                {errors.licenseValidityMonths && (
-                  <p className="mt-1 text-xs text-error">
-                    {errors.licenseValidityMonths}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <p className="text-xs text-on-surface-variant">
-              Carteirinhas emitidas neste período expirarão conforme a validade
-              em meses definida acima.
-            </p>
-
-            {(errors.general || serverError) && (
-              <div className="rounded-xl border border-error/40 bg-error/10 px-3 py-2 text-sm text-error">
-                {errors.general || serverError}
-              </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-on-surface">
+              Validade da carteirinha (meses)
+            </label>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={form.licenseValidityMonths}
+              onChange={(event) => setField("licenseValidityMonths", event.target.value)}
+              className="h-10 w-full rounded-xl border-2 border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Ex: 6"
+            />
+            {errors.licenseValidityMonths && (
+              <p className="mt-1 text-xs text-error">{errors.licenseValidityMonths}</p>
             )}
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={loading}
-                onClick={onClose}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" variant="primary" size="sm" loading={loading}>
-                {period ? "Salvar alterações" : "Abrir período"}
-              </Button>
-            </div>
-          </form>
+          </div>
         </div>
-      </div>
-    </>
+
+        <p className="text-xs text-on-surface-variant">
+          Carteirinhas emitidas neste período expirarão conforme a validade em meses definida acima.
+        </p>
+
+        {(errors.general || serverError) && (
+          <div className="rounded-xl border border-error/40 bg-error/10 px-3 py-2 text-sm text-error">
+            {errors.general || serverError}
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="button" variant="outline" size="sm" disabled={loading} onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" variant="primary" size="sm" loading={loading}>
+            {period ? "Salvar alterações" : "Abrir período"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

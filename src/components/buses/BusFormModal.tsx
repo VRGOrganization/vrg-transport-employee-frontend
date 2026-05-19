@@ -61,7 +61,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
     const missing = slots.some((s) => !s.acronym && !s.name);
     if (!missing) return;
 
-    let cancelled = false;
+    const mountState = { cancelled: false };
     (async () => {
       try {
         const res = await universityApi.list();
@@ -70,7 +70,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
         arr.forEach((u: any) => {
           if (u && u._id) map[u._id] = { acronym: u.acronym, name: u.name };
         });
-        if (cancelled) return;
+        if (mountState.cancelled) return;
         setSlots((prev) =>
           prev.map((s) => ({
             ...s,
@@ -82,7 +82,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
         // ignore
       }
     })();
-    return () => { cancelled = true; };
+    return () => { mountState.cancelled = true; };
   }, [open, slots.length]);
 
   if (!open) return null;
@@ -114,13 +114,13 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
 
   const handleSubmit = async () => {
     if (!identifier.trim()) { setError("O identificador é obrigatório."); return; }
-    let cap: number | undefined = undefined;
     const trimmed = capacity.trim();
-    if (trimmed.length > 0) {
-      const parsed = parseInt(trimmed, 10);
-      if (Number.isNaN(parsed) || parsed < 1) { setError("Capacidade deve ser um número maior que zero ou vazia para sem limite."); return; }
-      cap = parsed;
+    const parsedCap = trimmed.length > 0 ? parseInt(trimmed, 10) : undefined;
+    if (parsedCap !== undefined && (Number.isNaN(parsedCap) || parsedCap < 1)) {
+      setError("Capacidade deve ser um número maior que zero ou vazia para sem limite."); 
+      return;
     }
+    const cap = parsedCap;
 
     setLoading(true);
     setError("");

@@ -2,15 +2,13 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { SideNav } from "@/components/layout/SideNav";
-import { TopBar } from "@/components/layout/TopBar";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { employeeApi } from "@/lib/employeeApi";
+import { StatusBanner } from "@/components/ui/StatusBanner";
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import { employeeService } from "@/services/employeeService";
 import {
-  ArrowLeft,
   Badge,
   CheckCircle2,
   Mail,
@@ -18,17 +16,10 @@ import {
   Trash2,
   AlertTriangle,
   Loader2,
-  X,
-  UserX
+  UserX,
 } from "lucide-react";
 
-interface Employee {
-  _id: string;
-  name: string;
-  email: string;
-  registrationId: string;
-  active: boolean;
-}
+import type { Employee } from "@/types/employee";
 
 interface FormData {
   name: string;
@@ -51,7 +42,6 @@ const emptyErrors: FormErrors = {
 };
 
 function EditEmployeeContent() {
-  const { user, logout } = useEmployeeAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
@@ -79,7 +69,7 @@ function EditEmployeeContent() {
 
     const fetchEmployee = async () => {
       try {
-        const data = await employeeApi.get<Employee>(`/employee/${id}`);
+        const data = await employeeService.getById(id!);
         setEmployee(data);
         setFormData({
           name: data.name,
@@ -104,28 +94,23 @@ function EditEmployeeContent() {
 
   const validate = (): boolean => {
     const next = { ...emptyErrors };
-    let valid = true;
 
     if (!formData.name.trim()) {
       next.name = "Nome é obrigatório";
-      valid = false;
     }
 
     if (!formData.email.trim()) {
       next.email = "Email é obrigatório";
-      valid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       next.email = "Email inválido";
-      valid = false;
     }
 
     if (!formData.registrationId.trim()) {
       next.registrationId = "Matrícula é obrigatória";
-      valid = false;
     }
 
     setErrors(next);
-    return valid;
+    return Object.values(next).every((msg) => msg === "");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,7 +119,7 @@ function EditEmployeeContent() {
 
     setSaving(true);
     try {
-      await employeeApi.patch(`/employee/${id}`, {
+      await employeeService.update(id!, {
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         registrationId: formData.registrationId.trim(),
@@ -155,7 +140,7 @@ function EditEmployeeContent() {
   const handleDeactivate = async () => {
     setDeactivating(true);
     try {
-      await employeeApi.delete(`/employee/${id}`);
+      await employeeService.deactivate(id!);
       router.push("/admin/employees");
     } catch (err: unknown) {
       const error = err as { message?: string };
@@ -172,7 +157,7 @@ function EditEmployeeContent() {
   const handleActivate = async () => {
     setActivating(true);
     try {
-      await employeeApi.patch(`/employee/${id}/activate`, {});
+      await employeeService.reactivate(id!);
       router.push("/admin/employees");
     } catch (err: unknown) {
       const error = err as { message?: string };
@@ -195,40 +180,26 @@ function EditEmployeeContent() {
   }
 
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-      <SideNav activePath="/admin/employees" onLogout={logout} />
-      <div className="min-w-0 flex flex-col">
-        <TopBar user={user} />
-        <main className="mx-auto w-full space-y-6 max-w-4xl pb-10">
+    <>
+    <main className="mx-auto w-full space-y-6 max-w-4xl pb-10">
           <div className="px-6 lg:px-10">
-            <div className="mt-6 flex items-center gap-3">
-              <Link
-                href="/admin/employees"
-                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-                title="Voltar"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
-              <div>
-                <h1 className="font-headline font-bold text-2xl text-on-surface">
-                  Editar Funcionário
-                </h1>
-                <p className="text-sm text-on-surface-variant">
-                  {employee?.active 
-                    ? "Atualize as informações do cadastro ou desative o acesso."
-                    : "Este funcionário está inativo. Você pode reativar o acesso abaixo."}
-                </p>
-              </div>
-            </div>
+            <PageHeader
+              back="/admin/employees"
+              title="Editar Funcionário"
+              subtitle={
+                employee?.active
+                  ? "Atualize as informações do cadastro ou desative o acesso."
+                  : "Este funcionário está inativo. Você pode reativar o acesso abaixo."
+              }
+              className="mt-6"
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_20rem] gap-6 mt-8">
               {/* Form Section */}
               <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-sm">
                 <form onSubmit={handleSubmit} className="space-y-5">
                   {errors.general && (
-                    <div className="bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3">
-                      {errors.general}
-                    </div>
+                    <StatusBanner variant="error">{errors.general}</StatusBanner>
                   )}
 
                   <div className="space-y-2">
@@ -342,114 +313,76 @@ function EditEmployeeContent() {
             </div>
           </div>
         </main>
-      </div>
-
       {/* Deactivation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between px-6 pt-6 pb-4">
-              <h2 className="font-headline font-semibold text-lg text-on-surface">
-                Desativar funcionário?
-              </h2>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="px-6 pb-6">
-              <div className="flex flex-col items-center gap-3 py-4 text-center mb-5">
-                <div className="p-4 bg-error/10 rounded-full">
-                  <UserX className="w-9 h-9 text-error" />
-                </div>
-                <p className="text-sm text-on-surface-variant max-w-xs">
-                  O funcionário <span className="font-semibold text-on-surface">{employee?.name}</span> perderá
-                  acesso ao sistema imediatamente.
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  size="md"
-                  fullWidth
-                  onClick={() => setShowDeleteConfirm(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="primary"
-                  size="md"
-                  fullWidth
-                  className="bg-error hover:bg-error/90 border-none text-white font-bold"
-                  loading={deactivating}
-                  icon={<UserX className="w-4.5 h-4.5" />}
-                  onClick={handleDeactivate}
-                >
-                  Sim, desativar
-                </Button>
-              </div>
-            </div>
+      <BottomSheet
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Desativar funcionário?"
+        actions={
+          <div className="flex gap-3">
+            <Button variant="outline" size="md" fullWidth onClick={() => setShowDeleteConfirm(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              fullWidth
+              className="bg-error hover:bg-error/90 border-none text-white font-bold"
+              loading={deactivating}
+              icon={<UserX className="w-4 h-4" />}
+              onClick={handleDeactivate}
+            >
+              Sim, desativar
+            </Button>
           </div>
+        }
+      >
+        <div className="flex flex-col items-center gap-3 py-4 text-center">
+          <div className="p-4 bg-error/10 rounded-full">
+            <UserX className="w-9 h-9 text-error" />
+          </div>
+          <p className="text-sm text-on-surface-variant max-w-xs">
+            O funcionário <span className="font-semibold text-on-surface">{employee?.name}</span> perderá
+            acesso ao sistema imediatamente.
+          </p>
         </div>
-      )}
+      </BottomSheet>
 
       {/* Activation Modal */}
-      {showActivateConfirm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between px-6 pt-6 pb-4">
-              <h2 className="font-headline font-semibold text-lg text-on-surface">
-                Reativar funcionário?
-              </h2>
-              <button
-                onClick={() => setShowActivateConfirm(false)}
-                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="px-6 pb-6">
-              <div className="flex flex-col items-center gap-3 py-4 text-center mb-5">
-                <div className="p-4 bg-success/10 rounded-full">
-                  <CheckCircle2 className="w-9 h-9 text-success" />
-                </div>
-                <p className="text-sm text-on-surface-variant max-w-xs">
-                  O funcionário <span className="font-semibold text-on-surface">{employee?.name}</span> recuperará
-                  o acesso ao sistema imediatamente.
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  size="md"
-                  fullWidth
-                  onClick={() => setShowActivateConfirm(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="primary"
-                  size="md"
-                  fullWidth
-                  className="bg-success hover:bg-success/90 border-none text-white font-bold"
-                  loading={activating}
-                  icon={<CheckCircle2 className="w-4.5 h-4.5" />}
-                  onClick={handleActivate}
-                >
-                  Sim, reativar
-                </Button>
-              </div>
-            </div>
+      <BottomSheet
+        open={showActivateConfirm}
+        onClose={() => setShowActivateConfirm(false)}
+        title="Reativar funcionário?"
+        actions={
+          <div className="flex gap-3">
+            <Button variant="outline" size="md" fullWidth onClick={() => setShowActivateConfirm(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              fullWidth
+              className="bg-success hover:bg-success/90 border-none text-white font-bold"
+              loading={activating}
+              icon={<CheckCircle2 className="w-4 h-4" />}
+              onClick={handleActivate}
+            >
+              Sim, reativar
+            </Button>
           </div>
+        }
+      >
+        <div className="flex flex-col items-center gap-3 py-4 text-center">
+          <div className="p-4 bg-success/10 rounded-full">
+            <CheckCircle2 className="w-9 h-9 text-success" />
+          </div>
+          <p className="text-sm text-on-surface-variant max-w-xs">
+            O funcionário <span className="font-semibold text-on-surface">{employee?.name}</span> recuperará
+            o acesso ao sistema imediatamente.
+          </p>
         </div>
-      )}
-    </div>
+      </BottomSheet>
+    </>
   );
 }
 

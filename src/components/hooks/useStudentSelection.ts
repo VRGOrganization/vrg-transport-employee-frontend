@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { employeeApi } from "@/lib/employeeApi";
+import { http } from "@/services/http";
 import {
   extractLicenseImage,
   normalizeMediaSource,
@@ -148,8 +148,8 @@ licenseRequests: LicenseRequestRecord[],
     setLoadingSelected(true);
     try {
       const [images, requestsByStudent] = await Promise.all([
-        employeeApi.get<ImageRecord[]>(`/image/student/${student._id}`),
-        employeeApi
+        http.get<ImageRecord[]>(`/image/student/${student._id}`),
+        http
           .get<LicenseRequestRecord[]>(`/license-request/student/${student._id}`)
           .catch(() => []),
       ]);

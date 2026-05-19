@@ -1,9 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { SideNav } from "@/components/layout/SideNav";
-import { TopBar } from "@/components/layout/TopBar";
 import { universityApi, courseApi, busApi } from "@/lib/universityApi";
 import type { University, Course, Bus } from "@/types/university.types";
 import { UniversityTable } from "@/components/universities/UniversityTable";
@@ -15,8 +12,6 @@ import { Plus, MapPin, BookOpen, Bus as BusIcon, Building2, AlertCircle, X } fro
 type DetailTab = "courses" | "buses";
 
 export default function UniversitiesPage() {
-  const { user, logout } = useEmployeeAuth();
-
   const [universities, setUniversities] = useState<University[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [buses, setBuses] = useState<Bus[]>([]);
@@ -110,13 +105,8 @@ export default function UniversitiesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-      <SideNav activePath="/admin/universities" onLogout={logout} />
-
-      <div className="min-w-0 flex flex-col">
-        <TopBar user={user} />
-
-        <main className="p-8 min-h-[calc(100vh-4rem)]">
+    <>
+      <main className="p-8 min-h-[calc(100vh-4rem)]">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -271,7 +261,6 @@ export default function UniversitiesPage() {
             )}
           </div>
         </main>
-      </div>
 
       <UniversityFormModal
         open={creating}
@@ -284,6 +273,6 @@ export default function UniversitiesPage() {
         onClose={() => setEditing(null)}
         onSubmit={handleEdit}
       />
-    </div>
+    </>
   );
 }

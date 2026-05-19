@@ -108,19 +108,19 @@ export async function buildCardsPdfUrl(cards: PrintableCard[], _title: string): 
   const blockHeight = cardH + cutLineGap;
 
   const offsetX = (pageWidth - cardW) / 2;
-  let y = margin;
+  const state = { y: margin };
 
   cards.forEach((card, index) => {
-    if (index > 0 && y + cardH > pageHeight - margin) {
+    if (index > 0 && state.y + cardH > pageHeight - margin) {
       doc.addPage();
-      y = margin;
+      state.y = margin;
     }
 
     doc.addImage(
       card.imageData,
       getImageFormatFromDataUrl(card.imageData),
       offsetX,
-      y,
+      state.y,
       cardW,
       cardH,
       undefined,
@@ -128,7 +128,7 @@ export async function buildCardsPdfUrl(cards: PrintableCard[], _title: string): 
     );
 
     if (index < cards.length - 1) {
-      const cutY = y + cardH + cutLineGap / 2;
+      const cutY = state.y + cardH + cutLineGap / 2;
       doc.setDrawColor(107, 114, 128);
       doc.setLineDashPattern([1.5, 1.5], 0);
       doc.setLineWidth(0.2);
@@ -136,7 +136,7 @@ export async function buildCardsPdfUrl(cards: PrintableCard[], _title: string): 
       doc.setLineDashPattern([], 0);
     }
 
-    y += blockHeight;
+    state.y += blockHeight;
   });
 
   const pdfBlob = doc.output("blob");

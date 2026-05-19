@@ -2,13 +2,11 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { EmployeeSideNav } from "@/components/layout/EmployeeSideNav";
-import { TopBar } from "@/components/layout/TopBar";
+import { AlertCircle } from "lucide-react";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
-import { employeeApi } from "@/lib/employeeApi";
-
+import { ResultState } from "@/components/ui/ResultState";
+import { studentService } from "@/services/studentService";
 import { Student } from "@/types/student";
 import { StudentForm } from "@/components/students/StudentForm";
 import { StudentFormLayout } from "@/components/students/StudentFormLayout";
@@ -16,7 +14,6 @@ import { SuccessBanner } from "@/components/students/SuccessBanner";
 import { useStudentForm } from "@/components/hooks/useStudentForm";
 
 function EditStudentPageInner() {
-  const { user, logout } = useEmployeeAuth();
   const searchParams = useSearchParams();
   const studentId = searchParams.get("id");
 
@@ -40,7 +37,7 @@ function EditStudentPageInner() {
 
     const load = async () => {
       try {
-        const s = await employeeApi.get<Student>(`/student/${studentId}`);
+        const s = await studentService.getById(studentId!);
         setStudent(s);
         onChange("name", s.name);
         onChange("email", s.email);
@@ -65,7 +62,7 @@ function EditStudentPageInner() {
     setLoading(true);
     clearErrors();
     try {
-      await employeeApi.patch(`/student/${studentId}`, {
+      await studentService.update(studentId!, {
         name: data.name.trim(),
         telephone: data.telephone.trim(),
         institution: data.institution,
@@ -89,10 +86,8 @@ function EditStudentPageInner() {
 
     setStatusLoading(true);
     try {
-      const endpoint = student.active
-        ? `/student/${studentId}/deactivate`
-        : `/student/${studentId}/activate`;
-      await employeeApi.patch(endpoint, {});
+      if (student.active) await studentService.deactivate(studentId!);
+      else await studentService.reactivate(studentId!);
       setStudent((prev) => (prev ? { ...prev, active: !prev.active } : prev));
       setConfirmDeactivate(false);
     } catch (err: unknown) {
@@ -106,56 +101,40 @@ function EditStudentPageInner() {
   // ── Skeleton de carregamento ──────────────────────────────────────────────
   if (fetchLoading) {
     return (
-      <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-        <EmployeeSideNav activePath="/employee/students" onLogout={logout} />
-        <div className="min-w-0 flex flex-col">
-          <TopBar user={user} />
-          <main className="p-8">
-            <div className="max-w-lg mx-auto space-y-4 animate-pulse">
-              <div className="h-8 bg-surface-container-high rounded-xl w-1/2" />
-              <div className="h-64 bg-surface-container-high rounded-2xl" />
-            </div>
-          </main>
+      <main className="p-8">
+        <div className="max-w-lg mx-auto space-y-4 animate-pulse">
+          <div className="h-8 bg-surface-container-high rounded-xl w-1/2" />
+          <div className="h-64 bg-surface-container-high rounded-2xl" />
         </div>
-      </div>
+      </main>
     );
   }
 
   // ── Erro de carregamento ──────────────────────────────────────────────────
   if (fetchError) {
     return (
-      <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-        <EmployeeSideNav activePath="/employee/students" onLogout={logout} />
-        <div className="min-w-0 flex flex-col">
-          <TopBar user={user} />
-          <main className="p-8">
-            <div className="max-w-lg mx-auto flex flex-col items-center gap-4 py-16 text-center">
-              <span
-                className="material-symbols-outlined text-error"
-                style={{ fontSize: "40px" }}
-              >
-                error
-              </span>
-              <p className="text-on-surface-variant">{fetchError}</p>
+      <main className="p-8">
+        <div className="max-w-lg mx-auto py-16">
+          <ResultState
+            variant="error"
+            icon={AlertCircle}
+            title="Erro ao carregar"
+            description={fetchError}
+            size="sm"
+            actions={
               <Button variant="outline" size="sm" onClick={() => window.history.back()}>
                 Voltar
               </Button>
-            </div>
-          </main>
+            }
+          />
         </div>
-      </div>
+      </main>
     );
   }
 
   // ── Página principal ──────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-      <EmployeeSideNav activePath="/employee/students" onLogout={logout} />
-
-      <div className="min-w-0 flex flex-col">
-        <TopBar user={user} />
-
-        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
+    <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
           <StudentFormLayout
             title="Editar Estudante"
             subtitle={`Atualize os dados de ${student?.name ?? "estudante"}`}
@@ -216,10 +195,7 @@ function EditStudentPageInner() {
                             : "text-success hover:bg-success-container"
                         }`}
                       >
-                        <span
-                          className="material-symbols-outlined"
-                          style={{ fontSize: "16px" }}
-                        >
+                        <span className="material-symbols-outlined text-base">
                           {student.active ? "person_off" : "person_check"}
                         </span>
                         {student.active ? "Desativar" : "Reativar"}
@@ -243,9 +219,7 @@ function EditStudentPageInner() {
           <div className="mt-auto w-full">
             <Footer />
           </div>
-        </main>
-      </div>
-    </div>
+    </main>
   );
 }
 

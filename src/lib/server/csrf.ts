@@ -1,16 +1,7 @@
 import { randomBytes } from "crypto";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
-
-function getRequiredEnv(name: string): string {
-  const value = process.env[name]?.trim();
-
-  if (!value) {
-    throw new Error(`${name} não configurado no frontend employee.`);
-  }
-
-  return value;
-}
+import { getRequiredEnv } from "@/lib/server/env";
 
 const CSRF_COOKIE_NAME = getRequiredEnv("CSRF_COOKIE_NAME");
 const CSRF_HEADER_NAME = getRequiredEnv("CSRF_HEADER_NAME").toLowerCase();

@@ -1,20 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { SideNav } from "@/components/layout/SideNav";
-import { TopBar } from "@/components/layout/TopBar";
 import { busApi } from "@/lib/universityApi";
 import type { Bus } from "@/types/university.types";
 import { BusTable } from "@/components/buses/BusTable";
 import { BusFormModal } from "@/components/buses/BusFormModal";
 import { BusStudentsDrawer } from "@/components/buses/BusStudentsDrawer";
 import { Bus as BusIcon, Armchair, Building2, Unlink } from "lucide-react";
+import { StatusBanner } from "@/components/ui/StatusBanner";
 import { DashboardStatCard } from "@/components/cards/DashboardStatCard";
 
 export default function BusesPage() {
-  const { user, logout } = useEmployeeAuth();
-
   const [buses, setBuses] = useState<Bus[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -69,13 +65,8 @@ export default function BusesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-      <SideNav activePath="/admin/buses" onLogout={logout} />
-
-      <div className="min-w-0 flex flex-col">
-        <TopBar user={user} />
-
-        <main className="p-8 min-h-[calc(100vh-4rem)]">
+    <>
+      <main className="p-8 min-h-[calc(100vh-4rem)]">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -90,7 +81,7 @@ export default function BusesPage() {
               onClick={() => setCreating(true)}
               className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
+              <span className="material-symbols-outlined text-lg">
                 add
               </span>
               Novo Ônibus
@@ -138,9 +129,7 @@ export default function BusesPage() {
           )}
 
           {error && (
-            <div className="mb-6 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl text-sm text-red-600 dark:text-red-400">
-              {error}
-            </div>
+            <StatusBanner variant="error" className="mb-6">{error}</StatusBanner>
           )}
 
           <BusTable
@@ -152,7 +141,6 @@ export default function BusesPage() {
             deactivatingId={deactivatingId}
           />
         </main>
-      </div>
 
       <BusFormModal
         open={creating}
@@ -169,7 +157,7 @@ export default function BusesPage() {
         bus={viewingStudents}
         onClose={() => setViewingStudents(null)}
       />
-    </div>
+    </>
   );
 }
 

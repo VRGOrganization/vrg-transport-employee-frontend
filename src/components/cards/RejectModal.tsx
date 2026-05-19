@@ -1,7 +1,7 @@
 import { XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { employeeApi } from "@/lib/employeeApi";
+import { http } from "@/services/http";
 import type {
   LicenseRequestRecord,
   RejectionReasonConfig,
@@ -27,7 +27,7 @@ export function RejectModal({
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    employeeApi
+    http
       .get<RejectionReasonConfig[]>("/license-request/rejection-reasons")
       .then(setReasons)
       .catch(() => setReasons([]));
@@ -50,7 +50,7 @@ export function RejectModal({
     setRejecting(true);
     setErrorMessage("");
     try {
-      await employeeApi.patch(`/license-request/reject/${currentLicenseRequest._id}`, {
+      await http.patch(`/license-request/reject/${currentLicenseRequest._id}`, {
         reasons: Array.from(selectedIds),
         ...(customMessage.trim() ? { customRejectionMessage: customMessage.trim() } : {}),
       });

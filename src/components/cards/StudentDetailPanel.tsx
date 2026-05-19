@@ -1,7 +1,7 @@
 import { Eye } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ImageLightbox } from "@/components/cards/CardPageComponents";
-import { employeeApi } from "@/lib/employeeApi";
+import { http } from "@/services/http";
 import type {
   ImageRecord,
   LicenseRecord,
@@ -107,7 +107,7 @@ export function StudentDetailPanel({
     setApproving(true);
     setApproveMessage("");
     try {
-      await employeeApi.patch(`/license-request/approve/${currentLicenseRequest._id}`, {
+      await http.patch(`/license-request/approve/${currentLicenseRequest._id}`, {
         institution: selected.institution,
         bus: selectedBusIdentifier,
         ...(profileImage ? { photo: profileImage } : {}),

@@ -26,6 +26,7 @@ describe("useStudentForm", () => {
       result.current.onChange("telephone", "22999999999");
       result.current.onChange("institution", "Instituto Federal");
       result.current.onChange("shift", "diurno");
+      result.current.onChange("cpf", "12345678901");
       result.current.onChange("password", "Senha123");
       result.current.onChange("confirmPassword", "Senha123");
     });

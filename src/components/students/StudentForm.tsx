@@ -2,6 +2,7 @@
 
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { StatusBanner } from "@/components/ui/StatusBanner";
 import {
   StudentFormData,
   StudentFormErrors,
@@ -28,11 +29,8 @@ export function StudentForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
-      {/* General error */}
       {errors.general && (
-        <div className="bg-error-container border border-error/20 text-error text-sm rounded-xl px-4 py-3">
-          {errors.general}
-        </div>
+        <StatusBanner variant="error">{errors.general}</StatusBanner>
       )}
 
       {/* Name */}

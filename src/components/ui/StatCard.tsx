@@ -30,10 +30,7 @@ export function StatCard({ icon, label, value, accent = "primary" }: StatCardPro
   return (
     <div className="flex items-center gap-4 bg-surface-container-lowest border border-outline-variant rounded-2xl px-5 py-4 flex-1 min-w-0">
       <div className={`p-2.5 rounded-xl shrink-0 ${classes.bg}`}>
-        <span
-          className={`material-symbols-outlined ${classes.icon}`}
-          style={{ fontSize: "22px" }}
-        >
+        <span className={`material-symbols-outlined text-[22px] ${classes.icon}`}>
           {icon}
         </span>
       </div>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { employeeApi } from "@/lib/employeeApi";
+import { http } from "@/services/http";
 import {
   LicenseRecord,
   LicenseRequestRecord,
@@ -59,9 +59,9 @@ export function useCardsData(bus?: Bus | null): UseCardsDataReturn {
     setError("");
     try {
       const [studentsResponse, licensesResponse, requestsResponse] = await Promise.all([
-        employeeApi.get<StudentsResponse>("/student"),
-        employeeApi.get<LicenseRecord[]>("/license/all"),
-        employeeApi.get<LicenseRequestRecord[]>("/license-request/all"),
+        http.get<StudentsResponse>("/student"),
+        http.get<LicenseRecord[]>("/license/all"),
+        http.get<LicenseRequestRecord[]>("/license-request/all"),
       ]);
 
       const resolvedStudents = normalizeArrayResponse<StudentRecord>(studentsResponse);

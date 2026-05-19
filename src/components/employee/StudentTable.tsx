@@ -2,17 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-
-// Reutiliza o tipo Student já exportado pela página de dashboard
-export interface Student {
-  _id: string;
-  name: string;
-  email: string;
-  registrationId: string;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { Student } from "@/types/student";
+import { getInitials, AVATAR_COLORS } from "@/lib/utils/string";
 
 interface StudentTableProps {
   students: Student[];
@@ -21,20 +12,6 @@ interface StudentTableProps {
 }
 
 const PAGE_SIZE = 5;
-
-function getInitials(name: string) {
-  const parts = name.trim().split(" ");
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-const avatarColors = [
-  "bg-blue-100 text-primary",
-  "bg-orange-100 text-secondary",
-  "bg-teal-100 text-tertiary",
-  "bg-purple-100 text-purple-700",
-  "bg-green-100 text-green-700",
-];
 
 export function StudentTable({
   students,
@@ -124,7 +101,7 @@ export function StudentTable({
                 </tr>
               ) : (
                 paginated.map((student, idx) => {
-                  const colorClass = avatarColors[idx % avatarColors.length];
+                  const colorClass = AVATAR_COLORS[idx % AVATAR_COLORS.length];
                   return (
                     <tr
                       key={student._id}
@@ -151,7 +128,7 @@ export function StudentTable({
 
                       {/* Matrícula — coluna extra relevante para alunos */}
                       <td className="px-8 py-5 text-on-surface-variant font-mono text-sm">
-                        {student.registrationId}
+                        {student.registrationNumber ?? "—"}
                       </td>
 
                       {/* Ações */}
@@ -164,10 +141,7 @@ export function StudentTable({
                           className="p-2 text-primary hover:bg-primary-fixed rounded-lg transition-colors inline-flex"
                           title="Editar"
                         >
-                          <span
-                            className="material-symbols-outlined"
-                            style={{ fontSize: "20px" }}
-                          >
+                          <span className="material-symbols-outlined text-xl">
                             edit
                           </span>
                         </button>
@@ -176,10 +150,7 @@ export function StudentTable({
                           className="p-2 text-error hover:bg-error-container rounded-lg transition-colors inline-flex ml-2"
                           title="Desativar"
                         >
-                          <span
-                            className="material-symbols-outlined"
-                            style={{ fontSize: "20px" }}
-                          >
+                          <span className="material-symbols-outlined text-xl">
                             delete
                           </span>
                         </button>
@@ -204,10 +175,7 @@ export function StudentTable({
               disabled={page === 1}
               className="w-10 h-10 rounded-lg flex items-center justify-center border border-outline-variant hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: "20px" }}
-              >
+              <span className="material-symbols-outlined text-xl">
                 chevron_left
               </span>
             </button>
@@ -231,10 +199,7 @@ export function StudentTable({
               disabled={page === totalPages}
               className="w-10 h-10 rounded-lg flex items-center justify-center border border-outline-variant hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: "20px" }}
-              >
+              <span className="material-symbols-outlined text-xl">
                 chevron_right
               </span>
             </button>

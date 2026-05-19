@@ -1,18 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { EmployeeSideNav } from "@/components/layout/EmployeeSideNav";
-import { TopBar } from "@/components/layout/TopBar";
 import { Footer } from "@/components/layout/Footer";
-import { employeeApi } from "@/lib/employeeApi";
+import { studentService } from "@/services/studentService";
 import { StudentForm } from "@/components/students/StudentForm";
 import { StudentFormLayout } from "@/components/students/StudentFormLayout";
 import { SuccessBanner } from "@/components/students/SuccessBanner";
 import { useStudentForm } from "@/components/hooks/useStudentForm";
 
 export default function EmployeeNewStudentPage() {
-  const { user, logout } = useEmployeeAuth();
   const [success, setSuccess] = useState(false);
   const [createdName, setCreatedName] = useState("");
 
@@ -25,7 +21,7 @@ export default function EmployeeNewStudentPage() {
 
     setLoading(true);
     try {
-      await employeeApi.post("/student", {
+      await studentService.create({
         name: data.name.trim(),
         email: data.email.trim().toLowerCase(),
         telephone: data.telephone.trim(),
@@ -60,13 +56,7 @@ export default function EmployeeNewStudentPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-      <EmployeeSideNav activePath="/employee/students" onLogout={logout} />
-
-      <div className="min-w-0 flex flex-col">
-        <TopBar user={user} />
-
-        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
+    <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
           <StudentFormLayout
             title="Cadastrar Estudante"
             subtitle="Preencha os dados para criar uma nova conta de estudante"
@@ -97,8 +87,6 @@ export default function EmployeeNewStudentPage() {
           <div className="mt-auto w-full">
             <Footer />
           </div>
-        </main>
-      </div>
-    </div>
+    </main>
   );
 }

@@ -1,9 +1,6 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { EmployeeSideNav } from "@/components/layout/EmployeeSideNav";
-import { TopBar } from "@/components/layout/TopBar";
 import { useCardsData } from "@/components/hooks/useCardsData";
 import BusSelectorPanel from "@/components/buses/BusSelectorPanel";
 import BusRouteSelectorPanel from "@/components/buses/BusRouteSelectorPanel";
@@ -19,7 +16,6 @@ import { useStudentSelection } from "@/components/hooks/useStudentSelection";
 import type { Bus, BusRoute } from "@/types/university.types";
 
 export default function EmployeeCardsPage() {
-  const { user, logout } = useEmployeeAuth();
 
   const [selectedBusId, setSelectedBusId] = useState<string | null>(null);
   const [selectedBus, setSelectedBus] = useState<Bus | null>(null);
@@ -39,7 +35,7 @@ export default function EmployeeCardsPage() {
   } = useCardsData(selectedBus);
 
   useEffect(() => {
-    let cancelled = false;
+    const mountState = { cancelled: false };
     setSelectedBusRoute(null);
     if (!selectedBusId) {
       setSelectedBus(null);
@@ -48,18 +44,17 @@ export default function EmployeeCardsPage() {
 
     (async () => {
       try {
-        const list = await busApi.list();
-        const arr = Array.isArray(list) ? list : (list as any)?.data ?? [];
-        const found = arr.find((b: any) => b._id === selectedBusId) ?? null;
-        if (!cancelled) setSelectedBus(found);
-        if (!cancelled) setSelectedBusRoute(found as unknown as BusRoute);
+        const arr = await busApi.list();
+        const found = arr.find((b) => b._id === selectedBusId) ?? null;
+        if (!mountState.cancelled) setSelectedBus(found);
+        if (!mountState.cancelled) setSelectedBusRoute(found as unknown as BusRoute);
       } catch {
-        if (!cancelled) setSelectedBus(null);
+        if (!mountState.cancelled) setSelectedBus(null);
       }
     })();
 
     return () => {
-      cancelled = true;
+      mountState.cancelled = true;
     };
   }, [selectedBusId]);
 
@@ -101,14 +96,9 @@ export default function EmployeeCardsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-      <EmployeeSideNav activePath="/employee/cards" onLogout={logout} />
-
-      <div className="min-w-0 flex flex-col">
-        <TopBar user={user} />
-
-        <main className="bg-surface flex flex-col flex-1 px-6 py-8 md:px-10">
-          <div className="max-w-7xl mx-auto w-full space-y-6">
+    <>
+      <main className="bg-surface flex flex-col flex-1 px-6 py-8 md:px-10">
+          <div className="mx-auto w-full space-y-6">
             <CardsPageHeader onRefresh={reload} />
 
             <CardsStatsRow
@@ -187,8 +177,7 @@ export default function EmployeeCardsPage() {
               />
             </div>
           </div>
-        </main>
-      </div>
+      </main>
 
       {pdfPreviewUrl && (
         <PdfPreviewModal
@@ -206,7 +195,7 @@ export default function EmployeeCardsPage() {
           onReload={reload}
         />
       )}
-    </div>
+    </>
   );
 }
 

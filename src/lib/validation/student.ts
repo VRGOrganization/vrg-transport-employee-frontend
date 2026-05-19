@@ -1,6 +1,5 @@
 import { z } from "zod";
-
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,64}$/;
+import { PASSWORD_REGEX } from "@/lib/constants";
 
 const studentBaseSchema = z.object({
   name: z
@@ -31,6 +30,11 @@ const studentBaseSchema = z.object({
   confirmPassword: z.string().optional(),
 });
 
-export const studentCreateSchema = studentBaseSchema;
+export const studentCreateSchema = studentBaseSchema.extend({
+  password: z
+    .string({ error: "Senha e obrigatoria" })
+    .regex(PASSWORD_REGEX, { error: "Senha deve conter maiuscula, minuscula e numero" }),
+  confirmPassword: z.string().optional(),
+});
 
 export const studentEditSchema = studentBaseSchema;

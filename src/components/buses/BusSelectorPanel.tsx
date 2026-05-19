@@ -25,7 +25,7 @@ export default function BusSelectorPanel({
   const [releaseOpen, setReleaseOpen] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
+    const mountState = { cancelled: false };
 
     const load = async () => {
       setLoading(true);
@@ -33,7 +33,7 @@ export default function BusSelectorPanel({
       try {
         const res = await busApi.listWithQueueCounts();
         const data = Array.isArray(res) ? res : (res as any)?.data ?? [];
-        if (!cancelled) setBuses(data as Bus[]);
+        if (!mountState.cancelled) setBuses(data as Bus[]);
 
         // If slots contain only university IDs (strings), load universities to resolve acronyms
         const ids = new Set<string>();
@@ -46,7 +46,7 @@ export default function BusSelectorPanel({
           });
         });
 
-        if (!cancelled && ids.size > 0) {
+        if (!mountState.cancelled && ids.size > 0) {
           try {
             const all = await universityApi.list();
             const arr = Array.isArray(all) ? all : (all as any)?.data ?? [];
@@ -54,21 +54,21 @@ export default function BusSelectorPanel({
             arr.forEach((u: any) => {
               if (u && u._id) map[u._id] = { acronym: u.acronym, name: u.name };
             });
-            if (!cancelled) setUniversitiesMap(map);
+            if (!mountState.cancelled) setUniversitiesMap(map);
           } catch (e) {
             // ignore university fetch errors silently
           }
         }
       } catch (err) {
-        if (!cancelled) setError("Não foi possível carregar os ônibus");
+        if (!mountState.cancelled) setError("Não foi possível carregar os ônibus");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!mountState.cancelled) setLoading(false);
       }
     };
 
     void load();
     return () => {
-      cancelled = true;
+      mountState.cancelled = true;
     };
   }, []);
 

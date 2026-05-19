@@ -3,17 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Pencil, Trash2, ChevronLeft, ChevronRight, UserPlus, CheckCircle2 } from "lucide-react";
-import { EmployeeModal } from "@/components/admin/EmployeeModal";
-
-export interface Employee {
-  _id: string;
-  name: string;
-  email: string;
-  registrationId: string;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import { EmployeeModal } from "@/components/employees/EmployeeModal";
+import type { Employee } from "@/types/employee";
+import { getInitials, AVATAR_COLORS } from "@/lib/utils/string";
 
 interface EmployeeTableProps {
   employees: Employee[];
@@ -23,20 +15,6 @@ interface EmployeeTableProps {
 }
 
 const PAGE_SIZE = 5;
-
-function getInitials(name: string) {
-  const parts = name.trim().split(" ");
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-const avatarColors = [
-  "bg-primary-fixed text-primary",
-  "bg-secondary-fixed text-secondary",
-  "bg-primary-fixed-dim text-tertiary",
-  "bg-info-container text-on-info",
-  "bg-success-container text-on-success",
-];
 
 export function EmployeeTable({ employees, loading, onUpdated, onDeleted }: EmployeeTableProps) {
   const [page, setPage] = useState(1);
@@ -120,7 +98,7 @@ export function EmployeeTable({ employees, loading, onUpdated, onDeleted }: Empl
                 </tr>
               ) : (
                 paginated.map((emp, idx) => {
-                  const colorClass = avatarColors[idx % avatarColors.length];
+                  const colorClass = AVATAR_COLORS[idx % AVATAR_COLORS.length];
                   return (
                     <tr
                       key={emp._id}
