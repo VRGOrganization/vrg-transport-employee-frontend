@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ArrowRight, Lock, Hash } from "lucide-react";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
@@ -14,6 +14,8 @@ import { ForgotPasswordModal } from "./ForgotPasswordModal";
 export function EmployeeAdminLoginForm() {
   const { login, loading } = useEmployeeAuth();
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const loginInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { loginInputRef.current?.focus(); }, []);
   const [formData, setFormData] = useState({
     login: "",
     password: "",
@@ -64,11 +66,13 @@ export function EmployeeAdminLoginForm() {
 
   return (
     <div className="space-y-5">
-      {errors.general && (
-        <div className="bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3">
-          {errors.general}
-        </div>
-      )}
+      <div role="alert" aria-live="polite" aria-atomic="true">
+        {errors.general && (
+          <div className="bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3">
+            {errors.general}
+          </div>
+        )}
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Perfil de acesso — toggle buttons */}
@@ -101,11 +105,17 @@ export function EmployeeAdminLoginForm() {
 
         {/* Matrícula ou E-mail */}
         <div className="space-y-1.5">
-          <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+          <label
+            htmlFor="login-field"
+            className="text-xs font-bold uppercase tracking-wider text-on-surface-variant"
+          >
             Matrícula ou E-mail
           </label>
           <Input
+            ref={loginInputRef}
+            id="login-field"
             type="text"
+            autoComplete="username"
             icon={<Hash size={18} />}
             placeholder="email@dominio.com ou MAT123456"
             value={formData.login}
@@ -119,7 +129,10 @@ export function EmployeeAdminLoginForm() {
         {/* Senha */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+            <label
+              htmlFor="password-field"
+              className="text-xs font-bold uppercase tracking-wider text-on-surface-variant"
+            >
               Senha
             </label>
             <button
@@ -131,7 +144,9 @@ export function EmployeeAdminLoginForm() {
             </button>
           </div>
           <Input
+            id="password-field"
             type="password"
+            autoComplete="current-password"
             icon={<Lock size={18} />}
             placeholder="••••••••"
             value={formData.password}
