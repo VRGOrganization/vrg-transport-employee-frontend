@@ -1,6 +1,6 @@
 import { EmployeeAdminLoginForm } from "@/components/auth/EmployeeAdminLoginForm";
 import { Footer } from "@/components/layout/Footer";
-import Link from "next/link";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export default function EmployeeAdminLoginPage() {
   return (
@@ -39,16 +39,20 @@ export default function EmployeeAdminLoginPage() {
             </div>
           </div>
         </div>
-        
+
       </aside>
 
       {/* RIGHT PANEL */}
-      <main className="flex-1 flex flex-col bg-surface">
+      <main className="flex-1 flex flex-col bg-surface relative">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle className="text-on-surface-variant hover:bg-surface-container hover:text-on-surface" />
+        </div>
+
         <div className="flex-1 flex items-center justify-center px-8 py-12">
           <div className="w-full max-w-md">
             {/* Eyebrow */}
             <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
-              Acessar Conta
+              Secretaria de Transporte · São Fidélis
             </p>
             <h1 className="text-3xl font-extrabold text-on-surface tracking-tight mb-2">
               Entrar no sistema
