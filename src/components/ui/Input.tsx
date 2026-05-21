@@ -39,7 +39,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             type={inputType}
             className={cn(
-              "w-full bg-surface-container-lowest border-none ring-1 ring-outline-variant/30 focus:ring-2 focus:ring-primary rounded-xl text-on-surface placeholder:text-outline/50 transition-all outline-none",
+              "w-full bg-surface-container-lowest border-none ring-1 ring-outline/40 focus:ring-2 focus:ring-primary rounded-xl text-on-surface placeholder:text-outline/50 transition-all outline-none",
               "h-14 text-base", // Altura fixa e fonte maior
               icon ? "pl-12" : "pl-4",
               (rightElement || type === "password") && "pr-12",
