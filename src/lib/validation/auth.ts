@@ -13,7 +13,7 @@ export const employeeLoginRequestSchema = z.object({
     .string({ error: "Senha e obrigatoria" })
     .min(6, "Senha deve ter no minimo 6 caracteres")
     .max(100, "Senha deve ter no maximo 100 caracteres"),
-    role: z.enum(["admin", "employee"], { 
+    role: z.enum(["admin", "employee"], {
     error: "Selecione um perfil de acesso",
   }),
 });
@@ -57,6 +57,10 @@ export const backendMeSchema = z.object({
 export const backendUserDetailSchema = z.object({
   name: z.string().optional(),
   username: z.string().optional(),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().min(1, "Email é obrigatório").email("Email inválido"),
 });
 
 export function getFieldErrors(error: z.ZodError): Record<string, string> {

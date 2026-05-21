@@ -9,14 +9,14 @@ import {
   employeeLoginRequestSchema,
   getFieldErrors,
 } from "@/lib/validation/auth";
-import Link from "next/link";
+import { ForgotPasswordModal } from "./ForgotPasswordModal";
 
 export function EmployeeAdminLoginForm() {
   const { login, loading } = useEmployeeAuth();
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
     login: "",
     password: "",
-    rememberMe: false,
     role: "employee" as "admin" | "employee",
   });
   const [errors, setErrors] = useState({
@@ -121,12 +121,13 @@ export function EmployeeAdminLoginForm() {
             <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
               Senha
             </label>
-            <Link
-              href="/forgot-password"
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
               className="text-xs text-primary hover:underline font-medium"
             >
               Esqueci minha senha
-            </Link>
+            </button>
           </div>
           <Input
             type="password"
@@ -139,21 +140,6 @@ export function EmployeeAdminLoginForm() {
             error={errors.password}
           />
         </div>
-
-        {/* Remember me */}
-        <label className="flex items-center gap-2.5 cursor-pointer select-none group">
-          <input
-            type="checkbox"
-            checked={formData.rememberMe}
-            onChange={(e) =>
-              setFormData({ ...formData, rememberMe: e.target.checked })
-            }
-            className="w-4 h-4 rounded border-outline accent-primary cursor-pointer"
-          />
-          <span className="text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">
-            Manter conectado neste computador
-          </span>
-        </label>
 
         {/* Submit */}
         <Button
@@ -175,6 +161,11 @@ export function EmployeeAdminLoginForm() {
           aplicativo móvel da Secretaria de Transportes.
         </p>
       </div>
+
+      <ForgotPasswordModal
+        open={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+      />
     </div>
   );
 }
