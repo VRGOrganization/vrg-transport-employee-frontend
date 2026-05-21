@@ -377,7 +377,7 @@ export default function AdminDashboardPage() {
                     value={search}
                     onChange={(e) => handleSearch(e.target.value)}
                     placeholder="Buscar por nome ou identificador…"
-                    className="h-8 pl-8 pr-8 rounded-lg border border-[var(--color-outline)] bg-surface-container-lowest text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] outline-none transition-all w-64 cursor-text"
+                    className="h-8 pl-8 pr-8 rounded-lg border-none ring-1 ring-outline/40 bg-surface-container-lowest text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary outline-none transition-all w-64 cursor-text"
                   />
                   {search && (
                     <button
