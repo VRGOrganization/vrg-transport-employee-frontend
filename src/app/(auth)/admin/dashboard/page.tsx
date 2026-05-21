@@ -323,17 +323,9 @@ export default function AdminDashboardPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors">
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer">
                 <Calendar className="w-4 h-4" />
                 {monthLabel}
-              </button>
-              <button 
-                onClick={handleExport}
-                disabled={exportLoading}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors disabled:opacity-50 disabled:cursor-wait"
-              >
-                {exportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {exportLoading ? "Exportando..." : "Exportar"}
               </button>
             </div>
           </div>
@@ -385,12 +377,12 @@ export default function AdminDashboardPage() {
                     value={search}
                     onChange={(e) => handleSearch(e.target.value)}
                     placeholder="Buscar por nome ou identificador…"
-                    className="h-8 pl-8 pr-3 rounded-lg border border-outline-variant bg-surface text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-64"
+                    className="h-8 pl-8 pr-8 rounded-lg border border-outline-variant bg-surface-container-lowest text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-64 cursor-text"
                   />
                   {search && (
                     <button
                       onClick={() => handleSearch("")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -398,22 +390,33 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* Filter tabs */}
-                <div className="flex items-center gap-1 p-1 bg-surface-container rounded-lg">
+                <div className="flex items-center gap-1 p-1 bg-surface-container rounded-lg border border-outline-variant/30">
                   {(["Todos", "Aluno", "Funcionário"] as const).map((f) => (
                     <button
                       key={f}
                       onClick={() => handleFilterChange(f)}
                       className={[
-                        "px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150",
+                        "px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150 cursor-pointer",
                         filter === f
                           ? "bg-primary text-on-primary shadow-sm"
-                          : "text-on-surface-variant hover:text-on-surface",
+                          : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low border border-transparent hover:border-outline-variant/40",
                       ].join(" ")}
                     >
                       {f}
                     </button>
                   ))}
                 </div>
+
+                {/* Export button */}
+                <button
+                  onClick={handleExport}
+                  disabled={exportLoading}
+                  title="Exportar relatório completo do sistema (Alunos, Funcionários, Frota e Instituições) em formato CSV"
+                  className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-xs font-medium text-on-surface-variant hover:bg-surface-container-low hover:border-outline-variant transition-colors disabled:opacity-50 disabled:cursor-wait cursor-pointer"
+                >
+                  {exportLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                  <span>{exportLoading ? "Exportando..." : "Exportar CSV"}</span>
+                </button>
               </div>
             </div>
 
