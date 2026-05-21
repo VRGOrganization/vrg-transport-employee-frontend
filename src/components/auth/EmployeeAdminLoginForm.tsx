@@ -83,10 +83,10 @@ export function EmployeeAdminLoginForm() {
                 type="button"
                 onClick={() => setFormData({ ...formData, role: r })}
                 className={[
-                  "h-10 rounded-lg text-sm font-semibold transition-all duration-150",
+                  "h-10 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer border-2",
                   formData.role === r
-                    ? "bg-primary text-on-primary shadow-sm"
-                    : "text-on-surface-variant hover:text-on-surface",
+                    ? "bg-primary text-on-primary shadow-sm border-primary"
+                    : "text-on-surface-variant hover:text-on-surface border-transparent hover:border-outline-variant",
                 ].join(" ")}
               >
                 {r === "employee" ? "Funcionário" : "Administrador"}
