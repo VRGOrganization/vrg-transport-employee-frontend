@@ -12,8 +12,10 @@ import {
 import { ForgotPasswordModal } from "./ForgotPasswordModal";
 
 export function EmployeeAdminLoginForm() {
-  const { login, loading } = useEmployeeAuth();
+  const { login } = useEmployeeAuth();
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
   const loginInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => { loginInputRef.current?.focus(); }, []);
   const [formData, setFormData] = useState({
@@ -49,6 +51,8 @@ export function EmployeeAdminLoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
+    setRateLimited(false);
+    setSubmitting(true);
 
     const result = await login({
       login: formData.login,
@@ -56,7 +60,10 @@ export function EmployeeAdminLoginForm() {
       role: formData.role,
     });
 
+    setSubmitting(false);
+
     if (!result.success) {
+      setRateLimited(result.rateLimited ?? false);
       setErrors((prev) => ({
         ...prev,
         general: result.error ?? "Credenciais inválidas",
@@ -68,7 +75,14 @@ export function EmployeeAdminLoginForm() {
     <div className="space-y-5">
       <div role="alert" aria-live="polite" aria-atomic="true">
         {errors.general && (
-          <div className="bg-error-container border border-error-border text-error text-sm rounded-xl px-4 py-3">
+          <div
+            className={[
+              "text-sm rounded-xl px-4 py-3",
+              rateLimited
+                ? "bg-primary/10 border border-primary/25 text-primary"
+                : "bg-error-container border border-error-border text-error",
+            ].join(" ")}
+          >
             {errors.general}
           </div>
         )}
@@ -163,7 +177,7 @@ export function EmployeeAdminLoginForm() {
           variant="secondary"
           size="lg"
           fullWidth
-          loading={loading}
+          loading={submitting || rateLimited}
           icon={<ArrowRight size={20} />}
         >
           Acessar sistema

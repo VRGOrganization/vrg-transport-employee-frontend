@@ -118,8 +118,9 @@ export function useEmployeeAuth() {
             ? (payload as { message: string }).message
             : "Credenciais invalidas";
         return {
-          success: false,
+          success: false as const,
           error: message,
+          rateLimited: response.status === 429,
         };
       }
 
