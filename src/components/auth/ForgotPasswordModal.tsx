@@ -20,14 +20,8 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose(); };
-    document.addEventListener("keydown", handler);
     document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", handler);
-      document.body.style.overflow = "";
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { document.body.style.overflow = ""; };
   }, [open]);
 
   function handleClose() {
@@ -84,10 +78,7 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={(e) => e.target === e.currentTarget && handleClose()}
-    >
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4">
