@@ -6,7 +6,7 @@ import { DayPicker } from "react-day-picker";
 import type { DateRange } from "react-day-picker";
 import { ptBR } from "react-day-picker/locale";
 import "react-day-picker/dist/style.css";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/Button";
 import { busApi } from "@/lib/universityApi";
 import type { EnrollmentPeriod } from "@/types/enrollmentPeriod";
@@ -399,6 +399,7 @@ export function EnrollmentPeriodModal({
                   onSelect={handleRangeSelect}
                   numberOfMonths={months}
                   locale={ptBR}
+                  disabled={{ before: startOfDay(new Date()) }}
                 />
 
                 <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
@@ -445,7 +446,7 @@ export function EnrollmentPeriodModal({
                   onChange={(event) =>
                     setField("totalSlots", event.target.value)
                   }
-                  className="h-10 w-full rounded-xl border-2 border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="h-10 w-full rounded-xl border-2 border-outline bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Ex: 100"
                 />
                 {errors.totalSlots ? (
@@ -485,7 +486,7 @@ export function EnrollmentPeriodModal({
                   onChange={(event) =>
                     setField("licenseValidityMonths", event.target.value)
                   }
-                  className="h-10 w-full rounded-xl border-2 border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="h-10 w-full rounded-xl border-2 border-outline bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Ex: 6"
                 />
                 {errors.licenseValidityMonths && (
