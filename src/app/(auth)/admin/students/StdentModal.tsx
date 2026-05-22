@@ -136,10 +136,7 @@ export function StudentModal({
 
   return (
     /* Backdrop */
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       {/* Panel */}
       <div className="relative w-full max-w-md bg-surface rounded-2xl shadow-2xl border border-outline-variant/30 overflow-hidden">
 
@@ -198,9 +195,9 @@ export function StudentModal({
                   <button
                     type="button"
                     onClick={() => setView(student.active ? "delete-confirm" : "activate-confirm")}
-                    className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${student.active
-                        ? "text-error hover:bg-error-container"
-                        : "text-success hover:bg-success-container"
+                    className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${student.active
+                        ? "text-error border-error/40 hover:bg-error-container"
+                        : "text-success border-success/40 hover:bg-success-container"
                       }`}
                   >
                     {student.active ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
@@ -295,18 +292,18 @@ export function StudentModal({
               </div>
 
               {/* Footer */}
-              <div className="px-6 py-4 border-t border-outline-variant/20 flex items-center justify-end gap-3">
+              <div className="px-6 py-4 bg-surface-container-low border-t border-outline-variant/20 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                  className="px-6 py-2.5 rounded-lg font-semibold text-sm transition-all bg-surface-container-high hover:bg-surface-container-highest text-on-surface shadow-sm"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60 shadow-sm"
                 >
                   {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {loading ? "Salvando..." : "Salvar alterações"}

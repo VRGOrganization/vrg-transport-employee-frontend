@@ -5,6 +5,7 @@ import { DAY_LABELS } from "@/types/cards.types";
 interface StudentInfoModalProps {
   student: Student;
   onClose: () => void;
+  onEdit?: () => void;
 }
 
 function getInitials(name: string) {
@@ -13,7 +14,7 @@ function getInitials(name: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export function StudentInfoModal({ student, onClose }: StudentInfoModalProps) {
+export function StudentInfoModal({ student, onClose, onEdit }: StudentInfoModalProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -28,8 +29,6 @@ export function StudentInfoModal({ student, onClose }: StudentInfoModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-300">
-      {/* Background overlay to close */}
-      <div className="absolute inset-0" onClick={onClose}></div>
 
       {/* Modal Container */}
       <div className="relative w-full max-w-3xl mx-4 bg-surface rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
@@ -145,13 +144,22 @@ export function StudentInfoModal({ student, onClose }: StudentInfoModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-surface-container-low border-t border-outline-variant/20 flex justify-end">
+        <div className="px-6 py-4 bg-surface-container-low border-t border-outline-variant/20 flex justify-end gap-3">
           <button
             onClick={onClose}
             className="px-6 py-2.5 rounded-lg font-semibold text-sm transition-all bg-surface-container-high hover:bg-surface-container-highest text-on-surface shadow-sm"
           >
             Fechar
           </button>
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all bg-primary text-on-primary hover:opacity-90 shadow-sm"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>edit</span>
+              Editar
+            </button>
+          )}
         </div>
       </div>
     </div>
