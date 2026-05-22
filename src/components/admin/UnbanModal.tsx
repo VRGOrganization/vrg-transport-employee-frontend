@@ -29,8 +29,8 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
     setLoading(true);
     setError("");
     try {
-      await employeeApi.patch(`/banlist/${entry._id}/unban`, {
-        unbanReasons: [unbanReasons.trim()],
+      await employeeApi.patch(`/banlist/unban/${entry.studentId}`, {
+        reasons: [unbanReasons.trim()],
       });
       onSuccess();
     } catch (err: unknown) {

@@ -432,7 +432,7 @@ export default function StudentsPage() {
               tabs={ALL_TABS}
               tab={tab}
               onTabChange={handleTabChange}
-              onExport={tab !== "banned" ? handleExport : undefined}
+              onExport={handleExport}
               exportLoading={exportLoading}
               exportLabel={tab === "active" ? "Exportar Alunos" : "Exportar Desativados"}
               searchPlaceholder="Buscar por nome, e-mail ou instituição…"

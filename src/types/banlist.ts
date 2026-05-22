@@ -2,7 +2,7 @@ export interface BanlistEntry {
   _id: string;
   email: string;
   name: string;
-  studentId?: string;
+  studentId: string;
   reasons: string[];
   bannedByAdminId: string;
   active: boolean;

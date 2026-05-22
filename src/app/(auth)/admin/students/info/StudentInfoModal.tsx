@@ -93,7 +93,7 @@ export function StudentInfoModal({ student, onClose, onEdit, onBanned }: Student
     setBanLoading(true);
     setBanError("");
     try {
-      await employeeApi.post(`/banlist`, {
+      await employeeApi.post(`/banlist/ban`, {
         studentId: student._id,
         reasons: [banReasons.trim()],
       });
