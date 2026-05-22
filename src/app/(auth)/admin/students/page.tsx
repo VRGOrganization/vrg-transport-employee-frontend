@@ -203,7 +203,7 @@ export default function StudentsPage() {
       header: "Ação",
       align: "right",
       render: (student) => (
-        <div className="relative inline-block text-left">
+        <div className="relative inline-block text-left" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => setOpenDropdownId(openDropdownId === student._id ? null : student._id)}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
@@ -288,6 +288,7 @@ export default function StudentsPage() {
             exportLabel={tab === "active" ? "Exportar Alunos" : "Exportar Desativados"}
             searchPlaceholder="Buscar por nome, e-mail ou instituição…"
             searchFields={(s) => [s.name, s.email, s.institution ?? ""]}
+            onRowClick={(s) => setViewingStudent(s)}
             renderEmpty={(t, hasSearch) => (
               <div className="flex flex-col items-center gap-3">
                 <span className="material-symbols-outlined text-on-surface-variant text-4xl">
@@ -322,6 +323,7 @@ export default function StudentsPage() {
         <StudentInfoModal
           student={viewingStudent}
           onClose={() => setViewingStudent(null)}
+          onEdit={() => { setSelected(viewingStudent); setViewingStudent(null); }}
         />
       )}
 
