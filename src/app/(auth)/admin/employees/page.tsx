@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { employeeApi } from "@/lib/employeeApi";
 import { EmployeeModal, Employee } from "@/components/admin/EmployeeModal";
 import { AdminListTable, type TableColumn, type AdminTabItem } from "@/components/admin/AdminListTable";
+import { buildEmployeesCsv, downloadCsv } from "@/lib/csvUtils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -54,6 +55,7 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Employee | null>(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const fetchActive = useCallback(async () => {
     const data = await employeeApi.get<Employee[]>("/employee");
@@ -86,6 +88,21 @@ export default function EmployeesPage() {
   const handleTabChange = (t: string) => {
     setTab(t as Tab);
     loadTab(t as Tab);
+  };
+
+  /* ── Export ───────────────────────────────────────────────────────── */
+
+  const handleExport = async () => {
+    setExportLoading(true);
+    const today = new Date().toISOString().split("T")[0];
+    try {
+      const label = tab === "active" ? "ativos" : "desativados";
+      downloadCsv(buildEmployeesCsv(source), `funcionarios_${label}_${today}.csv`);
+    } catch (err) {
+      console.error("Erro ao exportar:", err);
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   /* ── Modal callbacks ──────────────────────────────────────────────── */
@@ -204,6 +221,9 @@ export default function EmployeesPage() {
             tabs={TABS}
             tab={tab}
             onTabChange={handleTabChange}
+            onExport={handleExport}
+            exportLoading={exportLoading}
+            exportLabel={tab === "active" ? "Exportar Funcionários" : "Exportar Desativados"}
             searchPlaceholder="Buscar por nome, e-mail ou matrícula…"
             searchFields={(e) => [e.name, e.email, e.registrationId]}
             renderEmpty={(t, hasSearch) => (
