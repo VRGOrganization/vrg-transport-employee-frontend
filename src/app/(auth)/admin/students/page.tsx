@@ -12,6 +12,7 @@ import { StudentModal } from "./StdentModal";
 import { StudentInfoModal } from "./info/StudentInfoModal";
 import { StudentCardModal } from "./StudentCardModal";
 import { AdminListTable, type TableColumn, type AdminTabItem } from "@/components/admin/AdminListTable";
+import { buildStudentsCsv, downloadCsv } from "@/lib/csvUtils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,6 +71,7 @@ export default function StudentsPage() {
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
   const [viewingCardStudent, setViewingCardStudent] = useState<Student | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const resolveStudents = (payload: StudentsResponse): Student[] => {
     if (Array.isArray(payload)) return payload;
@@ -107,6 +109,21 @@ export default function StudentsPage() {
   const handleTabChange = (t: string) => {
     setTab(t as Tab);
     loadTab(t as Tab);
+  };
+
+  /* ── Export ───────────────────────────────────────────────────────── */
+
+  const handleExport = async () => {
+    setExportLoading(true);
+    const today = new Date().toISOString().split("T")[0];
+    try {
+      const label = tab === "active" ? "ativos" : "desativados";
+      downloadCsv(buildStudentsCsv(source), `alunos_${label}_${today}.csv`);
+    } catch (err) {
+      console.error("Erro ao exportar:", err);
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   /* ── Modal callbacks ──────────────────────────────────────────────── */
@@ -266,6 +283,9 @@ export default function StudentsPage() {
             tabs={TABS}
             tab={tab}
             onTabChange={handleTabChange}
+            onExport={handleExport}
+            exportLoading={exportLoading}
+            exportLabel={tab === "active" ? "Exportar Alunos" : "Exportar Desativados"}
             searchPlaceholder="Buscar por nome, e-mail ou instituição…"
             searchFields={(s) => [s.name, s.email, s.institution ?? ""]}
             renderEmpty={(t, hasSearch) => (
