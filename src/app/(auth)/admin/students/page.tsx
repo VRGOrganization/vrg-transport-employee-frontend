@@ -11,14 +11,16 @@ import { Student } from "@/types/student";
 import { StudentModal } from "./StdentModal";
 import { StudentInfoModal } from "./info/StudentInfoModal";
 import { StudentCardModal } from "./StudentCardModal";
+import { AdminListTable, type TableColumn, type AdminTabItem } from "@/components/admin/AdminListTable";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type Tab = "active" | "inactive";
 type StudentsResponse =
   | Student[]
   | { data?: Student[]; total?: number; page?: number; limit?: number };
 
-const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50] as const;
+// ─── Helpers (module-level, no duplication cost) ──────────────────────────────
 
 function getInitials(name: string) {
   const parts = name.trim().split(" ");
@@ -42,6 +44,20 @@ const shiftLabel: Record<string, string> = {
   full: "Integral",
 };
 
+const TABS: AdminTabItem[] = [
+  { key: "active", label: "Ativos", icon: "check_circle" },
+  { key: "inactive", label: "Desativados", icon: "person_off" },
+];
+
+const NAME_SKELETON = (
+  <div className="flex items-center gap-3">
+    <div className="w-9 h-9 rounded-full bg-surface-container-high animate-pulse flex-shrink-0" />
+    <div className="h-3 w-32 bg-surface-container-high rounded animate-pulse" />
+  </div>
+);
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function StudentsPage() {
   const { user, logout } = useEmployeeAuth();
 
@@ -54,10 +70,6 @@ export default function StudentsPage() {
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
   const [viewingCardStudent, setViewingCardStudent] = useState<Student | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(10);
-  const [isMounted, setIsMounted] = useState(false);
 
   const resolveStudents = (payload: StudentsResponse): Student[] => {
     if (Array.isArray(payload)) return payload;
@@ -90,61 +102,131 @@ export default function StudentsPage() {
     [fetchActive, fetchInactive]
   );
 
-  useEffect(() => {
-    setIsMounted(true);
-    loadTab("active");
-  }, [loadTab]);
+  useEffect(() => { loadTab("active"); }, [loadTab]);
 
-  const handleTabChange = (t: Tab) => {
-    setTab(t);
-    setSearch("");
-    setPage(1);
-    loadTab(t);
-  };
-
-  const handleSearch = (v: string) => {
-    setSearch(v);
-    setPage(1);
-  };
-
-  const handlePageSize = (s: (typeof PAGE_SIZE_OPTIONS)[number]) => {
-    setPageSize(s);
-    setPage(1);
+  const handleTabChange = (t: string) => {
+    setTab(t as Tab);
+    loadTab(t as Tab);
   };
 
   /* ── Modal callbacks ──────────────────────────────────────────────── */
 
-  const handleUpdated = (updated: Student) => {
-    setSelected(null);
-    loadTab(tab);
-  };
+  const handleUpdated = () => { setSelected(null); loadTab(tab); };
+  const handleDeactivated = () => { setSelected(null); loadTab(tab); };
+  const handleReactivated = () => { setSelected(null); loadTab(tab); };
 
-  const handleDeactivated = (id: string) => {
-    setSelected(null);
-    loadTab(tab);
-  };
-
-  const handleReactivated = (updated: Student) => {
-    setSelected(null);
-    loadTab(tab);
-  };
-
-  /* ── Derived state ────────────────────────────────────────────────── */
+  /* ── Derived ──────────────────────────────────────────────────────── */
 
   const source = tab === "active" ? active : inactive;
 
-  const filtered = source.filter((s) => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return (
-      s.name.toLowerCase().includes(q) ||
-      s.email.toLowerCase().includes(q) ||
-      (s.institution ?? "").toLowerCase().includes(q)
-    );
-  });
+  /* ── Column definitions ───────────────────────────────────────────── */
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const columns: TableColumn<Student>[] = [
+    {
+      key: "name",
+      header: "Estudante",
+      skeleton: NAME_SKELETON,
+      render: (student, idx) => (
+        <div className="flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 ${avatarColors[idx % avatarColors.length]}`}>
+            {getInitials(student.name)}
+          </div>
+          <span className="text-sm font-medium text-on-surface">{student.name}</span>
+        </div>
+      ),
+    },
+    {
+      key: "email",
+      header: "E-mail",
+      render: (student) => (
+        <span className="text-sm text-on-surface-variant">{student.email}</span>
+      ),
+    },
+    {
+      key: "institution",
+      header: "Instituição",
+      render: (student) => (
+        <span className="text-sm text-on-surface-variant">{student.institution ?? "—"}</span>
+      ),
+    },
+    {
+      key: "shift",
+      header: "Turno",
+      render: (student) => (
+        <span className="text-sm text-on-surface-variant">
+          {student.shift ? shiftLabel[student.shift] ?? student.shift : "—"}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (student) => (
+        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+          student.active
+            ? "bg-success-container text-on-success"
+            : "bg-surface-container-high text-on-surface-variant"
+        }`}>
+          {student.active ? "Ativo" : "Inativo"}
+        </span>
+      ),
+    },
+    {
+      key: "createdAt",
+      header: "Cadastro",
+      align: "right",
+      render: (student, _idx, isMounted) => (
+        <span className="text-xs text-on-surface-variant">
+          {isMounted ? new Date(student.createdAt).toLocaleDateString("pt-BR") : "—"}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Ação",
+      align: "right",
+      render: (student) => (
+        <div className="relative inline-block text-left">
+          <button
+            onClick={() => setOpenDropdownId(openDropdownId === student._id ? null : student._id)}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
+            title="Ações"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>more_vert</span>
+          </button>
+
+          {openDropdownId === student._id && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setOpenDropdownId(null)} />
+              <div className="absolute right-0 mt-2 w-36 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                <button
+                  onClick={() => { setViewingStudent(student); setOpenDropdownId(null); }}
+                  className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>visibility</span>
+                  Ver
+                </button>
+                <button
+                  onClick={() => { setSelected(student); setOpenDropdownId(null); }}
+                  className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
+                  Editar
+                </button>
+                <button
+                  onClick={() => { setViewingCardStudent(student); setOpenDropdownId(null); }}
+                  className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>badge</span>
+                  Carteirinha
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      ),
+    },
+  ];
 
   /* ── Render ───────────────────────────────────────────────────────── */
 
@@ -160,360 +242,47 @@ export default function StudentsPage() {
           {/* Page header */}
           <div className="flex items-center justify-between px-4 pt-6 pb-4">
             <div>
-              <h1 className="text-2xl font-extrabold text-on-surface tracking-tight">
-                Estudantes
-              </h1>
+              <h1 className="text-2xl font-extrabold text-on-surface tracking-tight">Estudantes</h1>
               {!loading && !error && (
                 <p className="text-sm text-on-surface-variant mt-1">
-                  {filtered.length}{" "}
-                  {filtered.length === 1 ? "estudante" : "estudantes"}{" "}
+                  {source.length} {source.length === 1 ? "estudante" : "estudantes"}{" "}
                   {tab === "active" ? "ativos" : "desativados"}
                 </p>
               )}
             </div>
             <Link href="/admin/students/new">
-              <Button variant="primary" size="sm">
-                Adicionar estudante
-              </Button>
+              <Button variant="primary" size="sm">Adicionar estudante</Button>
             </Link>
           </div>
 
-          {/* Table section */}
-          <section className="flex flex-col flex-1 bg-surface-container-lowest border border-outline-variant/30 rounded-xl mx-4 mb-4 overflow-hidden">
-
-            {/* Toolbar */}
-            <div className="px-4 py-3.5 flex items-center justify-between gap-4 flex-wrap border-b border-outline-variant/20">
-
-              {/* Tabs */}
-              <div className="flex items-center gap-1 p-1 bg-surface-container rounded-lg">
-                {(["active", "inactive"] as Tab[]).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => handleTabChange(t)}
-                    className={[
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-150",
-                      tab === t
-                        ? "bg-primary text-on-primary shadow-sm"
-                        : "text-on-surface-variant hover:text-on-surface",
-                    ].join(" ")}
-                  >
-                    <span
-                      className="material-symbols-outlined"
-                      style={{ fontSize: "14px" }}
-                    >
-                      {t === "active" ? "check_circle" : "person_off"}
-                    </span>
-                    {t === "active" ? "Ativos" : "Desativados"}
-                  </button>
-                ))}
-              </div>
-
-              {/* Search */}
-              <div className="relative">
-                <span
-                  className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
-                  style={{ fontSize: "16px" }}
-                >
-                  search
+          {/* Table */}
+          <AdminListTable
+            rows={source}
+            rowKey={(s) => s._id}
+            columns={columns}
+            loading={loading}
+            error={error}
+            onRetry={() => loadTab(tab)}
+            tabs={TABS}
+            tab={tab}
+            onTabChange={handleTabChange}
+            searchPlaceholder="Buscar por nome, e-mail ou instituição…"
+            searchFields={(s) => [s.name, s.email, s.institution ?? ""]}
+            renderEmpty={(t, hasSearch) => (
+              <div className="flex flex-col items-center gap-3">
+                <span className="material-symbols-outlined text-on-surface-variant text-4xl">
+                  {t === "active" ? "school" : "person_off"}
                 </span>
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  placeholder="Buscar por nome, e-mail ou instituição…"
-                  className="h-9 pl-9 pr-8 rounded-lg bg-surface-container text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:ring-1 focus:ring-primary outline-none transition-all w-80"
-                />
-                {search && (
-                  <button
-                    onClick={() => handleSearch("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
-                  >
-                    <span
-                      className="material-symbols-outlined"
-                      style={{ fontSize: "15px" }}
-                    >
-                      close
-                    </span>
-                  </button>
-                )}
+                <p className="text-on-surface-variant text-sm">
+                  {hasSearch
+                    ? "Nenhum estudante encontrado para esta busca."
+                    : t === "active"
+                    ? "Nenhum estudante ativo."
+                    : "Nenhum estudante desativado."}
+                </p>
               </div>
-            </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-left">
-                <thead className="sticky top-0">
-                  <tr className="bg-surface-container-low">
-                    <th className="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                      Estudante
-                    </th>
-                    <th className="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                      E-mail
-                    </th>
-                    <th className="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                      Instituição
-                    </th>
-                    <th className="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                      Turno
-                    </th>
-                    <th className="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-right">
-                      Cadastro
-                    </th>
-                    <th className="px-4 py-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-right">
-                      Ação
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-outline-variant/20">
-                  {loading
-                    ? Array.from({ length: 6 }).map((_, i) => (
-                        <tr key={i}>
-                          <td className="px-4 py-3.5">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-full bg-surface-container-high animate-pulse flex-shrink-0" />
-                              <div className="h-3 w-32 bg-surface-container-high rounded animate-pulse" />
-                            </div>
-                          </td>
-                          {[44, 28, 16, 16, 20, 8].map((w, j) => (
-                            <td key={j} className="px-4 py-3.5">
-                              <div
-                                className={`h-3 w-${w} bg-surface-container-high rounded animate-pulse ${
-                                  j >= 4 ? "ml-auto" : ""
-                                }`}
-                              />
-                            </td>
-                          ))}
-                        </tr>
-                      ))
-                    : error
-                    ? (
-                      <tr>
-                        <td colSpan={7} className="px-4 py-16 text-center">
-                          <div className="flex flex-col items-center gap-3">
-                            <span className="material-symbols-outlined text-error text-4xl">
-                              error
-                            </span>
-                            <p className="text-on-surface-variant text-sm">{error}</p>
-                            <button
-                              onClick={() => loadTab(tab)}
-                              className="text-xs text-primary hover:underline font-medium"
-                            >
-                              Tentar novamente
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                    : paginated.length === 0
-                    ? (
-                      <tr>
-                        <td colSpan={7} className="px-4 py-16 text-center">
-                          <div className="flex flex-col items-center gap-3">
-                            <span className="material-symbols-outlined text-on-surface-variant text-4xl">
-                              {tab === "active" ? "school" : "person_off"}
-                            </span>
-                            <p className="text-on-surface-variant text-sm">
-                              {search
-                                ? "Nenhum estudante encontrado para esta busca."
-                                : tab === "active"
-                                ? "Nenhum estudante ativo."
-                                : "Nenhum estudante desativado."}
-                            </p>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                    : paginated.map((student, idx) => (
-                        <tr
-                          key={student._id}
-                          className="hover:bg-surface-container-low/40 transition-colors"
-                        >
-                          <td className="px-4 py-3.5">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 ${
-                                  avatarColors[idx % avatarColors.length]
-                                }`}
-                              >
-                                {getInitials(student.name)}
-                              </div>
-                              <span className="text-sm font-medium text-on-surface">
-                                {student.name}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3.5 text-sm text-on-surface-variant">
-                            {student.email}
-                          </td>
-                          <td className="px-4 py-3.5 text-sm text-on-surface-variant">
-                            {student.institution ?? "—"}
-                          </td>
-                          <td className="px-4 py-3.5 text-sm text-on-surface-variant">
-                            {student.shift ? shiftLabel[student.shift] ?? student.shift : "—"}
-                          </td>
-                          <td className="px-4 py-3.5">
-                            <span
-                              className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                                student.active
-                                  ? "bg-success-container text-on-success"
-                                  : "bg-surface-container-high text-on-surface-variant"
-                              }`}
-                            >
-                              {student.active ? "Ativo" : "Inativo"}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3.5 text-xs text-on-surface-variant text-right">
-                            {isMounted 
-                              ? new Date(student.createdAt).toLocaleDateString("pt-BR")
-                              : "—"}
-                          </td>
-                          <td className="px-4 py-3.5 text-right relative">
-                            <div className="relative inline-block text-left">
-                              <button
-                                onClick={() => setOpenDropdownId(openDropdownId === student._id ? null : student._id)}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
-                                title="Ações"
-                              >
-                                <span
-                                  className="material-symbols-outlined"
-                                  style={{ fontSize: "18px" }}
-                                >
-                                  more_vert
-                                </span>
-                              </button>
-                              
-                              {openDropdownId === student._id && (
-                                <>
-                                  <div className="fixed inset-0 z-10" onClick={() => setOpenDropdownId(null)}></div>
-                                  <div className="absolute right-0 mt-2 w-36 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                                    <button
-                                      onClick={() => {
-                                        setViewingStudent(student);
-                                        setOpenDropdownId(null);
-                                      }}
-                                      className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
-                                    >
-                                      <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>visibility</span>
-                                      Ver
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        setSelected(student);
-                                        setOpenDropdownId(null);
-                                      }}
-                                      className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
-                                    >
-                                      <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
-                                      Editar
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        setViewingCardStudent(student);
-                                        setOpenDropdownId(null);
-                                      }}
-                                      className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
-                                    >
-                                      <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>badge</span>
-                                      Carteirinha
-                                    </button>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination footer */}
-            <div className="px-4 py-3.5 border-t border-outline-variant/20 flex items-center justify-between text-sm text-on-surface-variant flex-shrink-0">
-
-              {/* Rows per page */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs">Linhas por página:</span>
-                <div className="flex items-center gap-1">
-                  {PAGE_SIZE_OPTIONS.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => handlePageSize(s)}
-                      className={[
-                        "w-9 h-7 rounded-md text-xs font-semibold transition-all",
-                        pageSize === s
-                          ? "bg-primary text-on-primary"
-                          : "text-on-surface-variant hover:bg-surface-container-low",
-                      ].join(" ")}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Page nav */}
-              <div className="flex items-center gap-3">
-                <span className="text-xs">
-                  {filtered.length === 0
-                    ? "0 de 0"
-                    : `${(page - 1) * pageSize + 1}–${Math.min(
-                        page * pageSize,
-                        filtered.length
-                      )} de ${filtered.length}`}
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setPage(1)}
-                    disabled={loading || page <= 1}
-                    suppressHydrationWarning
-                    className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Primeira página"
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                      first_page
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={loading || page <= 1}
-                    suppressHydrationWarning
-                    className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                      chevron_left
-                    </span>
-                  </button>
-                  <span className="text-xs px-2">
-                    Página {page} de {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={loading || page >= totalPages}
-                    suppressHydrationWarning
-                    className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                      chevron_right
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => setPage(totalPages)}
-                    disabled={loading || page >= totalPages}
-                    suppressHydrationWarning
-                    className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Última página"
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                      last_page
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
+            )}
+          />
         </main>
       </div>
 
