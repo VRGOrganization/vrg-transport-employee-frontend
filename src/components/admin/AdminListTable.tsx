@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { Download, Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -48,6 +49,11 @@ interface AdminListTableProps<T> {
 
   /** Custom empty state. Receives current tab key and whether a search is active */
   renderEmpty?: (tab: string, hasSearch: boolean) => ReactNode;
+
+  /** Optional export button — only rendered when provided */
+  onExport?: () => Promise<void>;
+  exportLoading?: boolean;
+  exportLabel?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -65,6 +71,9 @@ export function AdminListTable<T>({
   searchPlaceholder = "Buscar…",
   searchFields,
   renderEmpty,
+  onExport,
+  exportLoading = false,
+  exportLabel = "Exportar CSV",
 }: AdminListTableProps<T>) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -123,27 +132,45 @@ export function AdminListTable<T>({
           ))}
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <span
-            className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
-            style={{ fontSize: "16px" }}
-          >
-            search
-          </span>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => handleSearch(e.target.value)}
-            placeholder={searchPlaceholder}
-            className="h-9 pl-9 pr-8 rounded-lg bg-surface-container text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:ring-1 focus:ring-primary outline-none transition-all w-80"
-          />
-          {search && (
-            <button
-              onClick={() => handleSearch("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
+        {/* Right group: search + export */}
+        <div className="flex items-center gap-2 flex-wrap">
+
+          {/* Search */}
+          <div className="relative">
+            <span
+              className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
+              style={{ fontSize: "16px" }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: "15px" }}>close</span>
+              search
+            </span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="h-9 pl-9 pr-8 rounded-lg ring-1 ring-outline/40 bg-surface-container-lowest text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary outline-none transition-all w-80 cursor-text"
+            />
+            {search && (
+              <button
+                onClick={() => handleSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "15px" }}>close</span>
+              </button>
+            )}
+          </div>
+
+          {/* Export button — only when onExport is provided */}
+          {onExport && (
+            <button
+              onClick={() => void onExport()}
+              disabled={exportLoading}
+              className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-xs font-medium text-on-surface-variant hover:bg-surface-container-low hover:border-outline transition-colors disabled:opacity-50 disabled:cursor-wait cursor-pointer"
+            >
+              {exportLoading
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Download className="w-3.5 h-3.5" />}
+              <span>{exportLoading ? "Exportando..." : exportLabel}</span>
             </button>
           )}
         </div>
