@@ -4,16 +4,16 @@ const LOGIN_REGEX = /^[a-zA-Z0-9_.@+-]+$/;
 
 export const employeeLoginRequestSchema = z.object({
   login: z
-    .string({ error: "Login e obrigatorio" })
+    .string({ error: "Login é obrigatório" })
     .trim()
-    .min(3, "Login deve ter no minimo 3 caracteres")
-    .max(100, "Login deve ter no maximo 100 caracteres")
-    .regex(LOGIN_REGEX, "Login contem caracteres invalidos"),
+    .min(3, "Login deve ter no mínimo 3 caracteres")
+    .max(100, "Login deve ter no máximo 100 caracteres")
+    .regex(LOGIN_REGEX, "Login contém caracteres inválidos"),
   password: z
-    .string({ error: "Senha e obrigatoria" })
-    .min(6, "Senha deve ter no minimo 6 caracteres")
-    .max(100, "Senha deve ter no maximo 100 caracteres"),
-    role: z.enum(["admin", "employee"], {
+    .string({ error: "Senha é obrigatória" })
+    .min(6, "Senha deve ter no mínimo 6 caracteres")
+    .max(100, "Senha deve ter no máximo 100 caracteres"),
+  role: z.enum(["admin", "employee"], {
     error: "Selecione um perfil de acesso",
   }),
 });
@@ -67,7 +67,7 @@ export function getFieldErrors(error: z.ZodError): Record<string, string> {
   const flat = error.flatten().fieldErrors as Record<string, string[] | undefined>;
   return Object.entries(flat).reduce<Record<string, string>>((acc, [field, issues]) => {
     if (Array.isArray(issues) && issues.length > 0) {
-      acc[field] = issues[0] ?? "Campo invalido";
+      acc[field] = issues[0] ?? "Campo inválido";
     }
     return acc;
   }, {});

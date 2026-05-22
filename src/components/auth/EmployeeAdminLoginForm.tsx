@@ -5,76 +5,63 @@ import { ArrowRight, Lock, Hash } from "lucide-react";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { useEmployeeAuth } from "../hooks/useEmployeeAuth";
-import {
-  employeeLoginRequestSchema,
-  getFieldErrors,
-} from "@/lib/validation/auth";
+import { employeeLoginRequestSchema } from "@/lib/validation/auth";
+import { useZodForm } from "../hooks/useZodForm";
 import { ForgotPasswordModal } from "./ForgotPasswordModal";
+import { z } from "zod";
+
+type LoginFormValues = z.infer<typeof employeeLoginRequestSchema>;
+
+const INITIAL_VALUES: LoginFormValues = {
+  login: "",
+  password: "",
+  role: "employee",
+};
 
 export function EmployeeAdminLoginForm() {
   const { login } = useEmployeeAuth();
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [rateLimited, setRateLimited] = useState(false);
+  const [generalError, setGeneralError] = useState("");
   const loginInputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => { loginInputRef.current?.focus(); }, []);
-  const [formData, setFormData] = useState({
-    login: "",
-    password: "",
-    role: "employee" as "admin" | "employee",
-  });
-  const [errors, setErrors] = useState({
-    login: "",
-    password: "",
-    role: "",
-    general: "",
-  });
 
-  const validateForm = () => {
-    const result = employeeLoginRequestSchema.safeParse(formData);
+  useEffect(() => {
+    loginInputRef.current?.focus();
+  }, []);
 
-    if (result.success) {
-      setErrors({ login: "", password: "", role: "", general: "" });
-      return true;
-    }
-
-    const fieldErrors = getFieldErrors(result.error);
-    setErrors({
-      login: fieldErrors.login ?? "",
-      password: fieldErrors.password ?? "",
-      role: fieldErrors.role ?? "",
-      general: "",
-    });
-    return false;
-  };
+  const { values, errors, handleChange, validate } = useZodForm(
+    employeeLoginRequestSchema,
+    INITIAL_VALUES
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    const data = validate();
+    if (!data) return;
+
+    setGeneralError("");
     setRateLimited(false);
     setSubmitting(true);
 
     const result = await login({
-      login: formData.login,
-      password: formData.password,
-      role: formData.role,
+      login: data.login,
+      password: data.password,
+      role: data.role,
     });
 
     setSubmitting(false);
 
     if (!result.success) {
       setRateLimited(result.rateLimited ?? false);
-      setErrors((prev) => ({
-        ...prev,
-        general: result.error ?? "Credenciais inválidas",
-      }));
+      setGeneralError(result.error ?? "Credenciais inválidas");
     }
   };
 
   return (
     <div className="space-y-5">
       <div role="alert" aria-live="polite" aria-atomic="true">
-        {errors.general && (
+        {generalError && (
           <div
             className={[
               "text-sm rounded-xl px-4 py-3",
@@ -83,7 +70,7 @@ export function EmployeeAdminLoginForm() {
                 : "bg-error-container border border-error-border text-error",
             ].join(" ")}
           >
-            {errors.general}
+            {generalError}
           </div>
         )}
       </div>
@@ -99,11 +86,11 @@ export function EmployeeAdminLoginForm() {
               <button
                 key={r}
                 type="button"
-                aria-pressed={formData.role === r}
-                onClick={() => setFormData({ ...formData, role: r })}
+                aria-pressed={values.role === r}
+                onClick={() => handleChange("role", r)}
                 className={[
                   "h-10 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer border-2",
-                  formData.role === r
+                  values.role === r
                     ? "bg-primary text-on-primary shadow-sm border-primary"
                     : "text-on-surface-variant hover:text-on-surface border-outline-variant",
                 ].join(" ")}
@@ -132,10 +119,8 @@ export function EmployeeAdminLoginForm() {
             autoComplete="username"
             icon={<Hash size={18} />}
             placeholder="email@dominio.com ou MAT123456"
-            value={formData.login}
-            onChange={(e) =>
-              setFormData({ ...formData, login: e.target.value })
-            }
+            value={values.login}
+            onChange={(e) => handleChange("login", e.target.value)}
             error={errors.login}
           />
         </div>
@@ -163,10 +148,8 @@ export function EmployeeAdminLoginForm() {
             autoComplete="current-password"
             icon={<Lock size={18} />}
             placeholder="••••••••"
-            value={formData.password}
-            onChange={(e) =>
-              setFormData({ ...formData, password: e.target.value })
-            }
+            value={values.password}
+            onChange={(e) => handleChange("password", e.target.value)}
             error={errors.password}
           />
         </div>
@@ -187,8 +170,8 @@ export function EmployeeAdminLoginForm() {
       {/* Footer note */}
       <div className="pt-4 border-t border-outline-variant">
         <p className="text-xs text-on-surface-variant leading-relaxed">
-          Acesso exclusivo para servidores. Estudantes devem usar o
-          aplicativo móvel da Secretaria de Transportes.
+          Acesso exclusivo para servidores. Estudantes devem usar o aplicativo
+          móvel da Secretaria de Transportes.
         </p>
       </div>
 

@@ -22,46 +22,61 @@ describe("EmployeeAdminLoginForm", () => {
     render(<EmployeeAdminLoginForm />);
 
     await userEvent.type(screen.getByPlaceholderText("••••••••"), "Senha123");
-    await userEvent.click(screen.getByRole("button", { name: "Acessar Sistema" }));
+    await userEvent.click(screen.getByRole("button", { name: "Acessar sistema" }));
 
-    expect(await screen.findByText("Login deve ter no minimo 3 caracteres")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Login deve ter no mínimo 3 caracteres")
+    ).toBeInTheDocument();
     expect(loginMock).not.toHaveBeenCalled();
   });
 
   it("deve exibir erro geral quando autenticacao falha", async () => {
-    loginMock.mockResolvedValue({ success: false, error: "Credenciais invalidas" });
+    loginMock.mockResolvedValue({ success: false, error: "Credenciais inválidas" });
     render(<EmployeeAdminLoginForm />);
 
-    await userEvent.type(screen.getByPlaceholderText("email@dominio.com ou MAT123456"), "MAT123456");
+    await userEvent.type(
+      screen.getByPlaceholderText("email@dominio.com ou MAT123456"),
+      "MAT123456"
+    );
     await userEvent.type(screen.getByPlaceholderText("••••••••"), "Senha123");
-    await userEvent.selectOptions(screen.getByRole("combobox"), "admin");
-    await userEvent.click(screen.getByRole("button", { name: "Acessar Sistema" }));
+    await userEvent.click(screen.getByRole("button", { name: "Acessar sistema" }));
 
-    expect(await screen.findByText("Credenciais invalidas")).toBeInTheDocument();
+    expect(await screen.findByText("Credenciais inválidas")).toBeInTheDocument();
     expect(loginMock).toHaveBeenCalledTimes(1);
   });
 
   it("deve validar senha curta e mostrar erro por campo", async () => {
     render(<EmployeeAdminLoginForm />);
 
-    await userEvent.type(screen.getByPlaceholderText("email@dominio.com ou MAT123456"), "MAT123456");
+    await userEvent.type(
+      screen.getByPlaceholderText("email@dominio.com ou MAT123456"),
+      "MAT123456"
+    );
     await userEvent.type(screen.getByPlaceholderText("••••••••"), "123");
-    await userEvent.click(screen.getByRole("button", { name: "Acessar Sistema" }));
+    await userEvent.click(screen.getByRole("button", { name: "Acessar sistema" }));
 
-    expect(await screen.findByText("Senha deve ter no minimo 6 caracteres")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Senha deve ter no mínimo 6 caracteres")
+    ).toBeInTheDocument();
     expect(loginMock).not.toHaveBeenCalled();
   });
 
   it("deve permitir navegacao basica por teclado no formulario", async () => {
     render(<EmployeeAdminLoginForm />);
 
-    await userEvent.tab();
-    expect(screen.getByRole("combobox")).toHaveFocus();
+    const loginInput = screen.getByPlaceholderText("email@dominio.com ou MAT123456");
+    const passwordInput = screen.getByPlaceholderText("••••••••");
+    const forgotPasswordBtn = screen.getByRole("button", { name: "Esqueci minha senha" });
 
-    await userEvent.tab();
-    expect(screen.getByPlaceholderText("email@dominio.com ou MAT123456")).toHaveFocus();
+    // useEffect focuses the login input on mount
+    expect(loginInput).toHaveFocus();
 
+    // Tab from login → "Esqueci minha senha" (next focusable in DOM order)
     await userEvent.tab();
-    expect(screen.getByPlaceholderText("••••••••")).toHaveFocus();
+    expect(forgotPasswordBtn).toHaveFocus();
+
+    // Tab → password input
+    await userEvent.tab();
+    expect(passwordInput).toHaveFocus();
   });
 });
