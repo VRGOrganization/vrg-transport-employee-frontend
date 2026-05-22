@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import {
   LayoutDashboard, Info, CalendarDays, Users, GraduationCap,
-  IdCard, Building2, Bus, LogOut,
+  IdCard, Building2, Bus, LogOut, Ban,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -25,6 +25,7 @@ const navItems: NavItem[] = [
   { icon: IdCard,          label: "Carteirinhas",          href: "/admin/cards"            },
   { icon: Building2,       label: "Instituições",          href: "/admin/universities"     },
   { icon: Bus,             label: "Frota",                 href: "/admin/buses"            },
+  { icon: Ban,             label: "Banimentos",            href: "/admin/banlist"          },
 ];
 
 interface SideNavProps {
