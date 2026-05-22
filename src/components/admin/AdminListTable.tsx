@@ -54,6 +54,9 @@ interface AdminListTableProps<T> {
   onExport?: () => Promise<void>;
   exportLoading?: boolean;
   exportLabel?: string;
+
+  /** Optional row click handler */
+  onRowClick?: (row: T) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -74,6 +77,7 @@ export function AdminListTable<T>({
   onExport,
   exportLoading = false,
   exportLabel = "Exportar CSV",
+  onRowClick,
 }: AdminListTableProps<T>) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -240,7 +244,14 @@ export function AdminListTable<T>({
               </tr>
             ) : (
               paginated.map((row, idx) => (
-                <tr key={rowKey(row)} className="hover:bg-surface-container-low/40 transition-colors">
+                <tr
+                  key={rowKey(row)}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  className={[
+                    "hover:bg-surface-container-low/40 transition-colors",
+                    onRowClick ? "cursor-pointer" : "",
+                  ].join(" ").trim()}
+                >
                   {columns.map((col) => (
                     <td
                       key={col.key}
