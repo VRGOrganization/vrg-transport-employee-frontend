@@ -5,6 +5,13 @@ import { employeeApi } from "@/lib/employeeApi";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { GraduationCap, Users, ClipboardList, Bus, Calendar, Download, Search, X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { universityApi, busApi } from "@/lib/universityApi";
+import {
+  buildStudentsCsv,
+  buildEmployeesCsv,
+  buildBusesCsv,
+  buildUniversitiesCsv,
+  downloadCsv,
+} from "@/lib/csvUtils";
 import { SideNav } from "@/components/layout/SideNav";
 import { TopBar } from "@/components/layout/TopBar";
 import { Footer } from "@/components/layout/Footer";
@@ -26,6 +33,7 @@ interface StudentRecord {
   _id: string;
   name: string;
   email: string;
+  telephone?: string;
   institution?: string;
   shift?: string;
   active: boolean;
@@ -196,7 +204,7 @@ export default function AdminDashboardPage() {
         );
 
         const pendingCount = resolvedStudents.filter((s) => s.active && pendingStudentIds.has(s._id)).length;
-        
+
         setStats((prev) => ({
           ...prev,
           pendingStudents: pendingCount,
@@ -244,7 +252,23 @@ export default function AdminDashboardPage() {
 
   const handleExport = async () => {
     setExportLoading(true);
+    const today = new Date().toISOString().split("T")[0];
+
     try {
+      if (filter === "Aluno") {
+        const res = await employeeApi.get<StudentsResponse>("/student");
+        const students = Array.isArray(res) ? res : ((res as { data?: StudentRecord[] }).data ?? []);
+        downloadCsv(buildStudentsCsv(students), `alunos_${today}.csv`);
+        return;
+      }
+
+      if (filter === "Funcionário") {
+        const res = await employeeApi.get<Employee[]>("/employee");
+        downloadCsv(buildEmployeesCsv(Array.isArray(res) ? res : []), `funcionarios_${today}.csv`);
+        return;
+      }
+
+      // "Todos" — arquivo combinado com seções para cada entidade
       const [studentsRes, employeesRes, busesRes, universitiesRes] = await Promise.all([
         employeeApi.get<StudentsResponse>("/student"),
         employeeApi.get<Employee[]>("/employee"),
@@ -252,49 +276,19 @@ export default function AdminDashboardPage() {
         universityApi.list(),
       ]);
 
-      const students = Array.isArray(studentsRes) ? studentsRes : (studentsRes as any).data ?? [];
+      const students = Array.isArray(studentsRes) ? studentsRes : ((studentsRes as { data?: StudentRecord[] }).data ?? []);
       const employees = Array.isArray(employeesRes) ? employeesRes : [];
       const buses = Array.isArray(busesRes) ? busesRes : [];
       const universities = Array.isArray(universitiesRes) ? universitiesRes : [];
 
-      let csv = "sep=,\n"; // Indica ao Excel o separador
+      const combined = [
+        "ALUNOS\n" + buildStudentsCsv(students),
+        "FUNCIONÁRIOS\n" + buildEmployeesCsv(employees),
+        "FROTA (ÔNIBUS)\n" + buildBusesCsv(buses),
+        "INSTITUIÇÕES\n" + buildUniversitiesCsv(universities),
+      ].join("\n\n");
 
-      // --- Alunos ---
-      csv += "--- ALUNOS ---\n";
-      csv += "ID,Nome,Email,Ativo,Status,Data Cadastro\n";
-      students.forEach((s: any) => {
-        csv += `"${s._id}","${s.name}","${s.email}","${s.active ? "Sim" : "Não"}","${s.status}","${new Date(s.createdAt).toLocaleString("pt-BR")}"\n`;
-      });
-
-      // --- Funcionários ---
-      csv += "\n--- FUNCIONÁRIOS ---\n";
-      csv += "ID,Nome,Email,Matrícula,Ativo,Data Cadastro\n";
-      employees.forEach((e: any) => {
-        csv += `"${e._id}","${e.name}","${e.email}","${e.registrationId ?? ""}","${e.active ? "Sim" : "Não"}","${new Date(e.createdAt).toLocaleString("pt-BR")}"\n`;
-      });
-
-      // --- Ônibus ---
-      csv += "\n--- FROTA (ÔNIBUS) ---\n";
-      csv += "ID,Identificador,Capacidade,Vagas Preenchidas,Ativo\n";
-      buses.forEach((b: any) => {
-        csv += `"${b._id}","${b.identifier}","${b.capacity ?? "N/A"}","${b.filledSlots ?? 0}","${b.active ? "Sim" : "Não"}"\n`;
-      });
-
-      // --- Instituições ---
-      csv += "\n--- INSTITUIÇÕES (UNIVERSIDADES) ---\n";
-      csv += "ID,Nome,Sigla,Endereço,Ativo\n";
-      universities.forEach((u: any) => {
-        csv += `"${u._id}","${u.name}","${u.acronym ?? ""}","${u.address ?? ""}","${u.active ? "Sim" : "Não"}"\n`;
-      });
-
-      const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `exportacao_sistema_${new Date().toISOString().split("T")[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      downloadCsv(combined, `exportacao_completa_${today}.csv`);
     } catch (err) {
       console.error("Erro ao exportar dados:", err);
       alert("Erro ao exportar dados. Tente novamente.");
@@ -302,6 +296,18 @@ export default function AdminDashboardPage() {
       setExportLoading(false);
     }
   };
+
+  const exportLabel = filter === "Aluno"
+    ? "Exportar Alunos"
+    : filter === "Funcionário"
+    ? "Exportar Funcionários"
+    : "Exportar CSV";
+
+  const exportTooltip = filter === "Aluno"
+    ? "Exportar planilha com todos os alunos (Nome, Email, Telefone, Instituição, Turno, Status)"
+    : filter === "Funcionário"
+    ? "Exportar planilha com todos os funcionários (Nome, Email, Matrícula, Status)"
+    : "Exportar relatório completo: Alunos, Funcionários, Frota e Instituições em um arquivo CSV";
 
   return (
     <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
@@ -411,11 +417,11 @@ export default function AdminDashboardPage() {
                 <button
                   onClick={handleExport}
                   disabled={exportLoading}
-                  title="Exportar relatório completo do sistema (Alunos, Funcionários, Frota e Instituições) em formato CSV"
+                  title={exportTooltip}
                   className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-xs font-medium text-on-surface-variant hover:bg-surface-container-low hover:border-outline-variant transition-colors disabled:opacity-50 disabled:cursor-wait cursor-pointer"
                 >
                   {exportLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                  <span>{exportLoading ? "Exportando..." : "Exportar CSV"}</span>
+                  <span>{exportLoading ? "Exportando..." : exportLabel}</span>
                 </button>
               </div>
             </div>
