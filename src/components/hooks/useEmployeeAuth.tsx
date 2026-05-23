@@ -120,6 +120,7 @@ export function useEmployeeAuth() {
         return {
           success: false,
           error: message,
+          rateLimited: response.status === 429,
         };
       }
 

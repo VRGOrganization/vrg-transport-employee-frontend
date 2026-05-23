@@ -1,36 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Lock, Hash } from "lucide-react";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
-import { StatusBanner } from "@/components/ui/StatusBanner";
 import { useEmployeeAuth } from "../hooks/useEmployeeAuth";
 import { useZodForm } from "@/components/hooks/useZodForm";
 import { employeeLoginRequestSchema } from "@/lib/validation/auth";
-import Link from "next/link";
+import { ForgotPasswordModal } from "./ForgotPasswordModal";
 
 type Role = "admin" | "employee";
 
 export function EmployeeAdminLoginForm() {
   const { login } = useEmployeeAuth();
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const loginInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    loginInputRef.current?.focus();
+  }, []);
 
   const { values, errors, generalError, loading, setValue, handleSubmit } = useZodForm({
     schema: employeeLoginRequestSchema,
     initialValues: { login: "", password: "", role: "employee" as Role },
     onSubmit: async (v) => {
+      setRateLimited(false);
       const result = await login({ login: v.login, password: v.password, role: v.role });
       if (result.success) return { success: true as const };
+      setRateLimited(result.rateLimited ?? false);
       return { success: false as const, error: result.error ?? "Credenciais inválidas" };
     },
   });
 
   return (
     <div className="space-y-5">
-      {generalError && (
-        <StatusBanner variant="error">{generalError}</StatusBanner>
-      )}
+      {/* Erro geral — aria-live para leitores de tela */}
+      <div role="alert" aria-live="polite" aria-atomic="true">
+        {generalError && (
+          <div
+            className={[
+              "text-sm rounded-xl px-4 py-3",
+              rateLimited
+                ? "bg-primary/10 border border-primary/25 text-primary"
+                : "bg-error-container border border-error-border text-error",
+            ].join(" ")}
+          >
+            {generalError}
+          </div>
+        )}
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Perfil de acesso — toggle buttons */}
@@ -43,12 +62,13 @@ export function EmployeeAdminLoginForm() {
               <button
                 key={r}
                 type="button"
+                aria-pressed={values.role === r}
                 onClick={() => setValue("role", r)}
                 className={[
-                  "h-10 rounded-lg text-sm font-semibold transition-all duration-150",
+                  "h-10 rounded-lg text-sm font-semibold transition-all duration-150 border-2",
                   values.role === r
-                    ? "bg-primary text-on-primary shadow-sm"
-                    : "text-on-surface-variant hover:text-on-surface",
+                    ? "bg-primary text-on-primary shadow-sm border-primary"
+                    : "text-on-surface-variant hover:text-on-surface border-outline-variant",
                 ].join(" ")}
               >
                 {r === "employee" ? "Funcionário" : "Administrador"}
@@ -62,11 +82,17 @@ export function EmployeeAdminLoginForm() {
 
         {/* Matrícula ou E-mail */}
         <div className="space-y-1.5">
-          <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+          <label
+            htmlFor="login-field"
+            className="text-xs font-bold uppercase tracking-wider text-on-surface-variant"
+          >
             Matrícula ou E-mail
           </label>
           <Input
+            ref={loginInputRef}
+            id="login-field"
             type="text"
+            autoComplete="username"
             icon={<Hash size={18} />}
             placeholder="email@dominio.com ou MAT123456"
             value={values.login}
@@ -78,18 +104,24 @@ export function EmployeeAdminLoginForm() {
         {/* Senha */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+            <label
+              htmlFor="password-field"
+              className="text-xs font-bold uppercase tracking-wider text-on-surface-variant"
+            >
               Senha
             </label>
-            <Link
-              href="/forgot-password"
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
               className="text-xs text-primary hover:underline font-medium"
             >
               Esqueci minha senha
-            </Link>
+            </button>
           </div>
           <Input
+            id="password-field"
             type="password"
+            autoComplete="current-password"
             icon={<Lock size={18} />}
             placeholder="••••••••"
             value={values.password}
@@ -97,19 +129,6 @@ export function EmployeeAdminLoginForm() {
             error={errors.password}
           />
         </div>
-
-        {/* Remember me */}
-        <label className="flex items-center gap-2.5 cursor-pointer select-none group">
-          <input
-            type="checkbox"
-            checked={rememberMe}
-            onChange={(e) => setRememberMe(e.target.checked)}
-            className="w-4 h-4 rounded border-outline accent-primary cursor-pointer"
-          />
-          <span className="text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">
-            Manter conectado neste computador
-          </span>
-        </label>
 
         {/* Submit */}
         <Button
@@ -131,6 +150,11 @@ export function EmployeeAdminLoginForm() {
           aplicativo móvel da Secretaria de Transportes.
         </p>
       </div>
+
+      <ForgotPasswordModal
+        open={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+      />
     </div>
   );
 }
