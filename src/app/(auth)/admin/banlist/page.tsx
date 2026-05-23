@@ -36,8 +36,8 @@ export default function BanlistPage() {
     setLoading(true);
     setError("");
     try {
-      const all = await employeeApi.get<BanlistEntry[]>("/banlist");
-      setEntries(Array.isArray(all) ? all : []);
+      const all = await employeeApi.get<BanlistEntry[] | { data?: BanlistEntry[] }>("/banlist");
+      setEntries(Array.isArray(all) ? all : (all?.data ?? []));
     } catch {
       setError("Não foi possível carregar a lista de banimentos.");
     } finally {

@@ -117,8 +117,9 @@ export default function StudentsPage() {
     setBannedLoading(true);
     setBannedError("");
     try {
-      const data = await employeeApi.get<BanlistEntry[]>("/banlist");
-      setBanned(Array.isArray(data) ? data.filter((e) => e.active) : []);
+      const data = await employeeApi.get<BanlistEntry[] | { data?: BanlistEntry[] }>("/banlist");
+      const entries = Array.isArray(data) ? data : (data?.data ?? []);
+      setBanned(entries.filter((e) => e.active));
     } catch {
       setBannedError("Não foi possível carregar os alunos banidos.");
     } finally {
