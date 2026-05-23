@@ -45,8 +45,8 @@ export default function EmployeeStudentsPage() {
   }, []);
 
   const fetchInactive = useCallback(async () => {
-    const data = await employeeApi.get<Student[]>("/student/inactive");
-    setInactive(data);
+    const data = await employeeApi.get<StudentsResponse>("/student/inactive");
+    setInactive(resolveStudents(data));
   }, []);
 
   const loadTab = useCallback(

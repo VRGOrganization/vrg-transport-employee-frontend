@@ -73,7 +73,12 @@ export default function EmployeeDashboardPage() {
 
         const licensedIds =
           licensesResult.status === "fulfilled"
-            ? new Set(licensesResult.value.map((l) => l.studentId))
+            ? new Set(
+                (Array.isArray(licensesResult.value)
+                  ? licensesResult.value
+                  : ((licensesResult.value as { data?: LicenseRecord[] }).data ?? [])
+                ).map((l) => l.studentId)
+              )
             : new Set<string>();
 
         const withCard = activeStudents.filter((s) =>
