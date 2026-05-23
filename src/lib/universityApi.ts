@@ -8,11 +8,17 @@ import type {
   BusQueueSummary,
 } from "@/types/university.types";
 
+function normalizeList<T>(res: T[] | { data?: T[] }): T[] {
+  return Array.isArray(res) ? res : (res?.data ?? []);
+}
+
 // ── Universities ──────────────────────────────────────────────
 
 export const universityApi = {
-  list: () => employeeApi.get<University[]>("/university"),
-  listInactive: () => employeeApi.get<University[]>("/university/inactive"),
+  list: () =>
+    employeeApi.get<University[] | { data?: University[] }>("/university").then(normalizeList<University>),
+  listInactive: () =>
+    employeeApi.get<University[] | { data?: University[] }>("/university/inactive").then(normalizeList<University>),
   getById: (id: string) => employeeApi.get<University>(`/university/${id}`),
   create: (data: { name: string; acronym: string; address: string }) =>
     employeeApi.post<University>("/university", data),
@@ -37,8 +43,10 @@ export const courseApi = {
 // ── Buses ─────────────────────────────────────────────────────
 
 export const busApi = {
-  list: () => employeeApi.get<Bus[]>("/bus"),
-  listInactive: () => employeeApi.get<Bus[]>("/bus/inactive"),
+  list: () =>
+    employeeApi.get<Bus[] | { data?: Bus[] }>("/bus").then(normalizeList<Bus>),
+  listInactive: () =>
+    employeeApi.get<Bus[] | { data?: Bus[] }>("/bus/inactive").then(normalizeList<Bus>),
   // Lista com contagens de fila/pendentes por ônibus (anônimo)
   listWithQueueCounts: () => employeeApi.get<Bus[]>("/bus/with-queue-counts"),
   create: (data: { identifier: string; capacity?: number | null; shift?: string }) =>
