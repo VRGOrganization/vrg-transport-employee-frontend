@@ -2,9 +2,11 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { GraduationCap, UserX } from "lucide-react";
+import { GraduationCap, UserX, ShieldBan } from "lucide-react";
 import { studentService } from "@/services/studentService";
+import { banlistService } from "@/services/banlistService";
 import type { Student } from "@/types/student";
+import type { BanlistEntry } from "@/types/banlist";
 import { Button } from "@/components/ui/Button";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Tabs } from "@/components/ui/Tabs";
@@ -16,16 +18,19 @@ import { getShiftLabel } from "@/lib/constants";
 import { StudentModal } from "@/components/students/StudentModal";
 import { StudentInfoModal } from "./info/StudentInfoModal";
 import { StudentCardModal } from "./StudentCardModal";
+import { UnbanModal } from "@/components/admin/UnbanModal";
 import type { PageSize } from "@/lib/constants";
 
-type Tab = "active" | "inactive";
+type StudentTab = "active" | "inactive";
+type Tab = StudentTab | "banned";
 
 const TAB_ITEMS = [
   { key: "active" as Tab,   label: "Ativos",      icon: "check_circle" },
   { key: "inactive" as Tab, label: "Desativados",  icon: "person_off"  },
+  { key: "banned" as Tab,   label: "Banidos",      icon: "block"       },
 ];
 
-const COLUMNS: Column<Student>[] = [
+const STUDENT_COLUMNS: Column<Student>[] = [
   {
     key: "name",
     label: "Estudante",
@@ -37,7 +42,7 @@ const COLUMNS: Column<Student>[] = [
     ),
     skeleton: () => (
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-surface-container-high animate-pulse flex-shrink-0" />
+        <div className="w-9 h-9 rounded-full bg-surface-container-high animate-pulse shrink-0" />
         <div className="h-3 w-32 bg-surface-container-high rounded animate-pulse" />
       </div>
     ),
@@ -84,28 +89,114 @@ const COLUMNS: Column<Student>[] = [
   },
 ];
 
+const BAN_COLUMNS: Column<BanlistEntry>[] = [
+  {
+    key: "name",
+    label: "Estudante",
+    render: (e) => (
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-error/10 flex items-center justify-center text-error font-bold text-xs shrink-0">
+          {e.name.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <p className="text-sm font-medium text-on-surface">{e.name}</p>
+          <p className="text-xs text-on-surface-variant">{e.email}</p>
+        </div>
+      </div>
+    ),
+    skeleton: () => (
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-surface-container-high animate-pulse shrink-0" />
+        <div className="h-3 w-36 bg-surface-container-high rounded animate-pulse" />
+      </div>
+    ),
+  },
+  {
+    key: "reasons",
+    label: "Motivos",
+    render: (e) => (
+      <div className="flex flex-wrap gap-1 max-w-xs">
+        {e.reasons.slice(0, 2).map((r, i) => (
+          <span
+            key={i}
+            className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full bg-error/8 text-error border border-error/20 truncate max-w-40"
+            title={r}
+          >
+            {r}
+          </span>
+        ))}
+        {e.reasons.length > 2 && (
+          <span className="text-[10px] text-on-surface-variant">+{e.reasons.length - 2} mais</span>
+        )}
+      </div>
+    ),
+  },
+  {
+    key: "createdAt",
+    label: "Banido em",
+    render: (e) => (
+      <span className="text-sm text-on-surface-variant">
+        {new Date(e.createdAt).toLocaleDateString("pt-BR")}
+      </span>
+    ),
+  },
+];
+
 export default function StudentsPage() {
+  const [topTab, setTopTab]                   = useState<Tab>("active");
   const [selected, setSelected]               = useState<Student | null>(null);
   const [viewingStudent, setViewingStudent]   = useState<Student | null>(null);
   const [viewingCardStudent, setViewingCard]  = useState<Student | null>(null);
+  const [unbanTarget, setUnbanTarget]         = useState<BanlistEntry | null>(null);
   const [openDropdownId, setOpenDropdownId]   = useState<string | null>(null);
 
-  const fetcher = useCallback(
-    (t: Tab) => (t === "active" ? studentService.list() : studentService.listInactive()),
+  // ── Student tabs (active / inactive) ─────────────────────────────
+  const studentFetcher = useCallback(
+    (t: StudentTab) => (t === "active" ? studentService.list() : studentService.listInactive()),
     [],
   );
 
-  const { tab, setTab, search, setSearch, page, setPage, pageSize, setPageSize,
-    loading, error, paginated, total, reload } =
-    useListPage<Student, Tab>({
-      tabs: ["active", "inactive"],
-      initialTab: "active",
-      fetcher,
-      searchFields: (s) => [s.name, s.email, s.institution ?? ""],
-    });
+  const {
+    tab: studentTab, setTab: setStudentTab,
+    search: studentSearch, setSearch: setStudentSearch,
+    page: studentPage, setPage: setStudentPage,
+    pageSize: studentPageSize, setPageSize: setStudentPageSize,
+    loading: studentLoading, error: studentError,
+    paginated: studentPaginated, total: studentTotal, reload: studentReload,
+  } = useListPage<Student, StudentTab>({
+    tabs: ["active", "inactive"],
+    initialTab: "active",
+    fetcher: studentFetcher,
+    searchFields: (s) => [s.name, s.email, s.institution ?? ""],
+  });
 
-  const handleReload = () => { setSelected(null); reload(); };
+  // ── Banned tab ────────────────────────────────────────────────────
+  const banFetcher = useCallback(() => banlistService.list(true), []);
 
+  const {
+    search: banSearch, setSearch: setBanSearch,
+    page: banPage, setPage: setBanPage,
+    pageSize: banPageSize, setPageSize: setBanPageSize,
+    loading: banLoading, error: banError,
+    paginated: banPaginated, total: banTotal, reload: banReload,
+  } = useListPage<BanlistEntry, "banned">({
+    tabs: ["banned"],
+    initialTab: "banned",
+    fetcher: banFetcher,
+    searchFields: (e) => [e.name, e.email],
+    errorMessage: "Não foi possível carregar os banimentos.",
+  });
+
+  // ── Tab switching ─────────────────────────────────────────────────
+  const handleTabChange = (t: Tab) => {
+    setTopTab(t);
+    if (t !== "banned") setStudentTab(t as StudentTab);
+  };
+
+  const handleStudentReload = () => { setSelected(null); studentReload(); };
+  const handleBanned = () => { setViewingStudent(null); banReload(); };
+
+  // ── Student action column ─────────────────────────────────────────
   const actionsColumn: Column<Student> = {
     key: "actions",
     label: "Ação",
@@ -143,7 +234,27 @@ export default function StudentsPage() {
     ),
   };
 
-  const columns = [...COLUMNS, actionsColumn];
+  // ── Ban action column ─────────────────────────────────────────────
+  const banActionsColumn: Column<BanlistEntry> = {
+    key: "actions",
+    label: "Ação",
+    align: "right",
+    render: (entry) => (
+      <button
+        onClick={() => setUnbanTarget(entry)}
+        title="Remover banimento"
+        className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-success hover:bg-success/10 transition-colors ml-auto"
+      >
+        <span className="material-symbols-outlined text-lg">shield_check</span>
+      </button>
+    ),
+  };
+
+  const studentColumns = [...STUDENT_COLUMNS, actionsColumn];
+  const banColumns = [...BAN_COLUMNS, banActionsColumn];
+
+  const isBanned = topTab === "banned";
+  const isStudentTab = !isBanned;
 
   return (
     <>
@@ -152,71 +263,131 @@ export default function StudentsPage() {
         <div className="flex items-center justify-between px-4 pt-6 pb-4">
           <div>
             <h1 className="text-2xl font-extrabold text-on-surface tracking-tight">Estudantes</h1>
-            {!loading && !error && (
+            {isStudentTab && !studentLoading && !studentError && (
               <p className="text-sm text-on-surface-variant mt-1">
-                {total} {total === 1 ? "estudante" : "estudantes"}{" "}
-                {tab === "active" ? "ativos" : "desativados"}
+                {studentTotal} {studentTotal === 1 ? "estudante" : "estudantes"}{" "}
+                {studentTab === "active" ? "ativos" : "desativados"}
+              </p>
+            )}
+            {isBanned && !banLoading && !banError && (
+              <p className="text-sm text-on-surface-variant mt-1">
+                {banTotal} {banTotal === 1 ? "aluno banido" : "alunos banidos"}
               </p>
             )}
           </div>
-          <Link href="/admin/students/new">
-            <Button variant="primary" size="sm">Adicionar estudante</Button>
-          </Link>
+          {isStudentTab && (
+            <Link href="/admin/students/new">
+              <Button variant="primary" size="sm">Adicionar estudante</Button>
+            </Link>
+          )}
         </div>
 
         {/* Toolbar */}
         <div className="px-4 pb-3 flex items-center justify-between gap-4 flex-wrap">
-          <Tabs items={TAB_ITEMS} value={tab} onChange={setTab} />
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder="Buscar por nome, e-mail ou instituição…"
-          />
+          <Tabs items={TAB_ITEMS} value={topTab} onChange={handleTabChange} />
+          {isStudentTab && (
+            <SearchInput
+              value={studentSearch}
+              onChange={setStudentSearch}
+              placeholder="Buscar por nome, e-mail ou instituição…"
+            />
+          )}
+          {isBanned && (
+            <SearchInput
+              value={banSearch}
+              onChange={setBanSearch}
+              placeholder="Buscar por nome ou e-mail…"
+            />
+          )}
         </div>
 
-        {/* Table */}
-        <DataTable
-          columns={columns}
-          rows={paginated}
-          rowKey={(s) => s._id}
-          loading={loading}
-          error={error ? <ErrorState message={error} onRetry={reload} /> : undefined}
-          empty={
-            <EmptyState
-              icon={tab === "active" ? GraduationCap : UserX}
-              title={tab === "active" ? "Nenhum estudante ativo" : "Nenhum estudante desativado"}
-              description={
-                search
-                  ? "Nenhum estudante encontrado para esta busca."
-                  : tab === "active"
-                  ? "Adicione o primeiro estudante ao sistema."
-                  : "Estudantes desativados aparecerão aqui."
-              }
-            />
-          }
-          page={page}
-          pageSize={pageSize}
-          total={total}
-          onPageChange={setPage}
-          onPageSizeChange={(s) => setPageSize(s as PageSize)}
-          className="mx-4 mb-4"
-        />
+        {/* Table — students */}
+        {isStudentTab && (
+          <DataTable
+            columns={studentColumns}
+            rows={studentPaginated}
+            rowKey={(s) => s._id}
+            onRowClick={(s) => setViewingStudent(s)}
+            loading={studentLoading}
+            error={studentError ? <ErrorState message={studentError} onRetry={studentReload} /> : undefined}
+            empty={
+              <EmptyState
+                icon={studentTab === "active" ? GraduationCap : UserX}
+                title={studentTab === "active" ? "Nenhum estudante ativo" : "Nenhum estudante desativado"}
+                description={
+                  studentSearch
+                    ? "Nenhum estudante encontrado para esta busca."
+                    : studentTab === "active"
+                    ? "Adicione o primeiro estudante ao sistema."
+                    : "Estudantes desativados aparecerão aqui."
+                }
+              />
+            }
+            page={studentPage}
+            pageSize={studentPageSize}
+            total={studentTotal}
+            onPageChange={setStudentPage}
+            onPageSizeChange={(s) => setStudentPageSize(s as PageSize)}
+            className="mx-4 mb-4"
+          />
+        )}
+
+        {/* Table — banned */}
+        {isBanned && (
+          <DataTable
+            columns={banColumns}
+            rows={banPaginated}
+            rowKey={(e) => e._id}
+            loading={banLoading}
+            error={banError ? <ErrorState message={banError} onRetry={banReload} /> : undefined}
+            empty={
+              <EmptyState
+                icon={ShieldBan}
+                title="Nenhum aluno banido"
+                description={
+                  banSearch
+                    ? "Nenhum registro encontrado para esta busca."
+                    : "Nenhum aluno está banido no momento."
+                }
+              />
+            }
+            page={banPage}
+            pageSize={banPageSize}
+            total={banTotal}
+            onPageChange={setBanPage}
+            onPageSizeChange={(s) => setBanPageSize(s as PageSize)}
+            className="mx-4 mb-4"
+          />
+        )}
       </main>
 
       {selected && (
         <StudentModal
           student={selected}
           onClose={() => setSelected(null)}
-          onUpdated={handleReload}
-          onDeactivated={handleReload}
-          onReactivated={handleReload}
+          onUpdated={handleStudentReload}
+          onDeactivated={handleStudentReload}
+          onReactivated={handleStudentReload}
         />
       )}
       {viewingStudent && (
-        <StudentInfoModal student={viewingStudent} onClose={() => setViewingStudent(null)} />
+        <StudentInfoModal
+          student={viewingStudent}
+          onClose={() => setViewingStudent(null)}
+          onEdit={() => { setSelected(viewingStudent); setViewingStudent(null); }}
+          onBanned={handleBanned}
+        />
       )}
       {viewingCardStudent && (
         <StudentCardModal student={viewingCardStudent} onClose={() => setViewingCard(null)} />
+      )}
+      {unbanTarget && (
+        <UnbanModal
+          open
+          entry={unbanTarget}
+          onClose={() => setUnbanTarget(null)}
+          onSuccess={() => { setUnbanTarget(null); banReload(); }}
+        />
       )}
     </>
   );

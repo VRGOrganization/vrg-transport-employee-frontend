@@ -26,6 +26,7 @@ interface DataTableProps<T> {
   total: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: PageSize) => void;
+  onRowClick?: (row: T) => void;
   skeletonRowCount?: number;
   className?: string;
 }
@@ -42,6 +43,7 @@ export function DataTable<T>({
   total,
   onPageChange,
   onPageSizeChange,
+  onRowClick,
   skeletonRowCount = 6,
   className,
 }: DataTableProps<T>) {
@@ -104,7 +106,11 @@ export function DataTable<T>({
               rows.map((row, idx) => (
                 <tr
                   key={rowKey(row)}
-                  className="hover:bg-surface-container-low/40 transition-colors"
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  className={cn(
+                    "hover:bg-surface-container-low/40 transition-colors",
+                    onRowClick && "cursor-pointer",
+                  )}
                 >
                   {columns.map((c) => (
                     <td
