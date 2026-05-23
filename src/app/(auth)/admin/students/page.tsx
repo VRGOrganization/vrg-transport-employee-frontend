@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { GraduationCap, UserX, ShieldBan } from "lucide-react";
+import { GraduationCap, UserX, ShieldBan, Download } from "lucide-react";
 import { studentService } from "@/services/studentService";
 import { banlistService } from "@/services/banlistService";
 import type { Student } from "@/types/student";
@@ -15,6 +15,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
 import { getShiftLabel } from "@/lib/constants";
+import { buildStudentsCsv, downloadCsv } from "@/lib/csvUtils";
 import { StudentModal } from "@/components/students/StudentModal";
 import { StudentInfoModal } from "./info/StudentInfoModal";
 import { StudentCardModal } from "./StudentCardModal";
@@ -162,6 +163,7 @@ export default function StudentsPage() {
     page: studentPage, setPage: setStudentPage,
     pageSize: studentPageSize, setPageSize: setStudentPageSize,
     loading: studentLoading, error: studentError,
+    filtered: studentFiltered,
     paginated: studentPaginated, total: studentTotal, reload: studentReload,
   } = useListPage<Student, StudentTab>({
     tabs: ["active", "inactive"],
@@ -194,6 +196,19 @@ export default function StudentsPage() {
   };
 
   const handleStudentReload = () => { setSelected(null); studentReload(); };
+
+  const [exportLoading, setExportLoading] = useState(false);
+
+  const handleExport = async () => {
+    setExportLoading(true);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const label = studentTab === "active" ? "ativos" : "desativados";
+      downloadCsv(buildStudentsCsv(studentFiltered as Parameters<typeof buildStudentsCsv>[0]), `alunos_${label}_${today}.csv`);
+    } finally {
+      setExportLoading(false);
+    }
+  };
   const handleBanned = () => { setViewingStudent(null); banReload(); };
 
   // ── Student action column ─────────────────────────────────────────
@@ -285,20 +300,34 @@ export default function StudentsPage() {
         {/* Toolbar */}
         <div className="px-4 pb-3 flex items-center justify-between gap-4 flex-wrap">
           <Tabs items={TAB_ITEMS} value={topTab} onChange={handleTabChange} />
-          {isStudentTab && (
-            <SearchInput
-              value={studentSearch}
-              onChange={setStudentSearch}
-              placeholder="Buscar por nome, e-mail ou instituição…"
-            />
-          )}
-          {isBanned && (
-            <SearchInput
-              value={banSearch}
-              onChange={setBanSearch}
-              placeholder="Buscar por nome ou e-mail…"
-            />
-          )}
+          <div className="flex items-center gap-2">
+            {isStudentTab && (
+              <SearchInput
+                value={studentSearch}
+                onChange={setStudentSearch}
+                placeholder="Buscar por nome, e-mail ou instituição…"
+              />
+            )}
+            {isBanned && (
+              <SearchInput
+                value={banSearch}
+                onChange={setBanSearch}
+                placeholder="Buscar por nome ou e-mail…"
+              />
+            )}
+            {isStudentTab && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                loading={exportLoading}
+                disabled={studentLoading || studentFiltered.length === 0}
+                icon={<Download size={15} />}
+              >
+                {studentTab === "active" ? "Exportar Ativos" : "Exportar Desativados"}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Table — students */}

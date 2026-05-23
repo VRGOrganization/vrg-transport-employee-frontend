@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { Users, UserX } from "lucide-react";
+import { Users, UserX, Download } from "lucide-react";
 import { employeeService } from "@/services/employeeService";
 import { EmployeeModal } from "@/components/employees/EmployeeModal";
 import type { Employee } from "@/types/employee";
@@ -13,6 +13,7 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { Avatar } from "@/components/ui/Avatar";
 import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
+import { buildEmployeesCsv, downloadCsv } from "@/lib/csvUtils";
 import type { PageSize } from "@/lib/constants";
 
 type Tab = "active" | "inactive";
@@ -85,7 +86,7 @@ export default function EmployeesPage() {
   );
 
   const { tab, setTab, search, setSearch, page, setPage, pageSize, setPageSize,
-    loading, error, paginated, total, reload } =
+    loading, error, filtered, paginated, total, reload } =
     useListPage<Employee, Tab>({
       tabs: ["active", "inactive"],
       initialTab: "active",
@@ -94,6 +95,19 @@ export default function EmployeesPage() {
     });
 
   const handleReload = () => { setSelected(null); reload(); };
+
+  const [exportLoading, setExportLoading] = useState(false);
+
+  const handleExport = async () => {
+    setExportLoading(true);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const label = tab === "active" ? "ativos" : "desativados";
+      downloadCsv(buildEmployeesCsv(filtered), `funcionarios_${label}_${today}.csv`);
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   const actionsColumn: Column<Employee> = {
     key: "actions",
@@ -134,11 +148,23 @@ export default function EmployeesPage() {
         {/* Toolbar */}
         <div className="px-4 pb-3 flex items-center justify-between gap-4 flex-wrap">
           <Tabs items={TAB_ITEMS} value={tab} onChange={setTab} />
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder="Buscar por nome, e-mail ou matrícula…"
-          />
+          <div className="flex items-center gap-2">
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder="Buscar por nome, e-mail ou matrícula…"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              loading={exportLoading}
+              disabled={loading || filtered.length === 0}
+              icon={<Download size={15} />}
+            >
+              {tab === "active" ? "Exportar Ativos" : "Exportar Desativados"}
+            </Button>
+          </div>
         </div>
 
         {/* Table */}
