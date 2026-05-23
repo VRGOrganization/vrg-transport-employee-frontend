@@ -21,7 +21,7 @@ export interface StudentUpdatePayload {
 
 export const studentService = {
   list:         ()                                => http.get<Paginated<Student>>("/student").then(resolvePaginated),
-  listInactive: ()                                => http.get<Student[]>("/student/inactive"),
+  listInactive: ()                                => http.get<Paginated<Student>>("/student/inactive").then(resolvePaginated),
   getById:      (id: string)                      => http.get<Student>(`/student/${id}`),
   create:       (data: StudentCreatePayload)      => http.post<Student>("/student", data),
   update:       (id: string, data: StudentUpdatePayload) => http.patch<Student>(`/student/${id}`, data),

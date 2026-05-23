@@ -1,9 +1,10 @@
 import { http } from "./http";
+import { resolvePaginated, type Paginated } from "@/types/api";
 import type { University, Course } from "@/types/university.types";
 
 export const universityService = {
-  list:         ()                                                    => http.get<University[]>("/university"),
-  listInactive: ()                                                    => http.get<University[]>("/university/inactive"),
+  list:         ()                                                    => http.get<Paginated<University>>("/university").then(resolvePaginated),
+  listInactive: ()                                                    => http.get<Paginated<University>>("/university/inactive").then(resolvePaginated),
   getById:      (id: string)                                          => http.get<University>(`/university/${id}`),
   create:       (data: { name: string; acronym: string; address: string }) => http.post<University>("/university", data),
   update:       (id: string, data: Partial<{ name: string; acronym: string; address: string }>) =>

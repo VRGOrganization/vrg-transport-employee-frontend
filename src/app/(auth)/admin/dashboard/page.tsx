@@ -101,11 +101,11 @@ export default function AdminDashboardPage() {
           employeeService.list(),
           http.get<Paginated<StudentRecord>>("/student").then(resolvePaginated),
           http.get<EnrollmentPeriodRecord>("/enrollment-period/active"),
-          http.get<unknown[]>("/license-request/all"),
+          http.get<Paginated<unknown>>("/license-request/all").then(resolvePaginated),
         ]);
 
       const rows: UserRow[] = [];
-      const resolvedStudents: StudentRecord[] = studentsResult.status === "fulfilled" ? resolvePaginated(studentsResult.value) : [];
+      const resolvedStudents: StudentRecord[] = studentsResult.status === "fulfilled" ? studentsResult.value : [];
 
       if (employeesResult.status === "fulfilled") {
         const all = employeesResult.value;
