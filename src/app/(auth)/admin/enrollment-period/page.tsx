@@ -123,11 +123,12 @@ export default function AdminEnrollmentPeriodPage() {
         }
       }
 
-      const [periodsResponse, studentsResponse] = await Promise.all([
-        employeeApi.get<EnrollmentPeriod[]>("/enrollment-period"),
+      const [periodsRes, studentsResponse] = await Promise.all([
+        employeeApi.get<EnrollmentPeriod[] | { data?: EnrollmentPeriod[] }>("/enrollment-period"),
         employeeApi.get<StudentsResponse>("/student"),
       ]);
 
+      const periodsResponse = Array.isArray(periodsRes) ? periodsRes : (periodsRes?.data ?? []);
       const sortedPeriods = [...periodsResponse].sort(
         (a, b) =>
           new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
@@ -138,10 +139,10 @@ export default function AdminEnrollmentPeriodPage() {
       setStudents(normalizeStudents(studentsResponse));
 
       if (resolvedActive?._id) {
-        const queue = await employeeApi.get<LicenseRequestRecord[]>(
+        const queueRes = await employeeApi.get<LicenseRequestRecord[] | { data?: LicenseRequestRecord[] }>(
           `/enrollment-period/${resolvedActive._id}/waitlist`,
         );
-        setWaitlistRequests(queue);
+        setWaitlistRequests(Array.isArray(queueRes) ? queueRes : (queueRes?.data ?? []));
       } else {
         setWaitlistRequests([]);
       }
