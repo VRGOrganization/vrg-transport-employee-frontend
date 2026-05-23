@@ -101,7 +101,8 @@ export default function AdminDashboardPage() {
       let resolvedStudents: StudentRecord[] = [];
 
       if (employeesResult.status === "fulfilled") {
-        const all = employeesResult.value;
+        const raw = employeesResult.value;
+        const all: Employee[] = Array.isArray(raw) ? raw : ((raw as { data?: Employee[] }).data ?? []);
         setStats((prev) => ({
           ...prev,
           activeEmployees: all.filter((e) => e.active).length,
@@ -146,7 +147,8 @@ export default function AdminDashboardPage() {
       }
 
       if (requestsResult.status === "fulfilled") {
-        const requests = requestsResult.value;
+        const rawReq = requestsResult.value;
+        const requests: any[] = Array.isArray(rawReq) ? rawReq : ((rawReq as { data?: any[] }).data ?? []);
         const pendingStudentIds = new Set(
           requests
             .filter((r: any) => r.status === "pending")
@@ -194,21 +196,22 @@ export default function AdminDashboardPage() {
       }
 
       if (filter === "Funcionário") {
-        const res = await employeeApi.get<Employee[]>("/employee");
-        downloadCsv(buildEmployeesCsv(Array.isArray(res) ? res : []), `funcionarios_${today}.csv`);
+        const res = await employeeApi.get<Employee[] | { data?: Employee[] }>("/employee");
+        const emps = Array.isArray(res) ? res : ((res as { data?: Employee[] }).data ?? []);
+        downloadCsv(buildEmployeesCsv(emps), `funcionarios_${today}.csv`);
         return;
       }
 
       // "Todos" — arquivo combinado com seções para cada entidade
       const [studentsRes, employeesRes, busesRes, universitiesRes] = await Promise.all([
         employeeApi.get<StudentsResponse>("/student"),
-        employeeApi.get<Employee[]>("/employee"),
+        employeeApi.get<Employee[] | { data?: Employee[] }>("/employee"),
         busApi.list(),
         universityApi.list(),
       ]);
 
       const students = Array.isArray(studentsRes) ? studentsRes : ((studentsRes as { data?: StudentRecord[] }).data ?? []);
-      const employees = Array.isArray(employeesRes) ? employeesRes : [];
+      const employees = Array.isArray(employeesRes) ? employeesRes : ((employeesRes as { data?: Employee[] }).data ?? []);
       const buses = Array.isArray(busesRes) ? busesRes : [];
       const universities = Array.isArray(universitiesRes) ? universitiesRes : [];
 
