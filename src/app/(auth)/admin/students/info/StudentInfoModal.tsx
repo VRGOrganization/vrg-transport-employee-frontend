@@ -55,6 +55,7 @@ export function StudentInfoModal({ student, onClose, onEdit, onBanned }: Student
 
   // Ban form state
   const [banReasons, setBanReasons] = useState("");
+  const [banConfirmName, setBanConfirmName] = useState("");
   const [banLoading, setBanLoading] = useState(false);
   const [banError, setBanError] = useState("");
   const [banSuccess, setBanSuccess] = useState(false);
@@ -75,7 +76,7 @@ export function StudentInfoModal({ student, onClose, onEdit, onBanned }: Student
   if (!mounted) return null;
 
   const handleOpenTerms = () => {
-    setTermsOpen(true);
+    setTermsOpen((prev) => !prev);
     setHasReadTerms(true);
   };
 
@@ -83,6 +84,10 @@ export function StudentInfoModal({ student, onClose, onEdit, onBanned }: Student
     e.preventDefault();
     if (!banReasons.trim()) {
       setBanError("Informe o motivo do banimento.");
+      return;
+    }
+    if (banConfirmName.trim() !== student.name.trim()) {
+      setBanError("O nome de confirmação não confere com o nome do estudante.");
       return;
     }
     if (!agreed) {
@@ -117,6 +122,7 @@ export function StudentInfoModal({ student, onClose, onEdit, onBanned }: Student
   const resetBanForm = () => {
     setView("info");
     setBanReasons("");
+    setBanConfirmName("");
     setBanError("");
     setBanSuccess(false);
     setAgreed(false);
@@ -305,7 +311,7 @@ export function StudentInfoModal({ student, onClose, onEdit, onBanned }: Student
                   <div className="flex items-start gap-3 p-4 rounded-xl bg-error/5 border border-error/20">
                     <ShieldAlert className="w-5 h-5 text-error shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-semibold text-error">Ação irreversível imediata</p>
+                      <p className="text-sm font-semibold text-error">Ação reversível imediata</p>
                       <p className="text-xs text-on-surface-variant mt-0.5">
                         Ao confirmar, o estudante perderá acesso ao sistema imediatamente. O banimento pode
                         ser removido posteriormente por um administrador.
@@ -331,7 +337,24 @@ export function StudentInfoModal({ student, onClose, onEdit, onBanned }: Student
                       onChange={(e) => { setBanReasons(e.target.value); setBanError(""); }}
                       placeholder="Descreva detalhadamente os motivos que justificam o banimento deste estudante…"
                       rows={4}
-                      className="w-full px-3 py-2.5 rounded-lg bg-surface-container text-sm text-on-surface placeholder:text-on-surface-variant/50 outline-none resize-none focus:ring-2 focus:ring-error transition-all"
+                      className="w-full px-3 py-2.5 rounded-lg bg-surface-container border-2 border-error text-sm text-on-surface placeholder:text-on-surface-variant/50 outline-none resize-none focus:ring-2 focus:ring-error transition-all"
+                    />
+                  </div>
+
+                  {/* Name confirmation field */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-on-surface-variant">
+                      Confirme o nome do estudante <span className="text-error">*</span>
+                    </label>
+                    <p className="text-[11px] text-on-surface-variant mb-1">
+                      Digite exatamente: <span className="font-bold text-on-surface select-all">{student.name}</span>
+                    </p>
+                    <input
+                      type="text"
+                      value={banConfirmName}
+                      onChange={(e) => { setBanConfirmName(e.target.value); setBanError(""); }}
+                      placeholder="Nome completo do estudante"
+                      className="w-full px-3 py-2.5 rounded-lg bg-surface-container border border-outline-variant text-sm text-on-surface placeholder:text-on-surface-variant/50 outline-none focus:ring-2 focus:ring-error focus:border-error transition-all"
                     />
                   </div>
 
@@ -377,31 +400,46 @@ export function StudentInfoModal({ student, onClose, onEdit, onBanned }: Student
                     )}
                   </div>
 
-                  {/* Agreement checkbox */}
-                  <label
-                    className={`flex items-start gap-3 cursor-pointer rounded-xl p-4 border transition-all ${
-                      hasReadTerms
-                        ? "border-outline-variant/40 hover:border-error/30 hover:bg-error/3"
-                        : "border-outline-variant/20 opacity-50 cursor-not-allowed"
+                  {/* Agreement button */}
+                  <button
+                    type="button"
+                    disabled={!hasReadTerms}
+                    onClick={() => { setAgreed(!agreed); setBanError(""); }}
+                    className={`group w-full flex items-start text-left gap-4 p-4 rounded-xl border-2 transition-all duration-200 ${
+                      !hasReadTerms
+                        ? "border-outline-variant/20 bg-surface-container-lowest opacity-60 cursor-not-allowed"
+                        : agreed
+                          ? "border-error bg-error/5 ring-4 ring-error/10 hover:bg-error/10"
+                          : "border-outline-variant/40 bg-surface hover:border-error/40 hover:shadow-md hover:bg-surface-container-lowest"
                     }`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={agreed}
-                      disabled={!hasReadTerms}
-                      onChange={(e) => { setAgreed(e.target.checked); setBanError(""); }}
-                      className="mt-0.5 w-4 h-4 rounded accent-error cursor-pointer disabled:cursor-not-allowed shrink-0"
-                    />
-                    <span className="text-sm text-on-surface leading-snug">
-                      <span className="font-semibold">Li e concordo</span> com os termos e consequências
-                      descritos acima, e confirmo que os motivos informados são legítimos e documentados.
+                    {/* Custom Checkbox */}
+                    <div className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center border-2 transition-colors shrink-0 ${
+                      !hasReadTerms
+                        ? "border-outline-variant/40 bg-surface-container-low"
+                        : agreed
+                          ? "border-error bg-error text-white"
+                          : "border-outline-variant/60 bg-surface group-hover:border-error/60"
+                    }`}>
+                      {agreed && <span className="material-symbols-outlined" style={{ fontSize: "14px", fontWeight: "bold" }}>check</span>}
+                      {!hasReadTerms && <span className="material-symbols-outlined text-outline-variant/60" style={{ fontSize: "12px" }}>lock</span>}
+                    </div>
+
+                    <div className="flex-1 text-sm leading-snug">
+                      <p className={`font-bold transition-colors ${agreed ? "text-error" : "text-on-surface group-hover:text-error"}`}>
+                        Li e concordo com os termos e consequências
+                      </p>
+                      <p className={`text-xs mt-0.5 transition-colors ${agreed ? "text-error/80" : "text-on-surface-variant"}`}>
+                        Confirmo que os motivos informados são legítimos e documentados.
+                      </p>
                       {!hasReadTerms && (
-                        <span className="block text-xs text-on-surface-variant mt-1">
-                          Abra e leia os termos acima para habilitar esta opção.
-                        </span>
+                        <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-error/80 bg-error/10 w-fit px-2 py-1 rounded-md uppercase tracking-wide">
+                          <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>warning</span>
+                          Abra e leia os termos para habilitar
+                        </div>
                       )}
-                    </span>
-                  </label>
+                    </div>
+                  </button>
                 </div>
 
                 {/* Ban form footer */}
@@ -416,7 +454,7 @@ export function StudentInfoModal({ student, onClose, onEdit, onBanned }: Student
                   </button>
                   <button
                     type="submit"
-                    disabled={banLoading || !agreed || !banReasons.trim()}
+                    disabled={banLoading || !agreed || !banReasons.trim() || banConfirmName.trim() !== student.name.trim()}
                     className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full bg-error text-white hover:bg-error/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {banLoading

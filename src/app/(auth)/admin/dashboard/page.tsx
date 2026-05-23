@@ -105,8 +105,8 @@ export default function AdminDashboardPage() {
         const all: Employee[] = Array.isArray(raw) ? raw : ((raw as { data?: Employee[] }).data ?? []);
         setStats((prev) => ({
           ...prev,
-          activeEmployees: all.filter((e) => e.active).length,
-          inactiveEmployees: all.filter((e) => !e.active).length,
+          activeEmployees: all.filter((e: any) => e.active).length,
+          inactiveEmployees: all.filter((e: any) => !e.active).length,
         }));
         for (const emp of all) {
           rows.push({

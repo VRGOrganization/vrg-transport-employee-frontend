@@ -25,7 +25,7 @@ function getPageTitle(pathname: string): string {
     "/admin/cards": "Carteirinhas",
     "/admin/universities": "Instituições",
     "/admin/buses": "Frota",
-    "/admin/banlist": "Banimentos",
+
     "/employee/dashboard": "Painel",
     "/employee/students": "Estudantes",
     "/employee/cards": "Carteirinhas",
