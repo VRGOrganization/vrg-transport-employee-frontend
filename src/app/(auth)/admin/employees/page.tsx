@@ -14,6 +14,7 @@ import { buildEmployeesCsv, downloadCsv } from "@/lib/csvUtils";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Tab = "active" | "inactive";
+type EmployeesResponse = Employee[] | { data?: Employee[] };
 
 // ─── Helpers (module-level, no duplication cost) ──────────────────────────────
 
@@ -58,13 +59,13 @@ export default function EmployeesPage() {
   const [exportLoading, setExportLoading] = useState(false);
 
   const fetchActive = useCallback(async () => {
-    const data = await employeeApi.get<Employee[]>("/employee");
-    setActive(data);
+    const data = await employeeApi.get<EmployeesResponse>("/employee");
+    setActive(Array.isArray(data) ? data : (data?.data ?? []));
   }, []);
 
   const fetchInactive = useCallback(async () => {
-    const data = await employeeApi.get<Employee[]>("/employee/inactive");
-    setInactive(data);
+    const data = await employeeApi.get<EmployeesResponse>("/employee/inactive");
+    setInactive(Array.isArray(data) ? data : (data?.data ?? []));
   }, []);
 
   const loadTab = useCallback(
