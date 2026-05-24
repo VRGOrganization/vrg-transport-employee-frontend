@@ -1,19 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Footer } from "@/components/layout/Footer";
 import { studentService } from "@/services/studentService";
+import { universityService } from "@/services/universityService";
 import { StudentForm } from "@/components/students/StudentForm";
 import { StudentFormLayout } from "@/components/students/StudentFormLayout";
 import { SuccessBanner } from "@/components/students/SuccessBanner";
 import { useStudentForm } from "@/components/hooks/useStudentForm";
+import type { University } from "@/types/university.types";
 
 export default function EmployeeNewStudentPage() {
   const [success, setSuccess] = useState(false);
   const [createdName, setCreatedName] = useState("");
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [loadingUniversities, setLoadingUniversities] = useState(false);
 
   const { data, errors, loading, setLoading, onChange, setError, validate } =
     useStudentForm({ mode: "create" });
+
+  useEffect(() => {
+    setLoadingUniversities(true);
+    universityService.list()
+      .then(setUniversities)
+      .catch(() => {})
+      .finally(() => setLoadingUniversities(false));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,12 +34,14 @@ export default function EmployeeNewStudentPage() {
     setLoading(true);
     try {
       await studentService.create({
-        name: data.name.trim(),
-        email: data.email.trim().toLowerCase(),
+        name:      data.name.trim(),
+        email:     data.email.trim().toLowerCase(),
         telephone: data.telephone.trim(),
-        institution: data.institution,
-        shift: data.shift,
-        password: data.password,
+        cpf:       data.cpf.replace(/\D/g, ""),
+        ...(data.institution ? { institution: data.institution.trim() } : {}),
+        ...(data.shift       ? { shift: data.shift }                   : {}),
+        ...(data.bloodType   ? { bloodType: data.bloodType }           : {}),
+        ...(data.degree      ? { degree: data.degree.trim() }          : {}),
       });
       setCreatedName(data.name.trim());
       setSuccess(true);
@@ -49,10 +63,11 @@ export default function EmployeeNewStudentPage() {
     onChange("name", "");
     onChange("email", "");
     onChange("telephone", "");
+    onChange("cpf", "");
     onChange("institution", "");
     onChange("shift", "");
-    onChange("password", "");
-    onChange("confirmPassword", "");
+    onChange("bloodType", "");
+    onChange("degree", "");
   };
 
   return (
@@ -80,6 +95,8 @@ export default function EmployeeNewStudentPage() {
                 mode="create"
                 onChange={onChange}
                 onSubmit={handleSubmit}
+                universities={universities}
+                loadingUniversities={loadingUniversities}
               />
             )}
           </StudentFormLayout>

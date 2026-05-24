@@ -6,10 +6,11 @@ export interface StudentCreatePayload {
   name: string;
   email: string;
   telephone: string;
-  cpf?: string;
-  institution: string;
-  shift: string;
-  password?: string;
+  cpf: string;
+  institution?: string;
+  shift?: string;
+  bloodType?: string;
+  degree?: string;
 }
 
 export interface StudentUpdatePayload {
@@ -17,6 +18,8 @@ export interface StudentUpdatePayload {
   telephone?: string;
   institution?: string;
   shift?: string;
+  bloodType?: string;
+  degree?: string;
 }
 
 export const studentService = {

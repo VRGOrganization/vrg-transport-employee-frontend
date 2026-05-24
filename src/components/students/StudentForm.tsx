@@ -3,10 +3,13 @@
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { StatusBanner } from "@/components/ui/StatusBanner";
-import {
-  StudentFormData,
-  StudentFormErrors,
-} from "@/types/student";
+import { SHIFTS, BLOOD_TYPES, StudentFormData, StudentFormErrors } from "@/types/student";
+
+interface University {
+  _id: string;
+  name: string;
+  acronym: string;
+}
 
 interface StudentFormProps {
   data: StudentFormData;
@@ -15,7 +18,15 @@ interface StudentFormProps {
   mode: "create" | "edit";
   onChange: (field: keyof StudentFormData, value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
+  universities?: University[];
+  loadingUniversities?: boolean;
 }
+
+const SELECT_CLASS =
+  "w-full h-14 bg-surface-container-lowest ring-1 ring-outline/40 focus:ring-2 focus:ring-primary rounded-xl text-on-surface pl-12 pr-4 text-base outline-none transition-all appearance-none";
+
+const LABEL_CLASS =
+  "text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1";
 
 export function StudentForm({
   data,
@@ -24,6 +35,8 @@ export function StudentForm({
   mode,
   onChange,
   onSubmit,
+  universities = [],
+  loadingUniversities = false,
 }: StudentFormProps) {
   const isEdit = mode === "edit";
 
@@ -33,7 +46,6 @@ export function StudentForm({
         <StatusBanner variant="error">{errors.general}</StatusBanner>
       )}
 
-      {/* Name */}
       <Input
         label="Nome completo"
         type="text"
@@ -44,7 +56,6 @@ export function StudentForm({
         error={errors.name}
       />
 
-      {/* Email */}
       <Input
         label="Email"
         type="email"
@@ -56,7 +67,6 @@ export function StudentForm({
         disabled={isEdit}
       />
 
-      {/* Telephone */}
       <Input
         label="Telefone"
         type="tel"
@@ -67,9 +77,85 @@ export function StudentForm({
         error={errors.telephone}
       />
 
+      <Input
+        label="Curso / Graduação (opcional)"
+        type="text"
+        icon="school"
+        placeholder="Ex: Engenharia de Software"
+        value={data.degree}
+        onChange={(e) => onChange("degree", e.target.value)}
+        error={errors.degree}
+      />
 
-      
-      {/* CPF */}
+      <div className="space-y-2">
+        <label className={LABEL_CLASS}>Turno (opcional)</label>
+        <div className="relative">
+          <span
+            className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-2xl"
+          >
+            schedule
+          </span>
+          <select
+            value={data.shift}
+            onChange={(e) => onChange("shift", e.target.value)}
+            className={SELECT_CLASS}
+          >
+            <option value="">Selecione o turno</option>
+            {SHIFTS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        {errors.shift && (
+          <p className="text-xs text-error mt-1 ml-1">{errors.shift}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <label className={LABEL_CLASS}>Tipo Sanguíneo (opcional)</label>
+        <select
+          value={data.bloodType}
+          onChange={(e) => onChange("bloodType", e.target.value)}
+          className="w-full h-14 bg-surface-container-lowest ring-1 ring-outline/40 focus:ring-2 focus:ring-primary rounded-xl text-on-surface px-4 text-base outline-none transition-all appearance-none"
+        >
+          <option value="">Não informado</option>
+          {BLOOD_TYPES.map((bt) => (
+            <option key={bt} value={bt}>
+              {bt}
+            </option>
+          ))}
+        </select>
+        {errors.bloodType && (
+          <p className="text-xs text-error mt-1 ml-1">{errors.bloodType}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <label className={LABEL_CLASS}>Instituição de Ensino (opcional)</label>
+        <div className="relative group">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary pointer-events-none text-2xl transition-colors">
+            apartment
+          </span>
+          <input
+            list="universities-datalist"
+            value={data.institution}
+            onChange={(e) => onChange("institution", e.target.value)}
+            placeholder={loadingUniversities ? "Carregando…" : "Nome da instituição"}
+            className="w-full h-14 bg-surface-container-lowest ring-1 ring-outline/40 focus:ring-2 focus:ring-primary rounded-xl text-on-surface pl-12 pr-4 text-base outline-none transition-all placeholder:text-outline/50"
+          />
+          <datalist id="universities-datalist">
+            {universities.map((u) => (
+              <option key={u._id} value={u.name} />
+            ))}
+          </datalist>
+        </div>
+        {errors.institution && (
+          <p className="text-xs text-error mt-1 ml-1">{errors.institution}</p>
+        )}
+      </div>
+
       <Input
         label="CPF (apenas números)"
         type="text"
@@ -81,12 +167,11 @@ export function StudentForm({
         disabled={isEdit}
       />
 
-      {/* Info message — only on create */}
       {!isEdit && (
         <div className="bg-surface-container-high rounded-xl p-4 border border-outline-variant">
           <p className="text-xs text-on-surface-variant italic">
-            * Por motivos de segurança, a senha não é definida pelo administrador. 
-            O estudante receberá um e-mail de boas-vindas com um link para definir sua própria senha 
+            * Por motivos de segurança, a senha não é definida pelo administrador.
+            O estudante receberá um e-mail com link para definir a própria senha
             assim que o cadastro for concluído.
           </p>
         </div>

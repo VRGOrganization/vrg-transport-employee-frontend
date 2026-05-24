@@ -6,7 +6,9 @@ import { useSearchParams } from "next/navigation";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
 import { studentService } from "@/services/studentService";
+import { universityService } from "@/services/universityService";
 import { Student } from "@/types/student";
+import type { University } from "@/types/university.types";
 import { StudentForm } from "@/components/students/StudentForm";
 import { StudentFormLayout } from "@/components/students/StudentFormLayout";
 import { SuccessBanner } from "@/components/students/SuccessBanner";
@@ -25,9 +27,19 @@ function EditStudentPageInner() {
   const [success, setSuccess] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
   const [modalView, setModalView] = useState<"deactivate" | "activate" | null>(null);
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [loadingUniversities, setLoadingUniversities] = useState(false);
 
   const { data, errors, loading, setLoading, onChange, setError, validate, clearErrors } =
     useStudentForm({ mode: "edit" });
+
+  useEffect(() => {
+    setLoadingUniversities(true);
+    universityService.list()
+      .then(setUniversities)
+      .catch(() => {})
+      .finally(() => setLoadingUniversities(false));
+  }, []);
 
   // Load student data
   useEffect(() => {
@@ -41,11 +53,13 @@ function EditStudentPageInner() {
       try {
         const s = await studentService.getById(studentId!);
         setStudent(s);
-        onChange("name", s.name);
-        onChange("email", s.email);
-        onChange("telephone", s.telephone ?? "");
+        onChange("name",        s.name);
+        onChange("email",       s.email);
+        onChange("telephone",   s.telephone   ?? "");
         onChange("institution", s.institution ?? "");
-        onChange("shift", s.shift ?? "");
+        onChange("shift",       s.shift       ?? "");
+        onChange("bloodType",   s.bloodType   ?? "");
+        onChange("degree",      s.degree      ?? "");
       } catch {
         setFetchError("Não foi possível carregar os dados do estudante");
       } finally {
@@ -65,10 +79,12 @@ function EditStudentPageInner() {
     clearErrors();
     try {
       await studentService.update(studentId!, {
-        name: data.name.trim(),
+        name:      data.name.trim(),
         telephone: data.telephone.trim(),
-        institution: data.institution,
-        shift: data.shift,
+        ...(data.institution ? { institution: data.institution.trim() } : { institution: "" }),
+        ...(data.shift       ? { shift: data.shift }                    : {}),
+        ...(data.bloodType   ? { bloodType: data.bloodType }            : {}),
+        ...(data.degree      ? { degree: data.degree.trim() }           : {}),
       });
       setSuccess(true);
     } catch (err: unknown) {
@@ -178,6 +194,8 @@ function EditStudentPageInner() {
                   mode="edit"
                   onChange={onChange}
                   onSubmit={handleSubmit}
+                  universities={universities}
+                  loadingUniversities={loadingUniversities}
                 />
               </>
             )}

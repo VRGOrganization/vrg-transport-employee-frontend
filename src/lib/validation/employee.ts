@@ -13,7 +13,7 @@ export const employeeEditSchema = employeeBaseSchema
   .extend({
     password: z
       .string()
-      .regex(PASSWORD_REGEX, "Mínimo 8 caracteres com maiúsculas, minúsculas e números")
+      .regex(PASSWORD_REGEX, "Mínimo 8 caracteres com maiúscula, minúscula, número e caractere especial")
       .optional()
       .or(z.literal("")),
     confirmPassword: z.string().optional(),
