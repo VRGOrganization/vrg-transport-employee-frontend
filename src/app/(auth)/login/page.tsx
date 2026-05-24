@@ -1,5 +1,7 @@
 import { EmployeeAdminLoginForm } from "@/components/auth/EmployeeAdminLoginForm";
 import { AuthPageShell } from "@/components/layout/AuthPageShell";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { Bus } from "lucide-react";
 
 export default function EmployeeAdminLoginPage() {
   return (
@@ -28,9 +30,7 @@ export default function EmployeeAdminLoginPage() {
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-surface/15 backdrop-blur-sm rounded-xl flex items-center justify-center border border-surface/20">
-              <span className="material-symbols-outlined text-white text-xl">
-                directions_bus
-              </span>
+              <Bus className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="text-white font-bold text-sm leading-tight">Transporte</p>
@@ -45,6 +45,9 @@ export default function EmployeeAdminLoginPage() {
         eyebrow="Acessar Conta"
         title="Entrar no sistema"
         subtitle="Use sua matrícula ou e-mail institucional."
+        topRight={
+          <ThemeToggle className="text-on-surface-variant hover:bg-surface-container hover:text-on-surface" />
+        }
       >
         <EmployeeAdminLoginForm />
       </AuthPageShell>

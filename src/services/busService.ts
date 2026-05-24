@@ -1,10 +1,11 @@
 import { http } from "./http";
+import { resolvePaginated, type Paginated } from "@/types/api";
 import type { Bus, BusStudent, BusRoute, BusQueueSummary } from "@/types/university.types";
 
 export const busService = {
-  list:               ()                                   => http.get<Bus[]>("/bus"),
-  listInactive:       ()                                   => http.get<Bus[]>("/bus/inactive"),
-  listWithQueueCounts: ()                                  => http.get<Bus[]>("/bus/with-queue-counts"),
+  list:               ()                                   => http.get<Paginated<Bus>>("/bus").then(resolvePaginated),
+  listInactive:       ()                                   => http.get<Paginated<Bus>>("/bus/inactive").then(resolvePaginated),
+  listWithQueueCounts: ()                                  => http.get<Paginated<Bus>>("/bus/with-queue-counts").then(resolvePaginated),
   create:             (data: { identifier: string; capacity?: number | null; shift?: string }) =>
                         http.post<Bus>("/bus", data),
   update:             (id: string, data: Partial<{ identifier: string; capacity?: number | null; shift?: string }>) =>

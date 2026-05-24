@@ -5,7 +5,7 @@ import { DayPicker } from "react-day-picker";
 import type { DateRange } from "react-day-picker";
 import { ptBR } from "react-day-picker/locale";
 import "react-day-picker/dist/style.css";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { busApi } from "@/lib/universityApi";
@@ -318,6 +318,7 @@ export function EnrollmentPeriodModal({
               onSelect={handleRangeSelect}
               numberOfMonths={months}
               locale={ptBR}
+              disabled={{ before: startOfDay(new Date()) }}
             />
             <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
               <div className="text-sm text-on-surface-variant">

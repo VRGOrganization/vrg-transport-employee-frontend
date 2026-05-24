@@ -17,17 +17,6 @@ export function Footer() {
             </p>
           </div>
         </div>
-        <div className="flex gap-8">
-          <a href="#" className="font-label text-xs text-on-surface-variant hover:text-primary transition-colors">
-            Ouvidoria
-          </a>
-          <a href="#" className="font-label text-xs text-on-surface-variant hover:text-primary transition-colors">
-            Privacidade
-          </a>
-          <a href="#" className="font-label text-xs text-on-surface-variant hover:text-primary transition-colors">
-            Ajuda
-          </a>
-        </div>
         <p className="font-label text-[10px] text-outline">
           © 2026 Prefeitura de São Fidélis. Todos os direitos reservados.
         </p>

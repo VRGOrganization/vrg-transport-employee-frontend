@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
 import { http } from "@/services/http";
+import { resolvePaginated, type Paginated } from "@/types/api";
 import type {
   LicenseRequestRecord,
   StudentRecord,
@@ -131,10 +132,10 @@ export default function AdminEnrollmentPeriodPage() {
       setStudents(normalizeStudents(studentsResponse));
 
       if (resolvedActive?._id) {
-        const queue = await http.get<LicenseRequestRecord[]>(
+        const queueRes = await http.get<Paginated<LicenseRequestRecord>>(
           `/enrollment-period/${resolvedActive._id}/waitlist`,
         );
-        setWaitlistRequests(queue);
+        setWaitlistRequests(resolvePaginated(queueRes));
       } else {
         setWaitlistRequests([]);
       }

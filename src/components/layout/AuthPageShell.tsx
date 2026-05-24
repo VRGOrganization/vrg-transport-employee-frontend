@@ -6,11 +6,15 @@ interface AuthPageShellProps {
   title: string;
   subtitle?: string;
   children: ReactNode;
+  topRight?: ReactNode;
 }
 
-export function AuthPageShell({ eyebrow, title, subtitle, children }: AuthPageShellProps) {
+export function AuthPageShell({ eyebrow, title, subtitle, children, topRight }: AuthPageShellProps) {
   return (
-    <main className="flex-1 flex flex-col bg-surface">
+    <main className="flex-1 flex flex-col bg-surface relative">
+      {topRight && (
+        <div className="absolute top-4 right-4 z-10">{topRight}</div>
+      )}
       <div className="flex-1 flex items-center justify-center px-8 py-12">
         <div className="w-full max-w-md">
           {eyebrow && (

@@ -9,10 +9,10 @@ import type { Employee } from "@/types/employee";
 import { Button } from "@/components/ui/Button";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Tabs } from "@/components/ui/Tabs";
-import { SearchInput } from "@/components/ui/SearchInput";
 import { Avatar } from "@/components/ui/Avatar";
 import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
+import { buildEmployeesCsv, downloadCsv } from "@/lib/csvUtils";
 import type { PageSize } from "@/lib/constants";
 
 type Tab = "active" | "inactive";
@@ -85,7 +85,7 @@ export default function EmployeesPage() {
   );
 
   const { tab, setTab, search, setSearch, page, setPage, pageSize, setPageSize,
-    loading, error, paginated, total, reload } =
+    loading, error, filtered, paginated, total, reload } =
     useListPage<Employee, Tab>({
       tabs: ["active", "inactive"],
       initialTab: "active",
@@ -94,6 +94,19 @@ export default function EmployeesPage() {
     });
 
   const handleReload = () => { setSelected(null); reload(); };
+
+  const [exportLoading, setExportLoading] = useState(false);
+
+  const handleExport = async () => {
+    setExportLoading(true);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const label = tab === "active" ? "ativos" : "desativados";
+      downloadCsv(buildEmployeesCsv(filtered), `funcionarios_${label}_${today}.csv`);
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   const actionsColumn: Column<Employee> = {
     key: "actions",
@@ -131,14 +144,9 @@ export default function EmployeesPage() {
           </Link>
         </div>
 
-        {/* Toolbar */}
-        <div className="px-4 pb-3 flex items-center justify-between gap-4 flex-wrap">
+        {/* Toolbar — only tabs; search and export live inside the DataTable */}
+        <div className="px-4 pb-3">
           <Tabs items={TAB_ITEMS} value={tab} onChange={setTab} />
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder="Buscar por nome, e-mail ou matrícula…"
-          />
         </div>
 
         {/* Table */}
@@ -166,6 +174,14 @@ export default function EmployeesPage() {
           total={total}
           onPageChange={setPage}
           onPageSizeChange={(s) => setPageSize(s as PageSize)}
+          search={{
+            value: search,
+            onChange: setSearch,
+            placeholder: "Buscar por nome, e-mail ou matrícula…",
+          }}
+          onExport={handleExport}
+          exportLoading={exportLoading}
+          exportLabel={tab === "active" ? "Exportar Ativos" : "Exportar Desativados"}
           className="mx-4 mb-4"
         />
       </main>

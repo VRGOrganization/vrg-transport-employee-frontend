@@ -61,6 +61,14 @@ export const backendUserDetailSchema = z.object({
   username: z.string().optional(),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string({ error: "Email é obrigatório" })
+    .trim()
+    .min(1, "Email é obrigatório")
+    .email("Informe um email válido"),
+});
+
 export function getFieldErrors(error: z.ZodError): Record<string, string> {
   const flat = error.flatten().fieldErrors as Record<string, string[] | undefined>;
   return Object.entries(flat).reduce<Record<string, string>>((acc, [field, issues]) => {
