@@ -9,6 +9,7 @@ import {
   Bus,
   BarChart2,
   User,
+  ShieldCheck,
 } from "lucide-react";
 import type { NavItem, SideNavBrand } from "./SideNav";
 
@@ -21,6 +22,7 @@ export const ADMIN_NAV_ITEMS: readonly NavItem[] = [
   { icon: IdCard,          label: "Carteirinhas",          href: "/admin/cards"              },
   { icon: Building2,       label: "Instituições",          href: "/admin/universities"       },
   { icon: Bus,             label: "Frota",                 href: "/admin/buses"              },
+  { icon: ShieldCheck,    label: "Regras de Prioridade",  href: "/admin/priority-rules"     },
 ];
 
 export const EMPLOYEE_NAV_ITEMS: readonly NavItem[] = [
