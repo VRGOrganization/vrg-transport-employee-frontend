@@ -3,12 +3,36 @@ export interface Student {
   name: string;
   email: string;
   telephone: string;
-  registrationNumber?: string;
+  degree?: string;
+  shift?: 'Manhã' | 'Tarde' | 'Noite' | 'Integral';
+  bloodType?: string;
+  universityId?: string | { _id: string; name: string; acronym: string };
   institution?: string;
-  shift?: "diurno" | "noturno";
+  photo?: string;
+  schedule?: Array<{
+    day: string;
+    period: string;
+    needsOutbound?: boolean;
+    needsReturn?: boolean;
+  }>;
+  transportMode?: 'regular' | 'weekly';
+  weeklyTripConfig?: {
+    departureDayOfWeek: string;
+    departurePeriod: string;
+    returnDayOfWeek: string;
+    returnPeriod: string;
+  };
+  hasDisability?: boolean;
+  distanceKm?: number;
+  courseSemester?: number;
+  status?: 'PENDING' | 'ACTIVE' | 'EXPIRED';
+  isInstitutionalEmail?: boolean;
+  hasPersonalDocuments?: boolean;
+  hasCompletedInitialEnrollment?: boolean;
   active: boolean;
+  secondaryBusId?: string;
+  registrationNumber?: string;
   emailVerified?: boolean;
-  schedule?: { day: string; period: string }[];
   createdAt: string;
   updatedAt: string;
 }
@@ -34,7 +58,7 @@ export interface LicenseRequestRecord {
   studentId: string;
   type: "initial" | "update";
   changedDocuments: string[];
-  status: "pending" | "approved" | "rejected" | "waitlisted";
+  status: "pending" | "approved" | "rejected" | "waitlisted" | "partially_waitlisted" | "cancelled";
   rejectionReason: string | null;
   rejectedAt: string | null;
   licenseId: string | null;

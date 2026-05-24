@@ -25,6 +25,7 @@ export function StudentListItem({
 }: StudentListItemProps) {
   const isPending = latestRequest?.status === "pending";
   const isWaitlisted = latestRequest?.status === "waitlisted";
+  const isPartiallyWaitlisted = latestRequest?.status === "partially_waitlisted";
   const isRejected = latestRequest?.status === "rejected";
   const isUpdateRequest = latestRequest?.type === "update";
 
@@ -82,6 +83,8 @@ export function StudentListItem({
                 ? "bg-success/15 text-success"
                 : isWaitlisted
                   ? "bg-warning-container text-on-warning"
+                : isPartiallyWaitlisted
+                  ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                 : isPending
                   ? "bg-warning/20 text-warning"
                   : isRejected
@@ -93,6 +96,8 @@ export function StudentListItem({
               ? "Com carteirinha"
               : isWaitlisted
                 ? `Na fila${latestRequest?.filaPosition ? ` (#${latestRequest.filaPosition})` : ""}`
+              : isPartiallyWaitlisted
+                ? `Parcial${latestRequest?.filaPosition ? ` (#${latestRequest.filaPosition})` : ""}`
               : isPending
                 ? "Pendente"
                 : isRejected

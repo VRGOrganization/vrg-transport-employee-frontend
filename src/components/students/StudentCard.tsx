@@ -39,12 +39,12 @@ export function StudentCard({ student, onClick, onEdit }: StudentCardProps) {
             {student.shift && (
               <span
                 className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
-                  student.shift === "diurno"
-                    ? "bg-info-container text-info"
-                    : "bg-primary-fixed text-primary"
+                  student.shift === "Noite"
+                    ? "bg-primary-fixed text-primary"
+                    : "bg-info-container text-info"
                 }`}
               >
-                {student.shift === "diurno" ? "Diurno" : "Noturno"}
+                {student.shift}
               </span>
             )}
           </div>

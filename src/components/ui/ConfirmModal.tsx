@@ -42,7 +42,7 @@ export function ConfirmModal({
   const s = VARIANT_STYLES[variant];
 
   return (
-    <Modal open={open} onClose={onClose} title={title} size="sm" hideClose>
+    <Modal open={open} onClose={onClose} title={title} size="sm" hideClose closeOnBackdrop={false}>
       <div className="flex flex-col items-center gap-3 py-4 text-center mb-5">
         <div className={`p-4 rounded-full ${s.bg}`}>
           <Icon className={`w-9 h-9 ${s.icon}`} />

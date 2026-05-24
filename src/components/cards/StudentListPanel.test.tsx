@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { StudentListPanel } from './StudentListPanel';
 
 const makeStudent = (id: string, name: string, institution = 'Inst') => ({ _id: id, name, email: `${id}@mail.com`, active: true, institution });
-const makeRequest = (id: string, studentId: string, universityId: string, status: 'pending' | 'waitlisted', createdAt = new Date().toISOString()) => ({ _id: id, studentId, universityId, status, createdAt, filaPosition: undefined });
+const makeRequest = (id: string, studentId: string, universityId: string, status: 'pending' | 'waitlisted' | 'partially_waitlisted' | 'approved' | 'rejected' | 'cancelled', createdAt = new Date().toISOString()) => ({ _id: id, studentId, universityId, status, createdAt, filaPosition: undefined });
 
 function renderPanel(props: any = {}) {
   const defaultProps = {

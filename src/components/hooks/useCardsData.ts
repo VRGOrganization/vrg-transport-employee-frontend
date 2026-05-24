@@ -146,7 +146,7 @@ export function useCardsData(bus?: Bus | null): UseCardsDataReturn {
     () =>
       new Set(
         licenseRequests
-          .filter((r) => r.status === "waitlisted")
+          .filter((r) => r.status === "waitlisted" || r.status === "partially_waitlisted")
           .map((r) => r.studentId),
       ),
     [licenseRequests],
