@@ -2,9 +2,11 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useCardsData } from "@/components/hooks/useCardsData";
+import { useAutoRefresh } from "@/components/hooks/useAutoRefresh";
 import BusSelectorPanel from "@/components/buses/BusSelectorPanel";
 import { busApi } from "@/lib/universityApi";
 import { usePdfPrint } from "@/components/hooks/usePdfPrint";
+import { AutoRefreshIndicator } from "@/components/cards/AutoRefreshIndicator";
 import { CardsPageHeader } from "@/components/cards/CardsPageHeader";
 import { CardsStatsRow } from "@/components/cards/CardsStatsRow";
 import { StudentListPanel } from "@/components/cards/StudentListPanel";
@@ -88,6 +90,15 @@ export default function AdminCardsPage() {
 
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [approveMessage, setApproveMessage] = useState("");
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+
+  const hasPendingOrWaitlisted = stats.pending > 0 || stats.waitlisted > 0;
+
+  const { isAutoRefreshing, refreshCount } = useAutoRefresh({
+    intervalMs: 30_000,
+    enabled: autoRefreshEnabled && hasPendingOrWaitlisted,
+    onRefresh: reload,
+  });
 
   const printableCardsByStudentId = useMemo(
     () => buildPrintableMap(licenses, students),
@@ -98,7 +109,16 @@ export default function AdminCardsPage() {
     <>
       <main className="bg-surface flex flex-col flex-1 px-6 py-8 md:px-10">
           <div className="mx-auto w-full space-y-6">
-            <CardsPageHeader onRefresh={reload} />
+            <div className="flex items-start justify-between gap-4">
+              <CardsPageHeader onRefresh={reload} />
+              <AutoRefreshIndicator
+                isRefreshing={isAutoRefreshing}
+                enabled={autoRefreshEnabled && hasPendingOrWaitlisted}
+                refreshCount={refreshCount}
+                intervalSeconds={30}
+                onToggle={() => setAutoRefreshEnabled((v) => !v)}
+              />
+            </div>
 
             <CardsStatsRow
               total={stats.total}
