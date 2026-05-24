@@ -6,7 +6,6 @@ import { banlistService } from "@/services/banlistService";
 import type { BanlistEntry } from "@/types/banlist";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Tabs } from "@/components/ui/Tabs";
-import { SearchInput } from "@/components/ui/SearchInput";
 import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
 import { UnbanModal } from "@/components/admin/UnbanModal";
@@ -152,13 +151,8 @@ export default function BanlistPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="px-4 pb-3 flex items-center justify-between gap-4 flex-wrap">
+      <div className="px-4 pb-3">
         <Tabs items={TAB_ITEMS} value={tab} onChange={setTab} />
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Buscar por nome ou e-mail…"
-        />
       </div>
 
       {/* Table */}
@@ -186,6 +180,11 @@ export default function BanlistPage() {
         total={total}
         onPageChange={setPage}
         onPageSizeChange={(s) => setPageSize(s as PageSize)}
+        search={{
+          value: search,
+          onChange: setSearch,
+          placeholder: "Buscar por nome ou e-mail…",
+        }}
         className="mx-4 mb-4"
       />
 

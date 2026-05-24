@@ -2,16 +2,15 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { GraduationCap, UserX, ShieldBan, Download } from "lucide-react";
+import { GraduationCap, UserX, ShieldBan } from "lucide-react";
 import { studentService } from "@/services/studentService";
 import { banlistService } from "@/services/banlistService";
 import type { Student } from "@/types/student";
 import type { BanlistEntry } from "@/types/banlist";
-import { Button } from "@/components/ui/Button";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Tabs } from "@/components/ui/Tabs";
-import { SearchInput } from "@/components/ui/SearchInput";
 import { Avatar } from "@/components/ui/Avatar";
+import { Button } from "@/components/ui/Button";
 import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
 import { getShiftLabel } from "@/lib/constants";
@@ -297,37 +296,9 @@ export default function StudentsPage() {
           )}
         </div>
 
-        {/* Toolbar */}
-        <div className="px-4 pb-3 flex items-center justify-between gap-4 flex-wrap">
+        {/* Toolbar — only tabs; search and export live inside each DataTable */}
+        <div className="px-4 pb-3">
           <Tabs items={TAB_ITEMS} value={topTab} onChange={handleTabChange} />
-          <div className="flex items-center gap-2">
-            {isStudentTab && (
-              <SearchInput
-                value={studentSearch}
-                onChange={setStudentSearch}
-                placeholder="Buscar por nome, e-mail ou instituição…"
-              />
-            )}
-            {isBanned && (
-              <SearchInput
-                value={banSearch}
-                onChange={setBanSearch}
-                placeholder="Buscar por nome ou e-mail…"
-              />
-            )}
-            {isStudentTab && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExport}
-                loading={exportLoading}
-                disabled={studentLoading || studentFiltered.length === 0}
-                icon={<Download size={15} />}
-              >
-                {studentTab === "active" ? "Exportar Ativos" : "Exportar Desativados"}
-              </Button>
-            )}
-          </div>
         </div>
 
         {/* Table — students */}
@@ -357,6 +328,14 @@ export default function StudentsPage() {
             total={studentTotal}
             onPageChange={setStudentPage}
             onPageSizeChange={(s) => setStudentPageSize(s as PageSize)}
+            search={{
+              value: studentSearch,
+              onChange: setStudentSearch,
+              placeholder: "Buscar por nome, e-mail ou instituição…",
+            }}
+            onExport={handleExport}
+            exportLoading={exportLoading}
+            exportLabel={studentTab === "active" ? "Exportar Ativos" : "Exportar Desativados"}
             className="mx-4 mb-4"
           />
         )}
@@ -385,6 +364,11 @@ export default function StudentsPage() {
             total={banTotal}
             onPageChange={setBanPage}
             onPageSizeChange={(s) => setBanPageSize(s as PageSize)}
+            search={{
+              value: banSearch,
+              onChange: setBanSearch,
+              placeholder: "Buscar por nome ou e-mail…",
+            }}
             className="mx-4 mb-4"
           />
         )}

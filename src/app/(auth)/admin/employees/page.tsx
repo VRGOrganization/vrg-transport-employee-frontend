@@ -2,14 +2,13 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { Users, UserX, Download } from "lucide-react";
+import { Users, UserX } from "lucide-react";
 import { employeeService } from "@/services/employeeService";
 import { EmployeeModal } from "@/components/employees/EmployeeModal";
 import type { Employee } from "@/types/employee";
 import { Button } from "@/components/ui/Button";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Tabs } from "@/components/ui/Tabs";
-import { SearchInput } from "@/components/ui/SearchInput";
 import { Avatar } from "@/components/ui/Avatar";
 import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
@@ -145,26 +144,9 @@ export default function EmployeesPage() {
           </Link>
         </div>
 
-        {/* Toolbar */}
-        <div className="px-4 pb-3 flex items-center justify-between gap-4 flex-wrap">
+        {/* Toolbar — only tabs; search and export live inside the DataTable */}
+        <div className="px-4 pb-3">
           <Tabs items={TAB_ITEMS} value={tab} onChange={setTab} />
-          <div className="flex items-center gap-2">
-            <SearchInput
-              value={search}
-              onChange={setSearch}
-              placeholder="Buscar por nome, e-mail ou matrícula…"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-              loading={exportLoading}
-              disabled={loading || filtered.length === 0}
-              icon={<Download size={15} />}
-            >
-              {tab === "active" ? "Exportar Ativos" : "Exportar Desativados"}
-            </Button>
-          </div>
         </div>
 
         {/* Table */}
@@ -192,6 +174,14 @@ export default function EmployeesPage() {
           total={total}
           onPageChange={setPage}
           onPageSizeChange={(s) => setPageSize(s as PageSize)}
+          search={{
+            value: search,
+            onChange: setSearch,
+            placeholder: "Buscar por nome, e-mail ou matrícula…",
+          }}
+          onExport={handleExport}
+          exportLoading={exportLoading}
+          exportLabel={tab === "active" ? "Exportar Ativos" : "Exportar Desativados"}
           className="mx-4 mb-4"
         />
       </main>
