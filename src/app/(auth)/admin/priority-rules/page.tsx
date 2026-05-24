@@ -1,47 +1,62 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ShieldCheck, ToggleLeft, ToggleRight, Pencil } from "lucide-react";
+import { ChevronUp, ChevronDown, Pencil, ShieldCheck, ToggleLeft, ToggleRight, Plus } from "lucide-react";
 import { priorityRuleService } from "@/services/priorityRuleService";
 import type { PriorityRule } from "@/types/priorityRule";
+import { CRITERION_TYPE_LABELS, OPERATOR_LABELS } from "@/types/priorityRule";
 import { PriorityRuleModal } from "@/components/admin/PriorityRuleModal";
 import { DashboardStatCard } from "@/components/cards/DashboardStatCard";
-import { DataTable, type Column } from "@/components/ui/DataTable";
-import { Tabs } from "@/components/ui/Tabs";
-import { ErrorState, EmptyState } from "@/components/ui/states";
-import { SearchInput } from "@/components/ui/SearchInput";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import type { PageSize } from "@/lib/constants";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { Tabs } from "@/components/ui/Tabs";
+import { ErrorState, EmptyState } from "@/components/ui/states";
 
 type Tab = "active" | "inactive";
 
 const TAB_ITEMS = [
-  { key: "active" as Tab, label: "Ativas", icon: "check_circle" },
+  { key: "active"   as Tab, label: "Ativas",   icon: "check_circle" },
   { key: "inactive" as Tab, label: "Inativas", icon: "cancel" },
 ];
 
+const LEVEL_STYLE: Record<number, string> = {
+  1: "bg-primary/15 text-primary",
+  2: "bg-secondary/15 text-secondary",
+  3: "bg-tertiary/15 text-tertiary",
+  4: "bg-outline-variant/30 text-on-surface-variant",
+  5: "bg-outline-variant/20 text-on-surface-variant",
+};
+
+function criterionLabel(c: PriorityRule["criteria"][number]): string {
+  const type = CRITERION_TYPE_LABELS[c.type] ?? c.type;
+  const op   = OPERATOR_LABELS[c.operator]   ?? c.operator;
+  if (c.operator === "is_true")  return `${type} é verdadeiro`;
+  if (c.operator === "is_false") return `${type} é falso`;
+  const val = Array.isArray(c.value) ? c.value.join(", ") : String(c.value ?? "");
+  return val ? `${type} ${op} "${val}"` : `${type} ${op}`;
+}
+
 export default function PriorityRulesPage() {
-  const [rules, setRules] = useState<PriorityRule[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [tab, setTab] = useState<Tab>("active");
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<PageSize>(10);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<PriorityRule | null>(null);
-  const [toggleTarget, setToggleTarget] = useState<PriorityRule | null>(null);
+  const [rules, setRules]             = useState<PriorityRule[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState("");
+  const [tab, setTab]                 = useState<Tab>("active");
+  const [search, setSearch]           = useState("");
+  const [modalOpen, setModalOpen]     = useState(false);
+  const [editing, setEditing]         = useState<PriorityRule | null>(null);
+  const [reordering, setReordering]   = useState<string | null>(null);
+  const [toggleTarget, setToggleTarget]   = useState<PriorityRule | null>(null);
   const [toggleLoading, setToggleLoading] = useState(false);
-  const [toggleError, setToggleError] = useState("");
+  const [toggleError, setToggleError]     = useState("");
+
+  const sorted = (list: PriorityRule[]) =>
+    [...list].sort((a, b) => a.sortOrder - b.sortOrder || a.level - b.level);
 
   const loadRules = useCallback(async () => {
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
-      const data = await priorityRuleService.list();
-      data.sort((a, b) => a.sortOrder - b.sortOrder || a.level - b.level);
-      setRules(data);
+      setRules(sorted(await priorityRuleService.list()));
     } catch {
       setError("Não foi possível carregar as regras de prioridade.");
     } finally {
@@ -49,17 +64,43 @@ export default function PriorityRulesPage() {
     }
   }, []);
 
-  useEffect(() => {
-    void loadRules();
-  }, [loadRules]);
+  useEffect(() => { void loadRules(); }, [loadRules]);
 
+  // ── Reorder ↑/↓ ──────────────────────────────────────────────────────────
+  const handleMove = async (rule: PriorityRule, direction: "up" | "down") => {
+    const visible = sorted(rules.filter((r) => r.active === (tab === "active")));
+    const idx = visible.findIndex((r) => r._id === rule._id);
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= visible.length) return;
+
+    const neighbor = visible[swapIdx];
+    setReordering(rule._id);
+    try {
+      const [updA, updB] = await Promise.all([
+        priorityRuleService.update(rule._id,     { sortOrder: neighbor.sortOrder }),
+        priorityRuleService.update(neighbor._id, { sortOrder: rule.sortOrder }),
+      ]);
+      setRules((prev) =>
+        sorted(prev.map((r) => {
+          if (r._id === updA._id) return updA;
+          if (r._id === updB._id) return updB;
+          return r;
+        }))
+      );
+    } catch {
+      // silent — UI unchanged on error
+    } finally {
+      setReordering(null);
+    }
+  };
+
+  // ── Toggle confirmation ───────────────────────────────────────────────────
   const confirmToggle = async () => {
     if (!toggleTarget) return;
-    setToggleLoading(true);
-    setToggleError("");
+    setToggleLoading(true); setToggleError("");
     try {
       const updated = await priorityRuleService.toggle(toggleTarget._id);
-      setRules((prev) => prev.map((r) => (r._id === toggleTarget._id ? updated : r)));
+      setRules((prev) => sorted(prev.map((r) => (r._id === toggleTarget._id ? updated : r))));
       setToggleTarget(null);
     } catch {
       setToggleError("Não foi possível alterar o status da regra. Tente novamente.");
@@ -68,39 +109,24 @@ export default function PriorityRulesPage() {
     }
   };
 
+  // ── CRUD callbacks ────────────────────────────────────────────────────────
   const handleSaved = (saved: PriorityRule) => {
     setRules((prev) => {
       const idx = prev.findIndex((r) => r._id === saved._id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = saved;
-        return next;
-      }
-      return [...prev, saved];
+      const next = idx >= 0 ? prev.map((r) => (r._id === saved._id ? saved : r)) : [...prev, saved];
+      return sorted(next);
     });
-    setModalOpen(false);
-    setEditing(null);
+    setModalOpen(false); setEditing(null);
   };
 
   const handleDeleted = (id: string) => {
     setRules((prev) => prev.filter((r) => r._id !== id));
-    setModalOpen(false);
-    setEditing(null);
+    setModalOpen(false); setEditing(null);
   };
 
-  const openCreate = () => {
-    setEditing(null);
-    setModalOpen(true);
-  };
-
-  const openEdit = (rule: PriorityRule) => {
-    setEditing(rule);
-    setModalOpen(true);
-  };
-
-  const tabFiltered = tab === "active" ? rules.filter((r) => r.active) : rules.filter((r) => !r.active);
-
-  const searchFiltered = search.trim()
+  // ── Filtered lists ────────────────────────────────────────────────────────
+  const tabFiltered = rules.filter((r) => r.active === (tab === "active"));
+  const displayed   = search.trim()
     ? tabFiltered.filter(
         (r) =>
           r.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -109,217 +135,168 @@ export default function PriorityRulesPage() {
       )
     : tabFiltered;
 
-  const totalPages = Math.max(1, Math.ceil(searchFiltered.length / pageSize));
-  const paginated = searchFiltered.slice((page - 1) * pageSize, page * pageSize);
-
-  const handleTabChange = (next: Tab) => {
-    setTab(next);
-    setSearch("");
-    setPage(1);
-  };
-
-  const handleSearch = (v: string) => {
-    setSearch(v);
-    setPage(1);
-  };
-
-  const COLUMNS: Column<PriorityRule>[] = [
-    {
-      key: "level",
-      label: "Nível",
-      width: "80px",
-      align: "center",
-      render: (r) => (
-        <span
-          className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
-            r.level === 1
-              ? "bg-primary/15 text-primary"
-              : r.level === 2
-                ? "bg-secondary/15 text-secondary"
-                : r.level === 3
-                  ? "bg-tertiary/15 text-tertiary"
-                  : "bg-outline-variant/30 text-on-surface-variant"
-          }`}
-        >
-          {r.level}
-        </span>
-      ),
-    },
-    {
-      key: "name",
-      label: "Nome",
-      render: (r) => (
-        <div>
-          <p className="font-semibold text-on-surface text-sm">{r.name}</p>
-          {r.description && (
-            <p className="text-xs text-on-surface-variant truncate max-w-xs">{r.description}</p>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "criteria",
-      label: "Critérios",
-      render: (r) => (
-        <span className="text-sm text-on-surface-variant">
-          {r.criteria.length === 0
-            ? "Nenhum"
-            : `${r.criteria.length} critério${r.criteria.length > 1 ? "s" : ""} (${r.criteriaLogic === "all" ? "todos" : "qualquer"})`}
-        </span>
-      ),
-    },
-    {
-      key: "sortOrder",
-      label: "Ordem",
-      align: "right",
-      width: "80px",
-      render: (r) => (
-        <span className="text-sm text-on-surface-variant">{r.sortOrder}</span>
-      ),
-    },
-    {
-      key: "actions",
-      label: "Ações",
-      align: "right",
-      width: "96px",
-      render: (r) => (
-        <div className="flex items-center justify-end gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setToggleError("");
-              setToggleTarget(r);
-            }}
-            title={r.active ? "Desativar" : "Ativar"}
-            className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-          >
-            {r.active ? (
-              <ToggleRight className="w-4 h-4 text-success" />
-            ) : (
-              <ToggleLeft className="w-4 h-4" />
-            )}
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              openEdit(r);
-            }}
-            title="Editar"
-            className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-          >
-            <Pencil className="w-4 h-4" />
-          </button>
-        </div>
-      ),
-    },
-  ];
-
   return (
     <div className="p-8 min-h-[calc(100vh-4rem)]">
-      {/* Header */}
+
+      {/* ── Header ── */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-on-surface">Regras de Prioridade</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-on-surface-muted mt-1">
             Configure os critérios que determinam a ordem de alocação de vagas nos ônibus
           </p>
         </div>
         <button
-          onClick={openCreate}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+          onClick={() => { setEditing(null); setModalOpen(true); }}
+          className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-container text-on-primary text-sm font-medium rounded-xl transition-colors shadow-sm"
         >
-          <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
-            add
-          </span>
+          <Plus className="w-4 h-4" />
           Nova Regra
         </button>
       </div>
 
-      {/* Stats cards */}
+      {/* ── Stats ── */}
       {!loading && rules.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-          <DashboardStatCard
-            icon={ShieldCheck}
-            label="Total de Regras"
-            value={rules.length}
-            badge="TOTAL"
-            accent="primary"
-          />
-          <DashboardStatCard
-            icon={ToggleRight}
-            label="Regras Ativas"
-            value={rules.filter((r) => r.active).length}
-            badge="ATIVAS"
-            accent="secondary"
-          />
-          <DashboardStatCard
-            icon={ToggleLeft}
-            label="Regras Inativas"
-            value={rules.filter((r) => !r.active).length}
-            badge="INATIVAS"
-            accent="tertiary"
-          />
-          <DashboardStatCard
-            icon={ShieldCheck}
-            label="Níveis em uso"
-            value={new Set(rules.filter((r) => r.active).map((r) => r.level)).size}
-            badge="NÍVEIS"
-            accent="primary"
-          />
+          <DashboardStatCard icon={ShieldCheck}   label="Total"          value={rules.length}                                                                   badge="TOTAL"    accent="primary"   />
+          <DashboardStatCard icon={ToggleRight}   label="Ativas"         value={rules.filter((r) => r.active).length}                                           badge="ATIVAS"   accent="secondary" />
+          <DashboardStatCard icon={ToggleLeft}    label="Inativas"       value={rules.filter((r) => !r.active).length}                                          badge="INATIVAS" accent="tertiary"  />
+          <DashboardStatCard icon={ShieldCheck}   label="Níveis em uso"  value={new Set(rules.filter((r) => r.active).map((r) => r.level)).size}                badge="NÍVEIS"   accent="primary"   />
         </div>
       )}
 
-      {/* Table */}
-      <DataTable
-        columns={COLUMNS}
-        rows={paginated}
-        rowKey={(r) => r._id}
-        loading={loading}
-        error={error ? <ErrorState message={error} onRetry={() => void loadRules()} /> : undefined}
-        empty={
-          <EmptyState
-            title="Nenhuma regra encontrada"
-            description={
-              search
-                ? "Tente outro termo de busca."
-                : tab === "active"
-                  ? "Nenhuma regra ativa cadastrada."
-                  : "Nenhuma regra inativa."
-            }
-          />
-        }
-        page={page}
-        pageSize={pageSize}
-        total={searchFiltered.length}
-        onPageChange={setPage}
-        onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
-        onRowClick={openEdit}
-        header={
-          <div className="px-4 py-3 border-b border-outline-variant/20 flex items-center gap-3 flex-wrap">
-            <Tabs items={TAB_ITEMS} value={tab} onChange={handleTabChange} />
-            <div className="ml-auto">
-              <SearchInput
-                value={search}
-                onChange={handleSearch}
-                placeholder="Buscar por nome ou nível..."
-              />
-            </div>
-          </div>
-        }
-      />
+      {/* ── Toolbar ── */}
+      <div className="flex items-center gap-3 flex-wrap mb-4">
+        <Tabs items={TAB_ITEMS} value={tab} onChange={(t) => { setTab(t); setSearch(""); }} />
+        <div className="ml-auto">
+          <SearchInput value={search} onChange={(v) => setSearch(v)} placeholder="Buscar por nome ou nível..." />
+        </div>
+      </div>
 
+      {/* ── Content ── */}
+      {loading ? (
+        <div className="flex flex-col gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-28 rounded-2xl bg-surface-container-low animate-pulse" />
+          ))}
+        </div>
+      ) : error ? (
+        <ErrorState message={error} onRetry={() => void loadRules()} />
+      ) : displayed.length === 0 ? (
+        <EmptyState
+          title="Nenhuma regra encontrada"
+          description={
+            search
+              ? "Tente outro termo de busca."
+              : tab === "active"
+                ? "Nenhuma regra ativa cadastrada."
+                : "Nenhuma regra inativa."
+          }
+        />
+      ) : (
+        <div className="flex flex-col gap-3">
+          {displayed.map((rule, idx) => {
+            const isFirst = idx === 0;
+            const isLast  = idx === displayed.length - 1;
+            const moving  = reordering === rule._id;
+
+            return (
+              <div
+                key={rule._id}
+                className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-5 flex items-start gap-4 group hover:border-outline-variant/60 transition-colors"
+              >
+                {/* Level badge */}
+                <span className={`inline-flex items-center justify-center w-10 h-10 rounded-xl text-sm font-bold shrink-0 ${LEVEL_STYLE[rule.level] ?? LEVEL_STYLE[5]}`}>
+                  {rule.level}
+                </span>
+
+                {/* Body */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    <h3 className="font-semibold text-on-surface text-sm">{rule.name}</h3>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant uppercase tracking-wide">
+                      {rule.criteriaLogic === "all" ? "TODAS condições" : "QUALQUER condição"}
+                    </span>
+                  </div>
+
+                  {rule.description && (
+                    <p className="text-xs text-on-surface-variant mb-2">{rule.description}</p>
+                  )}
+
+                  {rule.criteria.length > 0 ? (
+                    <ul className="flex flex-wrap gap-1.5 mt-2">
+                      {rule.criteria.map((c, i) => (
+                        <li
+                          key={i}
+                          className="text-[11px] px-2 py-1 rounded-lg bg-surface-container border border-outline-variant/30 text-on-surface-variant"
+                        >
+                          {criterionLabel(c)}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-on-surface-variant/50 italic mt-1">Sem critérios — aplica-se a todos</p>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
+                  {/* Move up */}
+                  <button
+                    disabled={isFirst || moving}
+                    onClick={() => void handleMove(rule, "up")}
+                    title="Mover para cima"
+                    className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                  </button>
+
+                  {/* Move down */}
+                  <button
+                    disabled={isLast || moving}
+                    onClick={() => void handleMove(rule, "down")}
+                    title="Mover para baixo"
+                    className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+
+                  {/* Edit */}
+                  <button
+                    onClick={() => { setEditing(rule); setModalOpen(true); }}
+                    title="Editar"
+                    className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+
+                  {/* Toggle active */}
+                  <button
+                    onClick={() => { setToggleError(""); setToggleTarget(rule); }}
+                    title={rule.active ? "Desativar" : "Ativar"}
+                    className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                  >
+                    {rule.active
+                      ? <ToggleRight className="w-4 h-4 text-success" />
+                      : <ToggleLeft  className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Form modal ── */}
       <PriorityRuleModal
         open={modalOpen}
         initial={editing}
-        onClose={() => {
-          setModalOpen(false);
-          setEditing(null);
-        }}
+        onClose={() => { setModalOpen(false); setEditing(null); }}
         onSaved={handleSaved}
         onDeleted={handleDeleted}
       />
 
-      {/* Toggle confirmation modal */}
+      {/* ── Toggle confirmation modal ── */}
       <Modal
         open={!!toggleTarget}
         onClose={() => { setToggleTarget(null); setToggleError(""); }}
@@ -327,48 +304,26 @@ export default function PriorityRulesPage() {
         title={toggleTarget?.active ? "Desativar regra?" : "Ativar regra?"}
         size="sm"
       >
-        <p className="text-sm text-on-surface-variant mb-1">
+        <p className="text-sm text-on-surface-variant mb-2">
           {toggleTarget?.active ? (
-            <>
-              A regra <strong className="text-on-surface">{toggleTarget.name}</strong> será{" "}
-              <span className="text-error font-medium">desativada</span> e deixará de ser
-              avaliada em novas solicitações.
-            </>
+            <>A regra <strong className="text-on-surface">{toggleTarget.name}</strong> será{" "}
+              <span className="text-error font-medium">desativada</span> e deixará de ser avaliada em novas solicitações.</>
           ) : (
-            <>
-              A regra <strong className="text-on-surface">{toggleTarget?.name}</strong> será{" "}
-              <span className="text-success font-medium">ativada</span> e passará a ser
-              avaliada em novas solicitações.
-            </>
+            <>A regra <strong className="text-on-surface">{toggleTarget?.name}</strong> será{" "}
+              <span className="text-success font-medium">ativada</span> e passará a ser avaliada em novas solicitações.</>
           )}
         </p>
-        <p className="text-sm text-on-surface-variant mt-2 mb-5">Tem certeza que deseja continuar?</p>
-
-        {toggleError && (
-          <p className="text-sm text-error mb-4">{toggleError}</p>
-        )}
-
+        <p className="text-sm text-on-surface-variant mb-5">Tem certeza que deseja continuar?</p>
+        {toggleError && <p className="text-sm text-error mb-4">{toggleError}</p>}
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            fullWidth
-            onClick={() => { setToggleTarget(null); setToggleError(""); }}
-            disabled={toggleLoading}
-          >
+          <Button variant="outline" size="sm" fullWidth onClick={() => { setToggleTarget(null); setToggleError(""); }} disabled={toggleLoading}>
             Não
           </Button>
           <Button
-            variant="primary"
-            size="sm"
-            fullWidth
+            variant="primary" size="sm" fullWidth
             loading={toggleLoading}
             onClick={() => void confirmToggle()}
-            className={
-              toggleTarget?.active
-                ? "bg-error hover:bg-error/90 text-white border-0"
-                : ""
-            }
+            className={toggleTarget?.active ? "bg-error hover:bg-error/90 text-white border-0" : ""}
           >
             Sim
           </Button>
