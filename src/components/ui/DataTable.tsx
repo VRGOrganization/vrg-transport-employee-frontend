@@ -1,9 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PAGE_SIZE_OPTIONS, type PageSize } from "@/lib/constants";
+import { SearchInput } from "./SearchInput";
 
 export interface Column<T> {
   key: string;
@@ -29,6 +30,18 @@ interface DataTableProps<T> {
   onRowClick?: (row: T) => void;
   skeletonRowCount?: number;
   className?: string;
+
+  /** Search field rendered inside the table toolbar */
+  search?: {
+    value: string;
+    onChange: (v: string) => void;
+    placeholder?: string;
+  };
+
+  /** Export button rendered inside the table toolbar */
+  onExport?: () => void | Promise<void>;
+  exportLoading?: boolean;
+  exportLabel?: string;
 }
 
 export function DataTable<T>({
@@ -46,8 +59,13 @@ export function DataTable<T>({
   onRowClick,
   skeletonRowCount = 6,
   className,
+  search,
+  onExport,
+  exportLoading = false,
+  exportLabel = "Exportar CSV",
 }: DataTableProps<T>) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const hasToolbar = search !== undefined || onExport !== undefined;
 
   return (
     <section
@@ -56,6 +74,31 @@ export function DataTable<T>({
         className,
       )}
     >
+      {/* ── Toolbar (search + export) ─────────────────────────────── */}
+      {hasToolbar && (
+        <div className="px-4 py-3 border-b border-outline-variant/20 flex items-center justify-end gap-2 flex-wrap">
+          {search !== undefined && (
+            <SearchInput
+              value={search.value}
+              onChange={search.onChange}
+              placeholder={search.placeholder}
+            />
+          )}
+          {onExport !== undefined && (
+            <button
+              onClick={() => void onExport()}
+              disabled={exportLoading}
+              className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-xs font-medium text-on-surface-variant hover:bg-surface-container-low hover:border-outline transition-colors disabled:opacity-50 disabled:cursor-wait cursor-pointer"
+            >
+              {exportLoading
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Download className="w-3.5 h-3.5" />}
+              <span>{exportLoading ? "Exportando..." : exportLabel}</span>
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="overflow-x-auto flex-1">
         <table className="w-full text-left">
           <thead className="sticky top-0">
@@ -169,15 +212,23 @@ function TablePagination({
     <div className="px-4 py-3 border-t border-outline-variant/20 flex items-center justify-between gap-4 flex-wrap text-xs text-on-surface-variant">
       <div className="flex items-center gap-2">
         <span>Linhas por página:</span>
-        <select
-          value={pageSize}
-          onChange={(e) => onPageSizeChange(Number(e.target.value) as PageSize)}
-          className="h-7 px-2 rounded-md border border-outline-variant bg-surface text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-        >
+        <div className="flex items-center gap-1">
           {PAGE_SIZE_OPTIONS.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <button
+              key={s}
+              onClick={() => onPageSizeChange(s)}
+              suppressHydrationWarning
+              className={cn(
+                "w-9 h-7 rounded-md text-xs font-semibold transition-all",
+                pageSize === s
+                  ? "bg-primary text-on-primary"
+                  : "text-on-surface-variant hover:bg-surface-container-low",
+              )}
+            >
+              {s}
+            </button>
           ))}
-        </select>
+        </div>
         <span>
           {start}–{end} de {total}
         </span>
