@@ -149,10 +149,19 @@ export default function StudentsPage() {
   const [viewingCardStudent, setViewingCard]  = useState<Student | null>(null);
   const [unbanTarget, setUnbanTarget]         = useState<BanlistEntry | null>(null);
   const [openDropdownId, setOpenDropdownId]   = useState<string | null>(null);
+  const [bannedIds, setBannedIds]             = useState<Set<string>>(new Set());
 
   // ── Student tabs (active / inactive) ─────────────────────────────
   const studentFetcher = useCallback(
-    (t: StudentTab) => (t === "active" ? studentService.list() : studentService.listInactive()),
+    async (t: StudentTab) => {
+      const [students, activeBans] = await Promise.all([
+        t === "active" ? studentService.list() : studentService.listInactive(),
+        banlistService.list(true).catch(() => [] as BanlistEntry[]),
+      ]);
+      const ids = new Set(activeBans.map((b) => b.studentId));
+      setBannedIds(ids);
+      return students.filter((s) => !ids.has(s._id));
+    },
     [],
   );
 
@@ -163,7 +172,7 @@ export default function StudentsPage() {
     pageSize: studentPageSize, setPageSize: setStudentPageSize,
     loading: studentLoading, error: studentError,
     filtered: studentFiltered,
-    paginated: studentPaginated, total: studentTotal, reload: studentReload,
+    paginated: studentPaginated, total: studentTotal, reloadAll: studentReloadAll,
   } = useListPage<Student, StudentTab>({
     tabs: ["active", "inactive"],
     initialTab: "active",
@@ -194,7 +203,7 @@ export default function StudentsPage() {
     if (t !== "banned") setStudentTab(t as StudentTab);
   };
 
-  const handleStudentReload = () => { setSelected(null); studentReload(); };
+  const handleStudentReload = () => { setSelected(null); studentReloadAll(); };
 
   const [exportLoading, setExportLoading] = useState(false);
 
@@ -208,7 +217,7 @@ export default function StudentsPage() {
       setExportLoading(false);
     }
   };
-  const handleBanned = () => { setViewingStudent(null); banReload(); };
+  const handleBanned = () => { setViewingStudent(null); banReload(); studentReloadAll(); };
 
   // ── Student action column ─────────────────────────────────────────
   const actionsColumn: Column<Student> = {
@@ -218,14 +227,14 @@ export default function StudentsPage() {
     render: (student) => (
       <div className="relative inline-block text-left">
         <button
-          onClick={() => setOpenDropdownId(openDropdownId === student._id ? null : student._id)}
+          onClick={(e) => { e.stopPropagation(); setOpenDropdownId(openDropdownId === student._id ? null : student._id); }}
           className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
         >
           <span className="material-symbols-outlined text-lg">more_vert</span>
         </button>
         {openDropdownId === student._id && (
           <>
-            <div className="fixed inset-0 z-10" onClick={() => setOpenDropdownId(null)} />
+            <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenDropdownId(null); }} />
             <div className="absolute right-0 mt-2 w-36 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
               {[
                 { icon: "visibility", label: "Ver",         action: () => { setViewingStudent(student); setOpenDropdownId(null); } },
@@ -234,7 +243,7 @@ export default function StudentsPage() {
               ].map(({ icon, label, action }) => (
                 <button
                   key={label}
-                  onClick={action}
+                  onClick={(e) => { e.stopPropagation(); action(); }}
                   className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
                 >
                   <span className="material-symbols-outlined text-lg">{icon}</span>
@@ -309,7 +318,7 @@ export default function StudentsPage() {
             rowKey={(s) => s._id}
             onRowClick={(s) => setViewingStudent(s)}
             loading={studentLoading}
-            error={studentError ? <ErrorState message={studentError} onRetry={studentReload} /> : undefined}
+            error={studentError ? <ErrorState message={studentError} onRetry={studentReloadAll} /> : undefined}
             empty={
               <EmptyState
                 icon={studentTab === "active" ? GraduationCap : UserX}
@@ -377,6 +386,7 @@ export default function StudentsPage() {
       {selected && (
         <StudentModal
           student={selected}
+          isBanned={bannedIds.has(selected._id)}
           onClose={() => setSelected(null)}
           onUpdated={handleStudentReload}
           onDeactivated={handleStudentReload}
@@ -399,7 +409,7 @@ export default function StudentsPage() {
           open
           entry={unbanTarget}
           onClose={() => setUnbanTarget(null)}
-          onSuccess={() => { setUnbanTarget(null); banReload(); }}
+          onSuccess={() => { setUnbanTarget(null); banReload(); studentReloadAll(); }}
         />
       )}
     </>

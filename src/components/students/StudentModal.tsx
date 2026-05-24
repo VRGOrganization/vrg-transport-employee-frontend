@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { UserX, UserCheck, Loader2, AlertCircle } from "lucide-react";
+import { UserX, UserCheck, Loader2, AlertCircle, ShieldBan } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { studentService } from "@/services/studentService";
@@ -9,6 +9,7 @@ import type { Student } from "@/types/student";
 
 interface Props {
   student: Student;
+  isBanned?: boolean;
   onClose: () => void;
   onUpdated: (updated: Student) => void;
   onDeactivated: (id: string) => void;
@@ -22,7 +23,7 @@ interface FormData {
   shift: string;
 }
 
-export function StudentModal({ student, onClose, onUpdated, onDeactivated, onReactivated }: Props) {
+export function StudentModal({ student, isBanned = false, onClose, onUpdated, onDeactivated, onReactivated }: Props) {
   const [data, setData] = useState<FormData>({
     name: student.name,
     telephone: student.telephone ?? "",
@@ -70,6 +71,7 @@ export function StudentModal({ student, onClose, onUpdated, onDeactivated, onRea
   };
 
   const handleConfirmToggleStatus = async () => {
+    if (isBanned && !student.active) return;
     setStatusLoading(true);
     setStatusError("");
     try {
@@ -177,18 +179,25 @@ export function StudentModal({ student, onClose, onUpdated, onDeactivated, onRea
                 {student.active ? "Conta ativa" : "Conta desativada"}
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => setView(student.active ? "delete-confirm" : "activate-confirm")}
-              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-                student.active
-                  ? "text-error hover:bg-error-container"
-                  : "text-success hover:bg-success-container"
-              }`}
-            >
-              {student.active ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
-              {student.active ? "Desativar" : "Reativar"}
-            </button>
+            {!student.active && isBanned ? (
+              <span className="flex items-center gap-1.5 text-xs font-medium text-on-surface-variant px-3 py-1.5">
+                <ShieldBan className="w-3.5 h-3.5 text-error" />
+                Remova o banimento antes de reativar
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setView(student.active ? "delete-confirm" : "activate-confirm")}
+                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+                  student.active
+                    ? "text-error hover:bg-error-container"
+                    : "text-success hover:bg-success-container"
+                }`}
+              >
+                {student.active ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
+                {student.active ? "Desativar" : "Reativar"}
+              </button>
+            )}
           </div>
 
           {generalError && (

@@ -88,6 +88,14 @@ export function useListPage<T, Tab extends string>({
 
   const reload = useCallback(() => load(tab), [load, tab]);
 
+  // Recarrega aba atual e invalida cache das demais (re-fetch lazy no próximo switch)
+  const reloadAll = useCallback(() => {
+    setItems((prev) =>
+      Object.fromEntries(tabs.map((t) => [t, t === tab ? prev[t] : null])) as Record<Tab, T[] | null>,
+    );
+    load(tab);
+  }, [load, tab, tabs]);
+
   return {
     tab,
     setTab: handleTabChange,
@@ -104,5 +112,6 @@ export function useListPage<T, Tab extends string>({
     total: filtered.length,
     totalPages: Math.max(1, Math.ceil(filtered.length / pageSize)),
     reload,
+    reloadAll,
   };
 }
