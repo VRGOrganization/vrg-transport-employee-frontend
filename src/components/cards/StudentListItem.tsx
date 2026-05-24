@@ -27,6 +27,7 @@ export function StudentListItem({
   const isWaitlisted = latestRequest?.status === "waitlisted";
   const isPartiallyWaitlisted = latestRequest?.status === "partially_waitlisted";
   const isRejected = latestRequest?.status === "rejected";
+  const isCancelled = latestRequest?.status === "cancelled";
   const isUpdateRequest = latestRequest?.type === "update";
 
   const baseClass = large
@@ -89,7 +90,9 @@ export function StudentListItem({
                   ? "bg-warning/20 text-warning"
                   : isRejected
                     ? "bg-error/15 text-error"
-                    : "bg-outline-variant/30 text-on-surface-variant"
+                    : isCancelled
+                      ? "bg-outline-variant/20 text-on-surface-variant line-through"
+                      : "bg-outline-variant/30 text-on-surface-variant"
             }`}
           >
             {hasCard
@@ -102,7 +105,9 @@ export function StudentListItem({
                 ? "Pendente"
                 : isRejected
                   ? "Recusada"
-                  : "Sem solicitação"}
+                  : isCancelled
+                    ? "Cancelada"
+                    : "Sem solicitação"}
           </span>
 
           {isUpdateRequest && (

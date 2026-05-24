@@ -9,6 +9,7 @@ import { universityApi, busApi } from "@/lib/universityApi";
 import { buildStudentsCsv, buildEmployeesCsv, buildBusesCsv, buildUniversitiesCsv, downloadCsv } from "@/lib/csvUtils";
 import { resolvePaginated, type Paginated } from "@/types/api";
 import { getGreeting } from "@/lib/utils/date";
+import { EnrollmentPeriodBanner } from "@/components/admin/EnrollmentPeriodBanner";
 import { DashboardStatCards } from "@/components/admin/dashboard/DashboardStatCards";
 import { DashboardUsersTable, type UserRow, type UserFilter } from "@/components/admin/dashboard/DashboardUsersTable";
 import type { PageSize } from "@/lib/constants";
@@ -56,6 +57,8 @@ function getTodayLabel() {
 
 export default function AdminDashboardPage() {
   const { user } = useEmployeeAuth();
+
+  const [activePeriod, setActivePeriod] = useState<EnrollmentPeriodRecord | null>(null);
 
   const [stats, setStats] = useState<DashboardStats>({
     activeStudents: null,
@@ -137,6 +140,7 @@ export default function AdminDashboardPage() {
 
       if (activePeriodResult.status === "fulfilled") {
         const p = activePeriodResult.value;
+        setActivePeriod(p ?? null);
         setStats((prev) => ({
           ...prev,
           fleetLabel: `${p.filledSlots}/${p.totalSlots}`,
@@ -226,6 +230,10 @@ export default function AdminDashboardPage() {
 
   return (
     <main className="px-6 py-5 bg-surface flex flex-col gap-5">
+
+      {activePeriod?.endDate && (
+        <EnrollmentPeriodBanner endDate={activePeriod.endDate} />
+      )}
 
       {/* ── Page header ──────────────────────────────────── */}
       <div className="flex items-center justify-between">

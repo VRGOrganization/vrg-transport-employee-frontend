@@ -61,6 +61,7 @@ export default function AdminCardsPage() {
     selectedImages,
     loadingSelected,
     currentLicense,
+    fullLicense,
     currentLicenseRequest,
     pendingImagesByType,
     profileImage,
@@ -153,6 +154,7 @@ export default function AdminCardsPage() {
                 selectedImages={selectedImages}
                 loadingSelected={loadingSelected}
                 currentLicense={currentLicense}
+                fullLicense={fullLicense}
                 currentLicenseRequest={currentLicenseRequest}
                 selectedBusRoute={selectedBusRoute}
                 pendingImagesByType={pendingImagesByType}

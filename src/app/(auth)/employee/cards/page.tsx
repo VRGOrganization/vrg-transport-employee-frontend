@@ -63,6 +63,7 @@ export default function EmployeeCardsPage() {
     selectedImages,
     loadingSelected,
     currentLicense,
+    fullLicense,
     currentLicenseRequest,
     pendingImagesByType,
     profileImage,
@@ -159,6 +160,7 @@ export default function EmployeeCardsPage() {
                 selectedImages={selectedImages}
                 loadingSelected={loadingSelected}
                 currentLicense={currentLicense}
+                fullLicense={fullLicense}
                 currentLicenseRequest={currentLicenseRequest}
                 selectedBusRoute={selectedBusRoute}
                 pendingImagesByType={pendingImagesByType}

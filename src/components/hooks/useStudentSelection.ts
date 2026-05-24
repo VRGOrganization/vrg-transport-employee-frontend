@@ -18,6 +18,7 @@ interface UseStudentSelectionReturn {
   loadingSelected: boolean;
   approvedLicensePreview: string | null;
   currentLicense: LicenseRecord | null;
+  fullLicense: LicenseRecord | null;
   currentLicenseRequest: LicenseRequestRecord | null;
   pendingImagesByType: Partial<Record<PhotoType, string>>;
   profileImage: string | null;
@@ -41,6 +42,7 @@ licenseRequests: LicenseRequestRecord[],
   const [approvedLicensePreview, setApprovedLicensePreview] = useState<string | null>(null);
   const [selectedRequestDetails, setSelectedRequestDetails] =
     useState<LicenseRequestRecord | null>(null);
+  const [fullLicense, setFullLicense] = useState<LicenseRecord | null>(null);
 
   const currentLicense = useMemo(() => {
     if (!selected) return null;
@@ -145,6 +147,7 @@ licenseRequests: LicenseRequestRecord[],
     setSelectedImages([]);
     setApprovedLicensePreview(null);
     setSelectedRequestDetails(null);
+    setFullLicense(null);
     setLoadingSelected(true);
     try {
       const [images, requestsByStudent] = await Promise.all([
@@ -153,6 +156,11 @@ licenseRequests: LicenseRequestRecord[],
           .get<LicenseRequestRecord[]>(`/license-request/student/${student._id}`)
           .catch(() => []),
       ]);
+
+      // Buscar licença completa (inclui expirationDate, qrCodeUrl, verificationCode)
+      const licenseDetail = await http
+        .get<LicenseRecord>(`/license/searchByStudent/${student._id}`)
+        .catch(() => null);
 
       const selectedLicense =
         licenses.find((license) => license.studentId === student._id) ?? null;
@@ -165,10 +173,12 @@ licenseRequests: LicenseRequestRecord[],
       setSelectedImages(images);
       setApprovedLicensePreview(extractLicenseImage(selectedLicense));
       setSelectedRequestDetails(latestDetailedRequest);
+      setFullLicense(licenseDetail);
     } catch {
       setSelectedImages([]);
       setApprovedLicensePreview(null);
       setSelectedRequestDetails(null);
+      setFullLicense(null);
     } finally {
       setLoadingSelected(false);
     }
@@ -179,6 +189,7 @@ licenseRequests: LicenseRequestRecord[],
     setSelectedImages([]);
     setApprovedLicensePreview(null);
     setSelectedRequestDetails(null);
+    setFullLicense(null);
   }, []);
 
   return {
@@ -187,6 +198,7 @@ licenseRequests: LicenseRequestRecord[],
     loadingSelected,
     approvedLicensePreview,
     currentLicense,
+    fullLicense,
     currentLicenseRequest,
     pendingImagesByType,
     profileImage,

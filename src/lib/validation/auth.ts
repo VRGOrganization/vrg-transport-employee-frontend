@@ -10,9 +10,9 @@ export const employeeLoginRequestSchema = z.object({
     .max(100, "Login deve ter no maximo 100 caracteres")
     .regex(LOGIN_REGEX, "Login contem caracteres invalidos"),
   password: z
-    .string({ error: "Senha e obrigatoria" })
-    .min(6, "Senha deve ter no minimo 6 caracteres")
-    .max(100, "Senha deve ter no maximo 100 caracteres"),
+    .string({ error: "Senha é obrigatória" })
+    .min(8, "Senha deve ter no mínimo 8 caracteres")
+    .max(64, "Senha deve ter no máximo 64 caracteres"),
     role: z.enum(["admin", "employee"], { 
     error: "Selecione um perfil de acesso",
   }),

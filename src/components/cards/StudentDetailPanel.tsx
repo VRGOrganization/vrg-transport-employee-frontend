@@ -11,8 +11,11 @@ import type {
   StudentRecord,
 } from "@/types/cards.types";
 import type { BusRoute, Bus } from "@/types/university.types";
+import { AllocationSummaryCard } from "./AllocationSummaryCard";
 import { ApprovalFooter } from "./ApprovalFooter";
 import { DocumentsGrid } from "./DocumentsGrid";
+import { LicenseDetailsCard } from "./LicenseDetailsCard";
+import { PriorityBadge } from "./PriorityBadge";
 import { StudentInfoCard } from "./StudentInfoCard";
 import { UpdateRequestDiff } from "./UpdateRequestDiff";
 
@@ -30,6 +33,7 @@ interface StudentDetailPanelProps {
   governmentImage: string | null;
   proofOfResidenceImage: string | null;
   selectedLicensePreview: string | null;
+  fullLicense?: LicenseRecord | null;
   onReload: () => Promise<void>;
   onOpenRejectModal: () => void;
   printingSingle: boolean;
@@ -50,6 +54,7 @@ export function StudentDetailPanel({
   governmentImage,
   proofOfResidenceImage,
   selectedLicensePreview,
+  fullLicense,
   onReload,
   onOpenRejectModal,
   printingSingle,
@@ -142,6 +147,36 @@ export function StudentDetailPanel({
       <div className="flex flex-1 min-h-0 flex-col">
         <div className="flex-1 min-h-0 space-y-4 overflow-y-auto pb-4 pr-1">
           <StudentInfoCard student={selected} currentLicense={currentLicense} />
+
+          {(fullLicense ?? currentLicense) && (
+            <LicenseDetailsCard license={(fullLicense ?? currentLicense)!} />
+          )}
+
+          {/* ── Bloco de prioridade e alocação ─────────────────── */}
+          {currentLicenseRequest &&
+            (currentLicenseRequest.priorityLevel != null ||
+              (currentLicenseRequest.allocationSummary?.length ?? 0) > 0) && (
+              <div className="space-y-2">
+                {currentLicenseRequest.priorityLevel != null && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-on-surface-variant">Prioridade:</span>
+                    <PriorityBadge
+                      level={currentLicenseRequest.priorityLevel}
+                      ruleName={currentLicenseRequest.priorityRuleName}
+                    />
+                  </div>
+                )}
+
+                {currentLicenseRequest.allocationSummary &&
+                  currentLicenseRequest.allocationSummary.length > 0 && (
+                    <AllocationSummaryCard
+                      allocations={currentLicenseRequest.allocationSummary}
+                      transportMode={currentLicenseRequest.transportMode}
+                    />
+                  )}
+              </div>
+            )}
+          {/* ─────────────────────────────────────────────────────── */}
 
           <div className="border-t border-outline-variant/20" />
 

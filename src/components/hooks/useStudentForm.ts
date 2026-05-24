@@ -57,8 +57,8 @@ export function useStudentForm({ mode, initial }: UseStudentFormOptions) {
       institution: flat.institution?.[0] ?? "",
       shift: flat.shift?.[0] ?? "",
       cpf: flat.cpf?.[0] ?? "",
-      password: flat.password?.[0] ?? "",
-      confirmPassword: flat.confirmPassword?.[0] ?? "",
+      password: "",
+      confirmPassword: "",
     };
 
     setErrors(next);

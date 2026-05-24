@@ -23,11 +23,32 @@ export type StudentsResponse =
   | StudentRecord[]
   | { data?: StudentRecord[]; total?: number; page?: number; limit?: number };
 
+// Representa uma alocação de ônibus por dia/período dentro do allocationSummary
+export interface AllocationEntry {
+  day: string;           // "SEG" | "TER" | "QUA" | "QUI" | "SEX"
+  period: string;        // "Manhã" | "Tarde" | "Noite"
+  busIdentifier?: string | null;
+  busId?: string | null;
+  status: "active" | "waitlisted" | "cancelled";
+  needsOutbound: boolean;
+  needsReturn: boolean;
+}
+
 export interface LicenseRecord {
   _id: string;
   studentId: string;
+  employeeId?: string;
+  enrollmentPeriodId?: string | null;
   imageLicense: string;
-  status: "active" | "inactive" | "expired";
+  status: "active" | "inactive" | "expired" | "rejected";
+  existing?: boolean;
+  expirationDate?: string | null;
+  verificationCode?: string | null;
+  qrCodeUrl?: string | null;
+  rejectionReason?: string | null;
+  rejectedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface LicenseRequestRecord {
@@ -45,6 +66,12 @@ export interface LicenseRequestRecord {
   busId?: string | { _id: string } | null;
   universityId?: string | { _id: string } | null;
   accessBusIdentifiers?: string[];
+  // Campos de prioridade e alocação
+  allocationSummary?: AllocationEntry[] | null;
+  priorityLevel?: number | null;
+  priorityRuleName?: string | null;
+  transportMode?: "regular" | "weekly" | null;
+  cardNote?: string | null;
   createdAt: string;
 }
 

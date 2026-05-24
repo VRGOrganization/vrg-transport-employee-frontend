@@ -58,6 +58,15 @@ export function ApprovalFooter({
         )}
       </div>
 
+      {currentLicenseRequest?.cardNote && (
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-on-surface space-y-0.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+            Observação da aprovação
+          </p>
+          <p>{currentLicenseRequest.cardNote}</p>
+        </div>
+      )}
+
       {approveMessage && (
         <div className="rounded-xl border border-outline-variant bg-surface p-3 text-xs text-on-surface">
           {approveMessage}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
+import { EnrollmentPeriodBanner } from "@/components/admin/EnrollmentPeriodBanner";
 import { EnrollmentPeriodModal } from "@/components/admin/EnrollmentPeriodModal";
 import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -244,6 +245,10 @@ export default function AdminEnrollmentPeriodPage() {
 
             {feedback && <StatusBanner variant="success">{feedback}</StatusBanner>}
             {error && <StatusBanner variant="error">{error}</StatusBanner>}
+
+            {activePeriod?.endDate && (
+              <EnrollmentPeriodBanner endDate={activePeriod.endDate} />
+            )}
 
             <section className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-5">
               <div className="mb-4 flex items-center justify-between">
