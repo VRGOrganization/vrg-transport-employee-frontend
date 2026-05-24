@@ -204,7 +204,7 @@ export default function AdminDashboardPage() {
       await new Promise((r) => setTimeout(r, 300));
       downloadCsv(buildUniversitiesCsv(unis), `faculdades_${today}.csv`);
     } catch (err) {
-      console.error("Erro ao exportar dados:", err);
+      if (process.env.NODE_ENV !== "production") console.error("Erro ao exportar dados:", err);
       alert("Erro ao exportar dados. Tente novamente.");
     } finally {
       setExportLoading(false);

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Student } from "@/types/student";
 import { getInitials, AVATAR_COLORS } from "@/lib/utils/string";
 
@@ -18,6 +19,7 @@ export function StudentTable({
   loading,
   onDeleted,
 }: StudentTableProps) {
+  const router = useRouter();
   const [page, setPage] = useState(1);
 
   const totalPages = Math.max(1, Math.ceil(students.length / PAGE_SIZE));
@@ -137,7 +139,7 @@ export function StudentTable({
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button
-                          onClick={() => window.location.assign(`/employee/students/edit?id=${student._id}`)}
+                          onClick={() => router.push(`/employee/students/edit?id=${student._id}`)}
                           className="p-2 text-primary hover:bg-primary-fixed rounded-lg transition-colors inline-flex"
                           title="Editar"
                         >

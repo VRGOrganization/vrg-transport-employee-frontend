@@ -11,6 +11,11 @@ import type {
   StudentRecord,
 } from "@/types/cards.types";
 import type { BusRoute, Bus } from "@/types/university.types";
+
+function busLabel(route: BusRoute | Bus | null): string | null {
+  if (!route) return null;
+  return (route as BusRoute).lineNumber ?? (route as Bus).identifier ?? null;
+}
 import { AllocationSummaryCard } from "./AllocationSummaryCard";
 import { ApprovalFooter } from "./ApprovalFooter";
 import { DocumentsGrid } from "./DocumentsGrid";
@@ -110,7 +115,7 @@ export function StudentDetailPanel({
       setApproveMessage("Não é possível criar a carteirinha sem instituição no cadastro.");
       return;
     }
-    const selectedBusIdentifier = (selectedBusRoute as any)?.identifier ?? (selectedBusRoute as any)?.lineNumber ?? null;
+    const selectedBusIdentifier = busLabel(selectedBusRoute);
     if (!selectedBusIdentifier) {
       setApproveMessage("Selecione uma rota antes de criar a carteirinha.");
       return;
@@ -217,7 +222,7 @@ export function StudentDetailPanel({
           currentLicense={currentLicense}
           currentLicenseRequest={currentLicenseRequest}
           selectedLicensePreview={selectedLicensePreview}
-          selectedBusRouteLabel={(selectedBusRoute as any)?.lineNumber ?? (selectedBusRoute as any)?.identifier ?? ""}
+          selectedBusRouteLabel={busLabel(selectedBusRoute) ?? ""}
           hasInstitution={!!selected.institution?.trim()}
           approving={approving}
           printingSingle={printingSingle}

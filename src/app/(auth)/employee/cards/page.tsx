@@ -96,7 +96,7 @@ export default function EmployeeCardsPage() {
 
   const hasPendingOrWaitlisted = stats.pending > 0 || stats.waitlisted > 0;
 
-  const { isAutoRefreshing, refreshCount } = useAutoRefresh({
+  const { isAutoRefreshing } = useAutoRefresh({
     intervalMs: 30_000,
     enabled: autoRefreshEnabled && hasPendingOrWaitlisted,
     onRefresh: reload,
@@ -116,7 +116,6 @@ export default function EmployeeCardsPage() {
               <AutoRefreshIndicator
                 isRefreshing={isAutoRefreshing}
                 enabled={autoRefreshEnabled && hasPendingOrWaitlisted}
-                refreshCount={refreshCount}
                 intervalSeconds={30}
                 onToggle={() => setAutoRefreshEnabled((v) => !v)}
               />

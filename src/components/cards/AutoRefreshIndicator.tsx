@@ -3,7 +3,6 @@ import { RefreshCw } from "lucide-react";
 interface AutoRefreshIndicatorProps {
   isRefreshing: boolean;
   enabled: boolean;
-  refreshCount: number;
   intervalSeconds: number;
   onToggle: () => void;
 }
@@ -11,7 +10,6 @@ interface AutoRefreshIndicatorProps {
 export function AutoRefreshIndicator({
   isRefreshing,
   enabled,
-  refreshCount: _refreshCount,
   intervalSeconds,
   onToggle,
 }: AutoRefreshIndicatorProps) {

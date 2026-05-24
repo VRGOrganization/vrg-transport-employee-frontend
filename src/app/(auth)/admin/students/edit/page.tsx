@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
@@ -14,6 +15,7 @@ import { AlertCircle, UserCheck, UserX, CheckCircle2 } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 
 function EditStudentPageInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const studentId = searchParams.get("id");
 
@@ -112,7 +114,7 @@ function EditStudentPageInner() {
         <div className="max-w-lg mx-auto flex flex-col items-center gap-4 py-16 text-center">
           <AlertCircle className="w-10 h-10 text-error" />
           <p className="text-on-surface-variant">{fetchError}</p>
-          <Button variant="outline" size="sm" onClick={() => window.history.back()}>
+          <Button variant="outline" size="sm" onClick={() => router.back()}>
             Voltar
           </Button>
         </div>

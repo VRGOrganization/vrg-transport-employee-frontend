@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { busApi, universityApi } from "@/lib/universityApi";
 import type { Bus, BusStudent } from "@/types/university.types";
-import { Bus as BusIcon, Users, UserX, X } from "lucide-react";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { AlertCircle, Bus as BusIcon, Users, UserX, X } from "lucide-react";
 
 interface Props {
   bus: Bus | null;
@@ -21,6 +22,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
   const [students, setStudents] = useState<BusStudent[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [universityCache, setUniversityCache] = useState<Record<string, string>>({});
 
@@ -54,6 +56,26 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
         setUniversityCache(next);
       });
   }, [bus, setUniversityCache]);
+
+  const handleReleaseSlots = async () => {
+    if (!bus) return;
+    try {
+      setActionLoading(true);
+      setMessage("");
+      await busApi.releaseSlots(bus._id, true);
+      setMessage("Vagas liberadas com sucesso.");
+      setLoading(true);
+      const list = await busApi.studentsByBusId(bus._id);
+      setStudents(list);
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setMessage(e?.message ?? "Erro ao liberar vagas.");
+    } finally {
+      setActionLoading(false);
+      setLoading(false);
+      setTimeout(() => setMessage(""), 4000);
+    }
+  };
 
   if (!bus) return null;
 
@@ -120,26 +142,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={async () => {
-                  if (!bus) return;
-                  const ok = window.confirm("Confirmar liberação de vagas para este ônibus? (promoverá automaticamente alunos em fila)");
-                  if (!ok) return;
-                  try {
-                    setActionLoading(true);
-                    setMessage("");
-                    await busApi.releaseSlots(bus._id, true);
-                    setMessage("Vagas liberadas com sucesso.");
-                    setLoading(true);
-                    const list = await busApi.studentsByBusId(bus._id);
-                    setStudents(list);
-                  } catch (err: any) {
-                    setMessage(err?.message ?? "Erro ao liberar vagas.");
-                  } finally {
-                    setActionLoading(false);
-                    setLoading(false);
-                    setTimeout(() => setMessage(""), 4000);
-                  }
-                }}
+                onClick={() => setConfirmOpen(true)}
                 disabled={actionLoading}
                 className="px-3 py-2 rounded-lg bg-warning-container text-on-warning text-sm"
               >
@@ -281,6 +284,21 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
           )}
         </div>
       </aside>
+
+      <ConfirmModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={async () => {
+          setConfirmOpen(false);
+          await handleReleaseSlots();
+        }}
+        loading={actionLoading}
+        title="Liberar vagas"
+        description="Confirmar liberação de vagas para este ônibus? Alunos em fila serão promovidos automaticamente."
+        icon={AlertCircle}
+        variant="warning"
+        confirmLabel="Liberar"
+      />
     </>
   );
 }

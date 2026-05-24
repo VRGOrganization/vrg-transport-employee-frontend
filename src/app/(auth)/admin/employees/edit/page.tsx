@@ -77,7 +77,7 @@ function EditEmployeeContent() {
           registrationId: data.registrationId,
         });
       } catch (err: unknown) {
-        console.error("Erro ao buscar funcionário:", err);
+        if (process.env.NODE_ENV !== "production") console.error("Erro ao buscar funcionário:", err);
         setErrors((prev) => ({ ...prev, general: "Não foi possível carregar os dados do funcionário" }));
       } finally {
         setLoading(false);

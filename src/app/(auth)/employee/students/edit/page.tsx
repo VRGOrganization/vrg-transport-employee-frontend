@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { AlertCircle } from "lucide-react";
 import { Footer } from "@/components/layout/Footer";
@@ -14,6 +15,7 @@ import { SuccessBanner } from "@/components/students/SuccessBanner";
 import { useStudentForm } from "@/components/hooks/useStudentForm";
 
 function EditStudentPageInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const studentId = searchParams.get("id");
 
@@ -122,7 +124,7 @@ function EditStudentPageInner() {
             description={fetchError}
             size="sm"
             actions={
-              <Button variant="outline" size="sm" onClick={() => window.history.back()}>
+              <Button variant="outline" size="sm" onClick={() => router.back()}>
                 Voltar
               </Button>
             }

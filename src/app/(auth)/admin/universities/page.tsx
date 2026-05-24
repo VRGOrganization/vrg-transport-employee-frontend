@@ -49,7 +49,7 @@ export default function UniversitiesPage() {
       const data = await courseApi.listByUniversity(universityId);
       setCourses(data);
     } catch (err: any) {
-      console.error("[loadCourses] erro:", err);
+      if (process.env.NODE_ENV !== "production") console.error("[loadCourses] erro:", err);
       setCourses([]);
       setCoursesError(err?.message ?? "Não foi possível carregar os cursos.");
     } finally {
