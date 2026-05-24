@@ -96,6 +96,16 @@ export interface ImageRecord {
   studentCard: string | null;
 }
 
+export interface ImageHistoryRecord {
+  _id: string;
+  studentId: string;
+  imageId: string;
+  photoType: PhotoType;
+  photo3x4: string | null;
+  documentImage: string | null;
+  replacedAt: string;
+}
+
 export interface PrintableCard {
   studentName: string;
   imageData: string;
@@ -109,8 +119,8 @@ export interface PreviewItem {
 export type StudentFilter = "pending" | "waitlisted" | "all" | "with-card";
 
 export interface RejectionReasonConfig {
-  id: string;
   label: string;
+  isPersonalDocumentReason: boolean;
 }
 
 export type RejectionReason = string;

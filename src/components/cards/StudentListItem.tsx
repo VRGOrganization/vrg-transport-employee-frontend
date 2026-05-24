@@ -28,8 +28,6 @@ export function StudentListItem({
   const isPartiallyWaitlisted = latestRequest?.status === "partially_waitlisted";
   const isRejected = latestRequest?.status === "rejected";
   const isCancelled = latestRequest?.status === "cancelled";
-  const isUpdateRequest = latestRequest?.type === "update";
-
   const baseClass = large
     ? `w-full rounded-xl border p-6 transition ${
         isSelected ? "border-primary bg-primary/8" : "border-outline-variant bg-surface-container-lowest"
@@ -110,9 +108,14 @@ export function StudentListItem({
                     : "Sem solicitação"}
           </span>
 
-          {isUpdateRequest && (
+          {latestRequest?.type === "update" && (
             <span className="rounded-full bg-secondary/15 px-2 py-1 text-[10px] font-semibold text-secondary">
-              Alteração
+              Atualização
+            </span>
+          )}
+          {latestRequest?.type === "initial" && latestRequest.status === "pending" && (
+            <span className="rounded-full bg-primary/15 px-2 py-1 text-[10px] font-semibold text-primary">
+              Inicial
             </span>
           )}
           {!isSelectable && (

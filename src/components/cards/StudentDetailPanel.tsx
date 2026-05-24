@@ -1,5 +1,5 @@
-import { Eye } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Eye, History } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { ImageLightbox } from "@/components/cards/CardPageComponents";
 import { http } from "@/services/http";
 import type {
@@ -14,6 +14,7 @@ import type { BusRoute, Bus } from "@/types/university.types";
 import { AllocationSummaryCard } from "./AllocationSummaryCard";
 import { ApprovalFooter } from "./ApprovalFooter";
 import { DocumentsGrid } from "./DocumentsGrid";
+import { ImageHistoryDrawer } from "./ImageHistoryDrawer";
 import { LicenseDetailsCard } from "./LicenseDetailsCard";
 import { PriorityBadge } from "./PriorityBadge";
 import { StudentInfoCard } from "./StudentInfoCard";
@@ -63,6 +64,11 @@ export function StudentDetailPanel({
   const [approving, setApproving] = useState(false);
   const [approveMessage, setApproveMessage] = useState("");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  useEffect(() => {
+    setHistoryOpen(false);
+  }, [selected?._id]);
 
   const licensePreviewItems = useMemo<PreviewItem[]>(() => {
     const base: PreviewItem[] = [
@@ -148,6 +154,16 @@ export function StudentDetailPanel({
         <div className="flex-1 min-h-0 space-y-4 overflow-y-auto pb-4 pr-1">
           <StudentInfoCard student={selected} currentLicense={currentLicense} />
 
+          <div className="flex justify-end">
+            <button
+              onClick={() => setHistoryOpen(true)}
+              className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-primary transition-colors px-2 py-1.5 rounded-lg hover:bg-surface-container-high"
+            >
+              <History className="w-3.5 h-3.5" />
+              Histórico de documentos
+            </button>
+          </div>
+
           {(fullLicense ?? currentLicense) && (
             <LicenseDetailsCard license={(fullLicense ?? currentLicense)!} />
           )}
@@ -219,6 +235,14 @@ export function StudentDetailPanel({
           currentIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
           onNavigate={setLightboxIndex}
+        />
+      )}
+
+      {historyOpen && (
+        <ImageHistoryDrawer
+          studentId={selected._id}
+          studentName={selected.name}
+          onClose={() => setHistoryOpen(false)}
         />
       )}
     </section>

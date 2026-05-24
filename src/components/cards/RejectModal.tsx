@@ -21,7 +21,7 @@ export function RejectModal({
   onReload,
 }: RejectModalProps) {
   const [reasons, setReasons] = useState<RejectionReasonConfig[]>([]);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedLabels, setSelectedLabels] = useState<Set<string>>(new Set());
   const [customMessage, setCustomMessage] = useState("");
   const [rejecting, setRejecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -33,17 +33,24 @@ export function RejectModal({
       .catch(() => setReasons([]));
   }, []);
 
-  const toggleReason = (id: string) => {
-    setSelectedIds((prev) => {
+  const toggleReason = (label: string) => {
+    setSelectedLabels((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
       return next;
     });
   };
 
+  const hasPersonalDocReason = reasons.some(
+    (r) => (r.isPersonalDocumentReason ?? false) && selectedLabels.has(r.label),
+  );
+
+  const cardReasons = reasons.filter((r) => !(r.isPersonalDocumentReason ?? false));
+  const personalDocReasons = reasons.filter((r) => r.isPersonalDocumentReason ?? false);
+
   const handleReject = async () => {
-    if (selectedIds.size === 0) {
+    if (selectedLabels.size === 0) {
       setErrorMessage("Selecione ao menos um motivo de recusa.");
       return;
     }
@@ -51,8 +58,8 @@ export function RejectModal({
     setErrorMessage("");
     try {
       await http.patch(`/license-request/reject/${currentLicenseRequest._id}`, {
-        reasons: Array.from(selectedIds),
-        ...(customMessage.trim() ? { customRejectionMessage: customMessage.trim() } : {}),
+        reasons: Array.from(selectedLabels),
+        ...(customMessage.trim() ? { customMessage: customMessage.trim() } : {}),
       });
       onSuccess("Carteirinha recusada. O aluno foi notificado por e-mail.");
       await onReload();
@@ -65,13 +72,30 @@ export function RejectModal({
     }
   };
 
+  const reasonItemClass = (label: string, isPersonalDoc: boolean) => {
+    const selected = selectedLabels.has(label);
+    const base = "flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm border transition-all cursor-pointer";
+    if (isPersonalDoc) {
+      return `${base} ${
+        selected
+          ? "border-warning bg-warning/10 text-warning font-medium"
+          : "border-warning/40 bg-surface-container-low text-on-surface hover:border-warning/60"
+      }`;
+    }
+    return `${base} ${
+      selected
+        ? "border-error bg-error/10 text-error font-medium"
+        : "border-outline-variant bg-surface-container-low text-on-surface hover:border-error/40"
+    }`;
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={() => !rejecting && onClose()}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-surface p-6 space-y-4 shadow-xl"
+        className="w-full max-w-md rounded-2xl bg-surface p-6 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3">
@@ -85,24 +109,49 @@ export function RejectModal({
         </div>
 
         <div className="space-y-2">
-          {reasons.map((reason) => (
-            <label
-              key={reason.id}
-              className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm border transition-all cursor-pointer ${
-                selectedIds.has(reason.id)
-                  ? "border-error bg-error/10 text-error font-medium"
-                  : "border-outline-variant bg-surface-container-low text-on-surface hover:border-error/40"
-              }`}
-            >
-              <input
-                type="checkbox"
-                className="accent-error"
-                checked={selectedIds.has(reason.id)}
-                onChange={() => toggleReason(reason.id)}
-              />
-              {reason.label}
-            </label>
-          ))}
+          {cardReasons.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">
+                Documentos da carteirinha
+              </p>
+              {cardReasons.map((reason) => (
+                <label
+                  key={reason.label}
+                  className={reasonItemClass(reason.label, false)}
+                >
+                  <input
+                    type="checkbox"
+                    className="accent-error"
+                    checked={selectedLabels.has(reason.label)}
+                    onChange={() => toggleReason(reason.label)}
+                  />
+                  {reason.label}
+                </label>
+              ))}
+            </div>
+          )}
+
+          {personalDocReasons.length > 0 && (
+            <div className="space-y-2 mt-3">
+              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">
+                Documentos pessoais
+              </p>
+              {personalDocReasons.map((reason) => (
+                <label
+                  key={reason.label}
+                  className={reasonItemClass(reason.label, true)}
+                >
+                  <input
+                    type="checkbox"
+                    className="accent-warning"
+                    checked={selectedLabels.has(reason.label)}
+                    onChange={() => toggleReason(reason.label)}
+                  />
+                  {reason.label}
+                </label>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
@@ -121,6 +170,23 @@ export function RejectModal({
 
         {errorMessage && <p className="text-xs text-error">{errorMessage}</p>}
 
+        {hasPersonalDocReason && (
+          <div className="flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2.5">
+            <span
+              className="material-symbols-outlined text-warning shrink-0"
+              style={{ fontSize: "16px" }}
+            >
+              warning
+            </span>
+            <p className="text-xs text-warning leading-relaxed">
+              <strong>Atenção:</strong> Os motivos selecionados incluem documentos pessoais.
+              Os documentos de identidade e comprovante de residência do aluno serão{" "}
+              <strong>invalidados automaticamente</strong> e ele precisará reenviá-los antes
+              de fazer uma nova solicitação.
+            </p>
+          </div>
+        )}
+
         <div className="flex gap-2 pt-2">
           <button
             type="button"
@@ -134,7 +200,7 @@ export function RejectModal({
             variant="primary"
             size="md"
             loading={rejecting}
-            disabled={selectedIds.size === 0 || rejecting}
+            disabled={selectedLabels.size === 0 || rejecting}
             onClick={handleReject}
             className="flex-1 bg-error hover:bg-error/90"
           >
