@@ -31,6 +31,9 @@ interface DataTableProps<T> {
   skeletonRowCount?: number;
   className?: string;
 
+  /** Arbitrary content rendered at the very top of the section, before the toolbar */
+  header?: ReactNode;
+
   /** Search field rendered inside the table toolbar */
   search?: {
     value: string;
@@ -59,6 +62,7 @@ export function DataTable<T>({
   onRowClick,
   skeletonRowCount = 6,
   className,
+  header,
   search,
   onExport,
   exportLoading = false,
@@ -74,6 +78,9 @@ export function DataTable<T>({
         className,
       )}
     >
+      {/* ── Custom section header (injected by consumer) ─────────── */}
+      {header}
+
       {/* ── Toolbar (search + export) ─────────────────────────────── */}
       {hasToolbar && (
         <div className="px-4 py-3 border-b border-outline-variant/20 flex items-center justify-end gap-2 flex-wrap">
