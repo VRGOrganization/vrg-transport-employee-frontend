@@ -65,7 +65,7 @@ export function EmployeeAdminLoginForm() {
                 aria-pressed={values.role === r}
                 onClick={() => setValue("role", r)}
                 className={[
-                  "h-10 rounded-lg text-sm font-semibold transition-all duration-150 border-2",
+                  "h-10 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer border-2",
                   values.role === r
                     ? "bg-primary text-on-primary shadow-sm border-primary"
                     : "text-on-surface-variant hover:text-on-surface border-outline-variant",
