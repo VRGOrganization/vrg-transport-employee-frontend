@@ -31,7 +31,9 @@ export function ApprovalFooter({
   onPrintSingle,
 }: ApprovalFooterProps) {
   const isPending = currentLicenseRequest?.status === "pending";
-  const isWaitlisted = currentLicenseRequest?.status === "waitlisted";
+  const isPartiallyWaitlisted = currentLicenseRequest?.status === "partially_waitlisted";
+  const isWaitlisted =
+    currentLicenseRequest?.status === "waitlisted" || isPartiallyWaitlisted;
   const canApprove = isPending && hasInstitution && !!selectedBusRouteLabel.trim();
   const canPrint = !!selectedLicensePreview && !isPdfDataUrl(selectedLicensePreview ?? "");
 
@@ -49,7 +51,9 @@ export function ApprovalFooter({
         </p>
         {isWaitlisted && (
           <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-            Na fila de espera{currentLicenseRequest?.filaPosition ? ` (posição ${currentLicenseRequest.filaPosition})` : ""}. A aprovação fica disponível após promoção para pendente.
+            {isPartiallyWaitlisted
+              ? `Parcialmente na fila de espera${currentLicenseRequest?.filaPosition ? ` (posição ${currentLicenseRequest.filaPosition})` : ""}. Alguns dias/períodos aguardam vagas. A aprovação fica disponível após promoção completa.`
+              : `Na fila de espera${currentLicenseRequest?.filaPosition ? ` (posição ${currentLicenseRequest.filaPosition})` : ""}. A aprovação fica disponível após promoção para pendente.`}
           </p>
         )}
       </div>
@@ -87,7 +91,9 @@ export function ApprovalFooter({
 
         {isWaitlisted ? (
           <span className="rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700">
-            Na fila de espera{currentLicenseRequest?.filaPosition ? ` - posição ${currentLicenseRequest.filaPosition}` : ""}
+            {isPartiallyWaitlisted
+              ? `Parcialmente na fila${currentLicenseRequest?.filaPosition ? ` - posição ${currentLicenseRequest.filaPosition}` : ""}`
+              : `Na fila de espera${currentLicenseRequest?.filaPosition ? ` - posição ${currentLicenseRequest.filaPosition}` : ""}`}
           </span>
         ) : (
           <Button
