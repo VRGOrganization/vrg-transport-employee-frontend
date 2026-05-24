@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import { EnrollmentPeriodModal } from "@/components/admin/EnrollmentPeriodModal";
 import { Button } from "@/components/ui/Button";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
 import { http } from "@/services/http";
@@ -70,6 +72,9 @@ export default function AdminEnrollmentPeriodPage() {
   const [editingPeriod, setEditingPeriod] = useState<EnrollmentPeriod | null>(null);
   const [periodSaving, setPeriodSaving] = useState(false);
   const [periodModalError, setPeriodModalError] = useState("");
+
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [closingPeriod, setClosingPeriod] = useState(false);
 
   // Nota: o fluxo de liberação por período foi removido. As liberações
   // agora ocorrem por ônibus (patch /bus/:id/release-slots). Mantemos a
@@ -186,18 +191,25 @@ export default function AdminEnrollmentPeriodPage() {
     }
   };
 
-  const handleClosePeriod = async () => {
+  const handleClosePeriod = () => {
     if (!activePeriod) return;
-    const confirmed = window.confirm("Deseja encerrar o período ativo? A fila atual será encerrada.");
-    if (!confirmed) return;
+    setShowCloseConfirm(true);
+  };
 
+  const handleCloseConfirmed = async () => {
+    if (!activePeriod) return;
+    setClosingPeriod(true);
     try {
       await enrollmentPeriodService.close(activePeriod._id);
+      setShowCloseConfirm(false);
       setFeedback("Período encerrado com sucesso.");
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
       setError(apiError.message ?? "Falha ao encerrar o período.");
+      setShowCloseConfirm(false);
+    } finally {
+      setClosingPeriod(false);
     }
   };
 
@@ -431,6 +443,19 @@ export default function AdminEnrollmentPeriodPage() {
             )}
           </div>
         </main>
+
+      <ConfirmModal
+        open={showCloseConfirm}
+        onClose={() => setShowCloseConfirm(false)}
+        onConfirm={handleCloseConfirmed}
+        loading={closingPeriod}
+        title="Encerrar período"
+        description="Deseja encerrar o período ativo? Alunos na fila de espera terão suas solicitações canceladas e as vagas dos ônibus serão resetadas."
+        icon={AlertTriangle}
+        variant="danger"
+        confirmLabel="Encerrar"
+        cancelLabel="Cancelar"
+      />
 
       <EnrollmentPeriodModal
         open={modalOpen}
