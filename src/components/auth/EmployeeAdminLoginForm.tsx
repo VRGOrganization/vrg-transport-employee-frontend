@@ -110,13 +110,15 @@ export function EmployeeAdminLoginForm() {
             >
               Senha
             </label>
-            <button
-              type="button"
-              onClick={() => setShowForgotPassword(true)}
-              className="text-xs text-primary hover:underline font-medium"
-            >
-              Esqueci minha senha
-            </button>
+            {values.role === "employee" && (
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-xs text-primary hover:underline font-medium"
+              >
+                Esqueci minha senha
+              </button>
+            )}
           </div>
           <Input
             id="password-field"
