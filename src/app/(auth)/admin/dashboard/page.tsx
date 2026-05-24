@@ -7,6 +7,7 @@ import { http } from "@/services/http";
 import { GraduationCap, Users, ClipboardList, Bus, Calendar, Download, Search, X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { universityApi, busApi } from "@/lib/universityApi";
 import { DashboardStatCard } from "@/components/cards/DashboardStatCard";
+import { buildStudentsCsv, buildEmployeesCsv, buildBusesCsv, buildUniversitiesCsv, downloadCsv } from "@/lib/csvUtils";
 
 import { resolvePaginated, type Paginated } from "@/types/api";
 import { getInitials, AVATAR_COLORS } from "@/lib/utils/string";
@@ -146,7 +147,6 @@ export default function AdminDashboardPage() {
         }
       }
 
-      // Calcula solicitações pendentes de aprovação (mesma lógica de /admin/cards)
       if (requestsResult.status === "fulfilled") {
         const requests = requestsResult.value;
         const pendingStudentIds = new Set(
@@ -157,7 +157,7 @@ export default function AdminDashboardPage() {
         );
 
         const pendingCount = resolvedStudents.filter((s) => s.active && pendingStudentIds.has(s._id)).length;
-        
+
         setStats((prev) => ({
           ...prev,
           pendingStudents: pendingCount,
@@ -203,61 +203,35 @@ export default function AdminDashboardPage() {
     setPage(1);
   };
 
-  const handleExport = async () => {
+  const handleExport = async (currentFilter: typeof filter) => {
     setExportLoading(true);
+    const today = new Date().toISOString().split("T")[0];
     try {
-      const [studentsRes, employeesRes, busesRes, universitiesRes] = await Promise.all([
+      if (currentFilter === "Aluno") {
+        const students = await http.get<Paginated<StudentRecord>>("/student").then(resolvePaginated);
+        downloadCsv(buildStudentsCsv(students), `alunos_${today}.csv`);
+        return;
+      }
+      if (currentFilter === "Funcionário") {
+        const emps = await employeeService.list();
+        downloadCsv(buildEmployeesCsv(emps), `funcionarios_${today}.csv`);
+        return;
+      }
+      const [studentsRes, empsRes, busesRes, unisRes] = await Promise.all([
         http.get<Paginated<StudentRecord>>("/student").then(resolvePaginated),
         employeeService.list(),
         busApi.list(),
         universityApi.list(),
       ]);
-
-      const students = studentsRes;
-      const employees = employeesRes;
       const buses = Array.isArray(busesRes) ? busesRes : [];
-      const universities = Array.isArray(universitiesRes) ? universitiesRes : [];
-
-      const csvRows = ["sep=,"];
-
-      // --- Alunos ---
-      csvRows.push("--- ALUNOS ---");
-      csvRows.push("Nome,Email,Ativo,Status,Data Cadastro");
-      students.forEach((s: any) => {
-        csvRows.push(`"${s.name}","${s.email}","${s.active ? "Sim" : "Não"}","${s.status}","${new Date(s.createdAt).toLocaleString("pt-BR")}"`);
-      });
-
-      // --- Funcionários ---
-      csvRows.push("\n--- FUNCIONÁRIOS ---");
-      csvRows.push("Nome,Email,Matrícula,Ativo,Data Cadastro");
-      employees.forEach((e: any) => {
-        csvRows.push(`"${e.name}","${e.email}","${e.registrationId ?? ""}","${e.active ? "Sim" : "Não"}","${new Date(e.createdAt).toLocaleString("pt-BR")}"`);
-      });
-
-      // --- Ônibus ---
-      csvRows.push("\n--- FROTA (ÔNIBUS) ---");
-      csvRows.push("Identificador,Capacidade,Vagas Preenchidas,Ativo");
-      buses.forEach((b: any) => {
-        csvRows.push(`"${b.identifier}","${b.capacity ?? "N/A"}","${b.filledSlots ?? 0}","${b.active ? "Sim" : "Não"}"`);
-      });
-
-      // --- Instituições ---
-      csvRows.push("\n--- INSTITUIÇÕES (UNIVERSIDADES) ---");
-      csvRows.push("Nome,Sigla,Endereço,Ativo");
-      universities.forEach((u: any) => {
-        csvRows.push(`"${u.name}","${u.acronym ?? ""}","${u.address ?? ""}","${u.active ? "Sim" : "Não"}"`);
-      });
-
-      const csv = csvRows.join("\n") + "\n";
-
-      const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `exportacao_sistema_${new Date().toISOString().split("T")[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const unis = Array.isArray(unisRes) ? unisRes : [];
+      const combined = [
+        "ALUNOS\n" + buildStudentsCsv(studentsRes),
+        "FUNCIONÁRIOS\n" + buildEmployeesCsv(empsRes),
+        "FROTA (ÔNIBUS)\n" + buildBusesCsv(buses),
+        "INSTITUIÇÕES\n" + buildUniversitiesCsv(unis),
+      ].join("\n\n");
+      downloadCsv(combined, `exportacao_completa_${today}.csv`);
     } catch (err) {
       console.error("Erro ao exportar dados:", err);
       alert("Erro ao exportar dados. Tente novamente.");
@@ -265,6 +239,13 @@ export default function AdminDashboardPage() {
       setExportLoading(false);
     }
   };
+
+  const exportLabel = filter === "Aluno" ? "Exportar Alunos" : filter === "Funcionário" ? "Exportar Funcionários" : "Exportar CSV";
+  const exportTooltip = filter === "Aluno"
+    ? "Exportar dados dos alunos"
+    : filter === "Funcionário"
+    ? "Exportar dados dos funcionários"
+    : "Exportar todos os dados (alunos, funcionários, frota e instituições)";
 
   return (
     <main className="px-6 py-5 bg-surface flex flex-col gap-5">
@@ -279,20 +260,10 @@ export default function AdminDashboardPage() {
                 {getTodayLabel()} · {stats.pendingStudents ?? "…"} itens precisam da sua atenção hoje.
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors">
-                <Calendar className="w-4 h-4" />
-                {monthLabel}
-              </button>
-              <button 
-                onClick={handleExport}
-                disabled={exportLoading}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors disabled:opacity-50 disabled:cursor-wait"
-              >
-                {exportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {exportLoading ? "Exportando..." : "Exportar"}
-              </button>
-            </div>
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors">
+              <Calendar className="w-4 h-4" />
+              {monthLabel}
+            </button>
           </div>
 
           {/* ── Stat cards ───────────────────────────────────── */}
@@ -342,12 +313,12 @@ export default function AdminDashboardPage() {
                     value={search}
                     onChange={(e) => handleSearch(e.target.value)}
                     placeholder="Buscar por nome ou identificador…"
-                    className="h-8 pl-8 pr-3 rounded-lg border border-outline-variant bg-surface text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-64"
+                    className="h-8 pl-8 pr-8 rounded-lg ring-1 ring-outline/40 bg-surface-container-lowest text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary outline-none transition-all w-64 cursor-text"
                   />
                   {search && (
                     <button
                       onClick={() => handleSearch("")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -355,22 +326,33 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* Filter tabs */}
-                <div className="flex items-center gap-1 p-1 bg-surface-container rounded-lg">
+                <div className="flex items-center gap-1 p-1 bg-surface-container rounded-lg border border-outline-variant/30">
                   {(["Todos", "Aluno", "Funcionário"] as const).map((f) => (
                     <button
                       key={f}
                       onClick={() => handleFilterChange(f)}
                       className={[
-                        "px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150",
+                        "px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150 cursor-pointer border-2",
                         filter === f
-                          ? "bg-primary text-on-primary shadow-sm"
-                          : "text-on-surface-variant hover:text-on-surface",
+                          ? "bg-primary text-on-primary shadow-sm border-primary"
+                          : "text-on-surface-variant hover:text-on-surface border-transparent hover:border-outline-variant/40",
                       ].join(" ")}
                     >
                       {f}
                     </button>
                   ))}
                 </div>
+
+                {/* Export button */}
+                <button
+                  onClick={() => handleExport(filter)}
+                  disabled={exportLoading}
+                  title={exportTooltip}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                >
+                  {exportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {exportLoading ? "Exportando..." : exportLabel}
+                </button>
               </div>
             </div>
 
