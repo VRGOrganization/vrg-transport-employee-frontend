@@ -24,9 +24,14 @@ export function DeactivateBusModal({
 
   useEffect(() => {
     setMounted(true);
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = "auto"; };
   }, []);
+
+  useEffect(() => {
+    if (!bus) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
+  }, [bus]);
 
   useEffect(() => {
     setInputValue("");

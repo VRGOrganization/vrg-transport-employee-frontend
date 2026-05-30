@@ -24,9 +24,14 @@ export function DeactivateUniversityModal({
 
   useEffect(() => {
     setMounted(true);
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = "auto"; };
   }, []);
+
+  useEffect(() => {
+    if (!university) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
+  }, [university]);
 
   useEffect(() => {
     setInputValue("");
