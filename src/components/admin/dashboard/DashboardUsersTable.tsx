@@ -171,7 +171,7 @@ export function DashboardUsersTable({
           onClick={onExport}
           disabled={exportLoading}
           title={exportTooltip}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+          className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait shrink-0 min-w-48 whitespace-nowrap"
         >
           {exportLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
