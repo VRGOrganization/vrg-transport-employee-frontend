@@ -8,11 +8,20 @@ import { CoursesPanel } from "@/components/universities/CoursesPanel";
 import { LinkedBusesPanel } from "@/components/universities/LinkedBusesPanel";
 import { UniversityFormModal } from "@/components/universities/UniversityFormModal";
 import { DeactivateUniversityModal } from "@/components/universities/DeactivateUniversityModal";
-import { Plus, MapPin, BookOpen, Bus as BusIcon, Building2, AlertCircle, X } from "lucide-react";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Tabs } from "@/components/ui/Tabs";
+import { Plus, MapPin, BookOpen, Bus as BusIcon, Building2, AlertCircle, X, CheckCircle2, Ban, RotateCcw } from "lucide-react";
 
 type DetailTab = "courses" | "buses";
+type StatusTab = "active" | "inactive";
+
+const STATUS_TABS = [
+  { key: "active" as StatusTab,   label: "Ativas",      icon: CheckCircle2 },
+  { key: "inactive" as StatusTab, label: "Desativadas", icon: Ban },
+];
 
 export default function UniversitiesPage() {
+  const [statusTab, setStatusTab] = useState<StatusTab>("active");
   const [universities, setUniversities] = useState<University[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [buses, setBuses] = useState<Bus[]>([]);
@@ -25,6 +34,9 @@ export default function UniversitiesPage() {
   const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
   const [pendingDeactivate, setPendingDeactivate] = useState<University | null>(null);
   const [deactivateError, setDeactivateError] = useState("");
+  const [reactivatingId, setReactivatingId] = useState<string | null>(null);
+  const [pendingReactivate, setPendingReactivate] = useState<University | null>(null);
+  const [reactivateError, setReactivateError] = useState("");
   const [error, setError] = useState("");
   const [coursesError, setCoursesError] = useState("");
 
@@ -32,18 +44,23 @@ export default function UniversitiesPage() {
     setLoadingUniversities(true);
     setError("");
     try {
-      const [unis, busList] = await Promise.all([
-        universityApi.list(),
-        busApi.list(),
-      ]);
-      setUniversities(unis);
-      setBuses(busList);
+      if (statusTab === "active") {
+        const [unis, busList] = await Promise.all([
+          universityApi.list(),
+          busApi.list(),
+        ]);
+        setUniversities(unis);
+        setBuses(busList);
+      } else {
+        const unis = await universityApi.listInactive();
+        setUniversities(unis);
+      }
     } catch {
       setError("Não foi possível carregar as faculdades.");
     } finally {
       setLoadingUniversities(false);
     }
-  }, []);
+  }, [statusTab]);
 
   const loadCourses = useCallback(async (universityId: string) => {
     setLoadingCourses(true);
@@ -51,16 +68,18 @@ export default function UniversitiesPage() {
     try {
       const data = await courseApi.listByUniversity(universityId);
       setCourses(data);
-    } catch (err: any) {
+    } catch (err) {
       if (process.env.NODE_ENV !== "production") console.error("[loadCourses] erro:", err);
       setCourses([]);
-      setCoursesError(err?.message ?? "Não foi possível carregar os cursos.");
+      const message = err instanceof Error ? err.message : "Não foi possível carregar os cursos.";
+      setCoursesError(message);
     } finally {
       setLoadingCourses(false);
     }
   }, []);
 
   useEffect(() => {
+    setSelected(null);
     loadUniversities();
   }, [loadUniversities]);
 
@@ -80,6 +99,27 @@ export default function UniversitiesPage() {
     const university = universities.find((u) => u._id === id) ?? null;
     setDeactivateError("");
     setPendingDeactivate(university);
+  };
+
+  const handleReactivate = (id: string) => {
+    const university = universities.find((u) => u._id === id) ?? null;
+    setReactivateError("");
+    setPendingReactivate(university);
+  };
+
+  const handleConfirmReactivate = async () => {
+    if (!pendingReactivate) return;
+    setReactivatingId(pendingReactivate._id);
+    setReactivateError("");
+    try {
+      await universityApi.reactivate(pendingReactivate._id);
+      await loadUniversities();
+      setPendingReactivate(null);
+    } catch {
+      setReactivateError("Não foi possível reativar a faculdade. Tente novamente.");
+    } finally {
+      setReactivatingId(null);
+    }
   };
 
   const handleConfirmDeactivate = async () => {
@@ -135,13 +175,19 @@ export default function UniversitiesPage() {
                 Cadastre faculdades, gerencie cursos e vincule ônibus
               </p>
             </div>
-            <button
-              onClick={() => setCreating(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
-            >
-              <Plus className="w-4.5 h-4.5" />
-              Nova Faculdade
-            </button>
+            {statusTab === "active" && (
+              <button
+                onClick={() => setCreating(true)}
+                className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+              >
+                <Plus className="w-4.5 h-4.5" />
+                Nova Faculdade
+              </button>
+            )}
+          </div>
+
+          <div className="mb-6">
+            <Tabs items={STATUS_TABS} value={statusTab} onChange={setStatusTab} />
           </div>
 
           {error && (
@@ -154,29 +200,40 @@ export default function UniversitiesPage() {
           <div className="flex gap-6 items-start">
 
             {/* Coluna esquerda — lista de faculdades */}
-            <div className="w-96 shrink-0 bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm p-5">
+            <div className={`shrink-0 bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm p-5 ${statusTab === "active" ? "w-96" : "flex-1"}`}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wide">
-                  Faculdades ativas
+                  {statusTab === "active" ? "Faculdades ativas" : "Faculdades desativadas"}
                 </h2>
                 <span className="text-xs bg-info-container text-info px-2 py-0.5 rounded-full font-medium">
                   {universities.length}
                 </span>
               </div>
 
-              <UniversityTable
-                universities={universities}
-                selectedId={selected?._id ?? null}
-                onSelect={handleSelect}
-                onEdit={(u) => setEditing(u)}
-                onDeactivate={handleDeactivate}
-                deactivatingId={deactivatingId}
-                loading={loadingUniversities}
-              />
+              {statusTab === "active" ? (
+                <UniversityTable
+                  universities={universities}
+                  selectedId={selected?._id ?? null}
+                  onSelect={handleSelect}
+                  onEdit={(u) => setEditing(u)}
+                  onDeactivate={handleDeactivate}
+                  deactivatingId={deactivatingId}
+                  loading={loadingUniversities}
+                />
+              ) : (
+                <UniversityTable
+                  universities={universities}
+                  loading={loadingUniversities}
+                  onReactivate={handleReactivate}
+                  reactivatingId={reactivatingId}
+                  emptyTitle="Nenhuma faculdade desativada"
+                  emptyDescription="Faculdades desativadas aparecerão aqui."
+                />
+              )}
             </div>
 
             {/* Coluna direita — painel de detalhes */}
-            {selected ? (
+            {statusTab === "active" && selected && (
               <div className="flex-1 bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm">
                 {/* Cabeçalho do painel */}
                 <div className="px-6 pt-6 pb-0 border-b border-outline-variant">
@@ -268,7 +325,8 @@ export default function UniversitiesPage() {
                   )}
                 </div>
               </div>
-            ) : (
+            )}
+            {statusTab === "active" && !selected && (
               <div className="flex-1 flex flex-col items-center justify-center py-24 text-on-surface-muted">
                 <Building2 className="w-16 h-16 mb-4 text-on-surface-muted/40" />
                 <p className="text-sm font-medium text-on-surface-variant">Selecione uma faculdade</p>
@@ -297,6 +355,26 @@ export default function UniversitiesPage() {
         onConfirm={handleConfirmDeactivate}
         loading={!!deactivatingId}
         error={deactivateError}
+      />
+      <ConfirmModal
+        open={!!pendingReactivate}
+        onClose={() => { setPendingReactivate(null); setReactivateError(""); }}
+        onConfirm={handleConfirmReactivate}
+        loading={!!reactivatingId}
+        error={reactivateError}
+        title="Reativar Faculdade"
+        icon={RotateCcw}
+        variant="success"
+        confirmLabel="Sim, reativar"
+        description={
+          pendingReactivate && (
+            <>
+              <p className="text-base font-bold text-on-surface">{pendingReactivate.acronym}</p>
+              <p className="text-sm text-on-surface-variant mb-2">{pendingReactivate.name}</p>
+              <p>Esta ação reativará a faculdade. Ela voltará a aparecer para novos cadastros.</p>
+            </>
+          )
+        }
       />
     </>
   );

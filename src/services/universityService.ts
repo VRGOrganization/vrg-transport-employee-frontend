@@ -10,6 +10,7 @@ export const universityService = {
   update:       (id: string, data: Partial<{ name: string; acronym: string; address: string }>) =>
                   http.patch<University>(`/university/${id}`, data),
   deactivate:   (id: string) => http.delete<{ message: string }>(`/university/${id}`),
+  reactivate:   (id: string) => http.patch<{ message: string }>(`/university/${id}/activate`, {}),
 };
 
 export const courseService = {

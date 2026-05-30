@@ -11,6 +11,7 @@ export const busService = {
   update:             (id: string, data: Partial<{ identifier: string; capacity?: number | null; shift?: string }>) =>
                         http.patch<Bus>(`/bus/${id}`, data),
   deactivate:         (id: string)                         => http.delete<{ message: string }>(`/bus/${id}`),
+  reactivate:         (id: string)                         => http.patch<{ message: string }>(`/bus/${id}/activate`, {}),
   linkUniversity:     (busId: string, universityId: string) =>
                         http.patch<Bus>(`/bus/${busId}/link-university`, { universityId }),
   unlinkUniversity:   (busId: string, universityId: string) =>

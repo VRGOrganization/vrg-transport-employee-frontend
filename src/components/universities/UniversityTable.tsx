@@ -1,17 +1,21 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Landmark, Edit2, Ban, ChevronRight, Building2 } from "lucide-react";
+import { Landmark, Edit2, Ban, ChevronRight, Building2, RotateCcw } from "lucide-react";
 import type { University } from "@/types/university.types";
 
 interface Props {
   universities: University[];
-  selectedId: string | null;
-  onSelect: (university: University | null) => void;
-  onEdit: (university: University) => void;
-  onDeactivate: (id: string) => void;
-  deactivatingId: string | null;
+  selectedId?: string | null;
+  onSelect?: (university: University | null) => void;
+  onEdit?: (university: University) => void;
+  onDeactivate?: (id: string) => void;
+  deactivatingId?: string | null;
+  onReactivate?: (id: string) => void;
+  reactivatingId?: string | null;
   loading: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
 }
 
 export function UniversityTable({
@@ -21,7 +25,11 @@ export function UniversityTable({
   onEdit,
   onDeactivate,
   deactivatingId,
+  onReactivate,
+  reactivatingId,
   loading,
+  emptyTitle = "Nenhuma faculdade cadastrada",
+  emptyDescription = 'Clique em "Nova Faculdade" para começar',
 }: Props) {
   if (loading) {
     return (
@@ -37,11 +45,13 @@ export function UniversityTable({
     return (
       <div className="flex flex-col items-center justify-center py-16 text-on-surface-muted">
         <Building2 className="w-12 h-12 mb-3" />
-        <p className="text-sm font-medium">Nenhuma faculdade cadastrada</p>
-        <p className="text-xs mt-1">Clique em &quot;Nova Faculdade&quot; para começar</p>
+        <p className="text-sm font-medium">{emptyTitle}</p>
+        <p className="text-xs mt-1">{emptyDescription}</p>
       </div>
     );
   }
+
+  const interactive = Boolean(onSelect);
 
   return (
     <ul className="space-y-2">
@@ -50,15 +60,24 @@ export function UniversityTable({
         return (
           <li key={university._id}>
             <div
-              role="button"
-              tabIndex={0}
-              onClick={() => onSelect(isSelected ? null : university)}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onSelect(isSelected ? null : university); }}
+              {...(interactive && {
+                role: "button",
+                tabIndex: 0,
+                onClick: () => onSelect?.(isSelected ? null : university),
+                onKeyDown: (e: React.KeyboardEvent) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    onSelect?.(isSelected ? null : university);
+                  }
+                },
+              })}
               className={cn(
-                "w-full text-left px-5 py-4 rounded-xl border transition-all duration-150 cursor-pointer",
+                "w-full text-left px-5 py-4 rounded-xl border transition-all duration-150",
+                interactive && "cursor-pointer",
                 isSelected
                   ? "border-primary bg-primary/8 shadow-sm"
-                  : "border-outline-variant bg-surface-container-lowest hover:border-primary/40 hover:bg-surface-container-low"
+                  : interactive
+                    ? "border-outline-variant bg-surface-container-lowest hover:border-primary/40 hover:bg-surface-container-low"
+                    : "border-outline-variant bg-surface-container-lowest"
               )}
             >
               <div className="flex items-center justify-between">
@@ -83,41 +102,61 @@ export function UniversityTable({
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onEdit(university); }}
-                    className="p-1.5 rounded-lg text-on-surface-muted hover:text-info hover:bg-info-container transition-colors"
-                    title="Editar"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onDeactivate(university._id); }}
-                    disabled={deactivatingId === university._id}
-                    className="p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-colors"
-                    title="Desativar"
-                  >
-                    {deactivatingId === university._id ? (
-                      <ChevronRight className="h-4 w-4 animate-pulse" />
-                    ) : (
-                      <Ban className="h-4 w-4" />
-                    )}
-                  </button>
-                  <span
-                    title="Listar faculdades"
-                    className={cn(
-                      "ml-1 p-1.5 rounded-lg transition-all",
-                      isSelected
-                        ? "text-primary"
-                        : "text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high"
-                    )}
-                  >
-                    <ChevronRight
-                      className={cn(
-                        "w-4 h-4 transition-transform",
-                        isSelected && "rotate-90"
+                  {onEdit && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onEdit(university); }}
+                      className="p-1.5 rounded-lg text-on-surface-muted hover:text-info hover:bg-info-container transition-colors"
+                      title="Editar"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  )}
+                  {onDeactivate && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDeactivate(university._id); }}
+                      disabled={deactivatingId === university._id}
+                      className="p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-colors"
+                      title="Desativar"
+                    >
+                      {deactivatingId === university._id ? (
+                        <ChevronRight className="h-4 w-4 animate-pulse" />
+                      ) : (
+                        <Ban className="h-4 w-4" />
                       )}
-                    />
-                  </span>
+                    </button>
+                  )}
+                  {onReactivate && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onReactivate(university._id); }}
+                      disabled={reactivatingId === university._id}
+                      className="p-1.5 rounded-lg text-on-surface-muted hover:text-success hover:bg-success-container transition-colors"
+                      title="Reativar"
+                    >
+                      {reactivatingId === university._id ? (
+                        <ChevronRight className="h-4 w-4 animate-pulse" />
+                      ) : (
+                        <RotateCcw className="h-4 w-4" />
+                      )}
+                    </button>
+                  )}
+                  {interactive && (
+                    <span
+                      title="Listar faculdades"
+                      className={cn(
+                        "ml-1 p-1.5 rounded-lg transition-all",
+                        isSelected
+                          ? "text-primary"
+                          : "text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high"
+                      )}
+                    >
+                      <ChevronRight
+                        className={cn(
+                          "w-4 h-4 transition-transform",
+                          isSelected && "rotate-90"
+                        )}
+                      />
+                    </span>
+                  )}
                 </div>
               </div>
 
