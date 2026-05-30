@@ -77,7 +77,6 @@ export default function BusReleaseModal({ open, bus, onClose, onSuccess }: BusRe
       open={open}
       onClose={onClose}
       title={`Liberar vagas — ${bus.identifier}`}
-      closeOnOverlay={!loading}
       actions={
         <div className="flex gap-3">
           <Button variant="outline" fullWidth onClick={onClose} disabled={loading}>

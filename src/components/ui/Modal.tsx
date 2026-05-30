@@ -27,7 +27,7 @@ export function Modal({
   onClose,
   title,
   size = "md",
-  closeOnBackdrop = true,
+  closeOnBackdrop = false,
   hideClose = false,
   children,
   footer,

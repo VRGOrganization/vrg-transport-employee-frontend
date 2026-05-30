@@ -49,7 +49,6 @@ export function CourseFormModal({ open, initial, universityName, onClose, onSubm
       onClose={onClose}
       title={initial ? "Editar Curso" : "Novo Curso"}
       description={universityName}
-      closeOnOverlay={!loading}
       actions={
         <div className="flex gap-3">
           <Button variant="outline" fullWidth onClick={onClose} disabled={loading}>

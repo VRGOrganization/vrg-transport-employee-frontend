@@ -51,7 +51,6 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit }: Props)
       open={open}
       onClose={onClose}
       title={initial ? "Editar Faculdade" : "Nova Faculdade"}
-      closeOnOverlay={!loading}
       actions={
         <div className="flex gap-3">
           <Button variant="outline" fullWidth onClick={onClose} disabled={loading}>

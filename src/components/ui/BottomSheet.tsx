@@ -26,7 +26,7 @@ export function BottomSheet({
   description,
   children,
   actions,
-  closeOnOverlay = true,
+  closeOnOverlay = false,
   maxWidth = "max-w-md",
   className,
 }: BottomSheetProps) {
