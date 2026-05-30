@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Bus as BusIcon } from "lucide-react";
 import { busApi, universityApi } from "@/lib/universityApi";
 import type { Bus } from "@/types/university.types";
 import BusReleaseModal from "./BusReleaseModal";
@@ -87,6 +88,17 @@ export default function BusSelectorPanel({
         </div>
       ) : !value ? (
         <div className="space-y-2">
+          {buses.length === 0 && !error && (
+            <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+              <BusIcon className="w-10 h-10 text-on-surface-variant/30" />
+              <p className="text-sm font-medium text-on-surface-variant">
+                Nenhum ônibus cadastrado
+              </p>
+              <p className="text-xs text-on-surface-muted">
+                Cadastre ônibus na seção de Frota para continuar.
+              </p>
+            </div>
+          )}
           {buses.map((b) => {
             const slots = (b.universitySlots ?? b.universityIds ?? []) as any[];
             const acronyms = slots
