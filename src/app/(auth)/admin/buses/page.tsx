@@ -6,6 +6,7 @@ import type { Bus } from "@/types/university.types";
 import { BusTable } from "@/components/buses/BusTable";
 import { BusFormModal } from "@/components/buses/BusFormModal";
 import { BusStudentsDrawer } from "@/components/buses/BusStudentsDrawer";
+import { DeactivateBusModal } from "@/components/buses/DeactivateBusModal";
 import { Bus as BusIcon, Armchair, Building2, Unlink } from "lucide-react";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { DashboardStatCard } from "@/components/cards/DashboardStatCard";
@@ -17,6 +18,8 @@ export default function BusesPage() {
   const [editing, setEditing] = useState<Bus | null>(null);
   const [viewingStudents, setViewingStudents] = useState<Bus | null>(null);
   const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
+  const [pendingDeactivate, setPendingDeactivate] = useState<Bus | null>(null);
+  const [deactivateError, setDeactivateError] = useState("");
   const [error, setError] = useState("");
 
   const loadBuses = useCallback(async () => {
@@ -54,11 +57,22 @@ export default function BusesPage() {
     await loadBuses();
   };
 
-  const handleDeactivate = async (id: string) => {
-    setDeactivatingId(id);
+  const handleDeactivate = (id: string) => {
+    const bus = buses.find((b) => b._id === id) ?? null;
+    setDeactivateError("");
+    setPendingDeactivate(bus);
+  };
+
+  const handleConfirmDeactivate = async () => {
+    if (!pendingDeactivate) return;
+    setDeactivatingId(pendingDeactivate._id);
+    setDeactivateError("");
     try {
-      await busApi.deactivate(id);
+      await busApi.deactivate(pendingDeactivate._id);
       await loadBuses();
+      setPendingDeactivate(null);
+    } catch {
+      setDeactivateError("Não foi possível desativar o ônibus. Tente novamente.");
     } finally {
       setDeactivatingId(null);
     }
@@ -156,6 +170,13 @@ export default function BusesPage() {
       <BusStudentsDrawer
         bus={viewingStudents}
         onClose={() => setViewingStudents(null)}
+      />
+      <DeactivateBusModal
+        bus={pendingDeactivate}
+        onClose={() => { setPendingDeactivate(null); setDeactivateError(""); }}
+        onConfirm={handleConfirmDeactivate}
+        loading={!!deactivatingId}
+        error={deactivateError}
       />
     </>
   );

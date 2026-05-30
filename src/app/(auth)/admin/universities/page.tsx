@@ -7,6 +7,7 @@ import { UniversityTable } from "@/components/universities/UniversityTable";
 import { CoursesPanel } from "@/components/universities/CoursesPanel";
 import { LinkedBusesPanel } from "@/components/universities/LinkedBusesPanel";
 import { UniversityFormModal } from "@/components/universities/UniversityFormModal";
+import { DeactivateUniversityModal } from "@/components/universities/DeactivateUniversityModal";
 import { Plus, MapPin, BookOpen, Bus as BusIcon, Building2, AlertCircle, X } from "lucide-react";
 
 type DetailTab = "courses" | "buses";
@@ -22,6 +23,8 @@ export default function UniversitiesPage() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<University | null>(null);
   const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
+  const [pendingDeactivate, setPendingDeactivate] = useState<University | null>(null);
+  const [deactivateError, setDeactivateError] = useState("");
   const [error, setError] = useState("");
   const [coursesError, setCoursesError] = useState("");
 
@@ -69,12 +72,23 @@ export default function UniversitiesPage() {
     loadCourses(university._id);
   };
 
-  const handleDeactivate = async (id: string) => {
-    setDeactivatingId(id);
+  const handleDeactivate = (id: string) => {
+    const university = universities.find((u) => u._id === id) ?? null;
+    setDeactivateError("");
+    setPendingDeactivate(university);
+  };
+
+  const handleConfirmDeactivate = async () => {
+    if (!pendingDeactivate) return;
+    setDeactivatingId(pendingDeactivate._id);
+    setDeactivateError("");
     try {
-      await universityApi.deactivate(id);
-      if (selected?._id === id) setSelected(null);
+      await universityApi.deactivate(pendingDeactivate._id);
+      if (selected?._id === pendingDeactivate._id) setSelected(null);
       await loadUniversities();
+      setPendingDeactivate(null);
+    } catch {
+      setDeactivateError("Não foi possível desativar a faculdade. Tente novamente.");
     } finally {
       setDeactivatingId(null);
     }
@@ -272,6 +286,13 @@ export default function UniversitiesPage() {
         initial={editing}
         onClose={() => setEditing(null)}
         onSubmit={handleEdit}
+      />
+      <DeactivateUniversityModal
+        university={pendingDeactivate}
+        onClose={() => { setPendingDeactivate(null); setDeactivateError(""); }}
+        onConfirm={handleConfirmDeactivate}
+        loading={!!deactivatingId}
+        error={deactivateError}
       />
     </>
   );
