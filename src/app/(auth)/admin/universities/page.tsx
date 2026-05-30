@@ -64,7 +64,11 @@ export default function UniversitiesPage() {
     loadUniversities();
   }, [loadUniversities]);
 
-  const handleSelect = (university: University) => {
+  const handleSelect = (university: University | null) => {
+    if (!university) {
+      setSelected(null);
+      return;
+    }
     setSelected(university);
     setActiveTab("courses");
     setCourses([]);

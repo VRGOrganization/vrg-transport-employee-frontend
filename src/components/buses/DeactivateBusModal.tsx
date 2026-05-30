@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, Loader2, ShieldAlert, Slash } from "lucide-react";
+import { AlertCircle, Loader2, ShieldAlert, Ban } from "lucide-react";
 import type { Bus } from "@/types/university.types";
 
 interface DeactivateBusModalProps {
@@ -67,7 +67,7 @@ export function DeactivateBusModal({
           </button>
 
           <div className="w-20 h-20 rounded-full bg-surface flex items-center justify-center shadow-lg border-4 border-surface mb-3">
-            <Slash className="w-9 h-9 text-error" />
+            <Ban className="w-9 h-9 text-error" />
           </div>
 
           <h2 className="text-2xl font-extrabold text-white tracking-tight text-center">
@@ -134,7 +134,7 @@ export function DeactivateBusModal({
             >
               {loading
                 ? <Loader2 className="w-4 h-4 animate-spin" />
-                : <Slash className="w-4 h-4" />
+                : <Ban className="w-4 h-4" />
               }
               {loading ? "Desativando..." : "Sim, desativar"}
             </button>

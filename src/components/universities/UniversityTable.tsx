@@ -1,13 +1,13 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Landmark, Edit2, Slash, ChevronRight, Building2 } from "lucide-react";
+import { Landmark, Edit2, Ban, ChevronRight, Building2 } from "lucide-react";
 import type { University } from "@/types/university.types";
 
 interface Props {
   universities: University[];
   selectedId: string | null;
-  onSelect: (university: University) => void;
+  onSelect: (university: University | null) => void;
   onEdit: (university: University) => void;
   onDeactivate: (id: string) => void;
   deactivatingId: string | null;
@@ -52,8 +52,8 @@ export function UniversityTable({
             <div
               role="button"
               tabIndex={0}
-              onClick={() => onSelect(university)}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onSelect(university); }}
+              onClick={() => onSelect(isSelected ? null : university)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onSelect(isSelected ? null : university); }}
               className={cn(
                 "w-full text-left px-5 py-4 rounded-xl border transition-all duration-150 cursor-pointer",
                 isSelected
@@ -99,10 +99,25 @@ export function UniversityTable({
                     {deactivatingId === university._id ? (
                       <ChevronRight className="h-4 w-4 animate-pulse" />
                     ) : (
-                      <Slash className="h-4 w-4" />
+                      <Ban className="h-4 w-4" />
                     )}
                   </button>
-                  <ChevronRight className={cn("ml-1 transition-transform", isSelected ? "text-primary rotate-90" : "text-outline-variant")} />
+                  <span
+                    title="Listar faculdades"
+                    className={cn(
+                      "ml-1 p-1.5 rounded-lg transition-all",
+                      isSelected
+                        ? "text-primary"
+                        : "text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high"
+                    )}
+                  >
+                    <ChevronRight
+                      className={cn(
+                        "w-4 h-4 transition-transform",
+                        isSelected && "rotate-90"
+                      )}
+                    />
+                  </span>
                 </div>
               </div>
 
