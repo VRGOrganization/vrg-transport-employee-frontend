@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { universityApi, courseApi, busApi } from "@/lib/universityApi";
 import type { University, Course, Bus } from "@/types/university.types";
 import { UniversityTable } from "@/components/universities/UniversityTable";
@@ -10,10 +10,13 @@ import { UniversityFormModal } from "@/components/universities/UniversityFormMod
 import { DeactivateUniversityModal } from "@/components/universities/DeactivateUniversityModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Tabs } from "@/components/ui/Tabs";
-import { Plus, MapPin, BookOpen, Bus as BusIcon, Building2, AlertCircle, X, CheckCircle2, Ban, RotateCcw } from "lucide-react";
+import { Plus, MapPin, BookOpen, Bus as BusIcon, Building2, AlertCircle, X, CheckCircle2, Ban, RotateCcw, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 type DetailTab = "courses" | "buses";
 type StatusTab = "active" | "inactive";
+type SortOrder = "az" | "za";
+
+const PAGE_SIZE = 5;
 
 const STATUS_TABS = [
   { key: "active" as StatusTab,   label: "Ativas",      icon: CheckCircle2 },
@@ -22,6 +25,8 @@ const STATUS_TABS = [
 
 export default function UniversitiesPage() {
   const [statusTab, setStatusTab] = useState<StatusTab>("active");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("az");
+  const [currentPage, setCurrentPage] = useState(1);
   const [universities, setUniversities] = useState<University[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [buses, setBuses] = useState<Bus[]>([]);
@@ -82,6 +87,23 @@ export default function UniversitiesPage() {
     setSelected(null);
     loadUniversities();
   }, [loadUniversities]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusTab, sortOrder]);
+
+  const sortedUniversities = useMemo(() => {
+    const list = [...universities];
+    list.sort((a, b) => {
+      const cmp = a.acronym.localeCompare(b.acronym, "pt-BR", { sensitivity: "base" });
+      return sortOrder === "az" ? cmp : -cmp;
+    });
+    return list;
+  }, [universities, sortOrder]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedUniversities.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pageItems = sortedUniversities.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const handleSelect = (university: University | null) => {
     if (!university) {
@@ -175,15 +197,13 @@ export default function UniversitiesPage() {
                 Cadastre faculdades, gerencie cursos e vincule ônibus
               </p>
             </div>
-            {statusTab === "active" && (
-              <button
-                onClick={() => setCreating(true)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
-              >
-                <Plus className="w-4.5 h-4.5" />
-                Nova Faculdade
-              </button>
-            )}
+            <button
+              onClick={() => setCreating(true)}
+              className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+            >
+              <Plus className="w-4.5 h-4.5" />
+              Nova Faculdade
+            </button>
           </div>
 
           <div className="mb-6">
@@ -201,7 +221,7 @@ export default function UniversitiesPage() {
 
             {/* Coluna esquerda — lista de faculdades */}
             <div className={`shrink-0 bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm p-5 ${statusTab === "active" ? "w-96" : "flex-1"}`}>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wide">
                   {statusTab === "active" ? "Faculdades ativas" : "Faculdades desativadas"}
                 </h2>
@@ -210,9 +230,23 @@ export default function UniversitiesPage() {
                 </span>
               </div>
 
+              <div className="flex items-center gap-2 mb-4">
+                <ArrowUpDown className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
+                <label htmlFor="university-sort" className="text-xs text-on-surface-variant">Ordenar:</label>
+                <select
+                  id="university-sort"
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+                  className="text-xs bg-surface-container border border-outline-variant rounded-lg px-2 py-1 text-on-surface outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  <option value="az">A → Z</option>
+                  <option value="za">Z → A</option>
+                </select>
+              </div>
+
               {statusTab === "active" ? (
                 <UniversityTable
-                  universities={universities}
+                  universities={pageItems}
                   selectedId={selected?._id ?? null}
                   onSelect={handleSelect}
                   onEdit={(u) => setEditing(u)}
@@ -222,13 +256,41 @@ export default function UniversitiesPage() {
                 />
               ) : (
                 <UniversityTable
-                  universities={universities}
+                  universities={pageItems}
                   loading={loadingUniversities}
                   onReactivate={handleReactivate}
                   reactivatingId={reactivatingId}
                   emptyTitle="Nenhuma faculdade desativada"
                   emptyDescription="Faculdades desativadas aparecerão aqui."
                 />
+              )}
+
+              {!loadingUniversities && sortedUniversities.length > 0 && (
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-outline-variant">
+                  <span className="text-xs text-on-surface-variant">
+                    Página {safePage} de {totalPages} · {sortedUniversities.length} {sortedUniversities.length === 1 ? "faculdade" : "faculdades"}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={safePage <= 1}
+                      className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Página anterior"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={safePage >= totalPages}
+                      className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Próxima página"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
 
