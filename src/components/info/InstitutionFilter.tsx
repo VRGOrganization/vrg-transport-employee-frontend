@@ -30,7 +30,7 @@ export function InstitutionFilter({ value, onChange }: InstitutionFilterProps) {
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="appearance-none bg-surface-container-lowest border-none shadow-sm px-4 py-2.5 pr-10 rounded-xl text-sm font-semibold text-primary focus:ring-2 focus:ring-primary cursor-pointer w-56 outline-none"
+          className="appearance-none bg-surface-container-lowest border border-on-surface-variant shadow-sm px-4 py-2.5 pr-10 rounded-xl text-sm font-semibold text-primary focus:ring-2 focus:ring-primary cursor-pointer w-56 outline-none"
         >
           {INSTITUTIONS.map((inst) => (
             <option key={inst} value={inst}>

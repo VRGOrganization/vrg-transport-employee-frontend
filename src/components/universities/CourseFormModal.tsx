@@ -68,7 +68,7 @@ export function CourseFormModal({ open, initial, universityName, onClose, onSubm
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Ex: Psicologia"
-          className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          className="w-full px-4 py-2.5 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
 

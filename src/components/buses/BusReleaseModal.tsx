@@ -107,7 +107,7 @@ export default function BusReleaseModal({ open, bus, onClose, onSuccess }: BusRe
           value={quantity ?? ''}
           onChange={(e) => setQuantity(e.target.value ? Math.max(0, parseInt(e.target.value, 10)) : null)}
           placeholder={`${totalWaitlisted}`}
-          className="w-full px-4 py-2.5 rounded-md border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          className="w-full px-4 py-2.5 rounded-md border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
 

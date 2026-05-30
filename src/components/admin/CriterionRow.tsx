@@ -19,7 +19,7 @@ function getOperatorsForType(type: CriterionType): CriterionOperator[] {
 }
 
 const fieldXs =
-  "w-full h-8 px-2.5 rounded-lg ring-1 ring-outline bg-surface-container-lowest text-xs text-on-surface " +
+  "w-full h-8 px-2.5 rounded-lg border border-on-surface-variant ring-0 bg-surface-container-lowest text-xs text-on-surface " +
   "placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary outline-none transition-all";
 
 interface CriterionRowProps {

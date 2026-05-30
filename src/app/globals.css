@@ -186,22 +186,24 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Reset de inputs — estilização fica nos componentes */
-input,
-textarea,
-select {
-  font-family: var(--font-body);
-  outline: none;
-  border: none;
-  background: transparent;
-  -webkit-appearance: none;
-  appearance: none;
-}
+@layer base {
+  input,
+  textarea,
+  select {
+    font-family: var(--font-body);
+    outline: none;
+    border: none;
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+  }
 
-input:focus,
-input:focus-visible,
-textarea:focus,
-textarea:focus-visible {
-  outline: none;
+  input:focus,
+  input:focus-visible,
+  textarea:focus,
+  textarea:focus-visible {
+    outline: none;
+  }
 }
 
 /* Material Symbols */

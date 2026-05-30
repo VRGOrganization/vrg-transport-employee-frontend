@@ -332,7 +332,7 @@ export function StudentInfoModal({ student, onClose, onEdit, onBanned }: Student
                       value={banConfirmName}
                       onChange={(e) => { setBanConfirmName(e.target.value); setBanError(""); }}
                       placeholder="Nome completo do estudante"
-                      className="w-full px-3 py-2.5 rounded-lg bg-surface-container border border-outline-variant text-sm text-on-surface placeholder:text-on-surface-variant/50 outline-none focus:ring-2 focus:ring-error focus:border-error transition-all"
+                      className="w-full px-3 py-2.5 rounded-lg bg-surface-container border border-on-surface-variant text-sm text-on-surface placeholder:text-on-surface-variant/50 outline-none focus:ring-2 focus:ring-error focus:border-error transition-all"
                     />
                   </div>
 

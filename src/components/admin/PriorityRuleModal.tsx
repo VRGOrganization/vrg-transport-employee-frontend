@@ -53,7 +53,7 @@ function buildFormState(rule: PriorityRule | null): FormState {
 }
 
 const field =
-  "w-full px-3 rounded-lg ring-1 ring-outline bg-surface-container-lowest text-sm text-on-surface " +
+  "w-full px-3 rounded-lg border border-on-surface-variant ring-0 bg-surface-container-lowest text-sm text-on-surface " +
   "placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary outline-none transition-all";
 const fieldSm = `${field} h-9`;
 

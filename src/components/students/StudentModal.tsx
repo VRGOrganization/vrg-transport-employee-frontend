@@ -135,9 +135,9 @@ export function StudentModal({ student, isBanned = false, onClose, onUpdated, on
 
   const inputClass = (hasError?: string) =>
     [
-      "w-full h-10 px-3 rounded-lg bg-surface-container text-sm text-on-surface",
+      "w-full h-10 px-3 rounded-lg bg-surface-container border text-sm text-on-surface",
       "placeholder:text-on-surface-variant/50 outline-none transition-all focus:ring-2",
-      hasError ? "ring-1 ring-error focus:ring-error" : "focus:ring-primary",
+      hasError ? "border-error ring-1 ring-error focus:ring-error" : "border-on-surface-variant focus:ring-primary",
     ].join(" ");
 
   return (

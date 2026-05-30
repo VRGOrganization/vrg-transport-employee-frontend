@@ -23,7 +23,7 @@ interface StudentFormProps {
 }
 
 const SELECT_CLASS =
-  "w-full h-14 bg-surface-container-lowest ring-1 ring-outline/40 focus:ring-2 focus:ring-primary rounded-xl text-on-surface pl-12 pr-4 text-base outline-none transition-all appearance-none";
+  "w-full h-14 bg-surface-container-lowest border border-on-surface-variant ring-0 focus:ring-2 focus:ring-primary rounded-xl text-on-surface pl-12 pr-4 text-base outline-none transition-all appearance-none";
 
 const LABEL_CLASS =
   "text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1";
@@ -118,7 +118,7 @@ export function StudentForm({
         <select
           value={data.bloodType}
           onChange={(e) => onChange("bloodType", e.target.value)}
-          className="w-full h-14 bg-surface-container-lowest ring-1 ring-outline/40 focus:ring-2 focus:ring-primary rounded-xl text-on-surface px-4 text-base outline-none transition-all appearance-none"
+          className="w-full h-14 bg-surface-container-lowest border border-on-surface-variant ring-0 focus:ring-2 focus:ring-primary rounded-xl text-on-surface px-4 text-base outline-none transition-all appearance-none"
         >
           <option value="">Não informado</option>
           {BLOOD_TYPES.map((bt) => (
@@ -143,7 +143,7 @@ export function StudentForm({
             value={data.institution}
             onChange={(e) => onChange("institution", e.target.value)}
             placeholder={loadingUniversities ? "Carregando…" : "Nome da instituição"}
-            className="w-full h-14 bg-surface-container-lowest ring-1 ring-outline/40 focus:ring-2 focus:ring-primary rounded-xl text-on-surface pl-12 pr-4 text-base outline-none transition-all placeholder:text-outline/50"
+            className="w-full h-14 bg-surface-container-lowest border border-on-surface-variant ring-0 focus:ring-2 focus:ring-primary rounded-xl text-on-surface pl-12 pr-4 text-base outline-none transition-all placeholder:text-outline/50"
           />
           <datalist id="universities-datalist">
             {universities.map((u) => (

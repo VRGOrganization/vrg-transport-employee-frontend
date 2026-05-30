@@ -82,7 +82,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
           <select
             value={selectedBusId}
             onChange={(e) => setSelectedBusId(e.target.value)}
-            className="flex-1 px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-success"
+            className="flex-1 px-3 py-2 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-success"
           >
             <option value="">Selecione um ônibus</option>
             {availableBuses.map((bus) => (

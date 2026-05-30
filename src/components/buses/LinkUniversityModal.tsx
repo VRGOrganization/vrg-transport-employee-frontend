@@ -79,7 +79,7 @@ export default function LinkUniversityModal({ open, currentSlots = [], onClose, 
           <select
             value={selected}
             onChange={(e) => setSelected(e.target.value)}
-            className="w-full h-10 rounded-xl border border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface"
+            className="w-full h-10 rounded-xl border border-on-surface-variant bg-surface-container-low px-3 text-sm text-on-surface"
           >
             {universities.map((u) => (
               <option key={u._id} value={u._id}>

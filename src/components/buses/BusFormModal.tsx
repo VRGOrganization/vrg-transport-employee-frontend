@@ -157,7 +157,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               placeholder="Ex: Ônibus 03"
-              className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2.5 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <div>
@@ -170,7 +170,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
               value={capacity}
               onChange={(e) => setCapacity(e.target.value)}
               placeholder="Ex: 48"
-              className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2.5 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
@@ -179,7 +179,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
             <select
               value={shift}
               onChange={(e) => setShift(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2.5 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">Nenhum</option>
               <option value="Manhã">Manhã</option>

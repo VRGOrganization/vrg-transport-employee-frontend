@@ -350,7 +350,7 @@ export function EnrollmentPeriodModal({
               step={1}
               value={form.totalSlots}
               onChange={(event) => setField("totalSlots", event.target.value)}
-              className="h-10 w-full rounded-xl border-2 border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+              className="h-10 w-full rounded-xl border-2 border-on-surface-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Ex: 100"
             />
             {errors.totalSlots ? (
@@ -382,7 +382,7 @@ export function EnrollmentPeriodModal({
               step={1}
               value={form.licenseValidityMonths}
               onChange={(event) => setField("licenseValidityMonths", event.target.value)}
-              className="h-10 w-full rounded-xl border-2 border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+              className="h-10 w-full rounded-xl border-2 border-on-surface-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Ex: 6"
             />
             {errors.licenseValidityMonths && (

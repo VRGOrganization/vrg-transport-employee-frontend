@@ -126,7 +126,7 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
               onChange={(e) => { setUnbanReasons(e.target.value); setError(""); }}
               placeholder="Descreva o motivo pelo qual o banimento está sendo removido…"
               rows={4}
-              className="w-full px-3 py-2.5 rounded-lg bg-surface-container text-sm text-on-surface placeholder:text-on-surface-variant/50 outline-none resize-none focus:ring-2 focus:ring-success transition-all"
+              className="w-full px-3 py-2.5 rounded-lg bg-surface-container border border-on-surface-variant text-sm text-on-surface placeholder:text-on-surface-variant/50 outline-none resize-none focus:ring-2 focus:ring-success transition-all"
             />
           </div>
 

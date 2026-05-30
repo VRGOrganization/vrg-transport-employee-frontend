@@ -159,7 +159,7 @@ export function RejectModal({
             Observação adicional (opcional)
           </label>
           <textarea
-            className="w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface resize-none focus:outline-none focus:border-primary"
+            className="w-full rounded-xl border border-on-surface-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface resize-none focus:outline-none focus:border-primary"
             rows={3}
             maxLength={300}
             placeholder="Observação adicional para o aluno…"

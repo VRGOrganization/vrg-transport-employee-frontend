@@ -56,7 +56,7 @@ export function StudentListToolbar({
 
         {(filter === "all" || filter === "with-card") && (
           <div
-            className={`relative flex items-center h-10 w-full rounded-xl border border-outline 
+            className={`relative flex items-center h-10 w-full rounded-xl border border-on-surface-variant 
               bg-surface-container-lowest shadow-(--shadow-card) transition-all duration-200
               focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25
               `}
