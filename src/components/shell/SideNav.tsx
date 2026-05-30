@@ -7,6 +7,7 @@ import { LogOut } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { getInitials } from "@/lib/utils/string";
+import type { EmployeeUser } from "@/types/employeeAuth";
 
 export interface NavItem {
   icon: LucideIcon;
@@ -24,10 +25,9 @@ interface SideNavProps {
   brand: SideNavBrand;
   items: readonly NavItem[];
   onLogout?: () => void;
-  showUserFooter?: boolean;
 }
 
-export function SideNav({ brand, items, onLogout, showUserFooter = true }: SideNavProps) {
+export function SideNav({ brand, items, onLogout }: SideNavProps) {
   const pathname = usePathname();
   const { user } = useEmployeeAuth();
   const Brand = brand.icon;
@@ -74,11 +74,7 @@ export function SideNav({ brand, items, onLogout, showUserFooter = true }: SideN
         </ul>
       </nav>
 
-      {showUserFooter ? (
-        <UserFooter user={user} onLogout={onLogout} />
-      ) : (
-        <LogoutOnlyFooter onLogout={onLogout} />
-      )}
+      <UserFooter user={user} onLogout={onLogout} />
     </aside>
   );
 }
@@ -87,7 +83,7 @@ function UserFooter({
   user,
   onLogout,
 }: {
-  user: { name?: string; registrationId?: string } | null;
+  user: EmployeeUser | null;
   onLogout?: () => void;
 }) {
   return (
@@ -100,9 +96,9 @@ function UserFooter({
           <p className="text-sm font-semibold text-on-surface truncate leading-tight">
             {user?.name ?? "Administrador"}
           </p>
-          {user?.registrationId && (
-            <p className="text-xs text-on-surface-variant">Mat. {user.registrationId}</p>
-          )}
+          <p className="text-xs text-on-surface-variant">
+            {user?.role === "admin" ? "Administradora" : "Funcionária"}
+          </p>
         </div>
         <button
           onClick={onLogout}
@@ -112,20 +108,6 @@ function UserFooter({
           <LogOut className="w-4.5 h-4.5" />
         </button>
       </div>
-    </div>
-  );
-}
-
-function LogoutOnlyFooter({ onLogout }: { onLogout?: () => void }) {
-  return (
-    <div className="px-4 pt-6 border-t border-outline-variant/20">
-      <button
-        onClick={onLogout}
-        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-error hover:bg-error-container transition-all duration-200 text-sm font-medium"
-      >
-        <LogOut className="w-5 h-5" />
-        <span>Sair</span>
-      </button>
     </div>
   );
 }
