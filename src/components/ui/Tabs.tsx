@@ -26,10 +26,10 @@ export function Tabs<T extends string>({ items, value, onChange, className }: Ta
             key={t.key}
             onClick={() => onChange(t.key)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-150",
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-150 cursor-pointer",
               active
                 ? "bg-primary text-on-primary shadow-sm"
-                : "text-on-surface-variant hover:text-on-surface",
+                : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high",
             )}
           >
             {typeof t.icon === "string" ? (

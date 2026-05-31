@@ -9,7 +9,6 @@ function getPageTitle(pathname: string): string {
     "/admin/info":             "Informações",
     "/admin/enrollment-period":"Período de Inscrição",
     "/admin/employees":        "Funcionários",
-    "/admin/employees/new":    "Novo Funcionário",
     "/admin/students":         "Estudantes",
     "/admin/cards":            "Carteirinhas",
     "/admin/universities":     "Instituições",
