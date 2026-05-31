@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getBackendApiBaseUrl, getServiceSecret } from "@/lib/server/bff-auth";
 import { checkRateLimit } from "@/lib/server/rate-limit";
-import { forgotPasswordSchema } from "@/lib/validation/auth";
-
-const SAFE_RESPONSE = {
-  message: "Se o email estiver cadastrado, você receberá um link de recuperação em breve.",
-};
+import { resetPasswordSchema } from "@/lib/validation/auth";
 
 function isConnectivityError(error: unknown): boolean {
   if (!(error instanceof TypeError)) return false;
@@ -29,35 +25,47 @@ export async function POST(request: NextRequest) {
     const xff = request.headers.get("x-forwarded-for") ?? "";
     const clientIp = xff.split(",")[0]?.trim() || "unknown";
 
-    if (!checkRateLimit(`forgot-password:${clientIp}`, 5, 900_000)) {
+    if (!checkRateLimit(`reset-password:${clientIp}`, 10, 3600_000)) {
       return NextResponse.json(
-        { message: "Muitas tentativas. Tente novamente em 15 minutos." },
+        { message: "Muitas tentativas. Tente novamente em 1 hora." },
         { status: 429 },
       );
     }
 
     const rawBody = await request.json().catch(() => ({}));
-    const result = forgotPasswordSchema.safeParse(rawBody);
+    const result = resetPasswordSchema.safeParse(rawBody);
 
     if (!result.success) {
-      const message = result.error.issues[0]?.message ?? "Email inválido.";
-      return NextResponse.json({ message }, { status: 400 });
+      const message = result.error.issues[0]?.message ?? "Dados inválidos.";
+      const field = result.error.issues[0]?.path[0] as string | undefined;
+      return NextResponse.json({ message, field }, { status: 400 });
     }
 
-    const { email } = result.data;
+    const { token, password } = result.data;
 
-    await fetch(`${getBackendApiBaseUrl()}/auth/employee/forgot-password`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-service-secret": getServiceSecret(),
+    const backendRes = await fetch(
+      `${getBackendApiBaseUrl()}/auth/employee/reset-password`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-service-secret": getServiceSecret(),
+        },
+        body: JSON.stringify({ token, password }),
+        cache: "no-store",
       },
-      body: JSON.stringify({ email }),
-      cache: "no-store",
-    });
+    );
 
-    // Sempre retorna 200 independente do resultado — previne enumeração de emails
-    return NextResponse.json(SAFE_RESPONSE);
+    const data = await backendRes.json().catch(() => ({}));
+
+    if (!backendRes.ok) {
+      return NextResponse.json(
+        { message: data?.message ?? "Não foi possível redefinir a senha." },
+        { status: backendRes.status },
+      );
+    }
+
+    return NextResponse.json({ message: "Senha redefinida com sucesso." });
   } catch (error) {
     if (isConnectivityError(error)) {
       return NextResponse.json(

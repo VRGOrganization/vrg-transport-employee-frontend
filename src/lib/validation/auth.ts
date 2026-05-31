@@ -69,6 +69,26 @@ export const forgotPasswordSchema = z.object({
     .email("Informe um email válido"),
 });
 
+const PASSWORD_POLICY_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/;
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, "Token inválido"),
+    password: z
+      .string({ error: "Senha é obrigatória" })
+      .min(8, "Senha deve ter no mínimo 8 caracteres")
+      .max(64, "Senha deve ter no máximo 64 caracteres")
+      .regex(
+        PASSWORD_POLICY_REGEX,
+        "Senha deve conter maiúscula, minúscula, número e caractere especial",
+      ),
+    confirmPassword: z.string({ error: "Confirmação de senha é obrigatória" }),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "As senhas não coincidem",
+  });
+
 export function getFieldErrors(error: z.ZodError): Record<string, string> {
   const flat = error.flatten().fieldErrors as Record<string, string[] | undefined>;
   return Object.entries(flat).reduce<Record<string, string>>((acc, [field, issues]) => {
