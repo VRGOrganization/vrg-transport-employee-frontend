@@ -324,3 +324,22 @@ input:-webkit-autofill:focus {
   .edp-picker .rdp-weekday { font-size: 10px; }
   .edp-picker .rdp-months { grid-template-columns: 1fr; gap: 8px; }
 }
+
+/* ── Toast animations ── */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(calc(100% + 1.5rem)); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(calc(100% + 1.5rem)); }
+}
+
+@keyframes toast-progress {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+.animate-toast-in  { animation: toast-in  0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-toast-out { animation: toast-out 0.28s cubic-bezier(0.7, 0, 0.84, 0) both; }

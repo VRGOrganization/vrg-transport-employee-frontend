@@ -31,7 +31,7 @@ export function EnrollmentPeriodBanner({ endDate }: EnrollmentPeriodBannerProps)
         </p>
         <Link
           href="/admin/enrollment-period"
-          className="text-xs font-semibold text-error underline underline-offset-2 shrink-0"
+          className="cursor-pointer text-xs font-semibold text-error underline underline-offset-2 shrink-0 hover:opacity-70 transition-opacity"
         >
           Ver período
         </Link>
@@ -58,7 +58,7 @@ export function EnrollmentPeriodBanner({ endDate }: EnrollmentPeriodBannerProps)
       <p className={`text-sm flex-1 ${styles.text}`}>{message}</p>
       <Link
         href="/admin/enrollment-period"
-        className={`text-xs font-semibold underline underline-offset-2 shrink-0 ${styles.text}`}
+        className={`cursor-pointer text-xs font-semibold underline underline-offset-2 shrink-0 hover:opacity-70 transition-opacity ${styles.text}`}
       >
         Ver período
       </Link>
