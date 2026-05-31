@@ -257,7 +257,7 @@ function EditStudentPageInner() {
               fullWidth
               className="bg-success hover:bg-success/90 border-none text-white"
               loading={statusLoading}
-              icon="check"
+              icon={<CheckCircle2 className="w-4 h-4" />}
               onClick={confirmToggleStatus}
             >
               Sim, reativar

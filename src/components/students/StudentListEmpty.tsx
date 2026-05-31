@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertCircle, GraduationCap, UserX } from "lucide-react";
+import { AlertCircle, GraduationCap, UserX, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ResultState } from "@/components/ui/ResultState";
 
@@ -47,7 +47,7 @@ export function StudentListEmpty({ tab, onRetry, isError }: StudentListEmptyProp
         size="sm"
         actions={isActive ? (
           <Link href="/admin/students/new">
-            <Button variant="primary" size="sm" icon="person_add">
+            <Button variant="primary" size="sm" icon={<UserPlus className="w-4 h-4" />}>
               Adicionar estudante
             </Button>
           </Link>

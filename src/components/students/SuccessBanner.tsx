@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ArrowLeft, UserPlus } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { ResultState } from "@/components/ui/ResultState";
 
@@ -12,7 +13,7 @@ interface SuccessBannerProps {
   backLabel?: string;
   onReset?: () => void;
   resetLabel?: string;
-  resetIcon?: string;
+  resetIcon?: ReactNode;
 }
 
 export function SuccessBanner({
@@ -22,7 +23,7 @@ export function SuccessBanner({
   backLabel = "Voltar",
   onReset,
   resetLabel = "Novo cadastro",
-  resetIcon = "person_add",
+  resetIcon = <UserPlus className="w-4 h-4" />,
 }: SuccessBannerProps) {
   const router = useRouter();
 
@@ -36,7 +37,7 @@ export function SuccessBanner({
       className="py-6"
       actions={
         <>
-          <Button variant="outline" size="md" fullWidth icon="arrow_back" onClick={() => router.push(backHref)}>
+          <Button variant="outline" size="md" fullWidth icon={<ArrowLeft className="w-4 h-4" />} onClick={() => router.push(backHref)}>
             {backLabel}
           </Button>
           {onReset ? (

@@ -253,7 +253,7 @@ function EditEmployeeContent() {
                       variant="primary"
                       size="md"
                       loading={saving}
-                      icon="check"
+                      icon={<CheckCircle2 className="w-4 h-4" />}
                     >
                       Salvar Alterações
                     </Button>

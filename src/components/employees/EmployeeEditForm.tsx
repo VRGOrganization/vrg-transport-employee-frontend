@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { StatusBanner } from "@/components/ui/StatusBanner";
@@ -158,7 +158,7 @@ export function EmployeeEditForm({ employee, generalError, onCancel, onPrepareCo
           <Button type="button" variant="outline" size="sm" fullWidth onClick={onCancel}>
             Cancelar
           </Button>
-          <Button type="submit" variant="primary" size="sm" fullWidth icon="check">
+          <Button type="submit" variant="primary" size="sm" fullWidth icon={<Check className="w-4 h-4" />}>
             Salvar alterações
           </Button>
         </div>

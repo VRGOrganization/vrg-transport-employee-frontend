@@ -2,6 +2,7 @@
 
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { Save } from "lucide-react";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { SelectField } from "@/components/ui/SelectField";
 import { SHIFTS, BLOOD_TYPES, StudentFormData, StudentFormErrors } from "@/types/student";
@@ -155,7 +156,7 @@ export function StudentForm({
         size="lg"
         fullWidth
         loading={loading}
-        icon={isEdit ? "save" : ""}
+        icon={isEdit ? <Save className="w-4 h-4" /> : undefined}
       >
         {isEdit ? "Salvar alterações" : "Cadastrar Estudante"}
       </Button>

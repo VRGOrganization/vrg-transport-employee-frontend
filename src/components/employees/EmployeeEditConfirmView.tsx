@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { ChangeEntry } from "./EmployeeEditForm";
 
@@ -44,7 +44,7 @@ export function EmployeeEditConfirmView({ changes, loading, onBack, onConfirm }:
         <Button variant="outline" size="sm" fullWidth onClick={onBack} disabled={loading}>
           Voltar
         </Button>
-        <Button variant="primary" size="sm" fullWidth loading={loading} icon="check" onClick={onConfirm}>
+        <Button variant="primary" size="sm" fullWidth loading={loading} icon={<Check className="w-4 h-4" />} onClick={onConfirm}>
           Confirmar
         </Button>
       </div>

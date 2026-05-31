@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
+import { UserPlus } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { studentService } from "@/services/studentService";
 import { Student } from "@/types/student";
@@ -72,7 +73,7 @@ export default function EmployeeStudentsPage() {
               back="/employee/dashboard"
               rightSlot={
                 <Link href="/employee/students/new">
-                  <Button variant="primary" size="sm" icon="person_add">Adicionar</Button>
+                  <Button variant="primary" size="sm" icon={<UserPlus className="w-4 h-4" />}>Adicionar</Button>
                 </Link>
               }
             />

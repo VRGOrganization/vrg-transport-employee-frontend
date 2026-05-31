@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, Badge, Calendar, RefreshCw, Info, UserX } from "lucide-react";
+import { Mail, Badge, Calendar, RefreshCw, Info, UserX, Pencil, CheckCircle2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
@@ -52,7 +52,7 @@ export function EmployeeInfoView({ employee, onEdit, onRequestDelete, onRequestA
 
       {employee.active ? (
         <div className="flex gap-3">
-          <Button variant="outline" size="sm" fullWidth icon="edit" onClick={onEdit}>
+          <Button variant="outline" size="sm" fullWidth icon={<Pencil className="w-4 h-4" />} onClick={onEdit}>
             Editar
           </Button>
           <button
@@ -74,7 +74,7 @@ export function EmployeeInfoView({ employee, onEdit, onRequestDelete, onRequestA
             size="sm"
             fullWidth
             className="bg-success hover:bg-success/90 border-none text-white"
-            icon="check"
+            icon={<CheckCircle2 className="w-4 h-4" />}
             onClick={onRequestActivate}
           >
             Reativar Funcionário
