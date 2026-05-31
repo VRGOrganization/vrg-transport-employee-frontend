@@ -1,6 +1,5 @@
 "use client";
 
-import { Download, Loader2 } from "lucide-react";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { getInitials, AVATAR_COLORS } from "@/lib/utils/string";
@@ -108,10 +107,6 @@ interface DashboardUsersTableProps {
   pageSize: PageSize;
   onPageChange: (p: number) => void;
   onPageSizeChange: (s: PageSize) => void;
-  exportLoading: boolean;
-  onExport: () => void;
-  exportLabel: string;
-  exportTooltip: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -129,10 +124,6 @@ export function DashboardUsersTable({
   pageSize,
   onPageChange,
   onPageSizeChange,
-  exportLoading,
-  onExport,
-  exportLabel,
-  exportTooltip,
 }: DashboardUsersTableProps) {
   const sectionHeader = (
     <div className="px-6 py-3.5 border-b border-outline-variant/30 flex items-center justify-between gap-4 flex-wrap">
@@ -167,19 +158,6 @@ export function DashboardUsersTable({
           ))}
         </div>
 
-        <button
-          onClick={onExport}
-          disabled={exportLoading}
-          title={exportTooltip}
-          className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait shrink-0 min-w-48 whitespace-nowrap"
-        >
-          {exportLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Download className="w-4 h-4" />
-          )}
-          {exportLoading ? "Exportando..." : exportLabel}
-        </button>
       </div>
     </div>
   );

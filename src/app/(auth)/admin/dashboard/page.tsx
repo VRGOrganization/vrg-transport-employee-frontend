@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { employeeService } from "@/services/employeeService";
 import { http } from "@/services/http";
-import { Calendar } from "lucide-react";
+import { Calendar, Download, Loader2 } from "lucide-react";
 import { universityApi, busApi } from "@/lib/universityApi";
 import { buildStudentsCsv, buildEmployeesCsv, buildBusesCsv, buildUniversitiesCsv, downloadCsv } from "@/lib/csvUtils";
 import { resolvePaginated, type Paginated } from "@/types/api";
@@ -176,17 +176,6 @@ export default function AdminDashboardPage() {
     setExportLoading(true);
     const today = new Date().toISOString().split("T")[0];
     try {
-      if (filter === "Aluno") {
-        const students = await http.get<Paginated<StudentRecord>>("/student").then(resolvePaginated);
-        downloadCsv(buildStudentsCsv(students), `alunos_${today}.csv`);
-        return;
-      }
-      if (filter === "Funcionário") {
-        const emps = await employeeService.list();
-        downloadCsv(buildEmployeesCsv(emps), `funcionarios_${today}.csv`);
-        return;
-      }
-      // "Todos" — 4 arquivos separados
       const [studentsRes, empsRes, busesRes, unisRes] = await Promise.all([
         http.get<Paginated<StudentRecord>>("/student").then(resolvePaginated),
         employeeService.list(),
@@ -210,16 +199,6 @@ export default function AdminDashboardPage() {
       setExportLoading(false);
     }
   };
-
-  const exportLabel =
-    filter === "Aluno" ? "Exportar Alunos" :
-    filter === "Funcionário" ? "Exportar Funcionários" :
-    "Exportar Todos (4 arquivos)";
-
-  const exportTooltip =
-    filter === "Aluno" ? "Exportar dados dos alunos em CSV" :
-    filter === "Funcionário" ? "Exportar dados dos funcionários em CSV" :
-    "Exportar 4 arquivos CSV separados: Alunos, Funcionários, Frota e Faculdades";
 
   // ── Month label ────────────────────────────────────────────────────────────
 
@@ -260,24 +239,37 @@ export default function AdminDashboardPage() {
       />
 
       {/* ── Users table ──────────────────────────────────── */}
-      <DashboardUsersTable
-        rows={paginated}
-        totalFiltered={filtered.length}
-        totalAll={userRows.length}
-        loading={loadingTable}
-        filter={filter}
-        onFilterChange={handleFilterChange}
-        search={search}
-        onSearch={handleSearch}
-        page={page}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={setPageSize}
-        exportLoading={exportLoading}
-        onExport={handleExport}
-        exportLabel={exportLabel}
-        exportTooltip={exportTooltip}
-      />
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-end">
+          <button
+            onClick={handleExport}
+            disabled={exportLoading}
+            title="Exportar 4 arquivos CSV: Alunos, Funcionários, Frota e Faculdades"
+            className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait shrink-0 whitespace-nowrap"
+          >
+            {exportLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            {exportLoading ? "Exportando..." : "Exportar"}
+          </button>
+        </div>
+        <DashboardUsersTable
+          rows={paginated}
+          totalFiltered={filtered.length}
+          totalAll={userRows.length}
+          loading={loadingTable}
+          filter={filter}
+          onFilterChange={handleFilterChange}
+          search={search}
+          onSearch={handleSearch}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      </div>
 
     </main>
   );
