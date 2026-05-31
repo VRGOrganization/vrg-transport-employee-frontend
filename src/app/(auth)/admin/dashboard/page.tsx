@@ -205,6 +205,11 @@ export default function AdminDashboardPage() {
   const currentMonth = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
   const monthLabel = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
 
+  const pendingLabel =
+    stats.pendingStudents === null ? "…" :
+    stats.pendingStudents === 1 ? "1 solicitação de licença pendente de aprovação" :
+    `${stats.pendingStudents} solicitações de licença pendentes de aprovação`;
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -221,7 +226,7 @@ export default function AdminDashboardPage() {
             {user?.name ? getGreeting(user.name.split(" ")[0]) : "Bom dia"}
           </h1>
           <p className="text-xs text-on-surface-variant mt-0.5">
-            {getTodayLabel()} · {stats.pendingStudents ?? "…"} itens precisam da sua atenção hoje.
+            {getTodayLabel()} · {pendingLabel}
           </p>
         </div>
         <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors">
