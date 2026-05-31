@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { employeeService } from "@/services/employeeService";
+import { employeeBaseSchema } from "@/lib/validation/employee";
 import {
   Badge,
   CheckCircle2,
@@ -93,24 +94,18 @@ function EditEmployeeContent() {
   };
 
   const validate = (): boolean => {
-    const next = { ...emptyErrors };
-
-    if (!formData.name.trim()) {
-      next.name = "Nome é obrigatório";
+    const result = employeeBaseSchema.safeParse(formData);
+    if (!result.success) {
+      const fe = result.error.flatten().fieldErrors;
+      setErrors((prev) => ({
+        ...prev,
+        name: fe.name?.[0] ?? "",
+        email: fe.email?.[0] ?? "",
+        registrationId: fe.registrationId?.[0] ?? "",
+      }));
+      return false;
     }
-
-    if (!formData.email.trim()) {
-      next.email = "Email é obrigatório";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      next.email = "Email inválido";
-    }
-
-    if (!formData.registrationId.trim()) {
-      next.registrationId = "Matrícula é obrigatória";
-    }
-
-    setErrors(next);
-    return Object.values(next).every((msg) => msg === "");
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
