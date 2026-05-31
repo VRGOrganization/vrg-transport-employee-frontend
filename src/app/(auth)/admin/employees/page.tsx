@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Users, UserX } from "lucide-react";
 import { employeeService } from "@/services/employeeService";
 import { EmployeeModal } from "@/components/employees/EmployeeModal";
+import { EmployeeInfoModal } from "@/components/employees/EmployeeInfoModal";
 import type { Employee } from "@/types/employee";
 import { Button } from "@/components/ui/Button";
 import { DataTable, type Column } from "@/components/ui/DataTable";
@@ -77,7 +78,9 @@ const COLUMNS: Column<Employee>[] = [
 ];
 
 export default function EmployeesPage() {
-  const [selected, setSelected] = useState<Employee | null>(null);
+  const [selected, setSelected]           = useState<Employee | null>(null);
+  const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
+  const [openDropdownId, setOpenDropdownId]   = useState<string | null>(null);
 
   const fetcher = useCallback(
     (t: Tab) => (t === "active" ? employeeService.list() : employeeService.listInactive()),
@@ -113,13 +116,34 @@ export default function EmployeesPage() {
     label: "Ação",
     align: "right",
     render: (emp) => (
-      <button
-        onClick={() => setSelected(emp)}
-        className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
-        title="Editar funcionário"
-      >
-        <span className="material-symbols-outlined text-lg">edit</span>
-      </button>
+      <div className="relative inline-block text-left">
+        <button
+          onClick={(e) => { e.stopPropagation(); setOpenDropdownId(openDropdownId === emp._id ? null : emp._id); }}
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
+        >
+          <span className="material-symbols-outlined text-lg">more_vert</span>
+        </button>
+        {openDropdownId === emp._id && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenDropdownId(null); }} />
+            <div className="absolute right-0 mt-2 w-36 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+              {[
+                { icon: "visibility", label: "Ver",    action: () => { setViewingEmployee(emp); setOpenDropdownId(null); } },
+                { icon: "edit",       label: "Editar", action: () => { setSelected(emp);         setOpenDropdownId(null); } },
+              ].map(({ icon, label, action }) => (
+                <button
+                  key={label}
+                  onClick={(e) => { e.stopPropagation(); action(); }}
+                  className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
+                >
+                  <span className="material-symbols-outlined text-lg">{icon}</span>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     ),
   };
 
@@ -154,6 +178,7 @@ export default function EmployeesPage() {
           columns={columns}
           rows={paginated}
           rowKey={(e) => e._id}
+          onRowClick={(e) => setViewingEmployee(e)}
           loading={loading}
           error={error ? <ErrorState message={error} onRetry={reload} /> : undefined}
           empty={
@@ -186,6 +211,13 @@ export default function EmployeesPage() {
         />
       </main>
 
+      {viewingEmployee && (
+        <EmployeeInfoModal
+          employee={viewingEmployee}
+          onClose={() => setViewingEmployee(null)}
+          onEdit={() => { setSelected(viewingEmployee); setViewingEmployee(null); }}
+        />
+      )}
       {selected && (
         <EmployeeModal
           employee={selected}
