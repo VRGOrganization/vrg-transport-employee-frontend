@@ -1,11 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { UserX, UserCheck, Loader2, AlertCircle, ShieldBan } from "lucide-react";
+import { UserX, UserCheck, Loader2, ShieldBan } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Input } from "@/components/ui/Input";
+import { SelectField } from "@/components/ui/SelectField";
+import { StatusBanner } from "@/components/ui/StatusBanner";
+import { Button } from "@/components/ui/Button";
 import { studentService } from "@/services/studentService";
 import type { Student } from "@/types/student";
+
+const SHIFT_OPTIONS = [
+  { value: "morning", label: "Manhã" },
+  { value: "afternoon", label: "Tarde" },
+  { value: "evening", label: "Noite" },
+  { value: "full", label: "Integral" },
+];
 
 interface Props {
   student: Student;
@@ -37,8 +48,6 @@ export function StudentModal({ student, isBanned = false, onClose, onUpdated, on
   const [statusError, setStatusError] = useState("");
   const [view, setView] = useState<"form" | "delete-confirm" | "activate-confirm">("form");
   const [success, setSuccess] = useState(false);
-
-  const handleCloseAfterSuccess = () => onUpdated(student);
 
   const onChange = (field: keyof FormData, value: string) => {
     setData((prev) => ({ ...prev, [field]: value }));
@@ -102,10 +111,7 @@ export function StudentModal({ student, isBanned = false, onClose, onUpdated, on
         icon={UserX}
         variant="danger"
         description={
-          <>
-            O estudante <strong>{student.name}</strong> perderá acesso ao sistema imediatamente.
-            O cadastro poderá ser reativado posteriormente.
-          </>
+          <>O estudante <strong>{student.name}</strong> perderá acesso ao sistema imediatamente. O cadastro poderá ser reativado posteriormente.</>
         }
         confirmLabel="Sim, desativar"
       />
@@ -124,21 +130,14 @@ export function StudentModal({ student, isBanned = false, onClose, onUpdated, on
         icon={UserCheck}
         variant="success"
         description={
-          <>
-            O estudante <strong>{student.name}</strong> recuperará acesso ao sistema imediatamente.
-          </>
+          <>O estudante <strong>{student.name}</strong> recuperará acesso ao sistema imediatamente.</>
         }
         confirmLabel="Sim, reativar"
       />
     );
   }
 
-  const inputClass = (hasError?: string) =>
-    [
-      "w-full h-10 px-3 rounded-lg bg-surface-container border text-sm text-on-surface",
-      "placeholder:text-on-surface-variant/50 outline-none transition-all focus:ring-2",
-      hasError ? "border-error ring-1 ring-error focus:ring-error" : "border-on-surface-variant focus:ring-primary",
-    ].join(" ");
+  const handleCloseAfterSuccess = () => onUpdated(student);
 
   return (
     <Modal
@@ -167,14 +166,9 @@ export function StudentModal({ student, isBanned = false, onClose, onUpdated, on
         </div>
       ) : (
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
-          {/* Status row */}
           <div className="flex items-center justify-between pb-4 border-b border-outline-variant/20">
             <div className="flex items-center gap-2">
-              <span
-                className={`w-2.5 h-2.5 rounded-full ${
-                  student.active ? "bg-success" : "bg-surface-container-high"
-                }`}
-              />
+              <span className={`w-2.5 h-2.5 rounded-full ${student.active ? "bg-success" : "bg-surface-container-high"}`} />
               <span className="text-sm font-medium text-on-surface-variant">
                 {student.active ? "Conta ativa" : "Conta desativada"}
               </span>
@@ -200,73 +194,50 @@ export function StudentModal({ student, isBanned = false, onClose, onUpdated, on
             )}
           </div>
 
-          {generalError && (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-error-container/60 text-error text-xs">
-              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-              {generalError}
-            </div>
-          )}
+          {generalError && <StatusBanner variant="error">{generalError}</StatusBanner>}
 
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-on-surface-variant">
-              Nome completo <span className="text-error">*</span>
-            </label>
-            <input
-              type="text"
-              value={data.name}
-              onChange={(e) => onChange("name", e.target.value)}
-              placeholder="Nome do estudante"
-              className={inputClass(fieldErrors.name)}
-            />
-            {fieldErrors.name && <p className="text-xs text-error">{fieldErrors.name}</p>}
-          </div>
+          <Input
+            label="Nome completo"
+            type="text"
+            value={data.name}
+            onChange={(e) => onChange("name", e.target.value)}
+            error={fieldErrors.name}
+            placeholder="Nome do estudante"
+          />
 
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-on-surface-variant">E-mail</label>
-            <input
-              type="email"
-              value={student.email}
-              disabled
-              className="w-full h-10 px-3 rounded-lg bg-surface-container/50 text-sm text-on-surface-variant cursor-not-allowed"
-            />
-          </div>
+          <Input
+            label="E-mail"
+            type="email"
+            value={student.email}
+            disabled
+          />
 
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-on-surface-variant">Telefone</label>
-            <input
-              type="tel"
-              value={data.telephone}
-              onChange={(e) => onChange("telephone", e.target.value)}
-              placeholder="(00) 00000-0000"
-              className={inputClass(fieldErrors.telephone)}
-            />
-          </div>
+          <Input
+            label="Telefone"
+            type="tel"
+            value={data.telephone}
+            onChange={(e) => onChange("telephone", e.target.value)}
+            placeholder="(00) 00000-0000"
+            error={fieldErrors.telephone}
+          />
 
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-on-surface-variant">Instituição</label>
-            <input
-              type="text"
-              value={data.institution}
-              onChange={(e) => onChange("institution", e.target.value)}
-              placeholder="Nome da instituição"
-              className={inputClass(fieldErrors.institution)}
-            />
-          </div>
+          <Input
+            label="Instituição"
+            type="text"
+            value={data.institution}
+            onChange={(e) => onChange("institution", e.target.value)}
+            placeholder="Nome da instituição"
+            error={fieldErrors.institution}
+          />
 
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-on-surface-variant">Turno</label>
-            <select
-              value={data.shift}
-              onChange={(e) => onChange("shift", e.target.value)}
-              className={inputClass(fieldErrors.shift)}
-            >
-              <option value="">Selecionar turno</option>
-              <option value="morning">Manhã</option>
-              <option value="afternoon">Tarde</option>
-              <option value="evening">Noite</option>
-              <option value="full">Integral</option>
-            </select>
-          </div>
+          <SelectField
+            label="Turno"
+            options={SHIFT_OPTIONS}
+            placeholder="Selecionar turno"
+            value={data.shift}
+            onChange={(e) => onChange("shift", e.target.value)}
+            error={fieldErrors.shift}
+          />
 
           <div className="flex items-center justify-end gap-3 pt-2 border-t border-outline-variant/20">
             <button
@@ -276,14 +247,9 @@ export function StudentModal({ student, isBanned = false, onClose, onUpdated, on
             >
               Cancelar
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
-            >
-              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            <Button type="submit" variant="primary" size="sm" loading={loading}>
               {loading ? "Salvando..." : "Salvar alterações"}
-            </button>
+            </Button>
           </div>
         </form>
       )}

@@ -250,63 +250,6 @@ export function EnrollmentPeriodModal({
       size="lg"
       title={period ? "Editar período de inscrição" : "Abrir novo período de inscrição"}
     >
-      <style>{`
-        .edp-picker {
-          --rdp-accent-color: var(--color-primary);
-          --rdp-accent-background-color: var(--color-info-container);
-          --rdp-range_middle-background-color: var(--color-info-container);
-          --rdp-range_middle-color: var(--color-on-info);
-          --rdp-range_start-color: var(--color-on-primary);
-          --rdp-range_end-color: var(--color-on-primary);
-          --rdp-range_start-date-background-color: var(--color-primary);
-          --rdp-range_end-date-background-color: var(--color-primary);
-          --rdp-day_button-border: 1px solid transparent;
-          --rdp-selected-border: 1px solid var(--color-primary);
-          --rdp-disabled-opacity: 0.45;
-          --rdp-outside-opacity: 1;
-          --rdp-today-color: var(--color-primary);
-          --rdp-day-height: 36px;
-          --rdp-day-width: 36px;
-          --rdp-day_button-height: 34px;
-          --rdp-day_button-width: 34px;
-          width: 100%;
-        }
-        .edp-picker .rdp-months {
-          display: grid !important;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 16px;
-          width: 100%;
-          max-width: 100% !important;
-        }
-        .edp-picker .rdp-month { width: 100%; min-width: 0; }
-        .edp-picker .rdp-weekday {
-          font-size: 11px; font-weight: 600; text-transform: uppercase;
-          letter-spacing: 0.04em; color: var(--color-on-surface-variant); opacity: 1;
-        }
-        .edp-picker .rdp-month_caption { color: var(--color-on-surface); }
-        .edp-picker .rdp-button_previous, .edp-picker .rdp-button_next { color: var(--color-primary); }
-        .edp-picker .rdp-day_button {
-          color: var(--color-on-surface); border-radius: 9999px;
-          transition: background-color 120ms ease, color 120ms ease;
-        }
-        .edp-picker .rdp-day_button:hover:not(:disabled) {
-          background-color: var(--color-surface-container-high); color: var(--color-on-surface);
-        }
-        .edp-picker .rdp-outside .rdp-day_button { color: var(--color-on-surface-muted); }
-        .edp-picker .rdp-disabled .rdp-day_button { color: var(--color-outline); }
-        .edp-picker .rdp-selected { font-size: inherit; font-weight: 600; }
-        .edp-picker .rdp-range_middle .rdp-day_button { color: var(--color-on-info); }
-        .edp-picker .rdp-range_start .rdp-day_button,
-        .edp-picker .rdp-range_end .rdp-day_button { color: var(--color-on-primary); }
-        .edp-picker .rdp-month_grid { border-collapse: collapse; table-layout: fixed; width: 100%; }
-        .edp-picker .rdp-month_grid td, .edp-picker .rdp-month_grid th { padding: 1px; text-align: center; }
-        @media (max-width: 640px) {
-          .edp-picker { --rdp-day-height: 30px; --rdp-day-width: 30px; --rdp-day_button-height: 28px; --rdp-day_button-width: 28px; }
-          .edp-picker .rdp-weekday { font-size: 10px; }
-          .edp-picker .rdp-months { grid-template-columns: 1fr; gap: 8px; }
-        }
-      `}</style>
-
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div>
           <label className="mb-1 block text-sm font-medium text-on-surface">Período</label>
