@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
+import { PanelCard } from "@/components/ui/PanelCard";
 import { http } from "@/services/http";
 import { resolvePaginated, type Paginated } from "@/types/api";
 import type {
@@ -250,7 +251,7 @@ export default function AdminEnrollmentPeriodPage() {
               <EnrollmentPeriodBanner endDate={activePeriod.endDate} />
             )}
 
-            <section className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-5">
+            <PanelCard as="section" className="p-5">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-on-surface">Estado atual</h2>
                 <div className="flex flex-wrap gap-2">
@@ -327,9 +328,9 @@ export default function AdminEnrollmentPeriodPage() {
               ) : (
                 <p className="text-sm text-on-surface-variant">Nenhum período aberto no momento.</p>
               )}
-            </section>
+            </PanelCard>
 
-            <section className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-5">
+            <PanelCard as="section" className="p-5">
               <h2 className="mb-4 text-lg font-semibold text-on-surface">Histórico de períodos</h2>
 
               {periods.length === 0 ? (
@@ -390,10 +391,10 @@ export default function AdminEnrollmentPeriodPage() {
                   </table>
                 </div>
               )}
-            </section>
+            </PanelCard>
 
             {activePeriod && (
-              <section className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-5">
+              <PanelCard as="section" className="p-5">
                 <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-on-surface">Fila de espera</h2>
@@ -444,7 +445,7 @@ export default function AdminEnrollmentPeriodPage() {
                     </table>
                   </div>
                 )}
-              </section>
+              </PanelCard>
             )}
           </div>
         </main>

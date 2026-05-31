@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MapPin } from "lucide-react";
 import { busRouteApi } from "@/lib/universityApi";
 import type { BusRoute } from "@/types/university.types";
+import { PanelCard } from "@/components/ui/PanelCard";
 
 interface BusRouteSelectorPanelProps {
   value?: string | null;
@@ -57,7 +58,7 @@ export default function BusRouteSelectorPanel({
   );
 
   return (
-    <div className={`${className ?? ""} rounded-2xl border border-outline-variant bg-surface-container-lowest p-4`}>
+    <PanelCard as="div" className={className}>
       <div className="mb-3 text-sm text-on-surface-variant">Rota para aprovação</div>
 
       {loading ? (
@@ -114,6 +115,6 @@ export default function BusRouteSelectorPanel({
           </button>
         </div>
       )}
-    </div>
+    </PanelCard>
   );
 }

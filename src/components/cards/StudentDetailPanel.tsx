@@ -2,6 +2,7 @@ import { Eye, History } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ImageLightbox } from "@/components/cards/CardPageComponents";
 import { http } from "@/services/http";
+import { PanelCard } from "@/components/ui/PanelCard";
 import type {
   ImageRecord,
   LicenseRecord,
@@ -140,7 +141,7 @@ export function StudentDetailPanel({
 
   if (!selected) {
     return (
-      <section className="relative h-full min-h-0 rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 md:p-5 flex flex-col">
+      <PanelCard as="section" className="relative h-full min-h-0 md:p-5 flex flex-col">
         <div className="flex flex-1 min-h-96 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-outline-variant bg-surface text-center text-on-surface-variant">
           <Eye className="h-8 w-8" />
           <p className="font-medium">Selecione um aluno para revisar.</p>
@@ -149,12 +150,12 @@ export function StudentDetailPanel({
             carteirinha.
           </p>
         </div>
-      </section>
+      </PanelCard>
     );
   }
 
   return (
-    <section className="relative h-full min-h-0 rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 md:p-5 flex flex-col">
+    <PanelCard as="section" className="relative h-full min-h-0 md:p-5 flex flex-col">
       <div className="flex flex-1 min-h-0 flex-col">
         <div className="flex-1 min-h-0 space-y-4 overflow-y-auto pb-4 pr-1">
           <StudentInfoCard student={selected} currentLicense={currentLicense} />
@@ -250,6 +251,6 @@ export function StudentDetailPanel({
           onClose={() => setHistoryOpen(false)}
         />
       )}
-    </section>
+    </PanelCard>
   );
 }

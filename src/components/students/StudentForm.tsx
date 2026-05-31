@@ -3,6 +3,7 @@
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { StatusBanner } from "@/components/ui/StatusBanner";
+import { SelectField } from "@/components/ui/SelectField";
 import { SHIFTS, BLOOD_TYPES, StudentFormData, StudentFormErrors } from "@/types/student";
 
 interface University {
@@ -21,9 +22,6 @@ interface StudentFormProps {
   universities?: University[];
   loadingUniversities?: boolean;
 }
-
-const SELECT_CLASS =
-  "w-full h-14 bg-surface-container-lowest border border-on-surface-variant ring-0 focus:ring-2 focus:ring-primary rounded-xl text-on-surface pl-12 pr-4 text-base outline-none transition-all appearance-none";
 
 const LABEL_CLASS =
   "text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1";
@@ -87,50 +85,24 @@ export function StudentForm({
         error={errors.degree}
       />
 
-      <div className="space-y-2">
-        <label className={LABEL_CLASS}>Turno (opcional)</label>
-        <div className="relative">
-          <span
-            className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-2xl"
-          >
-            schedule
-          </span>
-          <select
-            value={data.shift}
-            onChange={(e) => onChange("shift", e.target.value)}
-            className={SELECT_CLASS}
-          >
-            <option value="">Selecione o turno</option>
-            {SHIFTS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        {errors.shift && (
-          <p className="text-xs text-error mt-1 ml-1">{errors.shift}</p>
-        )}
-      </div>
+      <SelectField
+        label="Turno (opcional)"
+        icon="schedule"
+        options={SHIFTS}
+        placeholder="Selecione o turno"
+        value={data.shift}
+        onChange={(e) => onChange("shift", e.target.value)}
+        error={errors.shift}
+      />
 
-      <div className="space-y-2">
-        <label className={LABEL_CLASS}>Tipo Sanguíneo (opcional)</label>
-        <select
-          value={data.bloodType}
-          onChange={(e) => onChange("bloodType", e.target.value)}
-          className="w-full h-14 bg-surface-container-lowest border border-on-surface-variant ring-0 focus:ring-2 focus:ring-primary rounded-xl text-on-surface px-4 text-base outline-none transition-all appearance-none"
-        >
-          <option value="">Não informado</option>
-          {BLOOD_TYPES.map((bt) => (
-            <option key={bt} value={bt}>
-              {bt}
-            </option>
-          ))}
-        </select>
-        {errors.bloodType && (
-          <p className="text-xs text-error mt-1 ml-1">{errors.bloodType}</p>
-        )}
-      </div>
+      <SelectField
+        label="Tipo Sanguíneo (opcional)"
+        options={BLOOD_TYPES.map((bt) => ({ value: bt, label: bt }))}
+        placeholder="Não informado"
+        value={data.bloodType}
+        onChange={(e) => onChange("bloodType", e.target.value)}
+        error={errors.bloodType}
+      />
 
       <div className="space-y-2">
         <label className={LABEL_CLASS}>Instituição de Ensino (opcional)</label>

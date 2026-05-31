@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { getDownloadName, isPdfDataUrl } from "@/lib/cardUtils";
+import { PanelCard } from "@/components/ui/PanelCard";
 
 export function FilterButton({
   active,
@@ -46,13 +47,13 @@ export function StatBox({
   value: number;
 }) {
   return (
-    <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-4">
+    <PanelCard>
       <div className="mb-2 inline-flex rounded-lg bg-primary/10 p-2">
         <Icon className="h-4 w-4 text-primary" />
       </div>
       <p className="text-xl font-bold text-on-surface">{value}</p>
       <p className="text-xs text-on-surface-variant">{label}</p>
-    </div>
+    </PanelCard>
   );
 }
 

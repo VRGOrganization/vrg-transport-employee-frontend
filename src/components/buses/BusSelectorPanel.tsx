@@ -5,6 +5,7 @@ import { Bus as BusIcon } from "lucide-react";
 import { busApi, universityApi } from "@/lib/universityApi";
 import type { Bus } from "@/types/university.types";
 import BusReleaseModal from "./BusReleaseModal";
+import { PanelCard } from "@/components/ui/PanelCard";
 
 interface BusSelectorPanelProps {
   value?: string | null;
@@ -77,7 +78,7 @@ export default function BusSelectorPanel({
   const selectedAssignments = ((selected?.universitySlots ?? selected?.universityIds ?? []) as any[]);
 
   return (
-    <div className={`${className ?? ""} rounded-2xl border border-outline-variant bg-surface-container-lowest p-4`}>
+    <PanelCard as="div" className={className}>
       <div className="mb-3 text-sm text-on-surface-variant">Ônibus</div>
 
       {loading ? (
@@ -217,6 +218,6 @@ export default function BusSelectorPanel({
           }
         }}
       />
-    </div>
+    </PanelCard>
   );
 }

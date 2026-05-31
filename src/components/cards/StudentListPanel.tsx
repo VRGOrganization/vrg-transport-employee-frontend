@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
+import { PanelCard } from "@/components/ui/PanelCard";
 import type {
   LicenseRequestRecord,
   PrintableCard,
@@ -198,7 +199,7 @@ export function StudentListPanel({
         : "Nenhuma carteirinha encontrada.";
 
   return (
-    <section className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 md:p-5">
+    <PanelCard as="section" className="md:p-5">
       <StudentListToolbar
         search={search}
         filter={filter}
@@ -258,6 +259,6 @@ export function StudentListPanel({
           })}
         </div>
       )}
-    </section>
+    </PanelCard>
   );
 }
