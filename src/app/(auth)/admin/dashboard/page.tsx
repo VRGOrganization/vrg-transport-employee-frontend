@@ -10,6 +10,7 @@ import { universityApi, busApi } from "@/lib/universityApi";
 import { buildStudentsCsv, buildEmployeesCsv, buildBusesCsv, buildUniversitiesCsv, downloadCsv } from "@/lib/csvUtils";
 import { resolvePaginated, type Paginated } from "@/types/api";
 import { getGreeting } from "@/lib/utils/date";
+import { toast } from "@/lib/toast";
 import { EnrollmentPeriodBanner } from "@/components/admin/EnrollmentPeriodBanner";
 import { DashboardStatCards } from "@/components/admin/dashboard/DashboardStatCards";
 import { DashboardUsersTable, type UserRow, type UserFilter } from "@/components/admin/dashboard/DashboardUsersTable";
@@ -194,9 +195,10 @@ export default function AdminDashboardPage() {
       downloadCsv(buildBusesCsv(buses), `frotas_${today}.csv`);
       await new Promise((r) => setTimeout(r, 300));
       downloadCsv(buildUniversitiesCsv(unis), `faculdades_${today}.csv`);
+      toast.success("Dados exportados com sucesso! 4 arquivos CSV foram baixados.");
     } catch (err) {
       if (process.env.NODE_ENV !== "production") console.error("Erro ao exportar dados:", err);
-      alert("Erro ao exportar dados. Tente novamente.");
+      toast.error("Erro ao exportar dados. Tente novamente.");
     } finally {
       setExportLoading(false);
     }
