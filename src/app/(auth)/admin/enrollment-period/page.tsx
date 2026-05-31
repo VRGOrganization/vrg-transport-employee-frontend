@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, RotateCcw } from "lucide-react";
 import { EnrollmentPeriodBanner } from "@/components/admin/EnrollmentPeriodBanner";
 import { EnrollmentPeriodModal } from "@/components/admin/EnrollmentPeriodModal";
 import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { StatusBanner } from "@/components/ui/StatusBanner";
+import { toast } from "@/lib/toast";
 import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
 import { PanelCard } from "@/components/ui/PanelCard";
 import { http } from "@/services/http";
@@ -30,6 +30,18 @@ function formatDate(dateValue: string | null | undefined): string {
   const date = new Date(dateValue);
   if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleDateString("pt-BR");
+}
+
+function computeLicenseExpiry(endDate: string | null | undefined, months: number | null | undefined): string {
+  if (!endDate || !months || months < 1) return "";
+  try {
+    const base = new Date(`${endDate.slice(0, 10)}T00:00:00`);
+    if (Number.isNaN(base.getTime())) return "";
+    base.setMonth(base.getMonth() + months);
+    return base.toLocaleDateString("pt-BR");
+  } catch {
+    return "";
+  }
 }
 
 function formatDateTime(dateValue: string | null | undefined): string {
@@ -62,8 +74,6 @@ function buildFallbackStudent(studentId: string): StudentRecord {
 
 export default function AdminEnrollmentPeriodPage() {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [feedback, setFeedback] = useState("");
 
   const [periods, setPeriods] = useState<EnrollmentPeriod[]>([]);
   const [activePeriod, setActivePeriod] = useState<EnrollmentPeriod | null>(null);
@@ -77,6 +87,10 @@ export default function AdminEnrollmentPeriodPage() {
 
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [closingPeriod, setClosingPeriod] = useState(false);
+
+  const [showReopenConfirm, setShowReopenConfirm] = useState(false);
+  const [pendingReopenId, setPendingReopenId] = useState<string | null>(null);
+  const [reopeningPeriod, setReopeningPeriod] = useState(false);
 
   // Nota: o fluxo de liberação por período foi removido. As liberações
   // agora ocorrem por ônibus (patch /bus/:id/release-slots). Mantemos a
@@ -116,7 +130,6 @@ export default function AdminEnrollmentPeriodPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    setError("");
     try {
       const resolvedActive: EnrollmentPeriod | null = await enrollmentPeriodService.getActive().catch((err: unknown) => {
         const apiError = err as { status?: number };
@@ -148,7 +161,7 @@ export default function AdminEnrollmentPeriodPage() {
       }
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      setError(apiError.message ?? "Não foi possível carregar os dados do período de inscrição.");
+      toast.error(apiError.message ?? "Não foi possível carregar os dados do período de inscrição.");
     } finally {
       setLoading(false);
     }
@@ -177,10 +190,10 @@ export default function AdminEnrollmentPeriodPage() {
     try {
       if (editingPeriod) {
         await enrollmentPeriodService.update(editingPeriod._id, payload);
-        setFeedback("Período atualizado com sucesso.");
+        toast.success("Período atualizado com sucesso.");
       } else {
         await enrollmentPeriodService.create(payload);
-        setFeedback("Novo período aberto com sucesso.");
+        toast.success("Novo período aberto com sucesso.");
       }
       setModalOpen(false);
       setEditingPeriod(null);
@@ -204,25 +217,37 @@ export default function AdminEnrollmentPeriodPage() {
     try {
       await enrollmentPeriodService.close(activePeriod._id);
       setShowCloseConfirm(false);
-      setFeedback("Período encerrado com sucesso.");
+      toast.success("Período encerrado com sucesso.");
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      setError(apiError.message ?? "Falha ao encerrar o período.");
+      toast.error(apiError.message ?? "Falha ao encerrar o período.");
       setShowCloseConfirm(false);
     } finally {
       setClosingPeriod(false);
     }
   };
 
-  const handleReopen = async (periodId: string) => {
+  const handleReopen = (periodId: string) => {
+    setPendingReopenId(periodId);
+    setShowReopenConfirm(true);
+  };
+
+  const handleReopenConfirmed = async () => {
+    if (!pendingReopenId) return;
+    setReopeningPeriod(true);
     try {
-      await enrollmentPeriodService.reopen(periodId);
-      setFeedback("Período reaberto com sucesso.");
+      await enrollmentPeriodService.reopen(pendingReopenId);
+      setShowReopenConfirm(false);
+      setPendingReopenId(null);
+      toast.success("Período reaberto com sucesso.");
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      setError(apiError.message ?? "Falha ao reabrir o período.");
+      toast.error(apiError.message ?? "Falha ao reabrir o período.");
+      setShowReopenConfirm(false);
+    } finally {
+      setReopeningPeriod(false);
     }
   };
 
@@ -243,9 +268,6 @@ export default function AdminEnrollmentPeriodPage() {
                 Atualizar
               </Button>
             </header>
-
-            {feedback && <StatusBanner variant="success">{feedback}</StatusBanner>}
-            {error && <StatusBanner variant="error">{error}</StatusBanner>}
 
             {activePeriod?.endDate && (
               <EnrollmentPeriodBanner endDate={activePeriod.endDate} />
@@ -295,10 +317,18 @@ export default function AdminEnrollmentPeriodPage() {
                       </p>
                     </div>
                     <div className="rounded-xl border border-outline-variant bg-surface p-3">
-                      <p className="text-xs text-on-surface-variant">Validade</p>
+                      <p className="text-xs text-on-surface-variant">Validade da carteirinha</p>
                       <p className="font-medium text-on-surface">
                         {activePeriod.licenseValidityMonths} meses
                       </p>
+                      {computeLicenseExpiry(activePeriod.endDate, activePeriod.licenseValidityMonths) && (
+                        <p className="text-xs text-on-surface-variant mt-0.5">
+                          até{" "}
+                          <strong className="text-on-surface">
+                            {computeLicenseExpiry(activePeriod.endDate, activePeriod.licenseValidityMonths)}
+                          </strong>
+                        </p>
+                      )}
                     </div>
                     <div className="rounded-xl border border-outline-variant bg-surface p-3">
                       <p className="text-xs text-on-surface-variant">Status</p>
@@ -351,7 +381,7 @@ export default function AdminEnrollmentPeriodPage() {
                     </thead>
                     <tbody>
                       {periods.map((period) => (
-                        <tr key={period._id} className="border-t border-outline-variant/40">
+                        <tr key={period._id} className="border-t border-outline-variant/40 hover:bg-surface-container-low/50 transition-colors">
                           <td className="px-3 py-2 text-on-surface">{formatDate(period.startDate)}</td>
                           <td className="px-3 py-2 text-on-surface-variant">
                             {formatDateTime(period.closedAt)}
@@ -398,20 +428,13 @@ export default function AdminEnrollmentPeriodPage() {
                 <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-on-surface">Fila de espera</h2>
-                    <p className="text-sm text-on-surface-variant">
-                      Libere vagas em lote para promover solicitações da fila para pendente.
-                    </p>
-                  </div>
-
-                  <div className="text-sm text-on-surface-variant">
-                    Liberação de vagas agora é feita por ônibus. Use a tela de Ônibus
-                    para liberar vagas por ônibus e promover a fila.
+                    
                   </div>
                 </div>
 
                 {waitlistEntries.length === 0 ? (
                   <p className="text-sm text-on-surface-variant">
-                    Não há alunos na fila de espera deste período.
+        
                   </p>
                 ) : (
                   <div className="overflow-x-auto rounded-xl border border-outline-variant">
@@ -427,7 +450,7 @@ export default function AdminEnrollmentPeriodPage() {
                       </thead>
                       <tbody>
                         {waitlistEntries.map((entry) => (
-                          <tr key={entry.request._id} className="border-t border-outline-variant/40">
+                          <tr key={entry.request._id} className="border-t border-outline-variant/40 hover:bg-surface-container-low/50 transition-colors">
                             <td className="px-3 py-2 font-medium text-on-surface">
                               #{entry.filaPosition}
                             </td>
@@ -460,6 +483,19 @@ export default function AdminEnrollmentPeriodPage() {
         icon={AlertTriangle}
         variant="danger"
         confirmLabel="Encerrar"
+        cancelLabel="Cancelar"
+      />
+
+      <ConfirmModal
+        open={showReopenConfirm}
+        onClose={() => { setShowReopenConfirm(false); setPendingReopenId(null); }}
+        onConfirm={handleReopenConfirmed}
+        loading={reopeningPeriod}
+        title="Reabrir período"
+        description="Deseja reabrir este período de inscrição? Ele voltará a aceitar novas solicitações de alunos."
+        icon={RotateCcw}
+        variant="warning"
+        confirmLabel="Reabrir"
         cancelLabel="Cancelar"
       />
 
