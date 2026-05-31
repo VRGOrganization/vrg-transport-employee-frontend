@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Users, UserX } from "lucide-react";
 import { employeeService } from "@/services/employeeService";
@@ -78,9 +78,15 @@ const COLUMNS: Column<Employee>[] = [
 ];
 
 export default function EmployeesPage() {
-  const [selected, setSelected]           = useState<Employee | null>(null);
+  const [selected, setSelected]               = useState<Employee | null>(null);
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
   const [openDropdownId, setOpenDropdownId]   = useState<string | null>(null);
+
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("view");
+    if (!id) return;
+    employeeService.getById(id).then(setViewingEmployee).catch(() => {});
+  }, []);
 
   const fetcher = useCallback(
     (t: Tab) => (t === "active" ? employeeService.list() : employeeService.listInactive()),

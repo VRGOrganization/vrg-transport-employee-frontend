@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { GraduationCap, UserX, ShieldBan } from "lucide-react";
 import { studentService } from "@/services/studentService";
@@ -146,6 +146,12 @@ export default function StudentsPage() {
   const [topTab, setTopTab]                   = useState<Tab>("active");
   const [selected, setSelected]               = useState<Student | null>(null);
   const [viewingStudent, setViewingStudent]   = useState<Student | null>(null);
+
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("view");
+    if (!id) return;
+    studentService.getById(id).then(setViewingStudent).catch(() => {});
+  }, []);
   const [viewingCardStudent, setViewingCard]  = useState<Student | null>(null);
   const [unbanTarget, setUnbanTarget]         = useState<BanlistEntry | null>(null);
   const [openDropdownId, setOpenDropdownId]   = useState<string | null>(null);

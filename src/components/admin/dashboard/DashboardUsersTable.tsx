@@ -107,6 +107,7 @@ interface DashboardUsersTableProps {
   pageSize: PageSize;
   onPageChange: (p: number) => void;
   onPageSizeChange: (s: PageSize) => void;
+  onRowClick?: (row: UserRow) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -124,6 +125,7 @@ export function DashboardUsersTable({
   pageSize,
   onPageChange,
   onPageSizeChange,
+  onRowClick,
 }: DashboardUsersTableProps) {
   const sectionHeader = (
     <div className="px-6 py-3.5 border-b border-outline-variant/30 flex items-center justify-between gap-4 flex-wrap">
@@ -168,6 +170,7 @@ export function DashboardUsersTable({
       columns={COLUMNS}
       rows={rows}
       rowKey={(r) => r.id}
+      onRowClick={onRowClick}
       loading={loading}
       empty={
         <p className="text-center text-on-surface-variant text-sm">

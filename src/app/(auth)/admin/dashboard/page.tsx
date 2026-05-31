@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { employeeService } from "@/services/employeeService";
 import { http } from "@/services/http";
@@ -57,6 +58,7 @@ function getTodayLabel() {
 
 export default function AdminDashboardPage() {
   const { user } = useEmployeeAuth();
+  const router = useRouter();
 
   const [activePeriod, setActivePeriod] = useState<EnrollmentPeriodRecord | null>(null);
 
@@ -205,6 +207,11 @@ export default function AdminDashboardPage() {
   const currentMonth = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
   const monthLabel = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
 
+  const handleRowClick = (row: import("@/components/admin/dashboard/DashboardUsersTable").UserRow) => {
+    if (row.type === "Aluno") router.push(`/admin/students?view=${row.id}`);
+    else router.push(`/admin/employees?view=${row.id}`);
+  };
+
   const pendingLabel =
     stats.pendingStudents === null ? "…" :
     stats.pendingStudents === 1 ? "1 solicitação de licença pendente de aprovação" :
@@ -273,6 +280,7 @@ export default function AdminDashboardPage() {
           pageSize={pageSize}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
+          onRowClick={handleRowClick}
         />
       </div>
 
