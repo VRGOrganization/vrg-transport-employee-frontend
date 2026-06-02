@@ -4,6 +4,7 @@ import type { Bus, BusStudent, BusRoute, BusQueueSummary } from "@/types/univers
 
 export const busService = {
   list:               ()                                   => http.get<Paginated<Bus>>("/bus").then(resolvePaginated),
+  listActive:         ()                                   => http.get<Paginated<Bus>>("/bus/active").then(resolvePaginated),
   listInactive:       ()                                   => http.get<Paginated<Bus>>("/bus/inactive").then(resolvePaginated),
   listWithQueueCounts: ()                                  => http.get<Paginated<Bus>>("/bus/with-queue-counts").then(resolvePaginated),
   create:             (data: { identifier: string; capacity?: number | null; shift?: string }) =>

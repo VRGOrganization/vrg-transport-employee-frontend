@@ -52,7 +52,7 @@ export default function UniversitiesPage() {
       if (statusTab === "active") {
         const [unis, busList] = await Promise.all([
           universityApi.list(),
-          busApi.list(),
+          busApi.listActive(),
         ]);
         setUniversities(unis);
         setBuses(busList);
@@ -180,7 +180,7 @@ export default function UniversitiesPage() {
   };
 
   const handleBusesChanged = async () => {
-    const busList = await busApi.list();
+    const busList = await busApi.listActive();
     setBuses(busList);
   };
 
