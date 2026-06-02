@@ -35,7 +35,7 @@ export function StatsDashboard() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4 text-on-surface-muted">
-        <AlertCircle className="w-12 h-12 text-error" />
+        <AlertCircle className="size-12 text-error" />
         <p className="text-sm text-center max-w-xs">{error}</p>
         <button
           onClick={refetch}
@@ -80,7 +80,7 @@ export function StatsDashboard() {
             title="Atualizar estatísticas"
             className="p-1.5 rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-muted hover:text-on-surface-variant"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="size-4" />
           </button>
         </div>
       </div>

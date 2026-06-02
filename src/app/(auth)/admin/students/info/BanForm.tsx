@@ -64,8 +64,8 @@ export function BanForm({ student, onCancel, onBanned }: BanFormProps) {
   if (success) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-5 px-8 py-12 text-center">
-        <div className="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center">
-          <Ban className="w-8 h-8 text-error" />
+        <div className="size-16 rounded-full bg-error/10 flex items-center justify-center">
+          <Ban className="size-8 text-error" />
         </div>
         <div>
           <p className="text-xl font-bold text-on-surface">Banimento aplicado</p>
@@ -88,7 +88,7 @@ export function BanForm({ student, onCancel, onBanned }: BanFormProps) {
     <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto px-8 py-6 space-y-5">
         <div className="flex items-start gap-3 p-4 rounded-xl bg-error/5 border border-error/20">
-          <ShieldAlert className="w-5 h-5 text-error shrink-0 mt-0.5" />
+          <ShieldAlert className="size-5 text-error shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-error">Ação reversível imediata</p>
             <p className="text-xs text-on-surface-variant mt-0.5">
@@ -100,7 +100,7 @@ export function BanForm({ student, onCancel, onBanned }: BanFormProps) {
 
         {error && (
           <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-error-container/60 text-error text-xs">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <AlertCircle className="size-3.5 shrink-0" />
             {error}
           </div>
         )}
@@ -150,8 +150,8 @@ export function BanForm({ student, onCancel, onBanned }: BanFormProps) {
               )}
             </span>
             {termsOpen
-              ? <ChevronUp className="w-4 h-4 text-on-surface-variant shrink-0" />
-              : <ChevronDown className="w-4 h-4 text-on-surface-variant shrink-0" />
+              ? <ChevronUp className="size-4 text-on-surface-variant shrink-0" />
+              : <ChevronDown className="size-4 text-on-surface-variant shrink-0" />
             }
           </button>
           {termsOpen && (
@@ -179,7 +179,7 @@ export function BanForm({ student, onCancel, onBanned }: BanFormProps) {
                 : "border-outline-variant/40 bg-surface hover:border-error/40 hover:shadow-md hover:bg-surface-container-lowest"
           }`}
         >
-          <div className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center border-2 transition-colors shrink-0 ${
+          <div className={`mt-0.5 size-5 rounded flex items-center justify-center border-2 transition-colors shrink-0 ${
             !hasReadTerms
               ? "border-outline-variant/40 bg-surface-container-low"
               : agreed
@@ -220,7 +220,7 @@ export function BanForm({ student, onCancel, onBanned }: BanFormProps) {
           disabled={loading || !agreed || !banReasons.trim() || banConfirmName.trim() !== student.name.trim()}
           className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full bg-error text-white hover:bg-error/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />}
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <Ban className="size-4" />}
           {loading ? "Aplicando banimento..." : "Confirmar Banimento"}
         </button>
       </div>

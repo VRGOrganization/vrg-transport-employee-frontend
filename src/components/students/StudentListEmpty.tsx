@@ -47,7 +47,7 @@ export function StudentListEmpty({ tab, onRetry, isError }: StudentListEmptyProp
         size="sm"
         actions={isActive ? (
           <Link href="/admin/students/new">
-            <Button variant="primary" size="sm" icon={<UserPlus className="w-4 h-4" />}>
+            <Button variant="primary" size="sm" icon={<UserPlus className="size-4" />}>
               Adicionar estudante
             </Button>
           </Link>

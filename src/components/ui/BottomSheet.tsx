@@ -41,8 +41,8 @@ export function BottomSheet({
         {(title || Icon) && (
           <div className="flex items-center gap-3 px-6 pt-6 pb-4">
             {Icon && (
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <Icon className="w-5 h-5 text-primary" />
+              <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <Icon className="size-5 text-primary" />
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -58,7 +58,7 @@ export function BottomSheet({
               className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors shrink-0"
               aria-label="Fechar"
             >
-              <X className="w-5 h-5" />
+              <X className="size-5" />
             </button>
           </div>
         )}

@@ -10,7 +10,7 @@ import type { Employee } from "@/types/employee";
 function InfoRow({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3 py-3 border-b border-outline-variant last:border-0">
-      <Icon className="w-4.5 h-4.5 text-on-surface-variant shrink-0" />
+      <Icon className="size-4.5 text-on-surface-variant shrink-0" />
       <div className="min-w-0">
         <p className="text-xs text-on-surface-variant">{label}</p>
         <p className="text-sm font-medium text-on-surface truncate">{value}</p>
@@ -52,21 +52,21 @@ export function EmployeeInfoView({ employee, onEdit, onRequestDelete, onRequestA
 
       {employee.active ? (
         <div className="flex gap-3">
-          <Button variant="outline" size="sm" fullWidth icon={<Pencil className="w-4 h-4" />} onClick={onEdit}>
+          <Button variant="outline" size="sm" fullWidth icon={<Pencil className="size-4" />} onClick={onEdit}>
             Editar
           </Button>
           <button
             onClick={onRequestDelete}
             className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full border-2 border-error text-error hover:bg-error/10 transition-colors"
           >
-            <UserX className="w-4 h-4" />
+            <UserX className="size-4" />
             Desativar
           </button>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 justify-center text-sm text-on-surface-variant bg-surface-container-high rounded-xl py-3">
-            <Info className="w-4 h-4" />
+            <Info className="size-4" />
             Este funcionário está desativado
           </div>
           <Button
@@ -74,7 +74,7 @@ export function EmployeeInfoView({ employee, onEdit, onRequestDelete, onRequestA
             size="sm"
             fullWidth
             className="bg-success hover:bg-success/90 border-none text-white"
-            icon={<CheckCircle2 className="w-4 h-4" />}
+            icon={<CheckCircle2 className="size-4" />}
             onClick={onRequestActivate}
           >
             Reativar Funcionário

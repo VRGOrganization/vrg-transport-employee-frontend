@@ -48,14 +48,14 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
           onClick={() => setCreating(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-medium rounded-lg transition-colors"
         >
-          <Plus className="w-3.5 h-3.5" />
+          <Plus className="size-3.5" />
           Novo curso
         </button>
       </div>
 
       {courses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 text-on-surface-muted">
-          <GraduationCap className="w-10 h-10 mb-2" />
+          <GraduationCap className="size-10 mb-2" />
           <p className="text-sm">Nenhum curso cadastrado</p>
           <p className="text-xs mt-1">Clique em &quot;Novo curso&quot; para começar</p>
         </div>
@@ -67,7 +67,7 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
               className="flex items-center justify-between px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant group"
             >
               <div className="flex items-center gap-3">
-                <BookOpen className="w-4.5 h-4.5 text-info" />
+                <BookOpen className="size-4.5 text-info" />
                 <span className="text-sm font-medium text-on-surface">
                   {course.name}
                 </span>
@@ -78,7 +78,7 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
                   className="p-1.5 rounded-lg text-on-surface-muted hover:text-info hover:bg-info-container transition-colors"
                   title="Editar"
                 >
-                  <Pencil className="w-4 h-4" />
+                  <Pencil className="size-4" />
                 </button>
                 <button
                   onClick={() => handleDeactivate(course._id)}
@@ -87,8 +87,8 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
                   title="Desativar"
                 >
                   {deactivating === course._id
-                    ? <Hourglass className="w-4 h-4" />
-                    : <Ban className="w-4 h-4" />
+                    ? <Hourglass className="size-4" />
+                    : <Ban className="size-4" />
                   }
                 </button>
               </div>

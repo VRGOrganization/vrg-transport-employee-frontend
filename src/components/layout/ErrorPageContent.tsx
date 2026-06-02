@@ -25,7 +25,7 @@ export function ErrorPageContent({
         <h1 className="font-headline text-2xl font-bold text-on-surface mb-2">{title}</h1>
         <p className="text-sm text-on-surface-variant mb-8">{description}</p>
         {onReset && (
-          <Button variant="outline" size="md" icon={<RefreshCw className="w-4 h-4" />} onClick={onReset}>
+          <Button variant="outline" size="md" icon={<RefreshCw className="size-4" />} onClick={onReset}>
             {resetLabel}
           </Button>
         )}

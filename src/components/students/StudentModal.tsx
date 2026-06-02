@@ -148,7 +148,7 @@ export function StudentModal({ student, isBanned = false, onClose, onUpdated, on
     >
       {success ? (
         <div className="flex flex-col items-center gap-4 py-6 text-center">
-          <div className="w-14 h-14 rounded-full bg-success-container flex items-center justify-center">
+          <div className="size-14 rounded-full bg-success-container flex items-center justify-center">
             <span className="material-symbols-outlined text-on-success text-2xl">check</span>
           </div>
           <div>
@@ -168,14 +168,14 @@ export function StudentModal({ student, isBanned = false, onClose, onUpdated, on
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div className="flex items-center justify-between pb-4 border-b border-outline-variant/20">
             <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${student.active ? "bg-success" : "bg-surface-container-high"}`} />
+              <span className={`size-2.5 rounded-full ${student.active ? "bg-success" : "bg-surface-container-high"}`} />
               <span className="text-sm font-medium text-on-surface-variant">
                 {student.active ? "Conta ativa" : "Conta desativada"}
               </span>
             </div>
             {!student.active && isBanned ? (
               <span className="flex items-center gap-1.5 text-xs font-medium text-on-surface-variant px-3 py-1.5">
-                <ShieldBan className="w-3.5 h-3.5 text-error" />
+                <ShieldBan className="size-3.5 text-error" />
                 Remova o banimento antes de reativar
               </span>
             ) : (
@@ -188,7 +188,7 @@ export function StudentModal({ student, isBanned = false, onClose, onUpdated, on
                     : "text-success hover:bg-success-container"
                 }`}
               >
-                {student.active ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
+                {student.active ? <UserX className="size-3.5" /> : <UserCheck className="size-3.5" />}
                 {student.active ? "Desativar" : "Reativar"}
               </button>
             )}

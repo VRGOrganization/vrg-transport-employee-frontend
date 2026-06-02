@@ -13,7 +13,7 @@ export function StudentInfoCard({ student, currentLicense }: StudentInfoCardProp
         <h2 className="font-semibold text-on-surface">{student.name}</h2>
         {currentLicense ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-xs font-semibold text-success">
-            <BadgeCheck className="h-3.5 w-3.5" />
+            <BadgeCheck className="size-3.5" />
             Carteirinha ativa
           </span>
         ) : (

@@ -28,7 +28,7 @@ export function StatusBanner({ variant, children, icon, onClose, className }: St
 
   return (
     <div className={cn("flex items-start gap-2 text-sm rounded-xl px-4 py-3", classes, className)}>
-      <Icon className="w-4 h-4 mt-0.5 shrink-0" />
+      <Icon className="size-4 mt-0.5 shrink-0" />
       <span className="flex-1">{children}</span>
       {onClose && (
         <button
@@ -37,7 +37,7 @@ export function StatusBanner({ variant, children, icon, onClose, className }: St
           className="shrink-0 opacity-70 hover:opacity-100 transition-opacity"
           aria-label="Fechar"
         >
-          <X className="w-4 h-4" />
+          <X className="size-4" />
         </button>
       )}
     </div>

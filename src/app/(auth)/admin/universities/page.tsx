@@ -201,7 +201,7 @@ export default function UniversitiesPage() {
               onClick={() => setCreating(true)}
               className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
             >
-              <Plus className="w-4.5 h-4.5" />
+              <Plus className="size-4.5" />
               Nova Faculdade
             </button>
           </div>
@@ -231,7 +231,7 @@ export default function UniversitiesPage() {
               </div>
 
               <div className="flex items-center gap-2 mb-4">
-                <ArrowUpDown className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
+                <ArrowUpDown className="size-3.5 text-on-surface-variant shrink-0" />
                 <label htmlFor="university-sort" className="text-xs text-on-surface-variant">Ordenar:</label>
                 <select
                   id="university-sort"
@@ -278,7 +278,7 @@ export default function UniversitiesPage() {
                       className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       aria-label="Página anterior"
                     >
-                      <ChevronLeft className="w-4 h-4" />
+                      <ChevronLeft className="size-4" />
                     </button>
                     <button
                       type="button"
@@ -287,7 +287,7 @@ export default function UniversitiesPage() {
                       className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       aria-label="Próxima página"
                     >
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="size-4" />
                     </button>
                   </div>
                 </div>
@@ -309,7 +309,7 @@ export default function UniversitiesPage() {
                         </span>
                       </h2>
                       <p className="text-xs text-on-surface-muted mt-0.5 flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5" />
+                        <MapPin className="size-3.5" />
                         {selected.address}
                       </p>
                     </div>
@@ -317,7 +317,7 @@ export default function UniversitiesPage() {
                       onClick={() => setSelected(null)}
                       className="p-1.5 rounded-lg text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors"
                     >
-                      <X className="w-4.5 h-4.5" />
+                      <X className="size-4.5" />
                     </button>
                   </div>
 
@@ -335,12 +335,12 @@ export default function UniversitiesPage() {
                       >
                         {tab === "courses" ? (
                           <span className="flex items-center gap-1.5">
-                            <BookOpen className="w-4 h-4" />
+                            <BookOpen className="size-4" />
                             Cursos
                           </span>
                         ) : (
                           <span className="flex items-center gap-1.5">
-                            <BusIcon className="w-4 h-4" />
+                            <BusIcon className="size-4" />
                             Ônibus
                           </span>
                         )}
@@ -360,7 +360,7 @@ export default function UniversitiesPage() {
                       </div>
                     ) : coursesError ? (
                       <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
-                        <AlertCircle className="w-10 h-10 text-error" />
+                        <AlertCircle className="size-10 text-error" />
                         <p className="text-sm text-error">{coursesError}</p>
                         <button
                           onClick={() => loadCourses(selected._id)}
@@ -390,7 +390,7 @@ export default function UniversitiesPage() {
             )}
             {statusTab === "active" && !selected && (
               <div className="flex-1 flex flex-col items-center justify-center py-24 text-on-surface-muted">
-                <Building2 className="w-16 h-16 mb-4 text-on-surface-muted/40" />
+                <Building2 className="size-16 mb-4 text-on-surface-muted/40" />
                 <p className="text-sm font-medium text-on-surface-variant">Selecione uma faculdade</p>
                 <p className="text-xs text-on-surface-muted mt-1">
                   para gerenciar seus cursos e ônibus

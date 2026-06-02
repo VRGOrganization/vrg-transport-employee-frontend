@@ -143,7 +143,7 @@ export function StudentDetailPanel({
     return (
       <PanelCard as="section" className="relative h-full min-h-0 md:p-5 flex flex-col">
         <div className="flex flex-1 min-h-96 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-outline-variant bg-surface text-center text-on-surface-variant">
-          <Eye className="h-8 w-8" />
+          <Eye className="size-8" />
           <p className="font-medium">Selecione um aluno para revisar.</p>
           <p className="max-w-xs text-xs">
             Você verá documentos, informações acadêmicas e poderá aprovar a criação da
@@ -165,7 +165,7 @@ export function StudentDetailPanel({
               onClick={() => setHistoryOpen(true)}
               className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-primary transition-colors px-2 py-1.5 rounded-lg hover:bg-surface-container-high"
             >
-              <History className="w-3.5 h-3.5" />
+              <History className="size-3.5" />
               Histórico de documentos
             </button>
           </div>

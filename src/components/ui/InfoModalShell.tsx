@@ -26,11 +26,11 @@ export function InfoModalShell({ name, subtitle, open, onClose, size = "lg", chi
         <div className="bg-gradient-to-r from-primary to-primary-container px-6 py-8 flex flex-col items-center justify-center relative shrink-0">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-on-primary hover:bg-black/20 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+            className="absolute top-4 right-4 text-on-primary hover:bg-black/20 size-8 rounded-full flex items-center justify-center transition-colors"
           >
             <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>close</span>
           </button>
-          <div className="w-24 h-24 rounded-full bg-surface flex items-center justify-center shadow-lg border-4 border-surface mb-4">
+          <div className="size-24 rounded-full bg-surface flex items-center justify-center shadow-lg border-4 border-surface mb-4">
             <span className="text-3xl font-bold text-primary">{getInitials(name)}</span>
           </div>
           <h2 className="text-2xl font-extrabold text-on-primary tracking-tight text-center">{name}</h2>

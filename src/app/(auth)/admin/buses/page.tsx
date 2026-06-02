@@ -225,7 +225,7 @@ export default function BusesPage() {
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2">
-                <ArrowUpDown className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
+                <ArrowUpDown className="size-3.5 text-on-surface-variant shrink-0" />
                 <label htmlFor="bus-sort" className="text-xs text-on-surface-variant">Ordenar:</label>
                 <select
                   id="bus-sort"
@@ -290,7 +290,7 @@ export default function BusesPage() {
                   className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   aria-label="Página anterior"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="size-4" />
                 </button>
                 <button
                   type="button"
@@ -299,7 +299,7 @@ export default function BusesPage() {
                   className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   aria-label="Próxima página"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="size-4" />
                 </button>
               </div>
             </div>

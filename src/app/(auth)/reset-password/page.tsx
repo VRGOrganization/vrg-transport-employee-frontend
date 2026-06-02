@@ -75,8 +75,8 @@ function ResetPasswordForm() {
     return (
       <AuthPageShell eyebrow="Acesso" title="Senha redefinida!" topRight={<ThemeToggle />}>
         <div className="flex flex-col items-center text-center gap-5 py-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-            <CheckCircle2 className="w-8 h-8 text-primary" />
+          <div className="size-16 bg-primary/10 rounded-full flex items-center justify-center">
+            <CheckCircle2 className="size-8 text-primary" />
           </div>
           <p className="text-sm text-on-surface-variant max-w-xs">
             Sua senha foi redefinida com sucesso. Você já pode fazer login com a nova senha.

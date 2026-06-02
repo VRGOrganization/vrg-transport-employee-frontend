@@ -187,6 +187,15 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Reset de inputs — estilização fica nos componentes */
 @layer base {
+  dialog {
+    padding: 0;
+    border: none;
+    background: transparent;
+    max-width: none;
+    max-height: none;
+    color: inherit;
+  }
+
   input,
   textarea,
   select {

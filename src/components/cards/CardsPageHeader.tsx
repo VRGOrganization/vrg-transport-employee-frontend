@@ -21,7 +21,7 @@ export function CardsPageHeader({ onRefresh }: CardsPageHeaderProps) {
         variant="outline"
         size="sm"
         onClick={onRefresh}
-        icon={<RefreshCw className="h-4 w-4" />}
+        icon={<RefreshCw className="size-4" />}
       >
         Atualizar
       </Button>

@@ -89,7 +89,7 @@ export function StudentListToolbar({
           <Button
             variant="outline"
             size="sm"
-            icon={<Printer className="h-4 w-4" />}
+            icon={<Printer className="size-4" />}
             disabled={selectedForBatchCount === 0 || printingBatch}
             loading={printingBatch}
             onClick={onPrintBatch}

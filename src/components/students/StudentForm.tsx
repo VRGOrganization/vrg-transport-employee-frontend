@@ -156,7 +156,7 @@ export function StudentForm({
         size="lg"
         fullWidth
         loading={loading}
-        icon={isEdit ? <Save className="w-4 h-4" /> : undefined}
+        icon={isEdit ? <Save className="size-4" /> : undefined}
       >
         {isEdit ? "Salvar alterações" : "Cadastrar Estudante"}
       </Button>

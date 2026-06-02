@@ -44,7 +44,7 @@ export function StudentTable({ students, loading, onDeleted }: StudentTableProps
       ),
       skeleton: () => (
         <div className="flex items-center gap-4">
-          <div className="w-9 h-9 rounded-full bg-surface-container-high animate-pulse shrink-0" />
+          <div className="size-9 rounded-full bg-surface-container-high animate-pulse shrink-0" />
           <div className="h-4 w-32 bg-surface-container-high rounded animate-pulse" />
         </div>
       ),

@@ -52,7 +52,7 @@ export function EmployeeTable({ employees, loading, onUpdated, onDeleted }: Empl
       ),
       skeleton: () => (
         <div className="flex items-center gap-4">
-          <div className="w-9 h-9 rounded-full bg-surface-container-high animate-pulse shrink-0" />
+          <div className="size-9 rounded-full bg-surface-container-high animate-pulse shrink-0" />
           <div className="h-4 w-32 bg-surface-container-high rounded animate-pulse" />
         </div>
       ),
@@ -106,7 +106,7 @@ export function EmployeeTable({ employees, loading, onUpdated, onDeleted }: Empl
               href="/admin/employees/new"
               className="bg-secondary text-white px-6 py-2 rounded-xl font-bold hover:bg-secondary/90 active:scale-95 transition-all flex items-center gap-2 text-sm"
             >
-              <UserPlus className="w-4 h-4" />
+              <UserPlus className="size-4" />
               Novo Funcionário
             </Link>
           </div>

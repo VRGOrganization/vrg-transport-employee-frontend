@@ -150,7 +150,7 @@ export default function PriorityRulesPage() {
           onClick={() => { setEditing(null); setModalOpen(true); }}
           className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-container text-on-primary text-sm font-medium rounded-xl transition-colors shadow-sm"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="size-4" />
           Nova Regra
         </button>
       </div>
@@ -206,7 +206,7 @@ export default function PriorityRulesPage() {
                 className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-5 flex items-start gap-4 group hover:border-outline-variant/60 transition-colors"
               >
                 {/* Level badge */}
-                <span className={`inline-flex items-center justify-center w-10 h-10 rounded-xl text-sm font-bold shrink-0 ${LEVEL_STYLE[rule.level] ?? LEVEL_STYLE[5]}`}>
+                <span className={`inline-flex items-center justify-center size-10 rounded-xl text-sm font-bold shrink-0 ${LEVEL_STYLE[rule.level] ?? LEVEL_STYLE[5]}`}>
                   {rule.level}
                 </span>
 
@@ -248,7 +248,7 @@ export default function PriorityRulesPage() {
                     title="Mover para cima"
                     className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
-                    <ChevronUp className="w-4 h-4" />
+                    <ChevronUp className="size-4" />
                   </button>
 
                   {/* Move down */}
@@ -258,7 +258,7 @@ export default function PriorityRulesPage() {
                     title="Mover para baixo"
                     className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
-                    <ChevronDown className="w-4 h-4" />
+                    <ChevronDown className="size-4" />
                   </button>
 
                   {/* Edit */}
@@ -267,7 +267,7 @@ export default function PriorityRulesPage() {
                     title="Editar"
                     className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
                   >
-                    <Pencil className="w-4 h-4" />
+                    <Pencil className="size-4" />
                   </button>
 
                   {/* Toggle active */}
@@ -277,8 +277,8 @@ export default function PriorityRulesPage() {
                     className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
                   >
                     {rule.active
-                      ? <ToggleRight className="w-4 h-4 text-success" />
-                      : <ToggleLeft  className="w-4 h-4" />}
+                      ? <ToggleRight className="size-4 text-success" />
+                      : <ToggleLeft  className="size-4" />}
                   </button>
                 </div>
               </div>

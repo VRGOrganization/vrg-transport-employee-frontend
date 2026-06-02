@@ -79,7 +79,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
             onClick={() => setLinking((v) => !v)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-success hover:bg-success/90 text-white text-xs font-medium rounded-lg transition-colors"
           >
-            {linking ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+            {linking ? <X className="size-3.5" /> : <Plus className="size-3.5" />}
             {linking ? "Cancelar" : "Vincular ônibus"}
           </button>
         )}
@@ -116,7 +116,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
 
       {linkedBuses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-on-surface-muted">
-          <Bus className="w-10 h-10 mb-2" />
+          <Bus className="size-10 mb-2" />
           <p className="text-sm">Nenhum ônibus vinculado</p>
           {allBuses.length === 0 && (
             <p className="text-xs mt-1 text-center">
@@ -132,7 +132,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
               className="flex items-center justify-between px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant group"
             >
               <div className="flex items-center gap-3">
-                <Bus className="w-4.5 h-4.5 text-success" />
+                <Bus className="size-4.5 text-success" />
                 <div>
                   <p className="text-sm font-medium text-on-surface">
                     {bus.identifier}
@@ -147,8 +147,8 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
                 title="Desvincular"
               >
                 {loadingId === bus._id
-                  ? <Hourglass className="w-4 h-4" />
-                  : <Unlink className="w-4 h-4" />
+                  ? <Hourglass className="size-4" />
+                  : <Unlink className="size-4" />
                 }
               </button>
             </li>

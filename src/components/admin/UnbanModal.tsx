@@ -52,8 +52,8 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-outline-variant/20">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-success" />
+            <div className="size-10 rounded-full bg-success/10 flex items-center justify-center">
+              <ShieldCheck className="size-5 text-success" />
             </div>
             <div>
               <h2 className="text-base font-bold text-on-surface">Remover Banimento</h2>
@@ -62,16 +62,16 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+            className="size-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="size-4" />
           </button>
         </div>
 
         {/* Student info */}
         <div className="px-6 py-4 bg-surface-container-low/50 border-b border-outline-variant/20">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center text-error font-bold text-sm">
+            <div className="size-10 rounded-full bg-error/10 flex items-center justify-center text-error font-bold text-sm">
               {entry.name.charAt(0).toUpperCase()}
             </div>
             <div>
@@ -82,7 +82,7 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
 
           <div className="flex items-center gap-4 text-xs text-on-surface-variant">
             <span className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5" />
+              <Calendar className="size-3.5" />
               Banido em {bannedDate}
             </span>
           </div>
@@ -112,7 +112,7 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
 
           {error && (
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-error-container/60 text-error text-xs">
-              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              <AlertCircle className="size-3.5 flex-shrink-0" />
               {error}
             </div>
           )}
@@ -154,9 +154,9 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
               className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full bg-success text-white hover:bg-success/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="size-4 animate-spin" />
               ) : (
-                <ShieldCheck className="w-4 h-4" />
+                <ShieldCheck className="size-4" />
               )}
               {loading ? "Removendo..." : "Confirmar Desbanimento"}
             </button>

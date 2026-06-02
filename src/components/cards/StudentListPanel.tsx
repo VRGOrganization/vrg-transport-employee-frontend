@@ -212,7 +212,7 @@ export function StudentListPanel({
 
       {loading && (
         <div className="flex items-center gap-2 rounded-xl border border-outline-variant bg-surface p-4 text-sm text-on-surface-variant">
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="size-4 animate-spin" />
           Carregando carteirinhas...
         </div>
       )}

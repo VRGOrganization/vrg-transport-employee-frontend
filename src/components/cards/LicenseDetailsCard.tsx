@@ -38,7 +38,7 @@ export function LicenseDetailsCard({ license }: LicenseDetailsCardProps) {
       {/* Cabeçalho */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <BadgeCheck className="w-4 h-4 text-primary" />
+          <BadgeCheck className="size-4 text-primary" />
           <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
             Carteirinha emitida
           </p>
@@ -54,7 +54,7 @@ export function LicenseDetailsCard({ license }: LicenseDetailsCardProps) {
         {/* Validade */}
         {license.expirationDate && (
           <div className="flex items-center gap-2">
-            <Calendar className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
+            <Calendar className="size-3.5 text-on-surface-variant shrink-0" />
             <span className="text-xs text-on-surface-variant">Válida até:</span>
             <span
               className={`text-xs font-semibold ${
@@ -77,7 +77,7 @@ export function LicenseDetailsCard({ license }: LicenseDetailsCardProps) {
         {/* QR Code */}
         {license.qrCodeUrl && (
           <div className="flex items-center gap-2">
-            <QrCode className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
+            <QrCode className="size-3.5 text-on-surface-variant shrink-0" />
             <a
               href={license.qrCodeUrl}
               target="_blank"
@@ -92,7 +92,7 @@ export function LicenseDetailsCard({ license }: LicenseDetailsCardProps) {
         {/* Código de verificação */}
         {license.verificationCode && (
           <div className="flex items-center gap-2">
-            <Hash className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
+            <Hash className="size-3.5 text-on-surface-variant shrink-0" />
             <span className="text-xs text-on-surface-variant">Código:</span>
             <span className="text-xs font-mono text-on-surface truncate">
               {license.verificationCode.slice(0, 8)}…

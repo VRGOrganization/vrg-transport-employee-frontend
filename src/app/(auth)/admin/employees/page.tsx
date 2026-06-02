@@ -37,7 +37,7 @@ const COLUMNS: Column<Employee>[] = [
     ),
     skeleton: () => (
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-surface-container-high animate-pulse flex-shrink-0" />
+        <div className="size-9 rounded-full bg-surface-container-high animate-pulse flex-shrink-0" />
         <div className="h-3 w-32 bg-surface-container-high rounded animate-pulse" />
       </div>
     ),
@@ -170,7 +170,7 @@ export default function EmployeesPage() {
       <div className="relative inline-block text-left">
         <button
           onClick={(e) => { e.stopPropagation(); setOpenDropdownId(openDropdownId === emp._id ? null : emp._id); }}
-          className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
+          className="size-8 rounded-lg flex items-center justify-center cursor-pointer text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
         >
           <span className="material-symbols-outlined text-lg">more_vert</span>
         </button>
@@ -226,7 +226,7 @@ export default function EmployeesPage() {
             onClick={() => setSortAsc((v) => !v)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer text-on-surface-variant border border-outline-variant/50 bg-surface-container hover:bg-surface-container-high hover:text-on-surface transition-colors"
           >
-            {sortAsc ? <ArrowUpAZ className="w-4 h-4" /> : <ArrowDownAZ className="w-4 h-4" />}
+            {sortAsc ? <ArrowUpAZ className="size-4" /> : <ArrowDownAZ className="size-4" />}
             {sortAsc ? "A–Z" : "Z–A"}
           </button>
         </div>

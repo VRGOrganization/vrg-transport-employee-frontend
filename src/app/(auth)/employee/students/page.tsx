@@ -73,7 +73,7 @@ export default function EmployeeStudentsPage() {
               back="/employee/dashboard"
               rightSlot={
                 <Link href="/employee/students/new">
-                  <Button variant="primary" size="sm" icon={<UserPlus className="w-4 h-4" />}>Adicionar</Button>
+                  <Button variant="primary" size="sm" icon={<UserPlus className="size-4" />}>Adicionar</Button>
                 </Link>
               }
             />

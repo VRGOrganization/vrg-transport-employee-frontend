@@ -23,7 +23,7 @@ export function SuccessBanner({
   backLabel = "Voltar",
   onReset,
   resetLabel = "Novo cadastro",
-  resetIcon = <UserPlus className="w-4 h-4" />,
+  resetIcon = <UserPlus className="size-4" />,
 }: SuccessBannerProps) {
   const router = useRouter();
 
@@ -37,7 +37,7 @@ export function SuccessBanner({
       className="py-6"
       actions={
         <>
-          <Button variant="outline" size="md" fullWidth icon={<ArrowLeft className="w-4 h-4" />} onClick={() => router.push(backHref)}>
+          <Button variant="outline" size="md" fullWidth icon={<ArrowLeft className="size-4" />} onClick={() => router.push(backHref)}>
             {backLabel}
           </Button>
           {onReset ? (

@@ -67,7 +67,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
       {success ? (
         <div className="flex flex-col items-center gap-4 py-4 text-center">
           <div className="p-4 rounded-full bg-success/10">
-            <CheckCircle2 className="w-10 h-10 text-success" />
+            <CheckCircle2 className="size-10 text-success" />
           </div>
           <div className="space-y-1">
             <h3 className="text-lg font-semibold text-on-surface">Funcionário cadastrado!</h3>
@@ -84,7 +84,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
               variant="primary"
               size="md"
               fullWidth
-              icon={<UserPlus className="w-4 h-4" />}
+              icon={<UserPlus className="size-4" />}
               onClick={handleNewRegistration}
             >
               Novo cadastro
@@ -108,7 +108,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
               </label>
               <Input
                 type="text"
-                icon={<User className="w-5 h-5" />}
+                icon={<User className="size-5" />}
                 placeholder="Maria da Silva"
                 value={values.name}
                 onChange={(e) => setValue("name", e.target.value)}
@@ -122,7 +122,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
               </label>
               <Input
                 type="email"
-                icon={<Mail className="w-5 h-5" />}
+                icon={<Mail className="size-5" />}
                 placeholder="funcionario@empresa.com"
                 value={values.email}
                 onChange={(e) => setValue("email", e.target.value)}
@@ -136,7 +136,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
               </label>
               <Input
                 type="text"
-                icon={<Badge className="w-5 h-5" />}
+                icon={<Badge className="size-5" />}
                 placeholder="MAT123456"
                 value={values.registrationId}
                 onChange={(e) => setValue("registrationId", e.target.value)}
@@ -155,7 +155,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
                 size="lg"
                 fullWidth
                 loading={loading}
-                icon={<UserPlus className="w-4 h-4" />}
+                icon={<UserPlus className="size-4" />}
               >
                 Cadastrar Funcionário
               </Button>

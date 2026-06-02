@@ -70,7 +70,7 @@ export function StudentListItem({
                 type="checkbox"
                 checked={isInBatch}
                 onChange={() => onToggleBatch(student._id)}
-                className="h-3.5 w-3.5"
+                className="size-3.5"
               />
               Lote
             </label>

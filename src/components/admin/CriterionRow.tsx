@@ -161,7 +161,7 @@ export function CriterionRow({ criterion, onChange, onRemove, universities }: Cr
           onClick={onRemove}
           className="flex items-center gap-1 text-[11px] text-error/70 hover:text-error transition-colors"
         >
-          <Trash2 className="w-3 h-3" />
+          <Trash2 className="size-3" />
           Remover
         </button>
       </div>

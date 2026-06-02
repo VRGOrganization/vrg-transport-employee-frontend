@@ -185,7 +185,7 @@ export function PriorityRuleModal({ open, initial, onClose, onSaved, onDeleted }
       <Modal open={open} onClose={() => setView("form")} title="Excluir regra de prioridade" size="sm" closeOnBackdrop={false}>
         <div className="flex flex-col items-center gap-4 py-2 text-center">
           <div className="p-4 rounded-full bg-error/10">
-            <AlertTriangle className="w-9 h-9 text-error" />
+            <AlertTriangle className="size-9 text-error" />
           </div>
           <p className="text-sm text-on-surface-variant max-w-xs">
             Esta ação desativa permanentemente a regra{" "}
@@ -271,8 +271,8 @@ export function PriorityRuleModal({ open, initial, onClose, onSaved, onDeleted }
                   : "border-outline-variant bg-surface-container-lowest text-on-surface-variant"
               }`}
             >
-              <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${form.active ? "border-success bg-success" : "border-outline-variant"}`}>
-                {form.active && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+              <span className={`size-4 rounded-full border-2 flex items-center justify-center transition-all ${form.active ? "border-success bg-success" : "border-outline-variant"}`}>
+                {form.active && <span className="size-1.5 rounded-full bg-white" />}
               </span>
               {form.active ? "Regra ativa" : "Regra inativa"}
             </button>
@@ -295,7 +295,7 @@ export function PriorityRuleModal({ open, initial, onClose, onSaved, onDeleted }
               onClick={addCriterion}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/40 bg-primary/5 text-primary text-xs font-semibold hover:bg-primary/10 hover:border-primary/70 transition-all"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="size-3.5" />
               Adicionar critério
             </button>
           </div>

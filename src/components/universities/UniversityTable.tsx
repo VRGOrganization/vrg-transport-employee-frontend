@@ -44,7 +44,7 @@ export function UniversityTable({
   if (universities.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-on-surface-muted">
-        <Building2 className="w-12 h-12 mb-3" />
+        <Building2 className="size-12 mb-3" />
         <p className="text-sm font-medium">{emptyTitle}</p>
         <p className="text-xs mt-1">{emptyDescription}</p>
       </div>
@@ -83,10 +83,10 @@ export function UniversityTable({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={cn(
-                    "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
+                    "size-9 rounded-lg flex items-center justify-center shrink-0",
                     isSelected ? "bg-primary" : "bg-surface-container-high"
                   )}>
-                    <Landmark className={cn("h-4 w-4", isSelected ? "text-on-primary" : "text-on-surface-variant")} />
+                    <Landmark className={cn("size-4", isSelected ? "text-on-primary" : "text-on-surface-variant")} />
                   </div>
                   <div className="min-w-0">
                     <p className={cn(
@@ -108,7 +108,7 @@ export function UniversityTable({
                       className="p-1.5 rounded-lg text-on-surface-muted hover:text-info hover:bg-info-container transition-colors"
                       title="Editar"
                     >
-                      <Edit2 className="h-4 w-4" />
+                      <Edit2 className="size-4" />
                     </button>
                   )}
                   {onDeactivate && (
@@ -119,9 +119,9 @@ export function UniversityTable({
                       title="Desativar"
                     >
                       {deactivatingId === university._id ? (
-                        <ChevronRight className="h-4 w-4 animate-pulse" />
+                        <ChevronRight className="size-4 animate-pulse" />
                       ) : (
-                        <Ban className="h-4 w-4" />
+                        <Ban className="size-4" />
                       )}
                     </button>
                   )}
@@ -133,9 +133,9 @@ export function UniversityTable({
                       title="Reativar"
                     >
                       {reactivatingId === university._id ? (
-                        <ChevronRight className="h-4 w-4 animate-pulse" />
+                        <ChevronRight className="size-4 animate-pulse" />
                       ) : (
-                        <RotateCcw className="h-4 w-4" />
+                        <RotateCcw className="size-4" />
                       )}
                     </button>
                   )}
@@ -151,7 +151,7 @@ export function UniversityTable({
                     >
                       <ChevronRight
                         className={cn(
-                          "w-4 h-4 transition-transform",
+                          "size-4 transition-transform",
                           isSelected && "rotate-90"
                         )}
                       />

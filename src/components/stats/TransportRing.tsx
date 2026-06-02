@@ -17,7 +17,7 @@ export function TransportRing({ totalUsing, totalStudents }: TransportRingProps)
 
   return (
     <div className="flex items-center gap-5 mb-5">
-      <div className="relative w-22 h-22 shrink-0">
+      <div className="relative size-22 shrink-0">
         <svg
           width="88"
           height="88"

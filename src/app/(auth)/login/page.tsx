@@ -23,14 +23,14 @@ export default function EmployeeAdminLoginPage() {
         />
 
         {/* Soft glow blobs */}
-        <div className="absolute top-[-80px] right-[-80px] w-80 h-80 bg-primary-container/25 rounded-full blur-3xl" />
-        <div className="absolute bottom-[-60px] left-[-60px] w-72 h-72 bg-primary-container/15 rounded-full blur-3xl" />
+        <div className="absolute top-[-80px] right-[-80px] size-80 bg-primary-container/25 rounded-full blur-3xl" />
+        <div className="absolute bottom-[-60px] left-[-60px] size-72 bg-primary-container/15 rounded-full blur-3xl" />
 
         {/* Logo / Brand */}
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-surface/15 backdrop-blur-sm rounded-xl flex items-center justify-center border border-surface/20">
-              <Bus className="w-5 h-5 text-white" />
+            <div className="size-10 bg-surface/15 backdrop-blur-sm rounded-xl flex items-center justify-center border border-surface/20">
+              <Bus className="size-5 text-white" />
             </div>
             <div>
               <p className="text-white font-bold text-sm leading-tight">Transporte</p>

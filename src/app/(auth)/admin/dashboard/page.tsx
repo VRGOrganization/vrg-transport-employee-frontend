@@ -239,7 +239,7 @@ export default function AdminDashboardPage() {
           </p>
         </div>
         <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors">
-          <Calendar className="w-4 h-4" />
+          <Calendar className="size-4" />
           {monthLabel}
         </button>
       </div>
@@ -262,9 +262,9 @@ export default function AdminDashboardPage() {
             className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait shrink-0 whitespace-nowrap"
           >
             {exportLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin" />
             ) : (
-              <Download className="w-4 h-4" />
+              <Download className="size-4" />
             )}
             {exportLoading ? "Exportando..." : "Exportar"}
           </button>

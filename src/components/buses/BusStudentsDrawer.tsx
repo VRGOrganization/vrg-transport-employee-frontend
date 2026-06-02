@@ -125,8 +125,8 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
         <div className="px-6 py-5 border-b border-outline-variant">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-info-container flex items-center justify-center">
-                <BusIcon className="text-info h-5 w-5" />
+              <div className="size-10 rounded-xl bg-info-container flex items-center justify-center">
+                <BusIcon className="text-info size-5" />
               </div>
               <div>
                 <h2 className="text-base font-bold text-on-surface flex items-center gap-2">
@@ -152,7 +152,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
                 onClick={onClose}
                 className="p-2 rounded-lg text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors"
               >
-                <X className="h-5 w-5" />
+                <X className="size-5" />
               </button>
             </div>
           </div>
@@ -188,7 +188,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
         {/* Contador */}
         <div className="px-6 py-4 bg-surface-container-low border-b border-outline-variant">
           <div className="flex items-center gap-2">
-            <Users className="text-on-surface-muted h-4 w-4" />
+            <Users className="text-on-surface-muted size-4" />
             <p className="text-sm text-on-surface-variant">
               <span className="font-bold text-on-surface text-base">
                 {loading ? "—" : students.length}
@@ -208,7 +208,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
             </div>
           ) : students.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-on-surface-muted">
-              <UserX className="h-12 w-12 mb-3" />
+              <UserX className="size-12 mb-3" />
               <p className="text-sm font-medium text-on-surface-variant">Nenhum aluno neste ônibus</p>
             </div>
           ) : (
@@ -227,7 +227,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
                               key={student._id}
                               className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant"
                             >
-                              <div className="w-8 h-8 rounded-full bg-info-container flex items-center justify-center shrink-0">
+                              <div className="size-8 rounded-full bg-info-container flex items-center justify-center shrink-0">
                                 <span className="text-xs font-bold text-info">
                                   {student.name.charAt(0).toUpperCase()}
                                 </span>
@@ -261,7 +261,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
                         key={student._id}
                         className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant"
                       >
-                        <div className="w-8 h-8 rounded-full bg-info-container flex items-center justify-center shrink-0">
+                        <div className="size-8 rounded-full bg-info-container flex items-center justify-center shrink-0">
                           <span className="text-xs font-bold text-info">
                             {student.name.charAt(0).toUpperCase()}
                           </span>

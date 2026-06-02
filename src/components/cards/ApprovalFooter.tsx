@@ -79,7 +79,7 @@ export function ApprovalFooter({
         <Button
           variant="outline"
           size="md"
-          icon={<Printer className="h-4 w-4" />}
+          icon={<Printer className="size-4" />}
           disabled={!canPrint || printingSingle}
           loading={printingSingle}
           onClick={onPrintSingle}
@@ -90,7 +90,7 @@ export function ApprovalFooter({
         <Button
           variant="outline"
           size="md"
-          icon={<XCircle className="h-4 w-4" />}
+          icon={<XCircle className="size-4" />}
           disabled={!isPending}
           onClick={onRejectOpen}
           className="text-error border-error/40 hover:bg-error/5"
@@ -108,7 +108,7 @@ export function ApprovalFooter({
           <Button
             variant="primary"
             size="md"
-            icon={<Bus className="h-4 w-4" />}
+            icon={<Bus className="size-4" />}
             loading={approving}
             disabled={!canApprove}
             onClick={onApprove}

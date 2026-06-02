@@ -80,7 +80,7 @@ export function EmployeeEditForm({ employee, generalError, onCancel, onPrepareCo
           onClick={onCancel}
           className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="size-5" />
         </button>
         <h3 className="font-headline font-semibold text-lg text-on-surface flex-1">Editar Funcionário</h3>
       </div>
@@ -121,7 +121,7 @@ export function EmployeeEditForm({ employee, generalError, onCancel, onPrepareCo
           <Button type="button" variant="outline" size="sm" fullWidth onClick={onCancel}>
             Cancelar
           </Button>
-          <Button type="submit" variant="primary" size="sm" fullWidth icon={<Check className="w-4 h-4" />}>
+          <Button type="submit" variant="primary" size="sm" fullWidth icon={<Check className="size-4" />}>
             Salvar alterações
           </Button>
         </div>

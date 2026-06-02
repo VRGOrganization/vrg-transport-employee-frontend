@@ -38,7 +38,7 @@ const COLUMNS: Column<UserRow>[] = [
     render: (row, idx) => (
       <div className="flex items-center gap-3">
         <div
-          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${AVATAR_COLORS[idx % AVATAR_COLORS.length]}`}
+          className={`size-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${AVATAR_COLORS[idx % AVATAR_COLORS.length]}`}
         >
           {getInitials(row.name)}
         </div>
@@ -47,7 +47,7 @@ const COLUMNS: Column<UserRow>[] = [
     ),
     skeleton: () => (
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-surface-container-high animate-pulse shrink-0" />
+        <div className="size-8 rounded-full bg-surface-container-high animate-pulse shrink-0" />
         <div className="h-3 w-32 bg-surface-container-high rounded animate-pulse" />
       </div>
     ),

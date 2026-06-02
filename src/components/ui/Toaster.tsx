@@ -62,7 +62,7 @@ function ToastCard({ item }: { item: ToastItem }) {
         exiting ? "animate-toast-out" : "animate-toast-in",
       )}
     >
-      <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", iconClass)} />
+      <Icon className={cn("mt-0.5 size-4 shrink-0", iconClass)} />
 
       <p className="flex-1 text-sm font-medium leading-snug text-on-surface">
         {item.message}
@@ -74,7 +74,7 @@ function ToastCard({ item }: { item: ToastItem }) {
         aria-label="Fechar notificação"
         className="cursor-pointer shrink-0 text-on-surface-variant opacity-50 transition-opacity hover:opacity-100"
       >
-        <X className="h-4 w-4" />
+        <X className="size-4" />
       </button>
 
       {/* Progress bar */}

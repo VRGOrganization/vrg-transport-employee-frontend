@@ -81,8 +81,8 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
       <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 pt-6 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center">
-              <Mail className="w-5 h-5 text-primary" />
+            <div className="size-9 bg-primary/10 rounded-xl flex items-center justify-center">
+              <Mail className="size-5 text-primary" />
             </div>
             <h2 className="font-semibold text-base text-on-surface">
               Recuperar senha
@@ -93,7 +93,7 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
             disabled={loading}
             className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-40"
           >
-            <X className="w-5 h-5" />
+            <X className="size-5" />
           </button>
         </div>
 
@@ -146,8 +146,8 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
             </form>
           ) : (
             <div className="flex flex-col items-center text-center gap-4 py-4">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                <MailCheck className="w-8 h-8 text-primary" />
+              <div className="size-16 bg-primary/10 rounded-full flex items-center justify-center">
+                <MailCheck className="size-8 text-primary" />
               </div>
               <div className="space-y-1.5">
                 <h3 className="font-semibold text-on-surface">Email enviado!</h3>

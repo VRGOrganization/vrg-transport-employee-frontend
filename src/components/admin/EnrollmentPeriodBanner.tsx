@@ -24,7 +24,7 @@ export function EnrollmentPeriodBanner({ endDate }: EnrollmentPeriodBannerProps)
   if (days <= 0) {
     return (
       <div className="flex items-center gap-3 rounded-xl border border-error/40 bg-error/10 px-4 py-3">
-        <AlertTriangle className="w-4 h-4 text-error shrink-0" />
+        <AlertTriangle className="size-4 text-error shrink-0" />
         <p className="text-sm text-error flex-1">
           O período de inscrição <strong>expirou</strong>. O sistema encerrará automaticamente
           na próxima verificação.
@@ -54,7 +54,7 @@ export function EnrollmentPeriodBanner({ endDate }: EnrollmentPeriodBannerProps)
 
   return (
     <div className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${styles.container}`}>
-      <Clock className={`w-4 h-4 shrink-0 ${styles.icon}`} />
+      <Clock className={`size-4 shrink-0 ${styles.icon}`} />
       <p className={`text-sm flex-1 ${styles.text}`}>{message}</p>
       <Link
         href="/admin/enrollment-period"

@@ -42,7 +42,7 @@ const STUDENT_COLUMNS: Column<Student>[] = [
     ),
     skeleton: () => (
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-surface-container-high animate-pulse shrink-0" />
+        <div className="size-9 rounded-full bg-surface-container-high animate-pulse shrink-0" />
         <div className="h-3 w-32 bg-surface-container-high rounded animate-pulse" />
       </div>
     ),
@@ -95,7 +95,7 @@ const BAN_COLUMNS: Column<BanlistEntry>[] = [
     label: "Estudante",
     render: (e) => (
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-error/10 flex items-center justify-center text-error font-bold text-xs shrink-0">
+        <div className="size-9 rounded-full bg-error/10 flex items-center justify-center text-error font-bold text-xs shrink-0">
           {e.name.charAt(0).toUpperCase()}
         </div>
         <div>
@@ -106,7 +106,7 @@ const BAN_COLUMNS: Column<BanlistEntry>[] = [
     ),
     skeleton: () => (
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-surface-container-high animate-pulse shrink-0" />
+        <div className="size-9 rounded-full bg-surface-container-high animate-pulse shrink-0" />
         <div className="h-3 w-36 bg-surface-container-high rounded animate-pulse" />
       </div>
     ),
@@ -234,7 +234,7 @@ export default function StudentsPage() {
       <div className="relative inline-block text-left">
         <button
           onClick={(e) => { e.stopPropagation(); setOpenDropdownId(openDropdownId === student._id ? null : student._id); }}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
+          className="size-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
         >
           <span className="material-symbols-outlined text-lg">more_vert</span>
         </button>
@@ -272,7 +272,7 @@ export default function StudentsPage() {
       <button
         onClick={() => setUnbanTarget(entry)}
         title="Remover banimento"
-        className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-success hover:bg-success/10 transition-colors ml-auto"
+        className="size-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-success hover:bg-success/10 transition-colors ml-auto"
       >
         <span className="material-symbols-outlined text-lg">shield_check</span>
       </button>

@@ -66,13 +66,13 @@ export function DeactivateBusModal({
           <button
             onClick={onClose}
             disabled={loading}
-            className="absolute top-4 right-4 text-white hover:bg-black/20 w-8 h-8 rounded-full flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="absolute top-4 right-4 text-white hover:bg-black/20 size-8 rounded-full flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>close</span>
           </button>
 
-          <div className="w-20 h-20 rounded-full bg-surface flex items-center justify-center shadow-lg border-4 border-surface mb-3">
-            <Ban className="w-9 h-9 text-error" />
+          <div className="size-20 rounded-full bg-surface flex items-center justify-center shadow-lg border-4 border-surface mb-3">
+            <Ban className="size-9 text-error" />
           </div>
 
           <h2 className="text-2xl font-extrabold text-white tracking-tight text-center">
@@ -89,7 +89,7 @@ export function DeactivateBusModal({
           <div className="flex-1 overflow-y-auto px-8 py-6 space-y-5">
 
             <div className="flex items-start gap-3 p-4 rounded-xl bg-error/5 border border-error/20">
-              <ShieldAlert className="w-5 h-5 text-error shrink-0 mt-0.5" />
+              <ShieldAlert className="size-5 text-error shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-error">Ação imediata</p>
                 <p className="text-xs text-on-surface-variant mt-0.5">
@@ -100,7 +100,7 @@ export function DeactivateBusModal({
 
             {error && (
               <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-error-container/60 text-error text-xs">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <AlertCircle className="size-3.5 shrink-0" />
                 {error}
               </div>
             )}
@@ -138,8 +138,8 @@ export function DeactivateBusModal({
               className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full bg-error text-white hover:bg-error/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading
-                ? <Loader2 className="w-4 h-4 animate-spin" />
-                : <Ban className="w-4 h-4" />
+                ? <Loader2 className="size-4 animate-spin" />
+                : <Ban className="size-4" />
               }
               {loading ? "Desativando..." : "Sim, desativar"}
             </button>

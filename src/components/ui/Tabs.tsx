@@ -35,7 +35,7 @@ export function Tabs<T extends string>({ items, value, onChange, className }: Ta
             {typeof t.icon === "string" ? (
               <span className="material-symbols-outlined text-sm">{t.icon}</span>
             ) : t.icon ? (
-              <t.icon className="w-4 h-4" />
+              <t.icon className="size-4" />
             ) : null}
             {t.label}
           </button>

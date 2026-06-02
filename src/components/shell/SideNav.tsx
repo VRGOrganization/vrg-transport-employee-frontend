@@ -35,8 +35,8 @@ export function SideNav({ brand, items, onLogout }: SideNavProps) {
   return (
     <aside className="hidden lg:flex h-dvh w-64 lg:sticky lg:top-0 bg-surface-container-lowest flex-col border-r border-outline-variant/30">
       <div className="px-5 py-5 flex items-center gap-3 border-b border-outline-variant/20">
-        <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shrink-0">
-          <Brand className="w-4.5 h-4.5 text-white" />
+        <div className="size-9 bg-primary rounded-xl flex items-center justify-center shrink-0">
+          <Brand className="size-4.5 text-white" />
         </div>
         <div>
           <p className="text-sm font-extrabold text-on-surface leading-tight">{brand.title}</p>
@@ -62,7 +62,7 @@ export function SideNav({ brand, items, onLogout }: SideNavProps) {
                 >
                   <Icon
                     className={cn(
-                      "w-5 h-5 transition-colors",
+                      "size-5 transition-colors",
                       isActive ? "text-primary" : "text-on-surface-variant",
                     )}
                   />
@@ -89,7 +89,7 @@ function UserFooter({
   return (
     <div className="px-4 py-4 border-t border-outline-variant/20">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0">
+        <div className="size-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0">
           {user?.name ? getInitials(user.name) : "A"}
         </div>
         <div className="flex-1 min-w-0">
@@ -105,7 +105,7 @@ function UserFooter({
           className="p-2 rounded-lg text-on-surface-variant hover:text-error hover:bg-error-container transition-colors shrink-0"
           title="Sair"
         >
-          <LogOut className="w-4.5 h-4.5" />
+          <LogOut className="size-4.5" />
         </button>
       </div>
     </div>

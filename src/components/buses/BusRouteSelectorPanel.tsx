@@ -86,7 +86,7 @@ export default function BusRouteSelectorPanel({
                   )}
                 </div>
                 <div className="mt-1 flex items-start gap-2 text-xs text-on-surface-variant">
-                  <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <MapPin className="mt-0.5 size-3.5 shrink-0" />
                   <span className="line-clamp-2">{summarizeDestinations(route)}</span>
                 </div>
               </div>
@@ -101,7 +101,7 @@ export default function BusRouteSelectorPanel({
             <div className="text-xs text-on-surface-variant">Rota selecionada</div>
             <div className="text-base font-semibold text-on-surface">{selected?.lineNumber ?? "–"}</div>
             <div className="mt-1 flex items-start gap-2 text-xs text-on-surface-variant">
-              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <MapPin className="mt-0.5 size-3.5 shrink-0" />
               <span className="line-clamp-2">{selected ? summarizeDestinations(selected) : ""}</span>
             </div>
           </div>

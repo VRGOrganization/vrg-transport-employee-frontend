@@ -32,7 +32,7 @@ export function PageHeader({
   if (variant === "skeleton") {
     return (
       <div className={cn("mb-6 flex items-center gap-3", className)}>
-        <div className="w-8 h-8 rounded-lg bg-surface-container-high animate-pulse" />
+        <div className="size-8 rounded-lg bg-surface-container-high animate-pulse" />
         <div className="space-y-1.5">
           <div className="h-4 w-40 bg-surface-container-high rounded animate-pulse" />
           <div className="h-3 w-24 bg-surface-container-high rounded animate-pulse" />
@@ -55,7 +55,7 @@ export function PageHeader({
             className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors shrink-0"
             aria-label="Voltar"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="size-5" />
           </Link>
         ) : (
           <button
@@ -64,7 +64,7 @@ export function PageHeader({
             className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors shrink-0"
             aria-label="Voltar"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="size-5" />
           </button>
         )
       )}

@@ -95,7 +95,7 @@ export function StudentInfoView({ student, onClose, onEdit, onBan }: StudentInfo
               onClick={onBan}
               className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all text-error border border-error/30 hover:bg-error/8 hover:border-error/60"
             >
-              <Ban className="w-4 h-4" />
+              <Ban className="size-4" />
               Banir
             </button>
           )}

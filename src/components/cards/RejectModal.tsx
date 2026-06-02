@@ -99,8 +99,8 @@ export function RejectModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-error/10 flex items-center justify-center shrink-0">
-            <XCircle className="h-5 w-5 text-error" />
+          <div className="size-10 rounded-xl bg-error/10 flex items-center justify-center shrink-0">
+            <XCircle className="size-5 text-error" />
           </div>
           <div>
             <h2 className="font-bold text-on-surface text-base">Recusar carteirinha</h2>
