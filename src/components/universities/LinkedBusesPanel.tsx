@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Bus, Plus, X, Hourglass, Unlink } from "lucide-react";
 import type { Bus as BusType, University } from "@/types/university.types";
 import { busApi } from "@/lib/universityApi";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface Props {
   university: University;
@@ -16,6 +17,8 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
   const [linking, setLinking] = useState(false);
   const [selectedBusId, setSelectedBusId] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [pendingUnlink, setPendingUnlink] = useState<BusType | null>(null);
+  const [unlinkError, setUnlinkError] = useState("");
 
   const linkedBuses = allBuses.filter((bus) => {
     const inSlots = (bus.universitySlots ?? []).some((s) =>
@@ -50,11 +53,16 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
     }
   };
 
-  const handleUnlink = async (busId: string) => {
-    setLoadingId(busId);
+  const handleConfirmUnlink = async () => {
+    if (!pendingUnlink) return;
+    setLoadingId(pendingUnlink._id);
+    setUnlinkError("");
     try {
-      await busApi.unlinkUniversity(busId, university._id);
+      await busApi.unlinkUniversity(pendingUnlink._id, university._id);
       onBusesChanged();
+      setPendingUnlink(null);
+    } catch {
+      setUnlinkError("Não foi possível desvincular o ônibus. Tente novamente.");
     } finally {
       setLoadingId(null);
     }
@@ -133,7 +141,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
                 </div>
               </div>
               <button
-                onClick={() => handleUnlink(bus._id)}
+                onClick={() => setPendingUnlink(bus)}
                 disabled={loadingId === bus._id}
                 className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-all"
                 title="Desvincular"
@@ -147,6 +155,36 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
           ))}
         </ul>
       )}
+
+      <ConfirmModal
+        open={!!pendingUnlink}
+        onClose={() => { setPendingUnlink(null); setUnlinkError(""); }}
+        onConfirm={handleConfirmUnlink}
+        loading={!!loadingId}
+        error={unlinkError}
+        title="Desvincular Ônibus"
+        icon={Unlink}
+        variant="warning"
+        confirmLabel="Sim, desvincular"
+        description={
+          pendingUnlink && (
+            <>
+              <p className="text-base font-bold text-on-surface">
+                {pendingUnlink.identifier}
+                {pendingUnlink.capacity != null && (
+                  <span className="ml-2 text-sm font-normal text-on-surface-variant">
+                    · {pendingUnlink.capacity} vagas
+                  </span>
+                )}
+              </p>
+              <p className="mt-2">
+                O ônibus será desvinculado de <span className="font-semibold">{university.acronym}</span>.
+                Você pode vincular novamente a qualquer momento.
+              </p>
+            </>
+          )
+        }
+      />
     </div>
   );
 }
