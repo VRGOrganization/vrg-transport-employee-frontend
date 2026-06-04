@@ -91,7 +91,7 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
             </div>
             <button
               onClick={onClose}
-              className="text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center size-8 rounded-full hover:bg-primary/10"
+              className="text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center size-8 rounded-full hover:bg-primary/10 cursor-pointer"
             >
               <X className="size-5" />
             </button>

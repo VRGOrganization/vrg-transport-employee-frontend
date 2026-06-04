@@ -159,7 +159,7 @@ export function StudentModal({ student, isBanned = false, onClose, onUpdated, on
           </div>
           <button
             onClick={handleCloseAfterSuccess}
-            className="mt-2 px-5 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-90 transition-opacity"
+            className="mt-2 px-5 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer"
           >
             Fechar
           </button>
@@ -182,7 +182,7 @@ export function StudentModal({ student, isBanned = false, onClose, onUpdated, on
               <button
                 type="button"
                 onClick={() => setView(student.active ? "delete-confirm" : "activate-confirm")}
-                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                   student.active
                     ? "text-error hover:bg-error-container"
                     : "text-success hover:bg-success-container"
@@ -243,7 +243,7 @@ export function StudentModal({ student, isBanned = false, onClose, onUpdated, on
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
             >
               Cancelar
             </button>

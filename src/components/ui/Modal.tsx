@@ -79,7 +79,7 @@ export function Modal({
             {!hideClose && (
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors ml-auto"
+                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors ml-auto cursor-pointer"
               >
                 <X className="size-5" />
               </button>

@@ -76,7 +76,7 @@ export function BanForm({ student, onCancel, onBanned }: BanFormProps) {
         </div>
         <button
           onClick={onBanned}
-          className="mt-2 px-6 py-2.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-semibold text-sm transition-all"
+          className="mt-2 px-6 py-2.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-semibold text-sm transition-all cursor-pointer"
         >
           Fechar
         </button>
@@ -138,7 +138,7 @@ export function BanForm({ student, onCancel, onBanned }: BanFormProps) {
           <button
             type="button"
             onClick={() => { setTermsOpen((prev) => !prev); setHasReadTerms(true); }}
-            className="w-full flex items-center justify-between px-4 py-3.5 bg-surface-container-low hover:bg-surface-container transition-colors text-left"
+            className="w-full flex items-center justify-between px-4 py-3.5 bg-surface-container-low hover:bg-surface-container transition-colors text-left cursor-pointer"
           >
             <span className="text-sm font-semibold text-on-surface flex items-center gap-2">
               <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: "18px" }}>gavel</span>
@@ -175,8 +175,8 @@ export function BanForm({ student, onCancel, onBanned }: BanFormProps) {
             !hasReadTerms
               ? "border-outline-variant/20 bg-surface-container-lowest opacity-60 cursor-not-allowed"
               : agreed
-                ? "border-error bg-error/5 ring-4 ring-error/10 hover:bg-error/10"
-                : "border-outline-variant/40 bg-surface hover:border-error/40 hover:shadow-md hover:bg-surface-container-lowest"
+                ? "border-error bg-error/5 ring-4 ring-error/10 hover:bg-error/10 cursor-pointer"
+                : "border-outline-variant/40 bg-surface hover:border-error/40 hover:shadow-md hover:bg-surface-container-lowest cursor-pointer"
           }`}
         >
           <div className={`mt-0.5 size-5 rounded flex items-center justify-center border-2 transition-colors shrink-0 ${
@@ -211,14 +211,14 @@ export function BanForm({ student, onCancel, onBanned }: BanFormProps) {
           type="button"
           onClick={onCancel}
           disabled={loading}
-          className="flex-1 px-4 py-2.5 rounded-full border-2 border-outline-variant text-on-surface-variant font-bold text-sm hover:bg-surface-container-high transition-colors disabled:opacity-50"
+          className="flex-1 px-4 py-2.5 rounded-full border-2 border-outline-variant text-on-surface-variant font-bold text-sm hover:bg-surface-container-high transition-colors disabled:opacity-50 cursor-pointer"
         >
           Cancelar
         </button>
         <button
           type="submit"
           disabled={loading || !agreed || !banReasons.trim() || banConfirmName.trim() !== student.name.trim()}
-          className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full bg-error text-white hover:bg-error/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full bg-error text-white hover:bg-error/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : <Ban className="size-4" />}
           {loading ? "Aplicando banimento..." : "Confirmar Banimento"}

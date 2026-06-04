@@ -66,7 +66,7 @@ export function DeactivateUniversityModal({
           <button
             onClick={onClose}
             disabled={loading}
-            className="absolute top-4 right-4 text-white hover:bg-black/20 size-8 rounded-full flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="absolute top-4 right-4 text-white hover:bg-black/20 size-8 rounded-full flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-white/40"
           >
             <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>close</span>
           </button>
@@ -127,14 +127,14 @@ export function DeactivateUniversityModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 px-4 py-2.5 rounded-full border-2 border-outline-variant text-on-surface-variant font-bold text-sm hover:bg-surface-container-high transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 rounded-full border-2 border-outline-variant text-on-surface-variant font-bold text-sm hover:bg-surface-container-high transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-outline-variant/50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={!canConfirm}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full bg-error text-white hover:bg-error/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full bg-error text-white hover:bg-error/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-error/40"
             >
               {loading
                 ? <Loader2 className="size-4 animate-spin" />

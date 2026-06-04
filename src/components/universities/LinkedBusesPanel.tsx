@@ -77,7 +77,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
         {availableBuses.length > 0 && (
           <button
             onClick={() => setLinking((v) => !v)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-success hover:bg-success/90 text-white text-xs font-medium rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-success hover:bg-success/90 text-white text-xs font-medium rounded-lg transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-success/40"
           >
             {linking ? <X className="size-3.5" /> : <Plus className="size-3.5" />}
             {linking ? "Cancelar" : "Vincular ônibus"}
@@ -103,10 +103,10 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
             onClick={handleLink}
             disabled={!selectedBusId || !!loadingId}
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+              "px-4 py-2 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-success/40",
               !selectedBusId || !!loadingId
                 ? "bg-success/50 text-white cursor-not-allowed"
-                : "bg-success hover:bg-success/90 text-white"
+                : "bg-success hover:bg-success/90 text-white cursor-pointer"
             )}
           >
             Vincular
@@ -143,7 +143,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
               <button
                 onClick={() => setPendingUnlink(bus)}
                 disabled={loadingId === bus._id}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-all"
+                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-all cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-error/30"
                 title="Desvincular"
               >
                 {loadingId === bus._id

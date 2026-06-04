@@ -105,7 +105,7 @@ export function UniversityTable({
                   {onEdit && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onEdit(university); }}
-                      className="p-1.5 rounded-lg text-on-surface-muted hover:text-info hover:bg-info-container transition-colors"
+                      className="p-1.5 rounded-lg text-on-surface-muted hover:text-info hover:bg-info-container transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-info/30"
                       title="Editar"
                     >
                       <Edit2 className="size-4" />
@@ -115,7 +115,7 @@ export function UniversityTable({
                     <button
                       onClick={(e) => { e.stopPropagation(); onDeactivate(university._id); }}
                       disabled={deactivatingId === university._id}
-                      className="p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-colors"
+                      className="p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-colors cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-error/30"
                       title="Desativar"
                     >
                       {deactivatingId === university._id ? (
@@ -129,7 +129,7 @@ export function UniversityTable({
                     <button
                       onClick={(e) => { e.stopPropagation(); onReactivate(university._id); }}
                       disabled={reactivatingId === university._id}
-                      className="p-1.5 rounded-lg text-on-surface-muted hover:text-success hover:bg-success-container transition-colors"
+                      className="p-1.5 rounded-lg text-on-surface-muted hover:text-success hover:bg-success-container transition-colors cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-success/30"
                       title="Reativar"
                     >
                       {reactivatingId === university._id ? (

@@ -59,7 +59,7 @@ export function ConfirmModal({
         <button
           disabled={loading}
           onClick={onConfirm}
-          className={`flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${s.btn}`}
+          className={`flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors ${s.btn}`}
         >
           {loading ? "…" : confirmLabel}
         </button>
