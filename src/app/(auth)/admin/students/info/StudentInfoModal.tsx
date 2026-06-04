@@ -11,11 +11,10 @@ type View = "info" | "ban-form";
 interface StudentInfoModalProps {
   student: Student;
   onClose: () => void;
-  onEdit?: () => void;
   onBanned?: () => void;
 }
 
-export function StudentInfoModal({ student, onClose, onEdit, onBanned }: StudentInfoModalProps) {
+export function StudentInfoModal({ student, onClose, onBanned }: StudentInfoModalProps) {
   const [view, setView] = useState<View>("info");
 
   const handleClose = view === "ban-form" ? () => setView("info") : onClose;
@@ -31,7 +30,6 @@ export function StudentInfoModal({ student, onClose, onEdit, onBanned }: Student
         <StudentInfoView
           student={student}
           onClose={onClose}
-          onEdit={onEdit}
           onBan={() => setView("ban-form")}
         />
       )}
