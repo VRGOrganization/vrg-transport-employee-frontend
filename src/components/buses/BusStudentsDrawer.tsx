@@ -18,6 +18,34 @@ const SHIFT_LABELS: Record<string, string> = {
   full_time: "Integral",
 };
 
+function StudentList({ students, shiftLabels }: { students: BusStudent[]; shiftLabels: Record<string, string> }) {
+  return (
+    <ul className="space-y-2">
+      {students.map((student) => (
+        <li
+          key={student._id}
+          className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant"
+        >
+          <div className="size-8 rounded-full bg-info-container flex items-center justify-center shrink-0">
+            <span className="text-xs font-bold text-info">
+              {student.name.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-on-surface truncate">{student.name}</p>
+            <p className="text-xs text-on-surface-muted truncate">{student.email}</p>
+          </div>
+          {student.shift && (
+            <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant">
+              {shiftLabels[student.shift] ?? student.shift}
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function BusStudentsDrawer({ bus, onClose }: Props) {
   const [students, setStudents] = useState<BusStudent[]>([]);
   const [loading, setLoading] = useState(false);
@@ -214,71 +242,44 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
           ) : (
             <div className="space-y-4">
               {orderedSlots.length > 0 ? (
-                orderedSlots.map((slot) => {
-                  const sid = typeof slot.universityId === "string" ? slot.universityId : slot.universityId._id;
-                  const items = grouped[sid] ?? [];
-                  return (
-                    <div key={sid}>
-                      <h4 className="text-xs font-medium text-on-surface-variant mb-2">P{slot.priorityOrder} — {getAcronym(slot.universityId)} ({items.length})</h4>
-                      {items.length > 0 ? (
-                        <ul className="space-y-2">
-                          {items.map((student) => (
-                            <li
-                              key={student._id}
-                              className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant"
-                            >
-                              <div className="size-8 rounded-full bg-info-container flex items-center justify-center shrink-0">
-                                <span className="text-xs font-bold text-info">
-                                  {student.name.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-on-surface truncate">{student.name}</p>
-                                <p className="text-xs text-on-surface-muted truncate">{student.email}</p>
-                              </div>
-                              {student.shift && (
-                                <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant">
-                                  {SHIFT_LABELS[student.shift] ?? student.shift}
-                                </span>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-xs italic text-on-surface-muted">Nenhum aluno para esta faixa</p>
-                      )}
-                    </div>
-                  );
-                })
-              ) : null}
-
-              {unknownStudents.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-medium text-on-surface-variant mb-2">Outros ({unknownStudents.length})</h4>
-                  <ul className="space-y-2">
-                    {unknownStudents.map((student) => (
-                      <li
-                        key={student._id}
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant"
-                      >
-                        <div className="size-8 rounded-full bg-info-container flex items-center justify-center shrink-0">
-                          <span className="text-xs font-bold text-info">
-                            {student.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-on-surface truncate">{student.name}</p>
-                          <p className="text-xs text-on-surface-muted truncate">{student.email}</p>
-                        </div>
-                        {student.shift && (
-                          <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant">
-                            {SHIFT_LABELS[student.shift] ?? student.shift}
-                          </span>
+                <>
+                  {orderedSlots.map((slot) => {
+                    const sid = typeof slot.universityId === "string" ? slot.universityId : slot.universityId._id;
+                    const items = grouped[sid] ?? [];
+                    return (
+                      <div key={sid}>
+                        <h4 className="text-xs font-medium text-on-surface-variant mb-2">P{slot.priorityOrder} — {getAcronym(slot.universityId)} ({items.length})</h4>
+                        {items.length > 0 ? (
+                          <StudentList students={items} shiftLabels={SHIFT_LABELS} />
+                        ) : (
+                          <p className="text-xs italic text-on-surface-muted">Nenhum aluno para esta faixa</p>
                         )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                      </div>
+                    );
+                  })}
+                  {/* alunos cujo universityId não casa com nenhum slot */}
+                  {(() => {
+                    const slotIds = new Set(orderedSlots.map((s) =>
+                      typeof s.universityId === "string" ? s.universityId : s.universityId._id
+                    ));
+                    const unmatched = students.filter((s) => {
+                      const key = typeof s.universityId === "string"
+                        ? s.universityId
+                        : (s.universityId?._id ?? "__unknown");
+                      return !slotIds.has(key);
+                    });
+                    if (unmatched.length === 0) return null;
+                    return (
+                      <div>
+                        <h4 className="text-xs font-medium text-on-surface-variant mb-2">Outros ({unmatched.length})</h4>
+                        <StudentList students={unmatched} shiftLabels={SHIFT_LABELS} />
+                      </div>
+                    );
+                  })()}
+                </>
+              ) : (
+                /* sem slots: lista todos flat */
+                <StudentList students={students} shiftLabels={SHIFT_LABELS} />
               )}
             </div>
           )}
