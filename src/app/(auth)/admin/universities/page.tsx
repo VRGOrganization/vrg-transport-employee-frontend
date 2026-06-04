@@ -153,8 +153,9 @@ export default function UniversitiesPage() {
       if (selected?._id === pendingDeactivate._id) setSelected(null);
       await loadUniversities();
       setPendingDeactivate(null);
-    } catch {
-      setDeactivateError("Não foi possível desativar a faculdade. Tente novamente.");
+    } catch (err) {
+      const apiMessage = (err as { message?: string })?.message;
+      setDeactivateError(apiMessage || "Não foi possível desativar a faculdade. Tente novamente.");
     } finally {
       setDeactivatingId(null);
     }
@@ -199,7 +200,7 @@ export default function UniversitiesPage() {
             </div>
             <button
               onClick={() => setCreating(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+              className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-xl transition-colors shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40"
             >
               <Plus className="size-4.5" />
               Nova Faculdade
@@ -275,7 +276,7 @@ export default function UniversitiesPage() {
                       type="button"
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={safePage <= 1}
-                      className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
                       aria-label="Página anterior"
                     >
                       <ChevronLeft className="size-4" />
@@ -284,7 +285,7 @@ export default function UniversitiesPage() {
                       type="button"
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       disabled={safePage >= totalPages}
-                      className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
                       aria-label="Próxima página"
                     >
                       <ChevronRight className="size-4" />
@@ -315,7 +316,7 @@ export default function UniversitiesPage() {
                     </div>
                     <button
                       onClick={() => setSelected(null)}
-                      className="p-1.5 rounded-lg text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                      className="p-1.5 rounded-lg text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
                     >
                       <X className="size-4.5" />
                     </button>
@@ -327,7 +328,7 @@ export default function UniversitiesPage() {
                       <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
+                        className={`px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 ${
                           activeTab === tab
                             ? "border-primary text-primary"
                             : "border-transparent text-on-surface-variant hover:text-on-surface"
@@ -364,7 +365,7 @@ export default function UniversitiesPage() {
                         <p className="text-sm text-error">{coursesError}</p>
                         <button
                           onClick={() => loadCourses(selected._id)}
-                          className="mt-1 text-xs text-primary hover:underline"
+                          className="mt-1 text-xs text-primary hover:underline cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/30 rounded"
                         >
                           Tentar novamente
                         </button>
