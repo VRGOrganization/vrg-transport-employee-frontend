@@ -8,10 +8,15 @@ export interface University {
   updatedAt: string;
 }
 
+export type CourseModel = "Bacharel" | "Técnico" | "Licenciatura";
+
+export const COURSE_MODEL_OPTIONS: CourseModel[] = ["Bacharel", "Técnico", "Licenciatura"];
+
 export interface Course {
   _id: string;
   name: string;
   universityId: string | { _id: string; name: string; acronym: string };
+  model: CourseModel | null;
   active: boolean;
   createdAt: string;
   updatedAt: string;
