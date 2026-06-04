@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { ChevronUp, ChevronDown, Pencil, ShieldCheck, ToggleLeft, ToggleRight, Plus } from "lucide-react";
 import { priorityRuleService } from "@/services/priorityRuleService";
 import type { PriorityRule } from "@/types/priorityRule";
-import { CRITERION_TYPE_LABELS, OPERATOR_LABELS } from "@/types/priorityRule";
 import { PriorityRuleModal } from "@/components/admin/PriorityRuleModal";
 import { DashboardStatCard } from "@/components/cards/DashboardStatCard";
 import { Modal } from "@/components/ui/Modal";
@@ -28,13 +27,37 @@ const LEVEL_STYLE: Record<number, string> = {
   5: "bg-outline-variant/20 text-on-surface-variant",
 };
 
+const LEVEL_LABELS: Record<number, string> = {
+  1: "Máxima",
+  2: "Alta",
+  3: "Média",
+  4: "Baixa",
+  5: "Padrão",
+};
+
 function criterionLabel(c: PriorityRule["criteria"][number]): string {
-  const type = CRITERION_TYPE_LABELS[c.type] ?? c.type;
-  const op   = OPERATOR_LABELS[c.operator]   ?? c.operator;
-  if (c.operator === "is_true")  return `${type} é verdadeiro`;
-  if (c.operator === "is_false") return `${type} é falso`;
-  const val = Array.isArray(c.value) ? c.value.join(", ") : String(c.value ?? "");
-  return val ? `${type} ${op} "${val}"` : `${type} ${op}`;
+  switch (c.type) {
+    case "has_disability":
+      return "PCD";
+    case "shift":
+      return `Turno: ${c.value}`;
+    case "transport_mode":
+      return `Transporte: ${c.value}`;
+    case "university_id":
+      return "Faculdade específica";
+    case "course_semester":
+      return (c.operator === "less_or_equal" || c.operator === "less_than")
+        ? `Até ${c.value}º semestre`
+        : `A partir do ${c.value}º semestre`;
+    case "distance_km":
+      return (c.operator === "greater_than" || c.operator === "greater_or_equal")
+        ? `Mais de ${c.value} km`
+        : `Menos de ${c.value} km`;
+    default: {
+      const val = Array.isArray(c.value) ? c.value.join(", ") : String(c.value ?? "");
+      return val ? `${c.type}: ${val}` : c.type;
+    }
+  }
 }
 
 export default function PriorityRulesPage() {
@@ -206,17 +229,15 @@ export default function PriorityRulesPage() {
                 className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-5 flex items-start gap-4 group hover:border-outline-variant/60 transition-colors"
               >
                 {/* Level badge */}
-                <span className={`inline-flex items-center justify-center size-10 rounded-xl text-sm font-bold shrink-0 ${LEVEL_STYLE[rule.level] ?? LEVEL_STYLE[5]}`}>
-                  {rule.level}
-                </span>
+                <div className={`flex flex-col items-center justify-center w-14 shrink-0 py-1.5 rounded-xl ${LEVEL_STYLE[rule.level] ?? LEVEL_STYLE[5]}`}>
+                  <span className="text-sm font-extrabold leading-tight">{rule.level}ª</span>
+                  <span className="text-[9px] font-semibold opacity-70 leading-tight">{LEVEL_LABELS[rule.level] ?? "Padrão"}</span>
+                </div>
 
                 {/* Body */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <h3 className="font-semibold text-on-surface text-sm">{rule.name}</h3>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant uppercase tracking-wide">
-                      {rule.criteriaLogic === "all" ? "TODAS condições" : "QUALQUER condição"}
-                    </span>
                   </div>
 
                   {rule.description && (
