@@ -30,3 +30,24 @@ const studentBaseSchema = z.object({
 export { PASSWORD_POLICY_REGEX };
 export const studentCreateSchema = studentBaseSchema;
 export const studentEditSchema = studentBaseSchema;
+
+export const studentAdminCreateSchema = z.object({
+  name: z
+    .string({ error: "Nome é obrigatório" })
+    .trim()
+    .min(1, "Nome é obrigatório")
+    .max(100, "Nome deve ter no máximo 100 caracteres"),
+  email: z
+    .string({ error: "Email é obrigatório" })
+    .trim()
+    .min(1, "Email é obrigatório")
+    .email("Email inválido"),
+  telephone: z
+    .string({ error: "Telefone é obrigatório" })
+    .trim()
+    .min(1, "Telefone é obrigatório"),
+  cpf: z
+    .string({ error: "CPF é obrigatório" })
+    .trim()
+    .regex(/^\d{11}$/, "CPF deve conter exatamente 11 dígitos"),
+});
