@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
-import { GraduationCap, UserX, ShieldBan } from "lucide-react";
+import { GraduationCap, UserX, UserCheck, CheckCircle2, ShieldBan, ShieldCheck, ArrowUpAZ, ArrowDownAZ } from "lucide-react";
 import { studentService } from "@/services/studentService";
 import { banlistService } from "@/services/banlistService";
 import type { Student } from "@/types/student";
@@ -15,10 +14,13 @@ import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
 import { getShiftLabel } from "@/lib/constants";
 import { buildStudentsCsv, downloadCsv } from "@/lib/csvUtils";
-import { StudentModal } from "@/components/students/StudentModal";
+import { StudentCreateModal } from "@/components/students/StudentCreateModal";
+import { StudentDocumentsModal } from "@/components/students/StudentDocumentsModal";
 import { StudentInfoModal } from "./info/StudentInfoModal";
 import { StudentCardModal } from "./StudentCardModal";
 import { UnbanModal } from "@/components/admin/UnbanModal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { toast } from "@/lib/toast";
 import type { PageSize } from "@/lib/constants";
 
 type StudentTab = "active" | "inactive";
@@ -61,21 +63,6 @@ const STUDENT_COLUMNS: Column<Student>[] = [
     key: "shift",
     label: "Turno",
     render: (s) => <span className="text-sm text-on-surface-variant">{getShiftLabel(s.shift)}</span>,
-  },
-  {
-    key: "status",
-    label: "Status",
-    render: (s) => (
-      <span
-        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-          s.active
-            ? "bg-success-container text-on-success"
-            : "bg-surface-container-high text-on-surface-variant"
-        }`}
-      >
-        {s.active ? "Ativo" : "Inativo"}
-      </span>
-    ),
   },
   {
     key: "createdAt",
@@ -144,8 +131,12 @@ const BAN_COLUMNS: Column<BanlistEntry>[] = [
 
 export default function StudentsPage() {
   const [topTab, setTopTab]                   = useState<Tab>("active");
-  const [selected, setSelected]               = useState<Student | null>(null);
+  const [createOpen, setCreateOpen]           = useState(false);
   const [viewingStudent, setViewingStudent]   = useState<Student | null>(null);
+  const [docsStudent, setDocsStudent]         = useState<Student | null>(null);
+  const [toggleTarget, setToggleTarget]       = useState<Student | null>(null);
+  const [toggleLoading, setToggleLoading]     = useState(false);
+  const [toggleError, setToggleError]         = useState("");
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("view");
@@ -171,6 +162,16 @@ export default function StudentsPage() {
     [],
   );
 
+  const [sortAsc, setSortAsc] = useState(true);
+
+  const sortFn = useCallback(
+    (a: Student, b: Student) =>
+      sortAsc
+        ? a.name.localeCompare(b.name, "pt-BR")
+        : b.name.localeCompare(a.name, "pt-BR"),
+    [sortAsc],
+  );
+
   const {
     tab: studentTab, setTab: setStudentTab,
     search: studentSearch, setSearch: setStudentSearch,
@@ -184,6 +185,7 @@ export default function StudentsPage() {
     initialTab: "active",
     fetcher: studentFetcher,
     searchFields: (s) => [s.name, s.email, s.institution ?? ""],
+    sortFn,
   });
 
   // ── Banned tab ────────────────────────────────────────────────────
@@ -209,7 +211,27 @@ export default function StudentsPage() {
     if (t !== "banned") setStudentTab(t as StudentTab);
   };
 
-  const handleStudentReload = () => { setSelected(null); studentReloadAll(); };
+  const handleConfirmToggle = async () => {
+    if (!toggleTarget) return;
+    setToggleLoading(true);
+    setToggleError("");
+    try {
+      if (toggleTarget.active) {
+        await studentService.deactivate(toggleTarget._id);
+        toast.success(`${toggleTarget.name} foi desativado com sucesso.`);
+      } else {
+        await studentService.reactivate(toggleTarget._id);
+        toast.success(`${toggleTarget.name} foi reativado com sucesso.`);
+      }
+      setToggleTarget(null);
+      studentReloadAll();
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setToggleError(e.message ?? "Erro ao alterar status do estudante");
+    } finally {
+      setToggleLoading(false);
+    }
+  };
 
   const [exportLoading, setExportLoading] = useState(false);
 
@@ -219,11 +241,39 @@ export default function StudentsPage() {
       const today = new Date().toISOString().slice(0, 10);
       const label = studentTab === "active" ? "ativos" : "desativados";
       downloadCsv(buildStudentsCsv(studentFiltered as Parameters<typeof buildStudentsCsv>[0]), `alunos_${label}_${today}.csv`);
+      toast.success(`${studentTotal} ${studentTotal === 1 ? "aluno exportado" : "alunos exportados"} com sucesso.`);
+    } catch {
+      toast.error("Erro ao exportar. Tente novamente.");
     } finally {
       setExportLoading(false);
     }
   };
-  const handleBanned = () => { setViewingStudent(null); banReload(); studentReloadAll(); };
+
+  const handleBanned = () => {
+    const name = viewingStudent?.name;
+    setViewingStudent(null);
+    banReload();
+    studentReloadAll();
+    if (name) toast.success(`${name} foi banido do sistema.`);
+  };
+
+  // ── Status toggle column ──────────────────────────────────────────
+  const statusColumn: Column<Student> = {
+    key: "status",
+    label: "Status",
+    render: (student) => (
+      <button
+        onClick={(e) => { e.stopPropagation(); setToggleTarget(student); }}
+        className={`text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer transition-colors ${
+          student.active
+            ? "bg-success-container text-on-success border-success/30 hover:bg-success/20 hover:border-success/50"
+            : "bg-surface-container-high text-on-surface-variant border-outline-variant/50 hover:bg-surface-container-highest hover:border-outline-variant"
+        }`}
+      >
+        {student.active ? "Ativo" : "Inativo"}
+      </button>
+    ),
+  };
 
   // ── Student action column ─────────────────────────────────────────
   const actionsColumn: Column<Student> = {
@@ -234,7 +284,7 @@ export default function StudentsPage() {
       <div className="relative inline-block text-left">
         <button
           onClick={(e) => { e.stopPropagation(); setOpenDropdownId(openDropdownId === student._id ? null : student._id); }}
-          className="size-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
+          className="size-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto cursor-pointer"
         >
           <span className="material-symbols-outlined text-lg">more_vert</span>
         </button>
@@ -243,14 +293,14 @@ export default function StudentsPage() {
             <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenDropdownId(null); }} />
             <div className="absolute right-0 mt-2 w-36 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
               {[
-                { icon: "visibility", label: "Ver",         action: () => { setViewingStudent(student); setOpenDropdownId(null); } },
-                { icon: "edit",       label: "Editar",       action: () => { setSelected(student);       setOpenDropdownId(null); } },
-                { icon: "badge",      label: "Carteirinha",  action: () => { setViewingCard(student);    setOpenDropdownId(null); } },
+                { icon: "visibility",  label: "Ver",         action: () => { setViewingStudent(student); setOpenDropdownId(null); } },
+                { icon: "folder_open", label: "Documentos",  action: () => { setDocsStudent(student);    setOpenDropdownId(null); } },
+                { icon: "badge",       label: "Carteirinha", action: () => { setViewingCard(student);    setOpenDropdownId(null); } },
               ].map(({ icon, label, action }) => (
                 <button
                   key={label}
                   onClick={(e) => { e.stopPropagation(); action(); }}
-                  className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
+                  className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-lg">{icon}</span>
                   {label}
@@ -272,14 +322,23 @@ export default function StudentsPage() {
       <button
         onClick={() => setUnbanTarget(entry)}
         title="Remover banimento"
-        className="size-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-success hover:bg-success/10 transition-colors ml-auto"
+        className="size-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-success hover:bg-success/10 transition-colors ml-auto cursor-pointer"
       >
-        <span className="material-symbols-outlined text-lg">shield_check</span>
+        <ShieldCheck className="size-4" />
       </button>
     ),
   };
 
-  const studentColumns = [...STUDENT_COLUMNS, actionsColumn];
+  // STUDENT_COLUMNS: [name, email, institution, shift, createdAt] (status removed — now interactive)
+  const studentColumns = [
+    STUDENT_COLUMNS[0], // name
+    STUDENT_COLUMNS[1], // email
+    STUDENT_COLUMNS[2], // institution
+    STUDENT_COLUMNS[3], // shift
+    statusColumn,
+    STUDENT_COLUMNS[4], // createdAt
+    actionsColumn,
+  ];
   const banColumns = [...BAN_COLUMNS, banActionsColumn];
 
   const isBanned = topTab === "banned";
@@ -305,15 +364,24 @@ export default function StudentsPage() {
             )}
           </div>
           {isStudentTab && (
-            <Link href="/admin/students/new">
-              <Button variant="primary" size="sm">Adicionar estudante</Button>
-            </Link>
+            <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
+              Adicionar estudante
+            </Button>
           )}
         </div>
 
-        {/* Toolbar — only tabs; search and export live inside each DataTable */}
-        <div className="px-4 pb-3">
+        {/* Toolbar */}
+        <div className="px-4 pb-3 flex items-center gap-3">
           <Tabs items={TAB_ITEMS} value={topTab} onChange={handleTabChange} />
+          {isStudentTab && (
+            <button
+              onClick={() => setSortAsc((v) => !v)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer text-on-surface-variant border border-outline-variant/50 bg-surface-container hover:bg-surface-container-high hover:text-on-surface transition-colors"
+            >
+              {sortAsc ? <ArrowUpAZ className="size-4" /> : <ArrowDownAZ className="size-4" />}
+              {sortAsc ? "A–Z" : "Z–A"}
+            </button>
+          )}
         </div>
 
         {/* Table — students */}
@@ -389,22 +457,43 @@ export default function StudentsPage() {
         )}
       </main>
 
-      {selected && (
-        <StudentModal
-          student={selected}
-          isBanned={bannedIds.has(selected._id)}
-          onClose={() => setSelected(null)}
-          onUpdated={handleStudentReload}
-          onDeactivated={handleStudentReload}
-          onReactivated={handleStudentReload}
+      {createOpen && (
+        <StudentCreateModal
+          open
+          onClose={() => setCreateOpen(false)}
+          onCreated={studentReloadAll}
         />
       )}
       {viewingStudent && (
         <StudentInfoModal
           student={viewingStudent}
           onClose={() => setViewingStudent(null)}
-          onEdit={() => { setSelected(viewingStudent); setViewingStudent(null); }}
           onBanned={handleBanned}
+        />
+      )}
+      {docsStudent && (
+        <StudentDocumentsModal
+          studentId={docsStudent._id}
+          studentName={docsStudent.name}
+          onClose={() => setDocsStudent(null)}
+        />
+      )}
+      {toggleTarget && (
+        <ConfirmModal
+          open
+          onClose={() => { setToggleError(""); setToggleTarget(null); }}
+          onConfirm={handleConfirmToggle}
+          loading={toggleLoading}
+          error={toggleError}
+          title={toggleTarget.active ? "Desativar estudante?" : "Reativar estudante?"}
+          icon={toggleTarget.active ? UserX : CheckCircle2}
+          variant={toggleTarget.active ? "danger" : "success"}
+          description={
+            toggleTarget.active
+              ? <><strong>{toggleTarget.name}</strong> perderá acesso ao sistema imediatamente. O cadastro poderá ser reativado posteriormente.</>
+              : <><strong>{toggleTarget.name}</strong> recuperará acesso ao sistema imediatamente.</>
+          }
+          confirmLabel={toggleTarget.active ? "Sim, desativar" : "Sim, reativar"}
         />
       )}
       {viewingCardStudent && (
@@ -415,7 +504,13 @@ export default function StudentsPage() {
           open
           entry={unbanTarget}
           onClose={() => setUnbanTarget(null)}
-          onSuccess={() => { setUnbanTarget(null); banReload(); studentReloadAll(); }}
+          onSuccess={() => {
+            const name = unbanTarget?.name;
+            setUnbanTarget(null);
+            banReload();
+            studentReloadAll();
+            if (name) toast.success(`Banimento de ${name} removido com sucesso.`);
+          }}
         />
       )}
     </>
