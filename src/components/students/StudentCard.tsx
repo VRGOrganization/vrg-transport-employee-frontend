@@ -1,4 +1,4 @@
-import { Pencil } from "lucide-react";
+import { Pencil, UserCheck } from "lucide-react";
 import { Student } from "@/types/student";
 import { getInitials } from "@/lib/utils/string";
 
@@ -8,9 +8,11 @@ interface StudentCardProps {
   onClick: () => void;
   /** Clique no botão de edição — redireciona para /admin/students/edit?id= */
   onEdit: () => void;
+  /** Clique no botão de reativação — exibido apenas para estudantes desativados */
+  onReactivate?: () => void;
 }
 
-export function StudentCard({ student, onClick, onEdit }: StudentCardProps) {
+export function StudentCard({ student, onClick, onEdit, onReactivate }: StudentCardProps) {
   const isInactive = !student.active;
 
   return (
@@ -55,6 +57,20 @@ export function StudentCard({ student, onClick, onEdit }: StudentCardProps) {
           </p>
         </div>
       </button>
+
+      {/* Reactivate button — exibido apenas para estudantes desativados */}
+      {isInactive && onReactivate && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onReactivate();
+          }}
+          title="Reativar estudante"
+          className="shrink-0 p-2 rounded-xl text-on-surface-variant hover:text-success hover:bg-success/10 transition-colors"
+        >
+          <UserCheck className="size-5" />
+        </button>
+      )}
 
       {/* Edit button — isolated so it doesn't trigger onClick */}
       <button
