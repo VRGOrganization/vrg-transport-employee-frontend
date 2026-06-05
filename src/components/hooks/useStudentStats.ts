@@ -54,7 +54,7 @@ export function useStudentStats(): UseStudentStatsResult {
         // Buscamos os dados do dashboard (para gráficos de transporte) e dados brutos em paralelo
         const [dashboardData, studentsRes, licensesRes, requestsRes] = await Promise.all([
           http.get<StudentDashboardStats>("/student/stats/dashboard"),
-          http.get<StudentsResponse>("/student"),
+          http.get<StudentsResponse>("/student/all"),
           http.get<LicenseRecord[]>("/license/all"),
           http.get<LicenseRequestRecord[]>("/license-request/all"),
         ]);
