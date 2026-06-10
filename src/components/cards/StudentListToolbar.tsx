@@ -11,6 +11,7 @@ interface StudentListToolbarProps {
   onSearchChange: (value: string) => void;
   onFilterChange: (filter: StudentFilter) => void;
   onPrintBatch: () => void;
+  showReview?: boolean;
 }
 
 export function StudentListToolbar({
@@ -21,6 +22,7 @@ export function StudentListToolbar({
   onSearchChange,
   onFilterChange,
   onPrintBatch,
+  showReview = false,
 }: StudentListToolbarProps) {
   return (
     <div className="mb-4 space-y-3">
@@ -45,16 +47,18 @@ export function StudentListToolbar({
             >
               Aprovados
             </FilterButton>
-            <FilterButton
-              active={filter === "all"}
-              onClick={() => onFilterChange("all")}
-            >
-              Todos
-            </FilterButton>
+            {showReview && (
+              <FilterButton
+                active={filter === "review"}
+                onClick={() => onFilterChange("review")}
+              >
+                Revisão
+              </FilterButton>
+            )}
           </div>
         </div>
 
-        {(filter === "all" || filter === "with-card") && (
+        {filter === "with-card" && (
           <div
             className={`relative flex items-center h-10 w-full rounded-xl border border-on-surface-variant 
               bg-surface-container-lowest shadow-(--shadow-card) transition-all duration-200

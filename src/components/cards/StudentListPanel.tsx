@@ -28,6 +28,10 @@ interface StudentListPanelProps {
   onPrintBatch: () => void;
   largeItems?: boolean;
   bus?: Bus | null;
+  showReview?: boolean;
+  /** Modo controlled: quando fornecidos, o filtro é gerido pelo componente pai. */
+  filter?: StudentFilter;
+  onFilterChange?: (filter: StudentFilter) => void;
 }
 
 export function StudentListPanel({
@@ -46,28 +50,26 @@ export function StudentListPanel({
   onToggleBatch,
   onPrintBatch,
   largeItems = false,
+  showReview = false,
+  filter: filterProp,
+  onFilterChange,
 }: StudentListPanelProps) {
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<StudentFilter>("pending");
+  const [internalFilter, setInternalFilter] = useState<StudentFilter>("pending");
 
-  // Clear search when filter is not 'all' to avoid stale queries
-  // and ensure search only applies when 'all' is active.
-  // Use effect to avoid calling setState during render.
+  // Controlled quando `filter`/`onFilterChange` são passados; senão usa estado interno.
+  const filter = filterProp ?? internalFilter;
+  const setFilter = (next: StudentFilter) => {
+    if (onFilterChange) onFilterChange(next);
+    else setInternalFilter(next);
+  };
+
+  // Mantém a busca apenas em "with-card" (Aprovados); limpa ao trocar de aba.
   useEffect(() => {
-    // keep search only when filter is 'all' or 'with-card' (Aprovados)
-    if (filter !== "all" && filter !== "with-card" && search) {
+    if (filter !== "with-card" && search) {
       setSearch("");
     }
   }, [filter]);
-
-  const cardRelatedStudentIds = useMemo(() => {
-    const ids = new Set<string>();
-
-    licensedStudentIds.forEach((id) => ids.add(id));
-    licenseRequests.forEach((request) => ids.add(request.studentId));
-
-    return ids;
-  }, [licensedStudentIds, licenseRequests]);
 
   // helper: resolve id from either string or nested object
   const resolveId = (v: unknown): string | null => {
@@ -123,8 +125,17 @@ export function StudentListPanel({
     return null;
   }, [bus, licenseRequests, filter]);
 
+  // Alunos com solicitação de atualização (type "update") pendente — aba "Revisão".
+  const reviewStudentIds = useMemo(() => {
+    return new Set(
+      licenseRequests
+        .filter((r) => r.type === "update" && r.status === "pending")
+        .map((r) => r.studentId),
+    );
+  }, [licenseRequests]);
+
   const filteredStudents = useMemo(() => {
-    const normalized = (filter === "all" || filter === "with-card") ? search.trim().toLowerCase() : "";
+    const normalized = filter === "with-card" ? search.trim().toLowerCase() : "";
     return students
       .filter((s) => s.active)
       .filter((s) => {
@@ -137,7 +148,8 @@ export function StudentListPanel({
           return waitlistedStudentIds.has(s._id);
         }
         if (filter === "with-card") return licensedStudentIds.has(s._id);
-        return cardRelatedStudentIds.has(s._id);
+        if (filter === "review") return reviewStudentIds.has(s._id);
+        return false;
       })
       .filter((s) => {
         if (!normalized) return true;
@@ -154,7 +166,8 @@ export function StudentListPanel({
     licensedStudentIds,
     pendingStudentIds,
     waitlistedStudentIds,
-    cardRelatedStudentIds,
+    reviewStudentIds,
+    priorityFilteredStudentIds,
   ]);
 
 
@@ -196,7 +209,9 @@ export function StudentListPanel({
       ? "Nenhuma solicitação pendente encontrada."
       : filter === "waitlisted"
         ? "Nenhuma solicitação na fila encontrada."
-        : "Nenhuma carteirinha encontrada.";
+        : filter === "review"
+          ? "Nenhuma solicitação de atualização pendente."
+          : "Nenhuma carteirinha encontrada.";
 
   return (
     <PanelCard as="section" className="md:p-5">
@@ -208,6 +223,7 @@ export function StudentListPanel({
         onSearchChange={setSearch}
         onFilterChange={setFilter}
         onPrintBatch={onPrintBatch}
+        showReview={showReview}
       />
 
       {loading && (

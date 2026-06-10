@@ -116,7 +116,7 @@ export interface PreviewItem {
   dataUrl: string | null;
 }
 
-export type StudentFilter = "pending" | "waitlisted" | "all" | "with-card";
+export type StudentFilter = "pending" | "waitlisted" | "with-card" | "review";
 
 export interface RejectionReasonConfig {
   label: string;

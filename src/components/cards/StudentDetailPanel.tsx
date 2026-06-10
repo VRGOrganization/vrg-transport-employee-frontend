@@ -12,11 +12,7 @@ import type {
   StudentRecord,
 } from "@/types/cards.types";
 import type { BusRoute, Bus } from "@/types/university.types";
-
-function busLabel(route: BusRoute | Bus | null): string | null {
-  if (!route) return null;
-  return (route as BusRoute).lineNumber ?? (route as Bus).identifier ?? null;
-}
+import { busLabel } from "@/lib/busLabel";
 import { AllocationSummaryCard } from "./AllocationSummaryCard";
 import { ApprovalFooter } from "./ApprovalFooter";
 import { DocumentsGrid } from "./DocumentsGrid";
