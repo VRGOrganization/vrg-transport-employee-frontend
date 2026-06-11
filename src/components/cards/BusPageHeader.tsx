@@ -1,16 +1,18 @@
-import { ArrowLeft, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { ArrowLeft } from "lucide-react";
 import type { Bus } from "@/types/university.types";
-import { AutoRefreshIndicator } from "./AutoRefreshIndicator";
+import { AutoRefreshSettings } from "./AutoRefreshSettings";
 import { BusCapacityBadge } from "./BusCapacityBadge";
 
 interface BusPageHeaderProps {
   bus: Bus;
-  onRefresh: () => void;
   onBack: () => void;
   isRefreshing: boolean;
   autoRefreshEnabled: boolean;
   onToggleAutoRefresh: () => void;
+  approved: number;
+  pending: number;
+  waitlisted: number;
+  review: number;
 }
 
 /**
@@ -19,11 +21,14 @@ interface BusPageHeaderProps {
  */
 export function BusPageHeader({
   bus,
-  onRefresh,
   onBack,
   isRefreshing,
   autoRefreshEnabled,
   onToggleAutoRefresh,
+  approved,
+  pending,
+  waitlisted,
+  review,
 }: BusPageHeaderProps) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -47,21 +52,19 @@ export function BusPageHeader({
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <AutoRefreshIndicator
+        <BusCapacityBadge
+          approved={approved}
+          capacity={bus.capacity ?? null}
+          pending={pending}
+          waitlisted={waitlisted}
+          review={review}
+        />
+        <AutoRefreshSettings
           isRefreshing={isRefreshing}
           enabled={autoRefreshEnabled}
           intervalSeconds={30}
           onToggle={onToggleAutoRefresh}
         />
-        <BusCapacityBadge bus={bus} />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onRefresh}
-          icon={<RefreshCw className="size-4" />}
-        >
-          Atualizar
-        </Button>
       </div>
     </div>
   );

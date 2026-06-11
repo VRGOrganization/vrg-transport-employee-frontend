@@ -26,10 +26,10 @@ export function FilterButton({
   return (
     <button
       onClick={onClick}
-      className={`rounded-lg px-3 py-1.5 font-medium transition ${
+      className={`cursor-pointer rounded-lg px-3 py-1.5 font-medium transition ${
         active
           ? "bg-surface-container-lowest text-on-surface shadow"
-          : "text-on-surface-variant"
+          : "text-on-surface-variant hover:text-on-surface"
       }`}
     >
       {children}

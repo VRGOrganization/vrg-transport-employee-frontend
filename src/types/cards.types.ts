@@ -2,6 +2,7 @@ export type PhotoType =
   | "ProfilePhoto"
   | "EnrollmentProof"
   | "CourseSchedule"
+  | "AcademicPeriodProof"
   | "LicenseImage"
   | "GovernmentId"
   | "ProofOfResidence";
@@ -137,6 +138,7 @@ export const PHOTO_TYPE_LABELS: Record<PhotoType, string> = {
   ProfilePhoto: "Foto 3x4",
   EnrollmentProof: "Comprovante de Matrícula",
   CourseSchedule: "Grade Horária",
+  AcademicPeriodProof: "Calendário Acadêmico",
   LicenseImage: "Carteirinha",
   GovernmentId: "Documento de identidade",
   ProofOfResidence: "Comprovante de residência",

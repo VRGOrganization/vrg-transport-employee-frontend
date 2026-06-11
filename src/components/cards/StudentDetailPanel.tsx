@@ -1,6 +1,6 @@
 import { Eye, History } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { ImageLightbox } from "@/components/cards/CardPageComponents";
+import { ImageLightbox, DocumentPreview } from "@/components/cards/CardPageComponents";
 import { http } from "@/services/http";
 import { PanelCard } from "@/components/ui/PanelCard";
 import type {
@@ -33,6 +33,7 @@ interface StudentDetailPanelProps {
   profileImage: string | null;
   enrollmentImage: string | null;
   scheduleImage: string | null;
+  academicPeriodImage: string | null;
   governmentImage: string | null;
   proofOfResidenceImage: string | null;
   selectedLicensePreview: string | null;
@@ -41,6 +42,8 @@ interface StudentDetailPanelProps {
   onOpenRejectModal: () => void;
   printingSingle: boolean;
   onPrintSingle: () => void;
+  /** Mostra o diff "antes/depois" dos documentos. Só na aba Revisão. */
+  showUpdateDiff?: boolean;
 }
 
 export function StudentDetailPanel({
@@ -54,6 +57,7 @@ export function StudentDetailPanel({
   profileImage,
   enrollmentImage,
   scheduleImage,
+  academicPeriodImage,
   governmentImage,
   proofOfResidenceImage,
   selectedLicensePreview,
@@ -62,6 +66,7 @@ export function StudentDetailPanel({
   onOpenRejectModal,
   printingSingle,
   onPrintSingle,
+  showUpdateDiff = false,
 }: StudentDetailPanelProps) {
   const [approving, setApproving] = useState(false);
   const [approveMessage, setApproveMessage] = useState("");
@@ -72,17 +77,23 @@ export function StudentDetailPanel({
     setHistoryOpen(false);
   }, [selected?._id]);
 
-  const licensePreviewItems = useMemo<PreviewItem[]>(() => {
-    const base: PreviewItem[] = [
+  const cardPreviewItem = useMemo<PreviewItem | null>(
+    () =>
+      selectedLicensePreview
+        ? { title: "Preview da Carteirinha", dataUrl: selectedLicensePreview }
+        : null,
+    [selectedLicensePreview],
+  );
+
+  const licensePreviewItems = useMemo<PreviewItem[]>(
+    () => [
       { title: "Foto 3x4", dataUrl: profileImage },
       { title: "Comprovante de Matrícula", dataUrl: enrollmentImage },
       { title: "Imagem da Grade Horária", dataUrl: scheduleImage },
-    ];
-    if (selectedLicensePreview) {
-      base.push({ title: "Preview da Carteirinha", dataUrl: selectedLicensePreview });
-    }
-    return base;
-  }, [profileImage, enrollmentImage, scheduleImage, selectedLicensePreview]);
+      { title: "Calendário Acadêmico", dataUrl: academicPeriodImage },
+    ],
+    [profileImage, enrollmentImage, scheduleImage, academicPeriodImage],
+  );
 
   const personalPreviewItems = useMemo<PreviewItem[]>(
     () => [
@@ -93,8 +104,12 @@ export function StudentDetailPanel({
   );
 
   const previewItems = useMemo(
-    () => [...licensePreviewItems, ...personalPreviewItems],
-    [licensePreviewItems, personalPreviewItems],
+    () => [
+      ...(cardPreviewItem ? [cardPreviewItem] : []),
+      ...licensePreviewItems,
+      ...personalPreviewItems,
+    ],
+    [cardPreviewItem, licensePreviewItems, personalPreviewItems],
   );
 
   const availablePreviewIndexes = useMemo(
@@ -198,13 +213,31 @@ export function StudentDetailPanel({
 
           <div className="border-t border-outline-variant/20" />
 
-          {currentLicenseRequest && (
+          {showUpdateDiff && currentLicenseRequest && (
             <UpdateRequestDiff
               request={currentLicenseRequest}
               savedImages={selectedImages}
               pendingImagesByType={pendingImagesByType}
               loadingImages={loadingSelected}
             />
+          )}
+
+          {cardPreviewItem && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-on-surface">
+                Preview da Carteirinha
+              </h3>
+              <DocumentPreview
+                title="Preview da Carteirinha"
+                dataUrl={cardPreviewItem.dataUrl}
+                loading={false}
+                onOpen={
+                  cardPreviewItem.dataUrl
+                    ? () => setLightboxIndex(previewItems.indexOf(cardPreviewItem))
+                    : undefined
+                }
+              />
+            </div>
           )}
 
           <DocumentsGrid

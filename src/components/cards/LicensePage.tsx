@@ -9,7 +9,7 @@ import BusSelectorPanel from "@/components/buses/BusSelectorPanel";
 import BusRouteSelectorPanel from "@/components/buses/BusRouteSelectorPanel";
 import { busApi } from "@/lib/universityApi";
 import { busLabel } from "@/lib/busLabel";
-import { AutoRefreshIndicator } from "@/components/cards/AutoRefreshIndicator";
+import { AutoRefreshSettings } from "@/components/cards/AutoRefreshSettings";
 import { CardsPageHeader } from "@/components/cards/CardsPageHeader";
 import { BusPageHeader } from "@/components/cards/BusPageHeader";
 import { CardsStatsRow } from "@/components/cards/CardsStatsRow";
@@ -81,6 +81,7 @@ export function LicensePage({ role }: LicensePageProps) {
     profileImage,
     enrollmentImage,
     scheduleImage,
+    academicPeriodImage,
     governmentImage,
     proofOfResidenceImage,
     selectedLicensePreview,
@@ -124,8 +125,8 @@ export function LicensePage({ role }: LicensePageProps) {
         <div className="mx-auto w-full space-y-6">
           {!selectedBus ? (
             <div className="flex items-start justify-between gap-4">
-              <CardsPageHeader onRefresh={reload} />
-              <AutoRefreshIndicator
+              <CardsPageHeader />
+              <AutoRefreshSettings
                 isRefreshing={isAutoRefreshing}
                 enabled={autoRefreshActive}
                 intervalSeconds={30}
@@ -135,11 +136,14 @@ export function LicensePage({ role }: LicensePageProps) {
           ) : (
             <BusPageHeader
               bus={selectedBus}
-              onRefresh={reload}
               onBack={() => setSelectedBusId(null)}
               isRefreshing={isAutoRefreshing}
               autoRefreshEnabled={autoRefreshActive}
               onToggleAutoRefresh={() => setAutoRefreshEnabled((v) => !v)}
+              approved={stats.withCard}
+              pending={stats.pending}
+              waitlisted={stats.waitlisted}
+              review={stats.review}
             />
           )}
 
@@ -153,7 +157,7 @@ export function LicensePage({ role }: LicensePageProps) {
           )}
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr]">
-            <div>
+            <div className="min-w-0">
               {!selectedBusId ? (
                 <BusSelectorPanel onChange={setSelectedBusId} className="mb-4" />
               ) : (
@@ -213,8 +217,9 @@ export function LicensePage({ role }: LicensePageProps) {
               )}
             </div>
 
-            <StudentDetailPanel
-              selected={selected}
+            <div className={`min-w-0 ${selectedBusId ? "" : "invisible pointer-events-none"}`} aria-hidden={!selectedBusId}>
+              <StudentDetailPanel
+                selected={selected}
               selectedImages={selectedImages}
               loadingSelected={loadingSelected}
               currentLicense={currentLicense}
@@ -225,6 +230,7 @@ export function LicensePage({ role }: LicensePageProps) {
               profileImage={profileImage}
               enrollmentImage={enrollmentImage}
               scheduleImage={scheduleImage}
+              academicPeriodImage={academicPeriodImage}
               governmentImage={governmentImage}
               proofOfResidenceImage={proofOfResidenceImage}
               selectedLicensePreview={selectedLicensePreview}
@@ -234,7 +240,9 @@ export function LicensePage({ role }: LicensePageProps) {
               onPrintSingle={() =>
                 handlePrintSingle(selected, printableCardsByStudentId, setApproveMessage)
               }
-            />
+              showUpdateDiff={activeFilter === "review"}
+              />
+            </div>
           </div>
         </div>
       </main>

@@ -20,12 +20,13 @@ function getImageUrl(doc: ImageRecord): string | null {
 }
 
 const DOC_ICON: Record<PhotoType, string> = {
-  ProfilePhoto:     "person",
-  EnrollmentProof:  "school",
-  CourseSchedule:   "calendar_today",
-  LicenseImage:     "badge",
-  GovernmentId:     "credit_card",
-  ProofOfResidence: "home",
+  ProfilePhoto:        "person",
+  EnrollmentProof:     "school",
+  CourseSchedule:      "calendar_today",
+  AcademicPeriodProof: "event_note",
+  LicenseImage:        "badge",
+  GovernmentId:        "credit_card",
+  ProofOfResidence:    "home",
 };
 
 const DOC_ORDER: PhotoType[] = [
@@ -34,6 +35,7 @@ const DOC_ORDER: PhotoType[] = [
   "ProofOfResidence",
   "EnrollmentProof",
   "CourseSchedule",
+  "AcademicPeriodProof",
   "LicenseImage",
 ];
 

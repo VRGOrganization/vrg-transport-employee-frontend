@@ -122,7 +122,7 @@ export default function BusSelectorPanel({
                 key={b._id}
                 type="button"
                 onClick={() => onChange?.(b._id)}
-                className={`w-full text-left rounded-xl border p-3 bg-surface hover:border-primary transition flex items-center justify-between ${
+                className={`w-full cursor-pointer text-left rounded-xl border p-3 bg-surface hover:border-primary hover:bg-surface-container-low transition flex items-center justify-between ${
                   value === b._id ? "border-primary bg-primary/10" : "border-outline-variant"
                 }`}
               >

@@ -24,6 +24,7 @@ interface UseStudentSelectionReturn {
   profileImage: string | null;
   enrollmentImage: string | null;
   scheduleImage: string | null;
+  academicPeriodImage: string | null;
   governmentImage: string | null;
   proofOfResidenceImage: string | null;
   selectedLicensePreview: string | null;
@@ -77,6 +78,7 @@ licenseRequests: LicenseRequestRecord[],
       if (normalized === "profilephoto") return "ProfilePhoto";
       if (normalized === "enrollmentproof") return "EnrollmentProof";
       if (normalized === "courseschedule") return "CourseSchedule";
+      if (normalized === "academicperiodproof") return "AcademicPeriodProof";
       if (normalized === "licenseimage") return "LicenseImage";
       if (normalized === "governmentid") return "GovernmentId";
       if (normalized === "proofofresidence") return "ProofOfResidence";
@@ -110,6 +112,12 @@ licenseRequests: LicenseRequestRecord[],
   const scheduleImage = normalizeMediaSource(
     pendingImagesByType.CourseSchedule ??
       selectedImages.find((img) => img.photoType === "CourseSchedule")?.documentImage ??
+      null,
+  );
+
+  const academicPeriodImage = normalizeMediaSource(
+    pendingImagesByType.AcademicPeriodProof ??
+      selectedImages.find((img) => img.photoType === "AcademicPeriodProof")?.documentImage ??
       null,
   );
 
@@ -204,6 +212,7 @@ licenseRequests: LicenseRequestRecord[],
     profileImage,
     enrollmentImage,
     scheduleImage,
+    academicPeriodImage,
     governmentImage,
     proofOfResidenceImage,
     selectedLicensePreview,

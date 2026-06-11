@@ -1,3 +1,4 @@
+import { Check, Square } from "lucide-react";
 import type { LicenseRequestRecord, StudentRecord } from "@/types/cards.types";
 
 interface StudentListItemProps {
@@ -28,52 +29,82 @@ export function StudentListItem({
   const isPartiallyWaitlisted = latestRequest?.status === "partially_waitlisted";
   const isRejected = latestRequest?.status === "rejected";
   const isCancelled = latestRequest?.status === "cancelled";
-  const baseClass = large
-    ? `w-full rounded-xl border p-6 transition ${
-        isSelected ? "border-primary bg-primary/8" : "border-outline-variant bg-surface-container-lowest"
-      }`
-    : `w-full rounded-xl border p-3 transition ${
-        isSelected ? "border-primary bg-primary/10" : "border-outline-variant bg-surface hover:border-primary/40"
-      }`;
 
   const isSelectable = selectable;
 
-  return (
-    <div className={baseClass}>
-      <div className={large ? "flex items-center justify-between gap-6" : "flex items-center justify-between gap-3"}>
-        <button
-          onClick={() => {
-            if (!isSelectable) return;
-            onSelect(student);
-          }}
-          aria-disabled={!isSelectable}
-          className={`min-w-0 flex-1 text-left ${!isSelectable ? "opacity-60 cursor-not-allowed" : ""}`}
-        >
-          <p className={large ? "truncate font-extrabold text-2xl text-on-surface" : "truncate font-semibold text-on-surface"}>{student.name}</p>
-          {!large && (
-            <>
-              <p className="truncate text-xs text-on-surface-variant">{student.email}</p>
-              <p className="truncate text-xs text-on-surface-variant">
-                {student.institution ?? "Instituição não informada"}
-              </p>
-            </>
-          )}
-          {large && (
-            <p className="mt-2 text-sm text-on-surface-variant">{student.institution ?? "Instituição não informada"} — {student.degree ?? ""}</p>
-          )}
-        </button>
+  const handleSelect = () => {
+    if (!isSelectable) return;
+    onSelect(student);
+  };
 
-        <div className="flex items-center gap-2">
+  const sizeClass = large
+    ? "h-32 items-center gap-6 p-6"
+    : "h-24 items-center gap-3 p-3";
+  const stateClass = isSelected
+    ? large
+      ? "border-primary bg-primary/8"
+      : "border-primary bg-primary/10"
+    : large
+      ? "border-outline-variant bg-surface-container-lowest"
+      : "border-outline-variant bg-surface";
+  const interactionClass = isSelectable
+    ? "cursor-pointer hover:border-primary/50 hover:bg-primary/5"
+    : "cursor-not-allowed opacity-60";
+  const batchClass = isInBatch ? "ring-2 ring-primary ring-offset-2 ring-offset-surface" : "";
+
+  return (
+    <div
+      role="button"
+      tabIndex={isSelectable ? 0 : -1}
+      aria-disabled={!isSelectable}
+      onClick={handleSelect}
+      onKeyDown={(e) => {
+        if (!isSelectable) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleSelect();
+        }
+      }}
+      className={`flex w-full justify-between overflow-hidden rounded-xl border outline-none transition focus-visible:ring-2 focus-visible:ring-primary/40 ${sizeClass} ${stateClass} ${interactionClass} ${batchClass}`}
+    >
+      <div className="min-w-0 flex-1 text-left">
+        <p className={large ? "truncate font-extrabold text-2xl text-on-surface" : "truncate font-semibold text-on-surface"}>{student.name}</p>
+        {!large && (
+          <>
+            <p className="truncate text-xs text-on-surface-variant">{student.email}</p>
+            <p className="truncate text-xs text-on-surface-variant">
+              {student.institution ?? "Instituição não informada"}
+            </p>
+          </>
+        )}
+        {large && (
+          <p className="mt-2 truncate text-sm text-on-surface-variant">{student.institution ?? "Instituição não informada"} — {student.degree ?? ""}</p>
+        )}
+      </div>
+
+      <div className="flex shrink-0 items-center gap-2">
           {hasCard && (
-            <label className="inline-flex items-center gap-1 rounded-md border border-outline-variant bg-surface-container-low px-2 py-1 text-[11px] text-on-surface-variant">
-              <input
-                type="checkbox"
-                checked={isInBatch}
-                onChange={() => onToggleBatch(student._id)}
-                className="size-3.5"
-              />
+            <button
+              type="button"
+              aria-pressed={isInBatch}
+              title={isInBatch ? "Remover da impressão em lote" : "Selecionar para impressão em lote"}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleBatch(student._id);
+              }}
+              className={`inline-flex cursor-pointer items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors ${
+                isInBatch
+                  ? "border-primary bg-primary/10 text-primary hover:bg-primary/20"
+                  : "border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-primary/40 hover:bg-surface-container"
+              }`}
+            >
+              {isInBatch ? (
+                <Check className="size-3.5" />
+              ) : (
+                <Square className="size-3.5" />
+              )}
               Lote
-            </label>
+            </button>
           )}
 
           <span
@@ -123,7 +154,6 @@ export function StudentListItem({
               🔒
             </span>
           )}
-        </div>
       </div>
     </div>
   );

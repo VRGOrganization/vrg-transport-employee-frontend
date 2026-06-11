@@ -37,6 +37,31 @@ export function ApprovalFooter({
   const canApprove = isPending && hasInstitution && !!selectedBusRouteLabel.trim();
   const canPrint = !!selectedLicensePreview && !isPdfDataUrl(selectedLicensePreview ?? "");
 
+  // Carteirinha já criada: só faz sentido reimprimir. Sem rota, recusar ou aprovar.
+  if (currentLicense) {
+    return (
+      <div className="border-t border-outline-variant bg-surface-container-lowest pt-3 pb-4 px-4 space-y-3">
+        {approveMessage && (
+          <div className="rounded-xl border border-outline-variant bg-surface p-3 text-xs text-on-surface">
+            {approveMessage}
+          </div>
+        )}
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="md"
+            icon={<Printer className="size-4" />}
+            disabled={!canPrint || printingSingle}
+            loading={printingSingle}
+            onClick={onPrintSingle}
+          >
+            Impressão única
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="border-t border-outline-variant bg-surface-container-lowest pt-3 pb-4 px-4 space-y-3">
       <div>

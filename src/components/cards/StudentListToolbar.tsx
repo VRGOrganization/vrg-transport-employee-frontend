@@ -39,7 +39,7 @@ export function StudentListToolbar({
               active={filter === "waitlisted"}
               onClick={() => onFilterChange("waitlisted")}
             >
-              Na fila
+              Em Espera
             </FilterButton>
             <FilterButton
               active={filter === "with-card"}
@@ -60,7 +60,7 @@ export function StudentListToolbar({
 
         {filter === "with-card" && (
           <div
-            className={`relative flex items-center h-10 w-full rounded-xl border border-on-surface-variant 
+            className={`relative flex items-center h-10 w-full rounded-xl border border-on-surface-variant
               bg-surface-container-lowest shadow-(--shadow-card) transition-all duration-200
               focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25
               `}
@@ -76,7 +76,7 @@ export function StudentListToolbar({
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Buscar por nome, e-mail ou instituição"
               data-testid="student-search-input"
-              className={`h-full w-full bg-transparent ml-2 pl-9 pr-3 text-sm text-on-surface 
+              className={`h-full w-full bg-transparent ml-2 pl-9 pr-3 text-sm text-on-surface
                 placeholder:text-on-surface-muted outline-none
               `}
             />

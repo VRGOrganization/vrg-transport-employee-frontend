@@ -17,7 +17,7 @@ interface UseCardsDataReturn {
   licensedStudentIds: Set<string>;
   pendingStudentIds: Set<string>;
   waitlistedStudentIds: Set<string>;
-  stats: { total: number; withCard: number; pending: number; waitlisted: number };
+  stats: { total: number; withCard: number; pending: number; waitlisted: number; review: number };
   reload: () => Promise<void>;
 }
 
@@ -152,14 +152,26 @@ export function useCardsData(bus?: Bus | null): UseCardsDataReturn {
     [licenseRequests],
   );
 
+  // Alunos com solicitação de atualização (type "update") pendente — aba "Revisão".
+  const reviewStudentIds = useMemo(
+    () =>
+      new Set(
+        licenseRequests
+          .filter((r) => r.type === "update" && r.status === "pending")
+          .map((r) => r.studentId),
+      ),
+    [licenseRequests],
+  );
+
   const stats = useMemo(() => {
     const activeStudents = students.filter((s) => s.active);
     const total = activeStudents.length;
     const withCard = activeStudents.filter((s) => licensedStudentIds.has(s._id)).length;
     const pending = activeStudents.filter((s) => pendingStudentIds.has(s._id)).length;
     const waitlisted = activeStudents.filter((s) => waitlistedStudentIds.has(s._id)).length;
-    return { total, withCard, pending, waitlisted };
-  }, [students, licensedStudentIds, pendingStudentIds, waitlistedStudentIds]);
+    const review = activeStudents.filter((s) => reviewStudentIds.has(s._id)).length;
+    return { total, withCard, pending, waitlisted, review };
+  }, [students, licensedStudentIds, pendingStudentIds, waitlistedStudentIds, reviewStudentIds]);
 
   return {
     students,
