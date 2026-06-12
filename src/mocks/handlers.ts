@@ -15,7 +15,7 @@ export const handlers = [
     return HttpResponse.json(data);
   }),
   // Bus list with queue counts for previews
-  http.get("/api/v1/bus/with-queue-counts", () => {
+  http.get("/api/v1/bus", () => {
     const now = new Date().toISOString();
     const data = [
       {
