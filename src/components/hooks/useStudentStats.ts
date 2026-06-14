@@ -56,7 +56,7 @@ export function useStudentStats(): UseStudentStatsResult {
           http.get<StudentDashboardStats>("/student/stats/dashboard"),
           http.get<StudentsResponse>("/student/all"),
           http.get<LicenseRecord[]>("/license/all"),
-          http.get<LicenseRequestRecord[]>("/license-request/all"),
+          http.get<LicenseRequestRecord[]>("/license-request"),
         ]);
 
         if (mountState.cancelled) return;

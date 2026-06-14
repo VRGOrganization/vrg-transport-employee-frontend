@@ -61,7 +61,7 @@ export function useCardsData(bus?: Bus | null): UseCardsDataReturn {
       const [studentsResponse, licensesResponse, requestsResponse] = await Promise.all([
         http.get<StudentsResponse>("/student"),
         http.get<LicenseRecord[]>("/license/all"),
-        http.get<LicenseRequestRecord[]>("/license-request/all"),
+        http.get<LicenseRequestRecord[]>("/license-request"),
       ]);
 
       const resolvedStudents = normalizeArrayResponse<StudentRecord>(studentsResponse);

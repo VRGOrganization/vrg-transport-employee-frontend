@@ -42,7 +42,7 @@ export function AcceptDocumentsButton({
     setMessage("");
     setIsError(false);
     try {
-      await http.patch(`/license-request/approve/${licenseRequest._id}`, {
+      await http.patch(`/license-request/${licenseRequest._id}/approve`, {
         institution,
         bus: selectedBusRouteLabel,
         ...(profileImage ? { photo: profileImage } : {}),

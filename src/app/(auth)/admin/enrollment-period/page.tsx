@@ -131,11 +131,14 @@ export default function AdminEnrollmentPeriodPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const resolvedActive: EnrollmentPeriod | null = await enrollmentPeriodService.getActive().catch((err: unknown) => {
-        const apiError = err as { status?: number };
-        if (apiError.status !== 404) throw err;
-        return null;
-      });
+      const resolvedActive: EnrollmentPeriod | null = await enrollmentPeriodService.getActive().then(
+        (res) => (res && typeof res === "object" && "_id" in res ? res : null),
+        (err: unknown) => {
+          const apiError = err as { status?: number };
+          if (apiError.status !== 404) throw err;
+          return null;
+        },
+      );
 
       const [periodsResponse, studentsResponse] = await Promise.all([
         enrollmentPeriodService.list(),
@@ -153,7 +156,7 @@ export default function AdminEnrollmentPeriodPage() {
 
       if (resolvedActive?._id) {
         const queueRes = await http.get<Paginated<LicenseRequestRecord>>(
-          `/enrollment-period/${resolvedActive._id}/waitlist`,
+          `/enrollment-period/${resolvedActive._id}/waitlisted`,
         );
         setWaitlistRequests(resolvePaginated(queueRes));
       } else {

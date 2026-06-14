@@ -85,7 +85,7 @@ export default function AdminDashboardPage() {
           employeeService.list(),
           http.get<Paginated<StudentRecord>>("/student").then(resolvePaginated),
           http.get<EnrollmentPeriodRecord>("/enrollment-period/active"),
-          http.get<Paginated<unknown>>("/license-request/all").then(resolvePaginated),
+          http.get<Paginated<unknown>>("/license-request").then(resolvePaginated),
         ]);
 
       const rows: UserRow[] = [];

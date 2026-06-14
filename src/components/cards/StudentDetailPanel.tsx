@@ -135,7 +135,7 @@ export function StudentDetailPanel({
     setApproving(true);
     setApproveMessage("");
     try {
-      await http.patch(`/license-request/approve/${currentLicenseRequest._id}`, {
+      await http.patch(`/license-request/${currentLicenseRequest._id}/approve`, {
         institution: selected.institution,
         bus: selectedBusIdentifier,
         ...(profileImage ? { photo: profileImage } : {}),

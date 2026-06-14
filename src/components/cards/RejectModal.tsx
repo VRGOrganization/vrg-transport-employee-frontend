@@ -57,7 +57,7 @@ export function RejectModal({
     setRejecting(true);
     setErrorMessage("");
     try {
-      await http.patch(`/license-request/reject/${currentLicenseRequest._id}`, {
+      await http.patch(`/license-request/${currentLicenseRequest._id}/reject`, {
         reasons: Array.from(selectedLabels),
         ...(customMessage.trim() ? { customMessage: customMessage.trim() } : {}),
       });
