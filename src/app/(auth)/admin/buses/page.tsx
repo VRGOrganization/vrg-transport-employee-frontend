@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { busApi } from "@/lib/universityApi";
+import { http } from "@/services/http";
+import { resolvePaginated, type Paginated } from "@/types/api";
+import { getApprovedBusStudents } from "@/lib/busStudents";
 import type { Bus } from "@/types/university.types";
+import type {
+  LicenseRecord,
+  LicenseRequestRecord,
+  StudentRecord,
+} from "@/types/cards.types";
 import { BusTable } from "@/components/buses/BusTable";
 import { BusFormModal } from "@/components/buses/BusFormModal";
 import { BusStudentsDrawer } from "@/components/buses/BusStudentsDrawer";
@@ -48,10 +56,21 @@ export default function BusesPage() {
     setLoading(true);
     setError("");
     try {
-      const data = statusTab === "active"
-        ? await busApi.listWithQueueCounts()
-        : await busApi.listInactive();
-      setBuses(data);
+      const [data, students, licenses, requests] = await Promise.all([
+        statusTab === "active"
+          ? busApi.listWithQueueCounts()
+          : busApi.listInactive(),
+        http.get<Paginated<StudentRecord>>("/student").then(resolvePaginated),
+        http.get<Paginated<LicenseRecord>>("/license/all").then(resolvePaginated),
+        http.get<Paginated<LicenseRequestRecord>>("/license-request").then(resolvePaginated),
+      ]);
+      // Recompute filled count from approved cards so the fleet card matches
+      // exactly what /admin/cards shows under "Aprovados" for each bus.
+      const withCounts = data.map((bus) => ({
+        ...bus,
+        filledSlotsTotal: getApprovedBusStudents(students, licenses, requests, bus).length,
+      }));
+      setBuses(withCounts);
     } catch {
       setError("Não foi possível carregar os ônibus.");
     } finally {

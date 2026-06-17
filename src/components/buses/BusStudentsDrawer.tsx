@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { busApi, universityApi } from "@/lib/universityApi";
+import { http } from "@/services/http";
+import { resolvePaginated, type Paginated } from "@/types/api";
+import { getApprovedBusStudents } from "@/lib/busStudents";
 import type { Bus, BusStudent } from "@/types/university.types";
+import type {
+  LicenseRecord,
+  LicenseRequestRecord,
+  StudentRecord,
+} from "@/types/cards.types";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { AlertCircle, Bus as BusIcon, Users, UserX, X } from "lucide-react";
 
@@ -54,15 +62,23 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
   const [message, setMessage] = useState("");
   const [universityCache, setUniversityCache] = useState<Record<string, string>>({});
 
+  const loadStudents = useCallback(async (target: Bus) => {
+    const [studentsRes, licensesRes, requestsRes] = await Promise.all([
+      http.get<Paginated<StudentRecord>>("/student").then(resolvePaginated),
+      http.get<Paginated<LicenseRecord>>("/license/all").then(resolvePaginated),
+      http.get<Paginated<LicenseRequestRecord>>("/license-request").then(resolvePaginated),
+    ]);
+    return getApprovedBusStudents(studentsRes, licensesRes, requestsRes, target);
+  }, []);
+
   useEffect(() => {
     if (!bus) return;
     setLoading(true);
-    busApi
-      .studentsByBusId(bus._id)
+    loadStudents(bus)
       .then(setStudents)
       .catch(() => setStudents([]))
       .finally(() => setLoading(false));
-  }, [bus]);
+  }, [bus, loadStudents]);
 
   useEffect(() => {
     if (!bus) return;
@@ -93,7 +109,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
       await busApi.releaseSlots(bus._id, true);
       setMessage("Vagas liberadas com sucesso.");
       setLoading(true);
-      const list = await busApi.studentsByBusId(bus._id);
+      const list = await loadStudents(bus);
       setStudents(list);
     } catch (err: unknown) {
       const e = err as { message?: string };
@@ -109,7 +125,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
 
   const busSlots = bus.universitySlots ?? [];
   const busUniversityIds = bus.universityIds ?? [];
-  const filledSlotsTotal = bus.filledSlotsTotal ?? students.length;
+  const filledSlotsTotal = students.length;
 
   const grouped = students.reduce((acc, s) => {
     const key =
@@ -195,7 +211,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
                   className="px-2.5 py-0.5 rounded-full bg-surface-container-high text-xs font-medium text-on-surface-variant"
                 >
                   {getAcronym(s.universityId)}
-                  <span className="ml-2 text-[10px] text-on-surface-muted">P{s.priorityOrder}{s.filledSlots != null ? ` • ${s.filledSlots}` : ""}</span>
+                  <span className="ml-2 text-[10px] text-on-surface-muted">P{s.priorityOrder} • {(grouped[typeof s.universityId === "string" ? s.universityId : s.universityId._id] ?? []).length}</span>
                 </span>
               ))}
             </div>
