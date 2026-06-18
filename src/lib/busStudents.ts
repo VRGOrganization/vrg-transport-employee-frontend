@@ -76,14 +76,41 @@ export function getApprovedBusStudents(
     }
   }
 
+  // studentId -> licenseRequest for day extraction (prefer approved).
+  const requestByStudentForDays = new Map<string, LicenseRequestRecord>();
+  for (const r of matchingRequests) {
+    const sid = resolveId(r.studentId) ?? r.studentId;
+    if (!sid) continue;
+    if (r.status === "approved" || !requestByStudentForDays.has(sid)) {
+      requestByStudentForDays.set(sid, r);
+    }
+  }
+  const normalizedBusIdentifier = normalizeIdentifierValue(busIdentifier ?? "");
+
   return students
     .filter((s) => busStudentIds.has(s._id))
     .filter((s) => s.active && licensedStudentIds.has(s._id))
-    .map((s) => ({
-      _id: s._id,
-      name: s.name,
-      email: s.email,
-      shift: s.shift,
-      universityId: universityByStudent.get(s._id) ?? undefined,
-    }));
+    .map((s) => {
+      const req = requestByStudentForDays.get(s._id);
+      const days = [
+        ...new Set(
+          (req?.allocationSummary ?? [])
+            .filter((e) => {
+              if (e.status !== "active") return false;
+              if (e.busId && e.busId === busId) return true;
+              const normEntry = normalizeIdentifierValue(e.busIdentifier ?? "");
+              return !!(normalizedBusIdentifier && normEntry && normalizedBusIdentifier === normEntry);
+            })
+            .map((e) => e.day),
+        ),
+      ];
+      return {
+        _id: s._id,
+        name: s.name,
+        email: s.email,
+        shift: s.shift,
+        universityId: universityByStudent.get(s._id) ?? undefined,
+        days,
+      };
+    });
 }

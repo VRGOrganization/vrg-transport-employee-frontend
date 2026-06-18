@@ -66,6 +66,7 @@ export interface BusStudent {
         name?: string;
         acronym?: string;
       };
+  days?: string[];
 }
 
 export interface BusRouteDestination {
