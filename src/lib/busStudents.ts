@@ -43,12 +43,11 @@ export function getApprovedBusStudents(
   // Same bus-membership filter used by useCardsData.
   const matchingRequests = licenseRequests.filter((request) => {
     const requestBusId = resolveId(request.busId);
-    // approved requests must match exact bus._id
-    if (request.status === "approved") return requestBusId === busId;
-
     if (requestBusId === busId) return true;
 
-    // compare normalized identifiers (strip leading zeros) against accessBusIdentifiers
+    // Aluno integral pode estar alocado em múltiplos ônibus (ida ≠ volta).
+    // accessBusIdentifiers lista todos os ônibus do request — checar em todos os
+    // statuses, inclusive approved.
     if (busIdentifier) {
       const normalizedSelected = normalizeIdentifierValue(busIdentifier);
       if (!normalizedSelected) return false;

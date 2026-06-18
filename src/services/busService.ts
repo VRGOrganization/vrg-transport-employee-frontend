@@ -9,14 +9,25 @@ export const busService = {
   listWithQueueCounts: async () => {
     const [busList, queueResult] = await Promise.all([
       http.get<Paginated<Bus>>("/bus").then(resolvePaginated),
-      http.get<{ enrollmentPeriodId: string | null; buses: Array<{ busId: string; pendingCount: number; waitlistedCount: number }> }>("/bus/queue"),
+      http.get<{ enrollmentPeriodId: string | null; buses: Array<{ busId: string; busIdentifier?: string; pendingCount: number; waitlistedCount: number }> }>("/bus/queue"),
     ]);
-    const queueMap = new Map(
-      (queueResult.buses ?? []).map((q) => [q.busId, q])
+    const queueMapById = new Map(
+      (queueResult.buses ?? []).map((q) => [q.busId, q]),
+    );
+    const queueMapByIdentifier = new Map(
+      (queueResult.buses ?? [])
+        .filter((q) => !!q.busIdentifier)
+        .map((q) => [q.busIdentifier!, q]),
     );
     return busList.map((bus) => {
-      const q = queueMap.get((bus as unknown as { _id: string })._id);
-      return { ...bus, pendingCount: q?.pendingCount ?? (bus as unknown as { pendingCount?: number }).pendingCount, waitlistedCount: q?.waitlistedCount ?? (bus as unknown as { waitlistedCount?: number }).waitlistedCount };
+      const q =
+        queueMapById.get((bus as unknown as { _id: string })._id) ??
+        queueMapByIdentifier.get(bus.identifier);
+      return {
+        ...bus,
+        pendingCount: q?.pendingCount ?? (bus as unknown as { pendingCount?: number }).pendingCount,
+        waitlistedCount: q?.waitlistedCount ?? (bus as unknown as { waitlistedCount?: number }).waitlistedCount,
+      };
     });
   },
   create:             (data: { identifier: string; capacity?: number | null; shift?: string }) =>
