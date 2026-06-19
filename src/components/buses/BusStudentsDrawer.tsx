@@ -207,6 +207,9 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
 
   const busSlots = bus?.universitySlots ?? [];
   const busCapacity = bus?.capacity ?? null;
+  const maxDailyOccupancy = students.length === 0
+    ? 0
+    : Math.max(...DAYS.map((day) => students.filter((s) => s.days?.includes(day)).length));
 
   const orderedSlots = busSlots
     .slice()
@@ -267,7 +270,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
                     <p className="text-xs text-on-surface-variant">
                       {busCapacity == null
                         ? "Sem limite de vagas"
-                        : `${loading ? "—" : students.length} / ${busCapacity} vagas preenchidas`}
+                        : `${loading ? "—" : maxDailyOccupancy} / ${busCapacity} vagas preenchidas (pico/dia)`}
                     </p>
                   </div>
                 </div>

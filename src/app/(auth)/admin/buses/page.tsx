@@ -64,12 +64,14 @@ export default function BusesPage() {
         http.get<Paginated<LicenseRecord>>("/license/all").then(resolvePaginated),
         http.get<Paginated<LicenseRequestRecord>>("/license-request").then(resolvePaginated),
       ]);
-      // Recompute filled count from approved cards so the fleet card matches
-      // exactly what /admin/cards shows under "Aprovados" for each bus.
-      const withCounts = data.map((bus) => ({
-        ...bus,
-        filledSlotsTotal: getApprovedBusStudents(students, licenses, requests, bus).length,
-      }));
+      const DAYS_LIST = ["SEG", "TER", "QUA", "QUI", "SEX"] as const;
+      const withCounts = data.map((bus) => {
+        const approvedStudents = getApprovedBusStudents(students, licenses, requests, bus);
+        const filledSlotsTotal = approvedStudents.length === 0
+          ? 0
+          : Math.max(...DAYS_LIST.map((day) => approvedStudents.filter((s) => s.days?.includes(day)).length));
+        return { ...bus, filledSlotsTotal };
+      });
       setBuses(withCounts);
     } catch {
       setError("Não foi possível carregar os ônibus.");
