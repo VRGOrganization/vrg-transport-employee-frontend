@@ -5,16 +5,14 @@ import { DayPicker } from "react-day-picker";
 import type { DateRange } from "react-day-picker";
 import { ptBR } from "react-day-picker/locale";
 import "react-day-picker/dist/style.css";
-import { addMonths, format, parseISO, startOfDay } from "date-fns";
+import { addMonths, format, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { busApi } from "@/lib/universityApi";
 import type { EnrollmentPeriod } from "@/types/enrollmentPeriod";
 
 interface EnrollmentPeriodFormPayload {
   startDate: string;
   endDate: string;
-  totalSlots: number;
   licenseValidityMonths: number;
 }
 
@@ -30,14 +28,12 @@ interface EnrollmentPeriodModalProps {
 interface FormState {
   startDate: string;
   endDate: string;
-  totalSlots: string;
   licenseValidityMonths: string;
 }
 
 interface FormErrors {
   startDate: string;
   endDate: string;
-  totalSlots: string;
   licenseValidityMonths: string;
   general: string;
 }
@@ -45,7 +41,6 @@ interface FormErrors {
 const EMPTY_ERRORS: FormErrors = {
   startDate: "",
   endDate: "",
-  totalSlots: "",
   licenseValidityMonths: "",
   general: "",
 };
@@ -79,7 +74,6 @@ function buildInitialForm(period: EnrollmentPeriod | null): FormState {
     return {
       startDate: "",
       endDate: "",
-      totalSlots: "",
       licenseValidityMonths: "6",
     };
   }
@@ -87,7 +81,6 @@ function buildInitialForm(period: EnrollmentPeriod | null): FormState {
   return {
     startDate: toInputDate(period.startDate),
     endDate: toInputDate(period.endDate),
-    totalSlots: String(period.totalSlots),
     licenseValidityMonths: String(period.licenseValidityMonths),
   };
 }
@@ -104,9 +97,6 @@ export function EnrollmentPeriodModal({
   const [errors, setErrors] = useState<FormErrors>(EMPTY_ERRORS);
   const [startDateText, setStartDateText] = useState<string>(() => isoToBR(buildInitialForm(period).startDate));
   const [endDateText, setEndDateText] = useState<string>(() => isoToBR(buildInitialForm(period).endDate));
-  const [busCount, setBusCount] = useState<number>(0);
-  const [maxSlotsFromBuses, setMaxSlotsFromBuses] = useState<number>(0);
-  const [loadingBusMin, setLoadingBusMin] = useState<boolean>(false);
   const [range, setRange] = useState<DateRange | undefined>(() => {
     if (!period) return undefined;
     const from = period.startDate ? new Date(period.startDate) : undefined;
@@ -141,48 +131,6 @@ export function EnrollmentPeriodModal({
     return () => window.removeEventListener("resize", update);
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const mountState = { cancelled: false };
-
-    const load = async () => {
-      setLoadingBusMin(true);
-      try {
-        const buses = await busApi.listWithQueueCounts();
-        if (mountState.cancelled) return;
-        const allBuses = Array.isArray(buses) ? buses : [];
-        const totalCapacity = allBuses.reduce((acc: number, b: any) => {
-          const cap = b?.capacity;
-          return typeof cap === "number" && cap > 0 ? acc + cap : acc;
-        }, 0);
-        if (!mountState.cancelled) {
-          setBusCount(allBuses.length);
-          setMaxSlotsFromBuses(totalCapacity);
-        }
-      } catch (e) {
-        if (!mountState.cancelled) {
-          setBusCount(0);
-          setMaxSlotsFromBuses(0);
-        }
-      } finally {
-        if (!mountState.cancelled) setLoadingBusMin(false);
-      }
-    };
-
-    void load();
-    return () => {
-      mountState.cancelled = true;
-    };
-  }, [open]);
-
-  const minAllowedSlots = useMemo(() => {
-    return period?.filledSlots ?? 0;
-  }, [period]);
-
-  const maxAllowedSlots = useMemo(() => {
-    return maxSlotsFromBuses > 0 ? maxSlotsFromBuses : null;
-  }, [maxSlotsFromBuses]);
-
   const licenseExpiryDate = useMemo(() => {
     if (!form.endDate) return null;
     const m = Number(form.licenseValidityMonths);
@@ -195,8 +143,6 @@ export function EnrollmentPeriodModal({
       return null;
     }
   }, [form.endDate, form.licenseValidityMonths]);
-
-  const totalSlotsNumber = Number(form.totalSlots) || 0;
 
   const setField = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -254,28 +200,17 @@ export function EnrollmentPeriodModal({
     if (!form.startDate) nextErrors.startDate = "Data de início é obrigatória.";
     if (!form.endDate) nextErrors.endDate = "Data de fim é obrigatória.";
 
-    const totalSlots = Number(form.totalSlots);
     const licenseValidityMonths = Number(form.licenseValidityMonths);
 
-    if (!Number.isInteger(totalSlots) || totalSlots < 1) {
-      nextErrors.totalSlots = "Quantidade de vagas deve ser maior ou igual a 1.";
-    } else if (minAllowedSlots > 0 && totalSlots < minAllowedSlots) {
-      nextErrors.totalSlots = `Quantidade de vagas não pode ser menor que ${minAllowedSlots} (vagas já preenchidas).`;
-    } else if (maxAllowedSlots !== null && totalSlots > maxAllowedSlots) {
-      nextErrors.totalSlots = `Quantidade de vagas não pode exceder a capacidade total dos ônibus (${maxAllowedSlots} vagas).`;
-    }
-
     if (!Number.isInteger(licenseValidityMonths) || licenseValidityMonths < 1) {
-      nextErrors.licenseValidityMonths =
-        "Validade deve ser maior ou igual a 1 mês.";
+      nextErrors.licenseValidityMonths = "Validade deve ser maior ou igual a 1 mês.";
     }
 
     if (form.startDate && form.endDate) {
       const start = new Date(`${form.startDate}T00:00:00.000Z`);
       const end = new Date(`${form.endDate}T23:59:59.999Z`);
       if (end <= start) {
-        nextErrors.endDate =
-          "Data de fim deve ser maior que a data de início.";
+        nextErrors.endDate = "Data de fim deve ser maior que a data de início.";
       }
     }
 
@@ -289,7 +224,6 @@ export function EnrollmentPeriodModal({
     return {
       startDate: `${form.startDate}T00:00:00.000Z`,
       endDate: `${form.endDate}T23:59:59.999Z`,
-      totalSlots,
       licenseValidityMonths,
     };
   };
@@ -388,29 +322,16 @@ export function EnrollmentPeriodModal({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="mb-1 block text-sm font-medium text-on-surface">
-              Quantidade de vagas
+              Capacidade (vagas-dia)
             </label>
-            <input
-              type="number"
-              min={Math.max(minAllowedSlots, 1)}
-              max={maxAllowedSlots ?? undefined}
-              step={1}
-              value={form.totalSlots}
-              onChange={(event) => setField("totalSlots", event.target.value)}
-              className="h-11 w-full rounded-xl border-2 border-on-surface-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Ex: 100"
-            />
-            {errors.totalSlots ? (
-              <p className="mt-1 text-xs text-error">{errors.totalSlots}</p>
-            ) : loadingBusMin ? (
-              <p className="mt-1 text-xs text-on-surface-variant">Carregando frota...</p>
-            ) : busCount > 0 ? (
-              <p className="mt-1 text-xs text-on-surface-variant">
-                {busCount} ônibus cadastrado{busCount !== 1 ? "s" : ""} · Máx. {maxSlotsFromBuses} vagas
-              </p>
-            ) : (
-              <p className="mt-1 text-xs text-on-surface-variant">Nenhum ônibus cadastrado.</p>
-            )}
+            <div className="h-11 flex items-center rounded-xl border-2 border-outline-variant/50 bg-surface-container-low px-3 text-sm text-on-surface-variant">
+              {period?.totalSlots != null
+                ? `${period.totalSlots} vagas-dia (derivado dos ônibus)`
+                : "Calculado automaticamente pelo backend"}
+            </div>
+            <p className="mt-1 text-xs text-on-surface-variant">
+              Capacidade = soma dos ônibus ativos × dias úteis. Não editável.
+            </p>
           </div>
 
           <div>

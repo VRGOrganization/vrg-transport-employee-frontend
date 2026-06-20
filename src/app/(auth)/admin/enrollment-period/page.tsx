@@ -21,7 +21,6 @@ import type { EnrollmentPeriod, WaitlistEntry } from "@/types/enrollmentPeriod";
 interface EnrollmentPeriodPayload {
   startDate: string;
   endDate: string;
-  totalSlots: number;
   licenseValidityMonths: number;
 }
 
