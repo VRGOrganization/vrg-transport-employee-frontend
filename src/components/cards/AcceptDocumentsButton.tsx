@@ -6,10 +6,7 @@ import type { LicenseRequestRecord } from "@/types/cards.types";
 
 interface AcceptDocumentsButtonProps {
   licenseRequest: LicenseRequestRecord | null;
-  selectedBusRouteLabel: string;
-  hasInstitution: boolean;
   profileImage: string | null;
-  institution: string | undefined;
   onSuccess: () => Promise<void>;
 }
 
@@ -20,10 +17,7 @@ interface AcceptDocumentsButtonProps {
  */
 export function AcceptDocumentsButton({
   licenseRequest,
-  selectedBusRouteLabel,
-  hasInstitution,
   profileImage,
-  institution,
   onSuccess,
 }: AcceptDocumentsButtonProps) {
   const [loading, setLoading] = useState(false);
@@ -32,9 +26,7 @@ export function AcceptDocumentsButton({
 
   const disabled =
     !licenseRequest ||
-    licenseRequest.status !== "pending" ||
-    !hasInstitution ||
-    !selectedBusRouteLabel;
+    licenseRequest.status !== "pending";
 
   const handleClick = async () => {
     if (!licenseRequest || disabled || loading) return;
@@ -43,8 +35,6 @@ export function AcceptDocumentsButton({
     setIsError(false);
     try {
       await http.patch(`/license-request/${licenseRequest._id}/approve`, {
-        institution,
-        bus: selectedBusRouteLabel,
         ...(profileImage ? { photo: profileImage } : {}),
       });
       setMessage("Documentos aceitos com sucesso.");

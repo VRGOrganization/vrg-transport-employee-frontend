@@ -58,7 +58,7 @@ export interface LicenseRequestRecord {
   studentId: string;
   type: "initial" | "update";
   changedDocuments: string[];
-  status: "pending" | "approved" | "rejected" | "waitlisted" | "partially_waitlisted" | "cancelled";
+  status: "pending" | "approved" | "rejected" | "waitlisted" | "cancelled";
   rejectionReason: string | null;
   rejectedAt: string | null;
   licenseId: string | null;

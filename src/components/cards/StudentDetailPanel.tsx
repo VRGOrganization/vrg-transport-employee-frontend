@@ -11,8 +11,6 @@ import type {
   PreviewItem,
   StudentRecord,
 } from "@/types/cards.types";
-import type { BusRoute, Bus } from "@/types/university.types";
-import { busLabel } from "@/lib/busLabel";
 import { AllocationSummaryCard } from "./AllocationSummaryCard";
 import { ApprovalFooter } from "./ApprovalFooter";
 import { DocumentsGrid } from "./DocumentsGrid";
@@ -28,7 +26,6 @@ interface StudentDetailPanelProps {
   loadingSelected: boolean;
   currentLicense: LicenseRecord | null;
   currentLicenseRequest: LicenseRequestRecord | null;
-  selectedBusRoute: BusRoute | Bus | null;
   pendingImagesByType: Partial<Record<PhotoType, string>>;
   profileImage: string | null;
   enrollmentImage: string | null;
@@ -52,7 +49,6 @@ export function StudentDetailPanel({
   loadingSelected,
   currentLicense,
   currentLicenseRequest,
-  selectedBusRoute,
   pendingImagesByType,
   profileImage,
   enrollmentImage,
@@ -123,21 +119,10 @@ export function StudentDetailPanel({
       setApproveMessage("A solicitação ainda não está apta para aprovação.");
       return;
     }
-    if (!selected.institution?.trim()) {
-      setApproveMessage("Não é possível criar a carteirinha sem instituição no cadastro.");
-      return;
-    }
-    const selectedBusIdentifier = busLabel(selectedBusRoute);
-    if (!selectedBusIdentifier) {
-      setApproveMessage("Selecione uma rota antes de criar a carteirinha.");
-      return;
-    }
     setApproving(true);
     setApproveMessage("");
     try {
       await http.patch(`/license-request/${currentLicenseRequest._id}/approve`, {
-        institution: selected.institution,
-        bus: selectedBusIdentifier,
         ...(profileImage ? { photo: profileImage } : {}),
       });
       setApproveMessage("Carteirinha criada com sucesso.");
@@ -252,8 +237,6 @@ export function StudentDetailPanel({
           currentLicense={currentLicense}
           currentLicenseRequest={currentLicenseRequest}
           selectedLicensePreview={selectedLicensePreview}
-          selectedBusRouteLabel={busLabel(selectedBusRoute) ?? ""}
-          hasInstitution={!!selected.institution?.trim()}
           approving={approving}
           printingSingle={printingSingle}
           approveMessage={approveMessage}

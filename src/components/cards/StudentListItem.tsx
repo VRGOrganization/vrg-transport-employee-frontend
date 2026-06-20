@@ -26,7 +26,9 @@ export function StudentListItem({
 }: StudentListItemProps) {
   const isPending = latestRequest?.status === "pending";
   const isWaitlisted = latestRequest?.status === "waitlisted";
-  const isPartiallyWaitlisted = latestRequest?.status === "partially_waitlisted";
+  const isPartiallyWaitlisted =
+    hasCard &&
+    (latestRequest?.allocationSummary?.some((allocation) => allocation.status === "waitlisted") ?? false);
   const isRejected = latestRequest?.status === "rejected";
   const isCancelled = latestRequest?.status === "cancelled";
 
@@ -109,12 +111,12 @@ export function StudentListItem({
 
           <span
             className={`rounded-full px-2 py-1 text-[11px] font-semibold ${
-              hasCard
-                ? "bg-success/15 text-success"
+              isPartiallyWaitlisted
+                  ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                : hasCard
+                  ? "bg-success/15 text-success"
                 : isWaitlisted
                   ? "bg-warning-container text-on-warning"
-                : isPartiallyWaitlisted
-                  ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                 : isPending
                   ? "bg-warning/20 text-warning"
                   : isRejected
@@ -124,12 +126,12 @@ export function StudentListItem({
                       : "bg-outline-variant/30 text-on-surface-variant"
             }`}
           >
-            {hasCard
-              ? "Com carteirinha"
+            {isPartiallyWaitlisted
+                ? `Parcial${latestRequest?.filaPosition ? ` (#${latestRequest.filaPosition})` : ""}`
+              : hasCard
+                ? "Com carteirinha"
               : isWaitlisted
                 ? `Na fila${latestRequest?.filaPosition ? ` (#${latestRequest.filaPosition})` : ""}`
-              : isPartiallyWaitlisted
-                ? `Parcial${latestRequest?.filaPosition ? ` (#${latestRequest.filaPosition})` : ""}`
               : isPending
                 ? "Pendente"
                 : isRejected

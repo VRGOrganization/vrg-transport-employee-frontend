@@ -6,7 +6,7 @@ import {
   StudentRecord,
   StudentsResponse,
 } from "@/types/cards.types";
-import type { Bus } from "@/types/university.types";
+import type { University } from "@/types/university.types";
 
 interface UseCardsDataReturn {
   students: StudentRecord[];
@@ -41,13 +41,17 @@ function resolveId(value: unknown): string | null {
   return null;
 }
 
-function normalizeIdentifierValue(value: unknown): string | null {
-  const v = resolveId(value) ?? (typeof value === 'string' ? value : null);
-  if (!v) return null;
-  return String(v).replace(/^0+/, '');
-}
+type RawLicenseRequestRecord = Omit<
+  LicenseRequestRecord,
+  "studentId" | "busId" | "universityId" | "accessBusIdentifiers"
+> & {
+  studentId?: unknown;
+  busId?: unknown;
+  universityId?: unknown;
+  accessBusIdentifiers?: unknown;
+};
 
-export function useCardsData(bus?: Bus | null): UseCardsDataReturn {
+export function useCardsData(university?: University | null): UseCardsDataReturn {
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [licenses, setLicenses] = useState<LicenseRecord[]>([]);
   const [licenseRequests, setLicenseRequests] = useState<LicenseRequestRecord[]>([]);
@@ -69,48 +73,30 @@ export function useCardsData(bus?: Bus | null): UseCardsDataReturn {
       const resolvedRequests = normalizeArrayResponse<LicenseRequestRecord>(requestsResponse);
 
       // Normaliza campos que podem vir como ObjectId / nested objects
-      const normalizedRequests = resolvedRequests.map((r: any) => ({
+      const normalizedRequests = resolvedRequests.map((r: RawLicenseRequestRecord) => ({
         ...r,
-        studentId: resolveId((r as any).studentId) ?? r.studentId,
-        busId: resolveId((r as any).busId) ?? r.busId,
-        universityId: resolveId((r as any).universityId) ?? r.universityId,
+        studentId: resolveId(r.studentId) ?? (typeof r.studentId === "string" ? r.studentId : ""),
+        busId: resolveId(r.busId) ?? (typeof r.busId === "string" ? r.busId : null),
+        universityId: resolveId(r.universityId) ?? (typeof r.universityId === "string" ? r.universityId : null),
         accessBusIdentifiers: Array.isArray(r?.accessBusIdentifiers)
-          ? r.accessBusIdentifiers.map((x: any) => (typeof x === 'string' ? x : resolveId(x) ?? String(x)))
+          ? r.accessBusIdentifiers.map((x) => (typeof x === "string" ? x : resolveId(x) ?? String(x)))
           : [],
       })) as LicenseRequestRecord[];
 
       setLicenses(resolvedLicenses);
 
-      const busId = bus?._id ?? null;
-      const busIdentifier = bus?.identifier ?? null;
+      const universityId = university?._id ?? null;
 
-      if (busId || busIdentifier) {
+      if (universityId) {
         const filteredRequests = normalizedRequests.filter((request) => {
-          const requestBusId = resolveId((request as any).busId);
-          // approved requests must match exact bus._id
-          if (request.status === "approved") {
-            return requestBusId === busId;
-          }
-
-          if (requestBusId === busId) return true;
-
-          // compare normalized identifiers (strip leading zeros) against accessBusIdentifiers
-          if (busIdentifier) {
-            const normalizedSelected = normalizeIdentifierValue(busIdentifier);
-            if (!normalizedSelected) return false;
-
-            const access = (request.accessBusIdentifiers ?? []) as any[];
-            const normalizedAccess = access.map((a) => normalizeIdentifierValue(a)).filter(Boolean) as string[];
-            if (normalizedAccess.includes(normalizedSelected)) return true;
-          }
-
-          return false;
+          const requestUniversityId = resolveId(request.universityId);
+          return requestUniversityId === universityId;
         });
 
-        const busStudentIds = new Set(filteredRequests.map((request) => resolveId((request as any).studentId) ?? request.studentId));
-        const busStudents = resolvedStudents.filter((student) => busStudentIds.has(student._id));
+        const universityStudentIds = new Set(filteredRequests.map((request) => resolveId(request.studentId) ?? request.studentId));
+        const universityStudents = resolvedStudents.filter((student) => universityStudentIds.has(student._id));
 
-        setStudents(busStudents);
+        setStudents(universityStudents);
         setLicenseRequests(filteredRequests);
       } else {
         setStudents(resolvedStudents);
@@ -121,7 +107,7 @@ export function useCardsData(bus?: Bus | null): UseCardsDataReturn {
     } finally {
       setLoading(false);
     }
-  }, [bus]);
+  }, [university]);
 
   useEffect(() => {
     reload();
@@ -146,7 +132,7 @@ export function useCardsData(bus?: Bus | null): UseCardsDataReturn {
     () =>
       new Set(
         licenseRequests
-          .filter((r) => r.status === "waitlisted" || r.status === "partially_waitlisted")
+          .filter((r) => r.status === "waitlisted")
           .map((r) => r.studentId),
       ),
     [licenseRequests],

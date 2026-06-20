@@ -3,12 +3,34 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 
 import { StudentListPanel } from './StudentListPanel';
+import type { LicenseRequestRecord, StudentRecord } from '@/types/cards.types';
+import type { Bus } from '@/types/university.types';
 
-const makeStudent = (id: string, name: string, institution = 'Inst') => ({ _id: id, name, email: `${id}@mail.com`, active: true, institution });
-const makeRequest = (id: string, studentId: string, universityId: string, status: 'pending' | 'waitlisted' | 'partially_waitlisted' | 'approved' | 'rejected' | 'cancelled', createdAt = new Date().toISOString()) => ({ _id: id, studentId, universityId, status, createdAt, filaPosition: undefined });
+type StudentListPanelProps = React.ComponentProps<typeof StudentListPanel>;
 
-function renderPanel(props: any = {}) {
-  const defaultProps = {
+const makeStudent = (id: string, name: string, institution = 'Inst'): StudentRecord => ({ _id: id, name, email: `${id}@mail.com`, active: true, institution });
+const makeRequest = (
+  id: string,
+  studentId: string,
+  universityId: string,
+  status: 'pending' | 'waitlisted' | 'approved' | 'rejected' | 'cancelled',
+  createdAt = new Date().toISOString(),
+): LicenseRequestRecord => ({
+  _id: id,
+  studentId,
+  universityId,
+  status,
+  createdAt,
+  filaPosition: undefined,
+  type: 'initial',
+  changedDocuments: [],
+  rejectionReason: null,
+  rejectedAt: null,
+  licenseId: null,
+});
+
+function renderPanel(props: Partial<StudentListPanelProps> = {}) {
+  const defaultProps: StudentListPanelProps = {
     students: [],
     licenseRequests: [],
     licensedStudentIds: new Set<string>(),
@@ -24,10 +46,9 @@ function renderPanel(props: any = {}) {
     onToggleBatch: () => {},
     onPrintBatch: () => {},
     largeItems: false,
-    ...props,
   };
 
-  return render(<StudentListPanel {...defaultProps} />);
+  return render(<StudentListPanel {...defaultProps} {...props} />);
 }
 
 describe('StudentListPanel — prioridade dinâmica', () => {
@@ -41,7 +62,7 @@ describe('StudentListPanel — prioridade dinâmica', () => {
         { universityId: 'uni-1', priorityOrder: 1 },
         { universityId: 'uni-2', priorityOrder: 2 },
       ],
-    } as any;
+    } as Bus;
 
     const r1 = makeRequest('r1', 's1', 'uni-1', 'pending');
     const r2 = makeRequest('r2', 's2', 'uni-2', 'pending');
@@ -62,7 +83,7 @@ describe('StudentListPanel — prioridade dinâmica', () => {
         { universityId: 'uni-1', priorityOrder: 1 },
         { universityId: 'uni-2', priorityOrder: 2 },
       ],
-    } as any;
+    } as Bus;
 
     const r1 = makeRequest('r1', 's1', 'uni-1', 'waitlisted');
     const r2 = makeRequest('r2', 's2', 'uni-2', 'pending');
@@ -83,7 +104,7 @@ describe('StudentListPanel — prioridade dinâmica', () => {
         { universityId: 'uni-1', priorityOrder: 1 },
         { universityId: 'uni-2', priorityOrder: 2 },
       ],
-    } as any;
+    } as Bus;
 
     const r2 = makeRequest('r2', 's2', 'uni-2', 'pending');
 
@@ -103,18 +124,45 @@ describe('StudentListPanel — prioridade dinâmica', () => {
         { universityId: 'uni-1', priorityOrder: 1 },
         { universityId: 'uni-2', priorityOrder: 2 },
       ],
-    } as any;
+    } as Bus;
 
     const r1 = makeRequest('r1', 's1', 'uni-1', 'waitlisted');
     const r2 = makeRequest('r2', 's2', 'uni-2', 'pending');
 
     renderPanel({ students: [s1, s2], licenseRequests: [r1, r2], pendingStudentIds: new Set(['s2']), waitlistedStudentIds: new Set(['s1']), bus });
 
-    // switch filter to 'Na fila' (waitlisted)
-    const btn = screen.getByText('Na fila');
+    const btn = screen.getByText('Em Espera');
     fireEvent.click(btn);
 
     expect(screen.queryByText('Alice')).toBeTruthy();
     expect(screen.queryByText('Bob')).toBeNull();
+  });
+
+  it('na revisão, lista apenas solicitações update pendentes', () => {
+    const updatePending = makeStudent('s1', 'Update Pendente');
+    const initialPending = makeStudent('s2', 'Inicial Pendente');
+    const updateApproved = makeStudent('s3', 'Update Aprovado');
+
+    const r1 = {
+      ...makeRequest('r1', 's1', 'uni-1', 'pending'),
+      type: 'update',
+    } as LicenseRequestRecord;
+    const r2 = makeRequest('r2', 's2', 'uni-1', 'pending');
+    const r3 = {
+      ...makeRequest('r3', 's3', 'uni-1', 'approved'),
+      type: 'update',
+    } as LicenseRequestRecord;
+
+    renderPanel({
+      students: [updatePending, initialPending, updateApproved],
+      licenseRequests: [r1, r2, r3],
+      pendingStudentIds: new Set(['s1', 's2']),
+      filter: 'review',
+      showReview: true,
+    });
+
+    expect(screen.getByText('Update Pendente')).toBeInTheDocument();
+    expect(screen.queryByText('Inicial Pendente')).toBeNull();
+    expect(screen.queryByText('Update Aprovado')).toBeNull();
   });
 });

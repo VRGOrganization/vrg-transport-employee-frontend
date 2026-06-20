@@ -7,8 +7,6 @@ interface ApprovalFooterProps {
   currentLicense: LicenseRecord | null;
   currentLicenseRequest: LicenseRequestRecord | null;
   selectedLicensePreview: string | null;
-  selectedBusRouteLabel: string;
-  hasInstitution: boolean;
   approving: boolean;
   printingSingle: boolean;
   approveMessage: string;
@@ -21,8 +19,6 @@ export function ApprovalFooter({
   currentLicense,
   currentLicenseRequest,
   selectedLicensePreview,
-  selectedBusRouteLabel,
-  hasInstitution,
   approving,
   printingSingle,
   approveMessage,
@@ -31,10 +27,11 @@ export function ApprovalFooter({
   onPrintSingle,
 }: ApprovalFooterProps) {
   const isPending = currentLicenseRequest?.status === "pending";
-  const isPartiallyWaitlisted = currentLicenseRequest?.status === "partially_waitlisted";
-  const isWaitlisted =
-    currentLicenseRequest?.status === "waitlisted" || isPartiallyWaitlisted;
-  const canApprove = isPending && hasInstitution && !!selectedBusRouteLabel.trim();
+  const hasWaitlistedAllocation =
+    currentLicenseRequest?.allocationSummary?.some((allocation) => allocation.status === "waitlisted") ?? false;
+  const isPartiallyWaitlisted = !!currentLicense && hasWaitlistedAllocation;
+  const isWaitlisted = currentLicenseRequest?.status === "waitlisted";
+  const canApprove = isPending;
   const canPrint = !!selectedLicensePreview && !isPdfDataUrl(selectedLicensePreview ?? "");
 
   // Carteirinha já criada: só faz sentido reimprimir. Sem rota, recusar ou aprovar.
@@ -45,6 +42,11 @@ export function ApprovalFooter({
           <div className="rounded-xl border border-outline-variant bg-surface p-3 text-xs text-on-surface">
             {approveMessage}
           </div>
+        )}
+        {isPartiallyWaitlisted && (
+          <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+            Parcialmente na fila de espera. Alguns dias/períodos aguardam vagas.
+          </p>
         )}
         <div className="flex justify-end">
           <Button
@@ -65,20 +67,12 @@ export function ApprovalFooter({
   return (
     <div className="border-t border-outline-variant bg-surface-container-lowest pt-3 pb-4 px-4 space-y-3">
       <div>
-        <label className="mb-2 block text-sm font-semibold text-on-surface">
-          Rota selecionada
-        </label>
-        <div className="flex h-10 items-center rounded-xl border border-outline-variant bg-surface-container-low px-3 text-sm text-on-surface">
-          {selectedBusRouteLabel || "Selecione uma rota acima para continuar"}
-        </div>
-        <p className="mt-1 text-[11px] text-on-surface-variant">
-          A rota vem do catálogo selecionado acima e será usada na aprovação.
+        <p className="text-xs text-on-surface-variant">
+          A universidade e os ônibus da carteirinha serão derivados da solicitação aprovada.
         </p>
         {isWaitlisted && (
           <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-            {isPartiallyWaitlisted
-              ? `Parcialmente na fila de espera${currentLicenseRequest?.filaPosition ? ` (posição ${currentLicenseRequest.filaPosition})` : ""}. Alguns dias/períodos aguardam vagas. A aprovação fica disponível após promoção completa.`
-              : `Na fila de espera${currentLicenseRequest?.filaPosition ? ` (posição ${currentLicenseRequest.filaPosition})` : ""}. A aprovação fica disponível após promoção para pendente.`}
+            {`Na fila de espera${currentLicenseRequest?.filaPosition ? ` (posição ${currentLicenseRequest.filaPosition})` : ""}. A aprovação fica disponível após promoção para pendente.`}
           </p>
         )}
       </div>
@@ -125,9 +119,7 @@ export function ApprovalFooter({
 
         {isWaitlisted ? (
           <span className="rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700">
-            {isPartiallyWaitlisted
-              ? `Parcialmente na fila${currentLicenseRequest?.filaPosition ? ` - posição ${currentLicenseRequest.filaPosition}` : ""}`
-              : `Na fila de espera${currentLicenseRequest?.filaPosition ? ` - posição ${currentLicenseRequest.filaPosition}` : ""}`}
+            {`Na fila de espera${currentLicenseRequest?.filaPosition ? ` - posição ${currentLicenseRequest.filaPosition}` : ""}`}
           </span>
         ) : (
           <Button

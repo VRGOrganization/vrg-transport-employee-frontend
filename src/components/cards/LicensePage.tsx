@@ -5,20 +5,19 @@ import { useCardsData } from "@/components/hooks/useCardsData";
 import { useAutoRefresh } from "@/components/hooks/useAutoRefresh";
 import { usePdfPrint } from "@/components/hooks/usePdfPrint";
 import { useStudentSelection } from "@/components/hooks/useStudentSelection";
-import BusSelectorPanel from "@/components/buses/BusSelectorPanel";
-import BusRouteSelectorPanel from "@/components/buses/BusRouteSelectorPanel";
-import { busApi } from "@/lib/universityApi";
-import { busLabel } from "@/lib/busLabel";
+import UniversitySelectorPanel from "@/components/universities/UniversitySelectorPanel";
+import { universityService } from "@/services/universityService";
 import { AutoRefreshSettings } from "@/components/cards/AutoRefreshSettings";
 import { CardsPageHeader } from "@/components/cards/CardsPageHeader";
-import { BusPageHeader } from "@/components/cards/BusPageHeader";
+import { UniversityPageHeader } from "@/components/cards/UniversityPageHeader";
 import { CardsStatsRow } from "@/components/cards/CardsStatsRow";
 import { StudentListPanel } from "@/components/cards/StudentListPanel";
 import { StudentDetailPanel } from "@/components/cards/StudentDetailPanel";
 import { AcceptDocumentsButton } from "@/components/cards/AcceptDocumentsButton";
+import { ReissueCandidatesSection } from "@/components/cards/ReissueCandidatesSection";
 import { PdfPreviewModal } from "@/components/cards/PdfPreviewModal";
 import { RejectModal } from "@/components/cards/RejectModal";
-import type { Bus, BusRoute } from "@/types/university.types";
+import type { University } from "@/types/university.types";
 import type { StudentFilter } from "@/types/cards.types";
 
 interface LicensePageProps {
@@ -26,36 +25,37 @@ interface LicensePageProps {
 }
 
 export function LicensePage({ role }: LicensePageProps) {
-  const [selectedBusId, setSelectedBusId] = useState<string | null>(null);
-  const [selectedBus, setSelectedBus] = useState<Bus | null>(null);
-  const [selectedBusRoute, setSelectedBusRoute] = useState<BusRoute | null>(null);
+  void role;
+  const [selectedUniversityId, setSelectedUniversityId] = useState<string | null>(null);
+  const [selectedUniversity, setSelectedUniversity] = useState<University | null>(null);
   const [activeFilter, setActiveFilter] = useState<StudentFilter>("pending");
 
-  // Carrega o ônibus selecionado. Admin usa contagens de fila; employee usa lista simples.
+  const handleUniversityChange = (universityId: string | null) => {
+    setSelectedUniversityId(universityId);
+    if (!universityId) setSelectedUniversity(null);
+  };
+
+  // Carrega a universidade selecionada.
   useEffect(() => {
     const mountState = { cancelled: false };
-    setSelectedBusRoute(null);
-    if (!selectedBusId) {
-      setSelectedBus(null);
+    if (!selectedUniversityId) {
       return;
     }
 
     (async () => {
       try {
-        const arr =
-          role === "admin" ? await busApi.listWithQueueCounts() : await busApi.list();
-        const found = arr.find((b) => b._id === selectedBusId) ?? null;
-        if (!mountState.cancelled) setSelectedBus(found);
-        if (!mountState.cancelled) setSelectedBusRoute(found as unknown as BusRoute);
+        const arr = await universityService.list();
+        const found = arr.find((university) => university._id === selectedUniversityId) ?? null;
+        if (!mountState.cancelled) setSelectedUniversity(found);
       } catch {
-        if (!mountState.cancelled) setSelectedBus(null);
+        if (!mountState.cancelled) setSelectedUniversity(null);
       }
     })();
 
     return () => {
       mountState.cancelled = true;
     };
-  }, [selectedBusId, role]);
+  }, [selectedUniversityId]);
 
   const {
     students,
@@ -68,7 +68,7 @@ export function LicensePage({ role }: LicensePageProps) {
     waitlistedStudentIds,
     stats,
     reload,
-  } = useCardsData(selectedBus);
+  } = useCardsData(selectedUniversity);
 
   const {
     selected,
@@ -123,7 +123,7 @@ export function LicensePage({ role }: LicensePageProps) {
     <>
       <main className="bg-surface flex flex-col flex-1 px-6 py-8 md:px-10">
         <div className="mx-auto w-full space-y-6">
-          {!selectedBus ? (
+          {!selectedUniversity ? (
             <div className="flex items-start justify-between gap-4">
               <CardsPageHeader />
               <AutoRefreshSettings
@@ -134,9 +134,9 @@ export function LicensePage({ role }: LicensePageProps) {
               />
             </div>
           ) : (
-            <BusPageHeader
-              bus={selectedBus}
-              onBack={() => setSelectedBusId(null)}
+            <UniversityPageHeader
+              university={selectedUniversity}
+              onBack={() => handleUniversityChange(null)}
               isRefreshing={isAutoRefreshing}
               autoRefreshEnabled={autoRefreshActive}
               onToggleAutoRefresh={() => setAutoRefreshEnabled((v) => !v)}
@@ -147,7 +147,7 @@ export function LicensePage({ role }: LicensePageProps) {
             />
           )}
 
-          {!selectedBus && (
+          {!selectedUniversity && (
             <CardsStatsRow
               total={stats.total}
               withCard={stats.withCard}
@@ -158,20 +158,13 @@ export function LicensePage({ role }: LicensePageProps) {
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr]">
             <div className="min-w-0">
-              {!selectedBusId ? (
-                <BusSelectorPanel onChange={setSelectedBusId} className="mb-4" />
+              {!selectedUniversityId ? (
+                <UniversitySelectorPanel onChange={handleUniversityChange} className="mb-4" />
               ) : (
                 <>
-                  {role === "employee" && (
-                    <BusRouteSelectorPanel
-                      value={selectedBusRoute?._id ?? null}
-                      onChange={setSelectedBusRoute}
-                      className="mb-4"
-                    />
-                  )}
-                  {!selectedBus ? (
+                  {!selectedUniversity ? (
                     <div className="rounded-2xl border border-outline-variant bg-surface p-4 text-sm text-on-surface-variant">
-                      Carregando ônibus selecionado...
+                      Carregando universidade selecionada...
                     </div>
                   ) : (
                     <>
@@ -182,7 +175,6 @@ export function LicensePage({ role }: LicensePageProps) {
                         pendingStudentIds={pendingStudentIds}
                         waitlistedStudentIds={waitlistedStudentIds}
                         selectedStudent={selected}
-                        bus={selectedBus}
                         selectedForBatch={selectedForBatch}
                         printingBatch={printingBatch}
                         loading={loading}
@@ -197,18 +189,33 @@ export function LicensePage({ role }: LicensePageProps) {
                         showReview={true}
                         filter={activeFilter}
                         onFilterChange={setActiveFilter}
+                        title={activeFilter === "review" ? "Reenvio de documentos" : undefined}
+                        description={
+                          activeFilter === "review"
+                            ? "Solicitações de atualização pendentes para validar documentos reenviados."
+                            : undefined
+                        }
                       />
+
+                      {approveMessage && (
+                        <div className="mt-4 rounded-xl border border-outline-variant bg-surface p-3 text-sm text-on-surface">
+                          {approveMessage}
+                        </div>
+                      )}
 
                       {activeFilter === "review" && selected && (
                         <div className="mt-4">
                           <AcceptDocumentsButton
                             licenseRequest={currentLicenseRequest}
-                            selectedBusRouteLabel={busLabel(selectedBusRoute) ?? ""}
-                            hasInstitution={!!selected.institution?.trim()}
                             profileImage={profileImage}
-                            institution={selected.institution}
                             onSuccess={reload}
                           />
+                        </div>
+                      )}
+
+                      {activeFilter === "review" && (
+                        <div className="mt-4">
+                          <ReissueCandidatesSection universityId={selectedUniversity._id} />
                         </div>
                       )}
                     </>
@@ -217,30 +224,29 @@ export function LicensePage({ role }: LicensePageProps) {
               )}
             </div>
 
-            <div className={`min-w-0 ${selectedBusId ? "" : "invisible pointer-events-none"}`} aria-hidden={!selectedBusId}>
+            <div className={`min-w-0 ${selectedUniversityId ? "" : "invisible pointer-events-none"}`} aria-hidden={!selectedUniversityId}>
               <StudentDetailPanel
                 selected={selected}
-              selectedImages={selectedImages}
-              loadingSelected={loadingSelected}
-              currentLicense={currentLicense}
-              fullLicense={fullLicense}
-              currentLicenseRequest={currentLicenseRequest}
-              selectedBusRoute={selectedBusRoute}
-              pendingImagesByType={pendingImagesByType}
-              profileImage={profileImage}
-              enrollmentImage={enrollmentImage}
-              scheduleImage={scheduleImage}
-              academicPeriodImage={academicPeriodImage}
-              governmentImage={governmentImage}
-              proofOfResidenceImage={proofOfResidenceImage}
-              selectedLicensePreview={selectedLicensePreview}
-              onReload={reload}
-              onOpenRejectModal={() => setRejectModalOpen(true)}
-              printingSingle={printingSingle}
-              onPrintSingle={() =>
-                handlePrintSingle(selected, printableCardsByStudentId, setApproveMessage)
-              }
-              showUpdateDiff={activeFilter === "review"}
+                selectedImages={selectedImages}
+                loadingSelected={loadingSelected}
+                currentLicense={currentLicense}
+                fullLicense={fullLicense}
+                currentLicenseRequest={currentLicenseRequest}
+                pendingImagesByType={pendingImagesByType}
+                profileImage={profileImage}
+                enrollmentImage={enrollmentImage}
+                scheduleImage={scheduleImage}
+                academicPeriodImage={academicPeriodImage}
+                governmentImage={governmentImage}
+                proofOfResidenceImage={proofOfResidenceImage}
+                selectedLicensePreview={selectedLicensePreview}
+                onReload={reload}
+                onOpenRejectModal={() => setRejectModalOpen(true)}
+                printingSingle={printingSingle}
+                onPrintSingle={() =>
+                  handlePrintSingle(selected, printableCardsByStudentId, setApproveMessage)
+                }
+                showUpdateDiff={activeFilter === "review"}
               />
             </div>
           </div>

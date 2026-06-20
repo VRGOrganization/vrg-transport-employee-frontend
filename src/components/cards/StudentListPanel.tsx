@@ -1,5 +1,5 @@
 import { Loader2 } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { PanelCard } from "@/components/ui/PanelCard";
 import type {
   LicenseRequestRecord,
@@ -10,6 +10,12 @@ import type {
 import type { Bus } from "@/types/university.types";
 import { StudentListItem } from "./StudentListItem";
 import { StudentListToolbar } from "./StudentListToolbar";
+
+type PrioritySlot = {
+  universityId?: unknown;
+  priorityOrder?: number;
+  _id?: unknown;
+} | string;
 
 interface StudentListPanelProps {
   students: StudentRecord[];
@@ -32,6 +38,8 @@ interface StudentListPanelProps {
   /** Modo controlled: quando fornecidos, o filtro é gerido pelo componente pai. */
   filter?: StudentFilter;
   onFilterChange?: (filter: StudentFilter) => void;
+  title?: string;
+  description?: string;
 }
 
 export function StudentListPanel({
@@ -53,6 +61,8 @@ export function StudentListPanel({
   showReview = false,
   filter: filterProp,
   onFilterChange,
+  title,
+  description,
 }: StudentListPanelProps) {
   const [search, setSearch] = useState("");
   const [internalFilter, setInternalFilter] = useState<StudentFilter>("pending");
@@ -64,19 +74,11 @@ export function StudentListPanel({
     else setInternalFilter(next);
   };
 
-  // Mantém a busca apenas em "with-card" (Aprovados); limpa ao trocar de aba.
-  useEffect(() => {
-    if (filter !== "with-card" && search) {
-      setSearch("");
-    }
-  }, [filter]);
-
-  // helper: resolve id from either string or nested object
   const resolveId = (v: unknown): string | null => {
     if (!v) return null;
     if (typeof v === "string") return v;
-    if (typeof v === "object" && v !== null && "_id" in (v as any)) {
-      const nested = (v as any)._id;
+    if (typeof v === "object" && v !== null && "_id" in v) {
+      const nested = (v as { _id?: unknown })._id;
       return typeof nested === "string" ? nested : null;
     }
     return null;
@@ -94,19 +96,22 @@ export function StudentListPanel({
     if (!bus) return null;
     if (filter !== "pending" && filter !== "waitlisted") return null;
 
-    const slots = (bus.universitySlots ?? bus.universityIds ?? []) as any[];
+    const slots = (bus.universitySlots ?? bus.universityIds ?? []) as PrioritySlot[];
     if (!slots || slots.length === 0) return null;
 
     // order slots by priorityOrder (default 1)
-    const ordered = [...slots].sort((a, b) => (typeof a.priorityOrder === "number" ? a.priorityOrder : 1) - (typeof b.priorityOrder === "number" ? b.priorityOrder : 1));
+    const priorityOrder = (slot: PrioritySlot) =>
+      typeof slot === "object" && typeof slot.priorityOrder === "number" ? slot.priorityOrder : 1;
+    const ordered = [...slots].sort((a, b) => priorityOrder(a) - priorityOrder(b));
 
     for (const slot of ordered) {
-      const uniId = typeof slot.universityId === "string" ? slot.universityId : resolveId((slot as any).universityId) ?? resolveId(slot);
+      const uniId =
+        typeof slot === "object" ? resolveId(slot.universityId) ?? resolveId(slot) : resolveId(slot);
       if (!uniId) continue;
 
       // check for ANY active demand (pending OR waitlisted) for this university
       const hasAnyActiveDemand = licenseRequests.some((r) => {
-        const rid = resolveId((r as any).universityId);
+        const rid = resolveId(r.universityId);
         return rid === uniId && (r.status === "pending" || r.status === "waitlisted");
       });
 
@@ -115,7 +120,7 @@ export function StudentListPanel({
       // This university is the active priority. Return studentIds that match
       // the current filter. Do NOT fallthrough even if empty.
       const matches = licenseRequests.filter((r) => {
-        const rid = resolveId((r as any).universityId);
+        const rid = resolveId(r.universityId);
         return rid === uniId && r.status === filter;
       });
 
@@ -225,6 +230,15 @@ export function StudentListPanel({
         onPrintBatch={onPrintBatch}
         showReview={showReview}
       />
+
+      {(title || description) && (
+        <div className="mb-4">
+          {title && <h2 className="text-base font-bold text-on-surface">{title}</h2>}
+          {description && (
+            <p className="mt-1 text-sm text-on-surface-variant">{description}</p>
+          )}
+        </div>
+      )}
 
       {loading && (
         <div className="flex items-center gap-2 rounded-xl border border-outline-variant bg-surface p-4 text-sm text-on-surface-variant">

@@ -58,7 +58,7 @@ export interface LicenseRequestRecord {
   type: "initial" | "update";
   changedDocuments: string[];
   pendingImages?: Array<{ photoType: string; dataUrl: string }>;
-  status: "pending" | "approved" | "rejected" | "waitlisted" | "partially_waitlisted" | "cancelled";
+  status: "pending" | "approved" | "rejected" | "waitlisted" | "cancelled";
   rejectionReason: string | null;
   rejectedAt: string | null;
   licenseId: string | null;
