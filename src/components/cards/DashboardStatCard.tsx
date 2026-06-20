@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { ArrowUpRight, TrendingUp, AlertTriangle } from "lucide-react";
 import Link from "next/link";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 
 interface SubInfo {
   text: string;
@@ -18,6 +19,8 @@ interface DashboardStatCardProps {
   accent?: Accent;
   subInfo?: SubInfo;
   href?: string;
+  tooltipContent?: string;
+  tooltipAriaLabel?: string;
 }
 
 const accentStyles: Record<Accent, { icon: string; badge: string }> = {
@@ -43,6 +46,8 @@ export function DashboardStatCard({
   accent = "primary",
   subInfo,
   href,
+  tooltipContent,
+  tooltipAriaLabel,
 }: DashboardStatCardProps) {
   const displayValue =
     typeof value === "number"
@@ -93,7 +98,12 @@ export function DashboardStatCard({
       </p>
 
       {/* Label */}
-      <p className="text-sm text-on-surface-variant mb-3">{label}</p>
+      <p className="text-sm text-on-surface-variant mb-3 flex items-center gap-1">
+        {label}
+        {tooltipContent && (
+          <InfoTooltip content={tooltipContent} ariaLabel={tooltipAriaLabel} />
+        )}
+      </p>
 
       {/* SubInfo */}
       {subInfo && (

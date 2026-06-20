@@ -9,6 +9,7 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { toast } from "@/lib/toast";
 import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
 import { PanelCard } from "@/components/ui/PanelCard";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { http } from "@/services/http";
 import { resolvePaginated, type Paginated } from "@/types/api";
 import type {
@@ -344,7 +345,13 @@ export default function AdminEnrollmentPeriodPage() {
 
                   <div className="rounded-xl border border-outline-variant bg-surface p-3">
                     <div className="mb-2 flex items-center justify-between text-sm">
-                      <span className="text-on-surface-variant">Vagas preenchidas</span>
+                      <span className="flex items-center gap-1 text-on-surface-variant">
+                        Ocupação (vaga-dia)
+                        <InfoTooltip
+                          ariaLabel="O que é vaga-dia?"
+                          content="Vagas em vaga-dia: 1 vaga de ônibus equivale a 5 (segunda a sexta). O total é a soma das vagas dos ônibus ativos × 5."
+                        />
+                      </span>
                       <span className="font-medium text-on-surface">
                         {activePeriod.filledSlots} / {activePeriod.totalSlots}
                       </span>
@@ -374,8 +381,16 @@ export default function AdminEnrollmentPeriodPage() {
                       <tr>
                         <th className="px-3 py-2 text-left font-medium">Abertura</th>
                         <th className="px-3 py-2 text-left font-medium">Encerramento</th>
-                        <th className="px-3 py-2 text-left font-medium">Vagas</th>
-                        <th className="px-3 py-2 text-left font-medium">Preenchidas</th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          <span className="flex items-center gap-1">
+                            Total (vaga-dia)
+                            <InfoTooltip
+                              ariaLabel="O que é vaga-dia?"
+                              content="Vagas em vaga-dia: 1 vaga de ônibus equivale a 5 (segunda a sexta). O total é a soma das vagas dos ônibus ativos × 5."
+                            />
+                          </span>
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium">Ocupadas (vaga-dia)</th>
                         <th className="px-3 py-2 text-left font-medium">Validade</th>
                         <th className="px-3 py-2 text-left font-medium">Status</th>
                         <th className="px-3 py-2 text-left font-medium">Ação</th>
