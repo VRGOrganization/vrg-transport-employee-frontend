@@ -121,7 +121,7 @@ export const POST = withAuthRouteGuards({
     response.cookies.set(SID_COOKIE_NAME, sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: sidMaxAgeSeconds,
     });
@@ -129,7 +129,7 @@ export const POST = withAuthRouteGuards({
     response.cookies.set(ROLE_COOKIE_NAME, resolvedRole, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       maxAge: sidMaxAgeSeconds,
     });
