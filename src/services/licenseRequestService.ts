@@ -27,6 +27,34 @@ export interface ApproveReissueBody {
   photo?: string;
 }
 
+export interface ApproveReissueBatchTarget {
+  allocationId?: string;
+  day?: string;
+  period?: string;
+}
+
+export interface ApproveReissueBatchBody {
+  targets: ApproveReissueBatchTarget[];
+  photo?: string;
+}
+
+export interface ApproveReissueBatchDay {
+  allocationId: string | null;
+  day: string;
+  period: string;
+}
+
+export interface ApproveReissueBatchRefusal extends ApproveReissueBatchDay {
+  reason: string;
+}
+
+export interface ApproveReissueBatchResult {
+  requestId: string;
+  licenseId: string | null;
+  approved: ApproveReissueBatchDay[];
+  refused: ApproveReissueBatchRefusal[];
+}
+
 export const licenseRequestService = {
   listReissueCandidates: (periodId?: string) => {
     const query = periodId ? `?enrollmentPeriodId=${encodeURIComponent(periodId)}` : "";
@@ -35,4 +63,7 @@ export const licenseRequestService = {
 
   approveReissue: (id: string, body: ApproveReissueBody) =>
     http.patch(`/license-request/${id}/approve-reissue`, body),
+
+  approveReissueBatch: (id: string, body: ApproveReissueBatchBody) =>
+    http.patch<ApproveReissueBatchResult>(`/license-request/${id}/approve-reissue-batch`, body),
 };

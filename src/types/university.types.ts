@@ -6,6 +6,8 @@ export interface University {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  pendingCount?: number;
+  waitlistedCount?: number;
 }
 
 export type CourseModel = "Bacharel" | "Técnico" | "Licenciatura";

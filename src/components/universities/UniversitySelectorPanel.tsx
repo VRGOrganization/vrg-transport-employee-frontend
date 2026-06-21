@@ -28,7 +28,7 @@ export default function UniversitySelectorPanel({
       setLoading(true);
       setError("");
       try {
-        const data = await universityService.list();
+        const data = await universityService.listWithQueueCounts();
         if (!mountState.cancelled) {
           setUniversities(data.filter((university) => university.active));
         }
@@ -90,6 +90,9 @@ export default function UniversitySelectorPanel({
                   <div className="truncate text-xs text-on-surface-variant">
                     {university.name}
                   </div>
+                </div>
+                <div className="shrink-0 rounded-full bg-surface-container-high px-2 py-0.5 text-xs font-medium text-on-surface-variant">
+                  {university.pendingCount ?? 0} pendentes
                 </div>
               </div>
             </button>
