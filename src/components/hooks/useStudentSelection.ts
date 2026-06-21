@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { employeeApi } from "@/lib/employeeApi";
+import { http } from "@/services/http";
 import {
   extractLicenseImage,
   normalizeMediaSource,
@@ -18,11 +18,13 @@ interface UseStudentSelectionReturn {
   loadingSelected: boolean;
   approvedLicensePreview: string | null;
   currentLicense: LicenseRecord | null;
+  fullLicense: LicenseRecord | null;
   currentLicenseRequest: LicenseRequestRecord | null;
   pendingImagesByType: Partial<Record<PhotoType, string>>;
   profileImage: string | null;
   enrollmentImage: string | null;
   scheduleImage: string | null;
+  academicPeriodImage: string | null;
   governmentImage: string | null;
   proofOfResidenceImage: string | null;
   selectedLicensePreview: string | null;
@@ -41,6 +43,7 @@ licenseRequests: LicenseRequestRecord[],
   const [approvedLicensePreview, setApprovedLicensePreview] = useState<string | null>(null);
   const [selectedRequestDetails, setSelectedRequestDetails] =
     useState<LicenseRequestRecord | null>(null);
+  const [fullLicense, setFullLicense] = useState<LicenseRecord | null>(null);
 
   const currentLicense = useMemo(() => {
     if (!selected) return null;
@@ -75,6 +78,7 @@ licenseRequests: LicenseRequestRecord[],
       if (normalized === "profilephoto") return "ProfilePhoto";
       if (normalized === "enrollmentproof") return "EnrollmentProof";
       if (normalized === "courseschedule") return "CourseSchedule";
+      if (normalized === "academicperiodproof") return "AcademicPeriodProof";
       if (normalized === "licenseimage") return "LicenseImage";
       if (normalized === "governmentid") return "GovernmentId";
       if (normalized === "proofofresidence") return "ProofOfResidence";
@@ -108,6 +112,12 @@ licenseRequests: LicenseRequestRecord[],
   const scheduleImage = normalizeMediaSource(
     pendingImagesByType.CourseSchedule ??
       selectedImages.find((img) => img.photoType === "CourseSchedule")?.documentImage ??
+      null,
+  );
+
+  const academicPeriodImage = normalizeMediaSource(
+    pendingImagesByType.AcademicPeriodProof ??
+      selectedImages.find((img) => img.photoType === "AcademicPeriodProof")?.documentImage ??
       null,
   );
 
@@ -145,14 +155,20 @@ licenseRequests: LicenseRequestRecord[],
     setSelectedImages([]);
     setApprovedLicensePreview(null);
     setSelectedRequestDetails(null);
+    setFullLicense(null);
     setLoadingSelected(true);
     try {
       const [images, requestsByStudent] = await Promise.all([
-        employeeApi.get<ImageRecord[]>(`/image/student/${student._id}`),
-        employeeApi
+        http.get<ImageRecord[]>(`/image/student/${student._id}`),
+        http
           .get<LicenseRequestRecord[]>(`/license-request/student/${student._id}`)
           .catch(() => []),
       ]);
+
+      // Buscar licença completa (inclui expirationDate, qrCodeUrl, verificationCode)
+      const licenseDetail = await http
+        .get<LicenseRecord>(`/license/searchByStudent/${student._id}`)
+        .catch(() => null);
 
       const selectedLicense =
         licenses.find((license) => license.studentId === student._id) ?? null;
@@ -165,10 +181,12 @@ licenseRequests: LicenseRequestRecord[],
       setSelectedImages(images);
       setApprovedLicensePreview(extractLicenseImage(selectedLicense));
       setSelectedRequestDetails(latestDetailedRequest);
+      setFullLicense(licenseDetail);
     } catch {
       setSelectedImages([]);
       setApprovedLicensePreview(null);
       setSelectedRequestDetails(null);
+      setFullLicense(null);
     } finally {
       setLoadingSelected(false);
     }
@@ -179,6 +197,7 @@ licenseRequests: LicenseRequestRecord[],
     setSelectedImages([]);
     setApprovedLicensePreview(null);
     setSelectedRequestDetails(null);
+    setFullLicense(null);
   }, []);
 
   return {
@@ -187,11 +206,13 @@ licenseRequests: LicenseRequestRecord[],
     loadingSelected,
     approvedLicensePreview,
     currentLicense,
+    fullLicense,
     currentLicenseRequest,
     pendingImagesByType,
     profileImage,
     enrollmentImage,
     scheduleImage,
+    academicPeriodImage,
     governmentImage,
     proofOfResidenceImage,
     selectedLicensePreview,

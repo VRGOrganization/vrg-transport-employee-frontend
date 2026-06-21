@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
+import { PanelCard } from "@/components/ui/PanelCard";
 import type {
   LicenseRequestRecord,
   PrintableCard,
@@ -9,6 +10,12 @@ import type {
 import type { Bus } from "@/types/university.types";
 import { StudentListItem } from "./StudentListItem";
 import { StudentListToolbar } from "./StudentListToolbar";
+
+type PrioritySlot = {
+  universityId?: unknown;
+  priorityOrder?: number;
+  _id?: unknown;
+} | string;
 
 interface StudentListPanelProps {
   students: StudentRecord[];
@@ -27,6 +34,12 @@ interface StudentListPanelProps {
   onPrintBatch: () => void;
   largeItems?: boolean;
   bus?: Bus | null;
+  showReview?: boolean;
+  /** Modo controlled: quando fornecidos, o filtro é gerido pelo componente pai. */
+  filter?: StudentFilter;
+  onFilterChange?: (filter: StudentFilter) => void;
+  title?: string;
+  description?: string;
 }
 
 export function StudentListPanel({
@@ -45,35 +58,27 @@ export function StudentListPanel({
   onToggleBatch,
   onPrintBatch,
   largeItems = false,
+  showReview = false,
+  filter: filterProp,
+  onFilterChange,
+  title,
+  description,
 }: StudentListPanelProps) {
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<StudentFilter>("pending");
+  const [internalFilter, setInternalFilter] = useState<StudentFilter>("pending");
 
-  // Clear search when filter is not 'all' to avoid stale queries
-  // and ensure search only applies when 'all' is active.
-  // Use effect to avoid calling setState during render.
-  useEffect(() => {
-    // keep search only when filter is 'all' or 'with-card' (Aprovados)
-    if (filter !== "all" && filter !== "with-card" && search) {
-      setSearch("");
-    }
-  }, [filter]);
+  // Controlled quando `filter`/`onFilterChange` são passados; senão usa estado interno.
+  const filter = filterProp ?? internalFilter;
+  const setFilter = (next: StudentFilter) => {
+    if (onFilterChange) onFilterChange(next);
+    else setInternalFilter(next);
+  };
 
-  const cardRelatedStudentIds = useMemo(() => {
-    const ids = new Set<string>();
-
-    licensedStudentIds.forEach((id) => ids.add(id));
-    licenseRequests.forEach((request) => ids.add(request.studentId));
-
-    return ids;
-  }, [licensedStudentIds, licenseRequests]);
-
-  // helper: resolve id from either string or nested object
   const resolveId = (v: unknown): string | null => {
     if (!v) return null;
     if (typeof v === "string") return v;
-    if (typeof v === "object" && v !== null && "_id" in (v as any)) {
-      const nested = (v as any)._id;
+    if (typeof v === "object" && v !== null && "_id" in v) {
+      const nested = (v as { _id?: unknown })._id;
       return typeof nested === "string" ? nested : null;
     }
     return null;
@@ -91,19 +96,22 @@ export function StudentListPanel({
     if (!bus) return null;
     if (filter !== "pending" && filter !== "waitlisted") return null;
 
-    const slots = (bus.universitySlots ?? bus.universityIds ?? []) as any[];
+    const slots = (bus.universitySlots ?? bus.universityIds ?? []) as PrioritySlot[];
     if (!slots || slots.length === 0) return null;
 
     // order slots by priorityOrder (default 1)
-    const ordered = [...slots].sort((a, b) => (typeof a.priorityOrder === "number" ? a.priorityOrder : 1) - (typeof b.priorityOrder === "number" ? b.priorityOrder : 1));
+    const priorityOrder = (slot: PrioritySlot) =>
+      typeof slot === "object" && typeof slot.priorityOrder === "number" ? slot.priorityOrder : 1;
+    const ordered = [...slots].sort((a, b) => priorityOrder(a) - priorityOrder(b));
 
     for (const slot of ordered) {
-      const uniId = typeof slot.universityId === "string" ? slot.universityId : resolveId((slot as any).universityId) ?? resolveId(slot);
+      const uniId =
+        typeof slot === "object" ? resolveId(slot.universityId) ?? resolveId(slot) : resolveId(slot);
       if (!uniId) continue;
 
       // check for ANY active demand (pending OR waitlisted) for this university
       const hasAnyActiveDemand = licenseRequests.some((r) => {
-        const rid = resolveId((r as any).universityId);
+        const rid = resolveId(r.universityId);
         return rid === uniId && (r.status === "pending" || r.status === "waitlisted");
       });
 
@@ -112,7 +120,7 @@ export function StudentListPanel({
       // This university is the active priority. Return studentIds that match
       // the current filter. Do NOT fallthrough even if empty.
       const matches = licenseRequests.filter((r) => {
-        const rid = resolveId((r as any).universityId);
+        const rid = resolveId(r.universityId);
         return rid === uniId && r.status === filter;
       });
 
@@ -122,8 +130,17 @@ export function StudentListPanel({
     return null;
   }, [bus, licenseRequests, filter]);
 
+  // Alunos com solicitação de atualização (type "update") pendente — aba "Revisão".
+  const reviewStudentIds = useMemo(() => {
+    return new Set(
+      licenseRequests
+        .filter((r) => r.type === "update" && r.status === "pending")
+        .map((r) => r.studentId),
+    );
+  }, [licenseRequests]);
+
   const filteredStudents = useMemo(() => {
-    const normalized = (filter === "all" || filter === "with-card") ? search.trim().toLowerCase() : "";
+    const normalized = filter === "with-card" ? search.trim().toLowerCase() : "";
     return students
       .filter((s) => s.active)
       .filter((s) => {
@@ -136,7 +153,8 @@ export function StudentListPanel({
           return waitlistedStudentIds.has(s._id);
         }
         if (filter === "with-card") return licensedStudentIds.has(s._id);
-        return cardRelatedStudentIds.has(s._id);
+        if (filter === "review") return reviewStudentIds.has(s._id);
+        return false;
       })
       .filter((s) => {
         if (!normalized) return true;
@@ -153,27 +171,28 @@ export function StudentListPanel({
     licensedStudentIds,
     pendingStudentIds,
     waitlistedStudentIds,
-    cardRelatedStudentIds,
+    reviewStudentIds,
+    priorityFilteredStudentIds,
   ]);
 
 
   const selectableStudentIds = useMemo(() => {
     try {
       if (filter === "pending") {
-        let pendings = licenseRequests.filter((r) => r.status === "pending");
-        if (priorityFilteredStudentIds) {
-          pendings = pendings.filter((p) => priorityFilteredStudentIds.has(p.studentId));
-        }
+        const initialPendings = licenseRequests.filter((r) => r.status === "pending");
+        const pendings = priorityFilteredStudentIds
+          ? initialPendings.filter((p) => priorityFilteredStudentIds.has(p.studentId))
+          : initialPendings;
         if (pendings.length === 0) return new Set<string>();
         pendings.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         return new Set([pendings[0].studentId]);
       }
 
       if (filter === "waitlisted") {
-        let waitlisted = licenseRequests.filter((r) => r.status === "waitlisted");
-        if (priorityFilteredStudentIds) {
-          waitlisted = waitlisted.filter((w) => priorityFilteredStudentIds.has(w.studentId));
-        }
+        const initialWaitlisted = licenseRequests.filter((r) => r.status === "waitlisted");
+        const waitlisted = priorityFilteredStudentIds
+          ? initialWaitlisted.filter((w) => priorityFilteredStudentIds.has(w.studentId))
+          : initialWaitlisted;
         if (waitlisted.length === 0) return new Set<string>();
         waitlisted.sort((a, b) => {
           const pa = typeof a.filaPosition === "number" ? a.filaPosition : Number.MAX_VALUE;
@@ -195,10 +214,12 @@ export function StudentListPanel({
       ? "Nenhuma solicitação pendente encontrada."
       : filter === "waitlisted"
         ? "Nenhuma solicitação na fila encontrada."
-        : "Nenhuma carteirinha encontrada.";
+        : filter === "review"
+          ? "Nenhuma solicitação de atualização pendente."
+          : "Nenhuma carteirinha encontrada.";
 
   return (
-    <section className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 md:p-5">
+    <PanelCard as="section" className="md:p-5">
       <StudentListToolbar
         search={search}
         filter={filter}
@@ -207,11 +228,21 @@ export function StudentListPanel({
         onSearchChange={setSearch}
         onFilterChange={setFilter}
         onPrintBatch={onPrintBatch}
+        showReview={showReview}
       />
+
+      {(title || description) && (
+        <div className="mb-4">
+          {title && <h2 className="text-base font-bold text-on-surface">{title}</h2>}
+          {description && (
+            <p className="mt-1 text-sm text-on-surface-variant">{description}</p>
+          )}
+        </div>
+      )}
 
       {loading && (
         <div className="flex items-center gap-2 rounded-xl border border-outline-variant bg-surface p-4 text-sm text-on-surface-variant">
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="size-4 animate-spin" />
           Carregando carteirinhas...
         </div>
       )}
@@ -258,6 +289,6 @@ export function StudentListPanel({
           })}
         </div>
       )}
-    </section>
+    </PanelCard>
   );
 }

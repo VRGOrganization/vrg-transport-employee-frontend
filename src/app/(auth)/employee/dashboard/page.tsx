@@ -1,39 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { employeeApi } from "@/lib/employeeApi";
-import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-
-import { EmployeeSideNav } from "@/components/layout/EmployeeSideNav";
-import { TopBar } from "@/components/layout/TopBar";
+import { studentService } from "@/services/studentService";
+import { http } from "@/services/http";
 import { StudentTable } from "@/components/employee/StudentTable";
 import { Footer } from "@/components/layout/Footer";
+import type { Student } from "@/types/student";
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
-
-export interface Student {
-  _id: string;
-  name: string;
-  email: string;
-  registrationId: string;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
 
 interface LicenseRecord {
   _id: string;
   studentId: string;
 }
-
-type StudentsResponse =
-  | Student[]
-  | {
-      data?: Student[];
-      total?: number;
-      page?: number;
-      limit?: number;
-    };
 
 interface DashboardStats {
   activeStudents: number | null;
@@ -44,7 +23,6 @@ interface DashboardStats {
 // ── Página ───────────────────────────────────────────────────────────────────
 
 export default function EmployeeDashboardPage() {
-  const { user, logout } = useEmployeeAuth();
 
   const [students, setStudents] = useState<Student[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
@@ -57,18 +35,13 @@ export default function EmployeeDashboardPage() {
   useEffect(() => {
     const fetchAll = async () => {
       const [studentsResult, licensesResult] = await Promise.allSettled([
-        employeeApi.get<StudentsResponse>("/student"),
-        employeeApi.get<LicenseRecord[]>("/license/all"),
+        studentService.list(),
+        http.get<LicenseRecord[]>("/license/all"),
       ]);
 
       if (studentsResult.status === "fulfilled") {
-        const resolvedStudents = Array.isArray(studentsResult.value)
-          ? studentsResult.value
-          : Array.isArray(studentsResult.value?.data)
-            ? studentsResult.value.data
-            : [];
-
-        const activeStudents = resolvedStudents.filter((s) => s.active);
+        const resolvedStudents = studentsResult.value;
+        const activeStudents = resolvedStudents.filter((s: Student) => s.active);
         setStudents(activeStudents);
 
         const licensedIds =
@@ -107,13 +80,7 @@ export default function EmployeeDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-      <EmployeeSideNav activePath="/employee/dashboard" onLogout={logout} />
-
-      <div className="min-w-0 flex flex-col">
-        <TopBar user={user} />
-
-        <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
+    <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <DashboardStatCard
@@ -149,9 +116,7 @@ export default function EmployeeDashboardPage() {
           <div className="mt-auto w-full">
             <Footer />
           </div>
-        </main>
-      </div>
-    </div>
+    </main>
   );
 }
 

@@ -2,6 +2,7 @@ export type PhotoType =
   | "ProfilePhoto"
   | "EnrollmentProof"
   | "CourseSchedule"
+  | "AcademicPeriodProof"
   | "LicenseImage"
   | "GovernmentId"
   | "ProofOfResidence";
@@ -23,11 +24,32 @@ export type StudentsResponse =
   | StudentRecord[]
   | { data?: StudentRecord[]; total?: number; page?: number; limit?: number };
 
+// Representa uma alocação de ônibus por dia/período dentro do allocationSummary
+export interface AllocationEntry {
+  day: string;           // "SEG" | "TER" | "QUA" | "QUI" | "SEX"
+  period: string;        // "Manhã" | "Tarde" | "Noite"
+  busIdentifier?: string | null;
+  busId?: string | null;
+  status: "active" | "waitlisted" | "cancelled";
+  needsOutbound: boolean;
+  needsReturn: boolean;
+}
+
 export interface LicenseRecord {
   _id: string;
   studentId: string;
+  employeeId?: string;
+  enrollmentPeriodId?: string | null;
   imageLicense: string;
-  status: "active" | "inactive" | "expired";
+  status: "active" | "inactive" | "expired" | "rejected";
+  existing?: boolean;
+  expirationDate?: string | null;
+  verificationCode?: string | null;
+  qrCodeUrl?: string | null;
+  rejectionReason?: string | null;
+  rejectedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface LicenseRequestRecord {
@@ -36,7 +58,7 @@ export interface LicenseRequestRecord {
   type: "initial" | "update";
   changedDocuments: string[];
   pendingImages?: Array<{ photoType: string; dataUrl: string }>;
-  status: "pending" | "approved" | "rejected" | "waitlisted";
+  status: "pending" | "approved" | "rejected" | "waitlisted" | "cancelled";
   rejectionReason: string | null;
   rejectedAt: string | null;
   licenseId: string | null;
@@ -45,6 +67,12 @@ export interface LicenseRequestRecord {
   busId?: string | { _id: string } | null;
   universityId?: string | { _id: string } | null;
   accessBusIdentifiers?: string[];
+  // Campos de prioridade e alocação
+  allocationSummary?: AllocationEntry[] | null;
+  priorityLevel?: number | null;
+  priorityRuleName?: string | null;
+  transportMode?: "regular" | "weekly" | null;
+  cardNote?: string | null;
   createdAt: string;
 }
 
@@ -69,6 +97,16 @@ export interface ImageRecord {
   studentCard: string | null;
 }
 
+export interface ImageHistoryRecord {
+  _id: string;
+  studentId: string;
+  imageId: string;
+  photoType: PhotoType;
+  photo3x4: string | null;
+  documentImage: string | null;
+  replacedAt: string;
+}
+
 export interface PrintableCard {
   studentName: string;
   imageData: string;
@@ -79,17 +117,14 @@ export interface PreviewItem {
   dataUrl: string | null;
 }
 
-export type StudentFilter = "pending" | "waitlisted" | "all" | "with-card";
+export type StudentFilter = "pending" | "waitlisted" | "with-card" | "review";
 
-export const REJECTION_REASONS = [
-  "Foto inadequada ou ilegível",
-  "Comprovante de matrícula inválido",
-  "Grade horária não corresponde aos documentos",
-  "Documentos ilegíveis ou corrompidos",
-  "Informações inconsistentes",
-] as const;
+export interface RejectionReasonConfig {
+  label: string;
+  isPersonalDocumentReason: boolean;
+}
 
-export type RejectionReason = (typeof REJECTION_REASONS)[number];
+export type RejectionReason = string;
 
 export const DAY_LABELS: Record<string, string> = {
   SEG: "Segunda",
@@ -103,6 +138,7 @@ export const PHOTO_TYPE_LABELS: Record<PhotoType, string> = {
   ProfilePhoto: "Foto 3x4",
   EnrollmentProof: "Comprovante de Matrícula",
   CourseSchedule: "Grade Horária",
+  AcademicPeriodProof: "Calendário Acadêmico",
   LicenseImage: "Carteirinha",
   GovernmentId: "Documento de identidade",
   ProofOfResidence: "Comprovante de residência",

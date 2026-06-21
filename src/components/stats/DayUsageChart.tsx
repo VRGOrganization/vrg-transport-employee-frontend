@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Chart,
   BarElement,
@@ -34,13 +34,31 @@ const DAY_LABELS: Record<keyof DayUsageStats, string> = {
 export function DayUsageChart({ byDay }: DayUsageChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart | null>(null);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains("dark"));
+
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const textColor = isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.4)";
-    const gridColor = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)";
+    const cssVar = (name: string) =>
+      getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+    const textColor = cssVar("--color-on-surface-muted");
+    const gridColor = cssVar("--color-outline-variant");
+    const barPrimary = cssVar("--color-primary");
+    const barSecondary = cssVar("--color-primary-fixed-dim");
 
     if (chartRef.current) {
       chartRef.current.destroy();
@@ -59,7 +77,7 @@ export function DayUsageChart({ byDay }: DayUsageChartProps) {
             label: "Alunos",
             data: values,
             backgroundColor: values.map((v) =>
-              v === maxVal ? "#185FA5" : "#378ADD"
+              v === maxVal ? barPrimary : barSecondary
             ),
             borderRadius: 5,
             borderSkipped: false,
@@ -104,11 +122,11 @@ export function DayUsageChart({ byDay }: DayUsageChartProps) {
     return () => {
       chartRef.current?.destroy();
     };
-  }, [byDay]);
+  }, [byDay, isDark]);
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-5">
-      <p className="text-xs font-medium text-gray-400 mb-4 tracking-wide uppercase">
+    <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-5">
+      <p className="text-xs font-medium text-on-surface-muted mb-4 tracking-wide uppercase">
         Uso por dia da semana
       </p>
       <div className="relative h-44">

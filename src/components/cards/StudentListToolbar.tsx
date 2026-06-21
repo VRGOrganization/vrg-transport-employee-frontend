@@ -11,6 +11,7 @@ interface StudentListToolbarProps {
   onSearchChange: (value: string) => void;
   onFilterChange: (filter: StudentFilter) => void;
   onPrintBatch: () => void;
+  showReview?: boolean;
 }
 
 export function StudentListToolbar({
@@ -21,6 +22,7 @@ export function StudentListToolbar({
   onSearchChange,
   onFilterChange,
   onPrintBatch,
+  showReview = false,
 }: StudentListToolbarProps) {
   return (
     <div className="mb-4 space-y-3">
@@ -37,7 +39,7 @@ export function StudentListToolbar({
               active={filter === "waitlisted"}
               onClick={() => onFilterChange("waitlisted")}
             >
-              Na fila
+              Em Espera
             </FilterButton>
             <FilterButton
               active={filter === "with-card"}
@@ -45,18 +47,20 @@ export function StudentListToolbar({
             >
               Aprovados
             </FilterButton>
-            <FilterButton
-              active={filter === "all"}
-              onClick={() => onFilterChange("all")}
-            >
-              Todos
-            </FilterButton>
+            {showReview && (
+              <FilterButton
+                active={filter === "review"}
+                onClick={() => onFilterChange("review")}
+              >
+                Revisão
+              </FilterButton>
+            )}
           </div>
         </div>
 
-        {(filter === "all" || filter === "with-card") && (
+        {filter === "with-card" && (
           <div
-            className={`relative flex items-center h-10 w-full rounded-xl border border-outline 
+            className={`relative flex items-center h-10 w-full rounded-xl border border-on-surface-variant
               bg-surface-container-lowest shadow-(--shadow-card) transition-all duration-200
               focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25
               `}
@@ -72,7 +76,7 @@ export function StudentListToolbar({
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Buscar por nome, e-mail ou instituição"
               data-testid="student-search-input"
-              className={`h-full w-full bg-transparent ml-2 pl-9 pr-3 text-sm text-on-surface 
+              className={`h-full w-full bg-transparent ml-2 pl-9 pr-3 text-sm text-on-surface
                 placeholder:text-on-surface-muted outline-none
               `}
             />
@@ -89,7 +93,7 @@ export function StudentListToolbar({
           <Button
             variant="outline"
             size="sm"
-            icon={<Printer className="h-4 w-4" />}
+            icon={<Printer className="size-4" />}
             disabled={selectedForBatchCount === 0 || printingBatch}
             loading={printingBatch}
             onClick={onPrintBatch}

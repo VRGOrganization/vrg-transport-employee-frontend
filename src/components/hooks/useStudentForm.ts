@@ -15,13 +15,14 @@ interface UseStudentFormOptions {
 
 export function useStudentForm({ mode, initial }: UseStudentFormOptions) {
   const [data, setData] = useState<StudentFormData>({
-    name: initial?.name ?? "",
-    email: initial?.email ?? "",
-    telephone: initial?.telephone ?? "",
+    name:        initial?.name        ?? "",
+    email:       initial?.email       ?? "",
+    telephone:   initial?.telephone   ?? "",
     institution: initial?.institution ?? "",
-    shift: initial?.shift ?? "",
-    password: "",
-    confirmPassword: "",
+    shift:       (initial?.shift      ?? "") as StudentFormData["shift"],
+    bloodType:   (initial?.bloodType  ?? "") as StudentFormData["bloodType"],
+    degree:      initial?.degree      ?? "",
+    cpf:         initial?.cpf         ?? "",
   });
 
   const [errors, setErrors] = useState<StudentFormErrors>(EMPTY_STUDENT_ERRORS);
@@ -50,13 +51,14 @@ export function useStudentForm({ mode, initial }: UseStudentFormOptions) {
     const flat = result.error.flatten().fieldErrors;
     const next: StudentFormErrors = {
       ...EMPTY_STUDENT_ERRORS,
-      name: flat.name?.[0] ?? "",
-      email: flat.email?.[0] ?? "",
-      telephone: flat.telephone?.[0] ?? "",
+      name:        flat.name?.[0]        ?? "",
+      email:       flat.email?.[0]       ?? "",
+      telephone:   flat.telephone?.[0]   ?? "",
       institution: flat.institution?.[0] ?? "",
-      shift: flat.shift?.[0] ?? "",
-      password: flat.password?.[0] ?? "",
-      confirmPassword: flat.confirmPassword?.[0] ?? "",
+      shift:       flat.shift?.[0]       ?? "",
+      bloodType:   flat.bloodType?.[0]   ?? "",
+      degree:      flat.degree?.[0]      ?? "",
+      cpf:         flat.cpf?.[0]         ?? "",
     };
 
     setErrors(next);
