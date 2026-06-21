@@ -145,6 +145,7 @@ describe("POST /api/auth/login", () => {
     expect(sentBody).toEqual({ username: "admin_user", password: "SenhaSegura123" });
 
     expect(response.cookies.get("_atk")?.value).toBe("507f1f77bcf86cd799439011");
+    expect(response.cookies.get("_atk")?.sameSite).toBe("lax");
     expect(response.cookies.get("_atk_role")?.value).toBe("admin");
   });
 });

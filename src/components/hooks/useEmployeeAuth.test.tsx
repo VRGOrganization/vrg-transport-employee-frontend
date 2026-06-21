@@ -19,15 +19,39 @@ vi.mock("@/lib/employeeApi", () => ({
   resetEmployeeApiState: mocks.resetEmployeeApiStateMock,
 }));
 
+function installLocalStorageMock(): Storage {
+  const data = new Map<string, string>();
+  const storage = {
+    get length() {
+      return data.size;
+    },
+    clear: vi.fn(() => data.clear()),
+    getItem: vi.fn((key: string) => data.get(key) ?? null),
+    key: vi.fn((index: number) => Array.from(data.keys())[index] ?? null),
+    removeItem: vi.fn((key: string) => data.delete(key)),
+    setItem: vi.fn((key: string, value: string) => data.set(key, String(value))),
+  } as Storage;
+
+  Object.defineProperty(window, "localStorage", {
+    configurable: true,
+    value: storage,
+  });
+  vi.stubGlobal("localStorage", storage);
+  return storage;
+}
+
 describe("useEmployeeAuth", () => {
   const fetchMock = vi.fn<typeof fetch>();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    installLocalStorageMock();
     vi.stubGlobal("fetch", fetchMock);
+    window.localStorage.clear();
   });
 
   afterEach(() => {
+    window.localStorage.clear();
     vi.unstubAllGlobals();
   });
 
@@ -111,5 +135,60 @@ describe("useEmployeeAuth", () => {
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/auth/csrf");
     expect(fetchMock.mock.calls[2]?.[0]).toBe("/api/auth/login");
+  });
+
+  it("deve manter usuario do snapshot quando /session falha por rede", async () => {
+    window.localStorage.setItem(
+      "vrg:employee-auth-snapshot",
+      JSON.stringify({
+        user: {
+          id: "507f1f77bcf86cd799439011",
+          role: "employee",
+          identifier: "MAT123",
+          name: "Funcionario Teste",
+        },
+        expiresAt: Date.now() + 60_000,
+      }),
+    );
+    fetchMock.mockRejectedValueOnce(new TypeError("fetch failed"));
+
+    const { result } = renderHook(() => useEmployeeAuth());
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.user?.identifier).toBe("MAT123");
+    expect(mocks.pushMock).not.toHaveBeenCalledWith("/login");
+  });
+
+  it("deve apagar snapshot em 401 real", async () => {
+    window.localStorage.setItem(
+      "vrg:employee-auth-snapshot",
+      JSON.stringify({
+        user: {
+          id: "507f1f77bcf86cd799439011",
+          role: "employee",
+          identifier: "MAT123",
+          name: "Funcionario Teste",
+        },
+        expiresAt: Date.now() + 60_000,
+      }),
+    );
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ message: "Sessao invalida" }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+
+    const { result } = renderHook(() => useEmployeeAuth());
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.user).toBeNull();
+    expect(window.localStorage.getItem("vrg:employee-auth-snapshot")).toBeNull();
   });
 });

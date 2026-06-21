@@ -49,7 +49,20 @@ describe("GET /api/auth/session", () => {
 
     expect(response.status).toBe(401);
     expect(response.cookies.get("_atk")?.value).toBe("");
+    expect(response.cookies.get("_atk")?.maxAge).toBe(0);
     expect(response.cookies.get("_atk_role")?.value).toBe("");
+  });
+
+  it("deve retornar offline sem limpar cookies quando backend falha por rede", async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError("fetch failed"));
+
+    const response = await GET(makeRequest("_atk=session-abc; _atk_role=employee"));
+    const body = (await response.json()) as { offline?: boolean; message?: string };
+
+    expect(response.status).toBe(503);
+    expect(body.offline).toBe(true);
+    expect(response.cookies.get("_atk")).toBeUndefined();
+    expect(response.cookies.get("_atk_role")).toBeUndefined();
   });
 
   it("deve retornar 403 para tipo de usuario fora do frontend", async () => {
@@ -96,6 +109,9 @@ describe("GET /api/auth/session", () => {
     expect(body.user.id).toBe("507f1f77bcf86cd799439011");
     expect(body.user.role).toBe("employee");
     expect(body.user.name).toBe("Funcionário");
+    expect(response.cookies.get("_atk")?.value).toBe("session-abc");
+    expect(response.cookies.get("_atk")?.maxAge).toBe(60 * 60 * 8);
+    expect(response.cookies.get("_atk")?.sameSite).toBe("lax");
     expect(response.cookies.get("_atk_role")?.value).toBe("employee");
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });

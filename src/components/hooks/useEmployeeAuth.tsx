@@ -16,13 +16,86 @@ import {
   employeeLoginRequestSchema,
 } from "@/lib/validation/auth";
 
+const AUTH_SNAPSHOT_KEY = "vrg:employee-auth-snapshot";
+const AUTH_SNAPSHOT_TTL_MS = 24 * 60 * 60 * 1000;
+
+interface AuthSnapshot {
+  user: EmployeeUser;
+  expiresAt: number;
+}
+
+function isNavigatorOffline(): boolean {
+  return typeof navigator !== "undefined" && navigator.onLine === false;
+}
+
+function readAuthSnapshot(): EmployeeUser | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(AUTH_SNAPSHOT_KEY);
+    if (!raw) return null;
+
+    const snapshot = JSON.parse(raw) as Partial<AuthSnapshot>;
+    const authResult = employeeAuthResponseSchema.safeParse({
+      ok: true,
+      user: snapshot.user,
+    });
+
+    if (
+      !authResult.success ||
+      typeof snapshot.expiresAt !== "number" ||
+      snapshot.expiresAt <= Date.now()
+    ) {
+      window.localStorage.removeItem(AUTH_SNAPSHOT_KEY);
+      return null;
+    }
+
+    return authResult.data.user;
+  } catch {
+    return null;
+  }
+}
+
+function persistAuthSnapshot(user: EmployeeUser): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    const snapshot: AuthSnapshot = {
+      user,
+      expiresAt: Date.now() + AUTH_SNAPSHOT_TTL_MS,
+    };
+    window.localStorage.setItem(AUTH_SNAPSHOT_KEY, JSON.stringify(snapshot));
+  } catch {
+    // Snapshot offline é best-effort.
+  }
+}
+
+function clearAuthSnapshot(): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.removeItem(AUTH_SNAPSHOT_KEY);
+  } catch {
+    // Snapshot offline é best-effort.
+  }
+}
+
 export function useEmployeeAuth() {
   const [user, setUser] = useState<EmployeeUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   const clearSession = useCallback(() => {
+    clearAuthSnapshot();
     setUser(null);
+  }, []);
+
+  const restoreSnapshot = useCallback((): boolean => {
+    const snapshotUser = readAuthSnapshot();
+    if (!snapshotUser) return false;
+
+    setUser(snapshotUser);
+    return true;
   }, []);
 
   const handleUnauthorized = useCallback(() => {
@@ -38,6 +111,11 @@ export function useEmployeeAuth() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        if (isNavigatorOffline()) {
+          restoreSnapshot();
+          return;
+        }
+
         const response = await fetch("/api/auth/session", {
           method: "GET",
           credentials: "include",
@@ -45,7 +123,12 @@ export function useEmployeeAuth() {
         });
 
         if (!response.ok) {
-          clearSession();
+          if (response.status === 401) {
+            clearSession();
+            return;
+          }
+
+          restoreSnapshot();
           return;
         }
 
@@ -58,15 +141,16 @@ export function useEmployeeAuth() {
         }
 
         setUser(sessionResult.data.user);
+        persistAuthSnapshot(sessionResult.data.user);
       } catch {
-        clearSession();
+        restoreSnapshot();
       } finally {
         setLoading(false);
       }
     };
 
     void checkAuth();
-  }, [clearSession]);
+  }, [clearSession, restoreSnapshot]);
 
   const getCsrfHeaders = useCallback(async (): Promise<Record<string, string>> => {
     const response = await fetch("/api/auth/csrf", {
@@ -125,6 +209,7 @@ export function useEmployeeAuth() {
       }
 
       setUser(authResult.data.user);
+      persistAuthSnapshot(authResult.data.user);
 
       if (authResult.data.user.role === "admin") {
         router.push("/admin/dashboard");

@@ -9,6 +9,45 @@ import {
 } from "@/lib/server/bff-auth";
 import { backendMeSchema } from "@/lib/validation/auth";
 
+function clearAuthCookies(response: NextResponse): void {
+  response.cookies.set(SID_COOKIE_NAME, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+  response.cookies.set(ROLE_COOKIE_NAME, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+}
+
+function refreshAuthCookies(
+  response: NextResponse,
+  sid: string,
+  role: "admin" | "employee",
+): void {
+  const maxAge = getSidMaxAgeSeconds(role);
+  response.cookies.set(SID_COOKIE_NAME, sid, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge,
+  });
+  response.cookies.set(ROLE_COOKIE_NAME, role, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge,
+  });
+}
+
 export async function GET(request: NextRequest) {
   const sid = request.cookies.get(SID_COOKIE_NAME)?.value;
 
@@ -26,23 +65,14 @@ export async function GET(request: NextRequest) {
       cache: "no-store",
     });
 
-    if (!upstream.ok) {
+    if (upstream.status === 401) {
       const response = NextResponse.json({ message: "Sessão inválida." }, { status: 401 });
-      response.cookies.set(SID_COOKIE_NAME, "", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
-        maxAge: 0,
-      });
-      response.cookies.set(ROLE_COOKIE_NAME, "", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
-        maxAge: 0,
-      });
+      clearAuthCookies(response);
       return response;
+    }
+
+    if (!upstream.ok) {
+      return NextResponse.json({ message: "Falha ao validar sessão." }, { status: 502 });
     }
 
     const mePayload = await upstream.json().catch(() => ({}));
@@ -74,16 +104,13 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    response.cookies.set(ROLE_COOKIE_NAME, meData.userType, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-      maxAge: getSidMaxAgeSeconds(meData.userType),
-    });
+    refreshAuthCookies(response, sid, meData.userType);
 
     return response;
   } catch {
-    return NextResponse.json({ message: "Falha ao carregar sessão." }, { status: 500 });
+    return NextResponse.json(
+      { message: "Backend indisponível. Mantendo sessão local.", offline: true },
+      { status: 503 },
+    );
   }
 }
