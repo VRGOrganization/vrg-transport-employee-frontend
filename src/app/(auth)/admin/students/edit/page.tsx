@@ -1,11 +1,14 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
 import { studentService } from "@/services/studentService";
+import { universityService } from "@/services/universityService";
 import { Student } from "@/types/student";
+import type { University } from "@/types/university.types";
 import { StudentForm } from "@/components/students/StudentForm";
 import { StudentFormLayout } from "@/components/students/StudentFormLayout";
 import { SuccessBanner } from "@/components/students/SuccessBanner";
@@ -14,6 +17,7 @@ import { AlertCircle, UserCheck, UserX, CheckCircle2 } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 
 function EditStudentPageInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const studentId = searchParams.get("id");
 
@@ -23,9 +27,19 @@ function EditStudentPageInner() {
   const [success, setSuccess] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
   const [modalView, setModalView] = useState<"deactivate" | "activate" | null>(null);
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [loadingUniversities, setLoadingUniversities] = useState(false);
 
   const { data, errors, loading, setLoading, onChange, setError, validate, clearErrors } =
     useStudentForm({ mode: "edit" });
+
+  useEffect(() => {
+    setLoadingUniversities(true);
+    universityService.list()
+      .then(setUniversities)
+      .catch(() => {})
+      .finally(() => setLoadingUniversities(false));
+  }, []);
 
   // Load student data
   useEffect(() => {
@@ -39,11 +53,13 @@ function EditStudentPageInner() {
       try {
         const s = await studentService.getById(studentId!);
         setStudent(s);
-        onChange("name", s.name);
-        onChange("email", s.email);
-        onChange("telephone", s.telephone ?? "");
+        onChange("name",        s.name);
+        onChange("email",       s.email);
+        onChange("telephone",   s.telephone   ?? "");
         onChange("institution", s.institution ?? "");
-        onChange("shift", s.shift ?? "");
+        onChange("shift",       s.shift       ?? "");
+        onChange("bloodType",   s.bloodType   ?? "");
+        onChange("degree",      s.degree      ?? "");
       } catch {
         setFetchError("Não foi possível carregar os dados do estudante");
       } finally {
@@ -63,10 +79,12 @@ function EditStudentPageInner() {
     clearErrors();
     try {
       await studentService.update(studentId!, {
-        name: data.name.trim(),
+        name:      data.name.trim(),
         telephone: data.telephone.trim(),
-        institution: data.institution,
-        shift: data.shift,
+        ...(data.institution ? { institution: data.institution.trim() } : { institution: "" }),
+        ...(data.shift       ? { shift: data.shift }                    : {}),
+        ...(data.bloodType   ? { bloodType: data.bloodType }            : {}),
+        ...(data.degree      ? { degree: data.degree.trim() }           : {}),
       });
       setSuccess(true);
     } catch (err: unknown) {
@@ -110,9 +128,9 @@ function EditStudentPageInner() {
     return (
       <main className="p-8">
         <div className="max-w-lg mx-auto flex flex-col items-center gap-4 py-16 text-center">
-          <AlertCircle className="w-10 h-10 text-error" />
+          <AlertCircle className="size-10 text-error" />
           <p className="text-on-surface-variant">{fetchError}</p>
-          <Button variant="outline" size="sm" onClick={() => window.history.back()}>
+          <Button variant="outline" size="sm" onClick={() => router.back()}>
             Voltar
           </Button>
         </div>
@@ -145,7 +163,7 @@ function EditStudentPageInner() {
                   <div className="flex items-center justify-between mb-5 pb-5 border-b border-outline-variant/20">
                     <div className="flex items-center gap-2">
                       <span
-                        className={`w-2.5 h-2.5 rounded-full ${
+                        className={`size-2.5 rounded-full ${
                           student.active ? "bg-success" : "bg-surface-container-high"
                         }`}
                       />
@@ -163,7 +181,7 @@ function EditStudentPageInner() {
                           : "text-success hover:bg-success-container"
                       }`}
                     >
-                      {student.active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                      {student.active ? <UserX className="size-4" /> : <UserCheck className="size-4" />}
                       {student.active ? "Desativar" : "Reativar"}
                     </button>
                   </div>
@@ -176,6 +194,8 @@ function EditStudentPageInner() {
                   mode="edit"
                   onChange={onChange}
                   onSubmit={handleSubmit}
+                  universities={universities}
+                  loadingUniversities={loadingUniversities}
                 />
               </>
             )}
@@ -203,7 +223,7 @@ function EditStudentPageInner() {
               fullWidth
               className="bg-error hover:bg-error/90 border-none text-white font-bold"
               loading={statusLoading}
-              icon={<UserX className="w-4 h-4" />}
+              icon={<UserX className="size-4" />}
               onClick={confirmToggleStatus}
             >
               Sim, desativar
@@ -213,7 +233,7 @@ function EditStudentPageInner() {
       >
         <div className="flex flex-col items-center gap-3 py-4 text-center">
           <div className="p-4 bg-error/10 rounded-full">
-            <UserX className="w-9 h-9 text-error" />
+            <UserX className="size-9 text-error" />
           </div>
           <p className="text-sm text-on-surface-variant max-w-xs">
             O estudante <span className="font-semibold text-on-surface">{student?.name}</span> perderá
@@ -237,7 +257,7 @@ function EditStudentPageInner() {
               fullWidth
               className="bg-success hover:bg-success/90 border-none text-white"
               loading={statusLoading}
-              icon="check"
+              icon={<CheckCircle2 className="size-4" />}
               onClick={confirmToggleStatus}
             >
               Sim, reativar
@@ -247,7 +267,7 @@ function EditStudentPageInner() {
       >
         <div className="flex flex-col items-center gap-3 py-4 text-center">
           <div className="p-4 bg-success/10 rounded-full">
-            <CheckCircle2 className="w-9 h-9 text-success" />
+            <CheckCircle2 className="size-9 text-success" />
           </div>
           <p className="text-sm text-on-surface-variant max-w-xs">
             O estudante <span className="font-semibold text-on-surface">{student?.name}</span> recuperará

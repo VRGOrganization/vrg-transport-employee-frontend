@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { employeeService } from "@/services/employeeService";
 import { http } from "@/services/http";
-import { Calendar } from "lucide-react";
+import { Calendar, Download, Loader2 } from "lucide-react";
 import { universityApi, busApi } from "@/lib/universityApi";
 import { buildStudentsCsv, buildEmployeesCsv, buildBusesCsv, buildUniversitiesCsv, downloadCsv } from "@/lib/csvUtils";
 import { resolvePaginated, type Paginated } from "@/types/api";
 import { getGreeting } from "@/lib/utils/date";
+import { toast } from "@/lib/toast";
+import { EnrollmentPeriodBanner } from "@/components/admin/EnrollmentPeriodBanner";
 import { DashboardStatCards } from "@/components/admin/dashboard/DashboardStatCards";
 import { DashboardUsersTable, type UserRow, type UserFilter } from "@/components/admin/dashboard/DashboardUsersTable";
 import type { PageSize } from "@/lib/constants";
@@ -56,6 +59,9 @@ function getTodayLabel() {
 
 export default function AdminDashboardPage() {
   const { user } = useEmployeeAuth();
+  const router = useRouter();
+
+  const [activePeriod, setActivePeriod] = useState<EnrollmentPeriodRecord | null>(null);
 
   const [stats, setStats] = useState<DashboardStats>({
     activeStudents: null,
@@ -79,7 +85,7 @@ export default function AdminDashboardPage() {
           employeeService.list(),
           http.get<Paginated<StudentRecord>>("/student").then(resolvePaginated),
           http.get<EnrollmentPeriodRecord>("/enrollment-period/active"),
-          http.get<Paginated<unknown>>("/license-request/all").then(resolvePaginated),
+          http.get<Paginated<unknown>>("/license-request").then(resolvePaginated),
         ]);
 
       const rows: UserRow[] = [];
@@ -137,6 +143,7 @@ export default function AdminDashboardPage() {
 
       if (activePeriodResult.status === "fulfilled") {
         const p = activePeriodResult.value;
+        setActivePeriod(p ?? null);
         setStats((prev) => ({
           ...prev,
           fleetLabel: `${p.filledSlots}/${p.totalSlots}`,
@@ -172,17 +179,6 @@ export default function AdminDashboardPage() {
     setExportLoading(true);
     const today = new Date().toISOString().split("T")[0];
     try {
-      if (filter === "Aluno") {
-        const students = await http.get<Paginated<StudentRecord>>("/student").then(resolvePaginated);
-        downloadCsv(buildStudentsCsv(students), `alunos_${today}.csv`);
-        return;
-      }
-      if (filter === "Funcionário") {
-        const emps = await employeeService.list();
-        downloadCsv(buildEmployeesCsv(emps), `funcionarios_${today}.csv`);
-        return;
-      }
-      // "Todos" — 4 arquivos separados
       const [studentsRes, empsRes, busesRes, unisRes] = await Promise.all([
         http.get<Paginated<StudentRecord>>("/student").then(resolvePaginated),
         employeeService.list(),
@@ -199,33 +195,38 @@ export default function AdminDashboardPage() {
       downloadCsv(buildBusesCsv(buses), `frotas_${today}.csv`);
       await new Promise((r) => setTimeout(r, 300));
       downloadCsv(buildUniversitiesCsv(unis), `faculdades_${today}.csv`);
+      toast.success("Dados exportados com sucesso! 4 arquivos CSV foram baixados.");
     } catch (err) {
-      console.error("Erro ao exportar dados:", err);
-      alert("Erro ao exportar dados. Tente novamente.");
+      if (process.env.NODE_ENV !== "production") console.error("Erro ao exportar dados:", err);
+      toast.error("Erro ao exportar dados. Tente novamente.");
     } finally {
       setExportLoading(false);
     }
   };
-
-  const exportLabel =
-    filter === "Aluno" ? "Exportar Alunos" :
-    filter === "Funcionário" ? "Exportar Funcionários" :
-    "Exportar Todos (4 arquivos)";
-
-  const exportTooltip =
-    filter === "Aluno" ? "Exportar dados dos alunos em CSV" :
-    filter === "Funcionário" ? "Exportar dados dos funcionários em CSV" :
-    "Exportar 4 arquivos CSV separados: Alunos, Funcionários, Frota e Faculdades";
 
   // ── Month label ────────────────────────────────────────────────────────────
 
   const currentMonth = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
   const monthLabel = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
 
+  const handleRowClick = (row: import("@/components/admin/dashboard/DashboardUsersTable").UserRow) => {
+    if (row.type === "Aluno") router.push(`/admin/students?view=${row.id}`);
+    else router.push(`/admin/employees?view=${row.id}`);
+  };
+
+  const pendingLabel =
+    stats.pendingStudents === null ? "…" :
+    stats.pendingStudents === 1 ? "1 solicitação de licença pendente de aprovação" :
+    `${stats.pendingStudents} solicitações de licença pendentes de aprovação`;
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <main className="px-6 py-5 bg-surface flex flex-col gap-5">
+
+      {activePeriod?.endDate && (
+        <EnrollmentPeriodBanner endDate={activePeriod.endDate} />
+      )}
 
       {/* ── Page header ──────────────────────────────────── */}
       <div className="flex items-center justify-between">
@@ -234,11 +235,11 @@ export default function AdminDashboardPage() {
             {user?.name ? getGreeting(user.name.split(" ")[0]) : "Bom dia"}
           </h1>
           <p className="text-xs text-on-surface-variant mt-0.5">
-            {getTodayLabel()} · {stats.pendingStudents ?? "…"} itens precisam da sua atenção hoje.
+            {getTodayLabel()} · {pendingLabel}
           </p>
         </div>
         <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors">
-          <Calendar className="w-4 h-4" />
+          <Calendar className="size-4" />
           {monthLabel}
         </button>
       </div>
@@ -252,24 +253,38 @@ export default function AdminDashboardPage() {
       />
 
       {/* ── Users table ──────────────────────────────────── */}
-      <DashboardUsersTable
-        rows={paginated}
-        totalFiltered={filtered.length}
-        totalAll={userRows.length}
-        loading={loadingTable}
-        filter={filter}
-        onFilterChange={handleFilterChange}
-        search={search}
-        onSearch={handleSearch}
-        page={page}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={setPageSize}
-        exportLoading={exportLoading}
-        onExport={handleExport}
-        exportLabel={exportLabel}
-        exportTooltip={exportTooltip}
-      />
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-end">
+          <button
+            onClick={handleExport}
+            disabled={exportLoading}
+            title="Exportar 4 arquivos CSV: Alunos, Funcionários, Frota e Faculdades"
+            className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait shrink-0 whitespace-nowrap"
+          >
+            {exportLoading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Download className="size-4" />
+            )}
+            {exportLoading ? "Exportando..." : "Exportar"}
+          </button>
+        </div>
+        <DashboardUsersTable
+          rows={paginated}
+          totalFiltered={filtered.length}
+          totalAll={userRows.length}
+          loading={loadingTable}
+          filter={filter}
+          onFilterChange={handleFilterChange}
+          search={search}
+          onSearch={handleSearch}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          onRowClick={handleRowClick}
+        />
+      </div>
 
     </main>
   );

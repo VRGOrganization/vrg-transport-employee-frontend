@@ -7,6 +7,8 @@ export const banlistService = {
     const qs = active !== undefined ? `?active=${active}` : "";
     return http.get<Paginated<BanlistEntry>>(`/banlist${qs}`).then(resolvePaginated);
   },
+  getByStudent: (studentId: string) =>
+    http.get<BanlistEntry[]>(`/banlist/student/${studentId}`),
   ban: (studentId: string, reasons: string[]) =>
     http.post<BanlistEntry>("/banlist/ban", { studentId, reasons }),
   unban: (studentId: string, reasons: string[]) =>

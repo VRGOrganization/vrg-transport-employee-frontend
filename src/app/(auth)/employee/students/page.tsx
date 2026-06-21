@@ -5,11 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
+import { UserPlus, CheckCircle2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { studentService } from "@/services/studentService";
 import { Student } from "@/types/student";
 import { StudentCard, StudentCardSkeleton } from "@/components/students/StudentCard";
 import { StudentListEmpty } from "@/components/students/StudentListEmpty";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { toast } from "@/lib/toast";
 
 type Tab = "active" | "inactive";
 
@@ -21,6 +24,10 @@ export default function EmployeeStudentsPage() {
   const [inactive, setInactive] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [reactivateTarget, setReactivateTarget] = useState<Student | null>(null);
+  const [reactivateLoading, setReactivateLoading] = useState(false);
+  const [reactivateError, setReactivateError] = useState("");
 
   const fetchActive = useCallback(async () => {
     setActive(await studentService.list());
@@ -59,6 +66,23 @@ export default function EmployeeStudentsPage() {
     router.push(`/employee/students/edit?id=${id}`);
   };
 
+  const handleConfirmReactivate = async () => {
+    if (!reactivateTarget) return;
+    setReactivateLoading(true);
+    setReactivateError("");
+    try {
+      await studentService.reactivate(reactivateTarget._id);
+      toast.success(`${reactivateTarget.name} foi reativado com sucesso.`);
+      setReactivateTarget(null);
+      await loadTab("inactive");
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setReactivateError(e.message ?? "Erro ao reativar o estudante");
+    } finally {
+      setReactivateLoading(false);
+    }
+  };
+
   const displayed = tab === "active" ? active : inactive;
   const count = displayed.length;
 
@@ -72,7 +96,7 @@ export default function EmployeeStudentsPage() {
               back="/employee/dashboard"
               rightSlot={
                 <Link href="/employee/students/new">
-                  <Button variant="primary" size="sm" icon="person_add">Adicionar</Button>
+                  <Button variant="primary" size="sm" icon={<UserPlus className="size-4" />}>Adicionar</Button>
                 </Link>
               }
             />
@@ -125,6 +149,7 @@ export default function EmployeeStudentsPage() {
                     student={student}
                     onClick={() => handleEdit(student._id)}
                     onEdit={() => handleEdit(student._id)}
+                    onReactivate={() => setReactivateTarget(student)}
                   />
                 ))}
               </div>
@@ -135,6 +160,21 @@ export default function EmployeeStudentsPage() {
           <div className="mt-auto w-full">
             <Footer />
           </div>
+
+          {reactivateTarget && (
+            <ConfirmModal
+              open
+              onClose={() => { setReactivateError(""); setReactivateTarget(null); }}
+              onConfirm={handleConfirmReactivate}
+              loading={reactivateLoading}
+              error={reactivateError}
+              title="Reativar estudante?"
+              icon={CheckCircle2}
+              variant="success"
+              description={<><strong>{reactivateTarget.name}</strong> recuperará acesso ao sistema imediatamente.</>}
+              confirmLabel="Sim, reativar"
+            />
+          )}
     </main>
   );
 }

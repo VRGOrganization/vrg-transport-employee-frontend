@@ -58,7 +58,7 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
       );
       setPdfPreviewUrl(pdfUrl);
     } catch (err) {
-      console.error(err);
+      if (process.env.NODE_ENV !== "production") console.error(err);
       alert("Falha ao gerar PDF.");
     }
   };
@@ -91,9 +91,9 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
             </div>
             <button
               onClick={onClose}
-              className="text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center w-8 h-8 rounded-full hover:bg-primary/10"
+              className="text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center size-8 rounded-full hover:bg-primary/10 cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="size-5" />
             </button>
           </div>
 
@@ -101,7 +101,7 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
           <div className="p-6 flex-1 overflow-y-auto flex flex-col items-center justify-center min-h-[400px] bg-surface-container-lowest">
             {loading ? (
               <div className="flex flex-col items-center gap-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full size-8 border-b-2 border-primary"></div>
                 <span className="text-sm text-on-surface-variant">Carregando carteirinha...</span>
               </div>
             ) : error ? (
@@ -133,7 +133,7 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
               variant="outline"
               onClick={handleDownload}
               disabled={!image}
-              icon={<Download className="w-4 h-4" />}
+              icon={<Download className="size-4" />}
             >
               Baixar Carteirinha
             </Button>
@@ -141,7 +141,7 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
               variant="primary"
               onClick={handlePrint}
               disabled={!image}
-              icon={<Printer className="w-4 h-4" />}
+              icon={<Printer className="size-4" />}
             >
               Imprimir Carteirinha
             </Button>

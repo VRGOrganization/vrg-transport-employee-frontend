@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     const { email } = result.data;
 
-    await fetch(`${getBackendApiBaseUrl()}/auth/student/forgot-password`, {
+    await fetch(`${getBackendApiBaseUrl()}/auth/employee/forgot-password`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

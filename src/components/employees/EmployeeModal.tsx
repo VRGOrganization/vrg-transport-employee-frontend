@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { UserX, CheckCircle2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
+import { toast } from "@/lib/toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { employeeService } from "@/services/employeeService";
 import type { Employee } from "@/types/employee";
@@ -21,7 +22,7 @@ interface Props {
 }
 
 export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props) {
-  const [view, setView] = useState<View>("info");
+  const [view, setView] = useState<View>("edit");
   const [pendingPayload, setPendingPayload] = useState<Record<string, string>>({});
   const [pendingChanges, setPendingChanges] = useState<ChangeEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -38,6 +39,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
     setError("");
     try {
       const updated = await employeeService.update(employee._id, pendingPayload);
+      toast.success("Informações do funcionário atualizadas com sucesso.");
       onUpdated(updated);
     } catch (err: unknown) {
       const e = err as { message?: string };
@@ -53,6 +55,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
     setError("");
     try {
       await employeeService.deactivate(employee._id);
+      toast.success("Funcionário desativado com sucesso.");
       onDeleted(employee._id);
     } catch (err: unknown) {
       const e = err as { message?: string };
@@ -67,6 +70,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
     setError("");
     try {
       const updated = await employeeService.reactivate(employee._id);
+      toast.success("Funcionário reativado com sucesso.");
       onUpdated(updated);
     } catch (err: unknown) {
       const e = err as { message?: string };
@@ -138,7 +142,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
         <EmployeeEditForm
           employee={employee}
           generalError={error}
-          onCancel={() => { setError(""); setView("info"); }}
+          onCancel={() => { setError(""); onClose(); }}
           onPrepareConfirm={handlePrepareConfirm}
         />
       )}

@@ -1,20 +1,35 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bus, Pencil, Ban, Hourglass, Users } from "lucide-react";
+import { Bus, Pencil, Ban, Hourglass, Users, RotateCcw } from "lucide-react";
 import { universityApi } from "@/lib/universityApi";
 import type { Bus as BusType } from "@/types/university.types";
 
 interface Props {
   buses: BusType[];
   loading: boolean;
-  onEdit: (bus: BusType) => void;
-  onDeactivate: (id: string) => void;
-  onViewStudents: (bus: BusType) => void;
-  deactivatingId: string | null;
+  onEdit?: (bus: BusType) => void;
+  onDeactivate?: (id: string) => void;
+  onViewStudents?: (bus: BusType) => void;
+  deactivatingId?: string | null;
+  onReactivate?: (id: string) => void;
+  reactivatingId?: string | null;
+  emptyTitle?: string;
+  emptyDescription?: string;
 }
 
-export function BusTable({ buses, loading, onEdit, onDeactivate, onViewStudents, deactivatingId }: Props) {
+export function BusTable({
+  buses,
+  loading,
+  onEdit,
+  onDeactivate,
+  onViewStudents,
+  deactivatingId,
+  onReactivate,
+  reactivatingId,
+  emptyTitle = "Nenhum ônibus cadastrado",
+  emptyDescription = 'Clique em "Novo Ônibus" para começar',
+}: Props) {
   const [universitiesMap, setUniversitiesMap] = useState<Record<string, { acronym?: string; name?: string }>>({});
 
   useEffect(() => {
@@ -63,9 +78,9 @@ export function BusTable({ buses, loading, onEdit, onDeactivate, onViewStudents,
   if (buses.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-on-surface-muted">
-        <Bus className="w-12 h-12 mb-3" />
-        <p className="text-sm font-medium">Nenhum ônibus cadastrado</p>
-        <p className="text-xs mt-1">Clique em "Novo Ônibus" para começar</p>
+        <Bus className="size-12 mb-3" />
+        <p className="text-sm font-medium">{emptyTitle}</p>
+        <p className="text-xs mt-1">{emptyDescription}</p>
       </div>
     );
   }
@@ -80,8 +95,8 @@ export function BusTable({ buses, loading, onEdit, onDeactivate, onViewStudents,
           {/* Header do card */}
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-info-container flex items-center justify-center">
-                <Bus className="text-info w-5 h-5" />
+              <div className="size-10 rounded-xl bg-info-container flex items-center justify-center">
+                <Bus className="text-info size-5" />
               </div>
               <div>
                 <p className="text-sm font-bold text-on-surface flex items-center gap-2">
@@ -105,23 +120,39 @@ export function BusTable({ buses, loading, onEdit, onDeactivate, onViewStudents,
                   Fila: {bus.waitlistedCount}
                 </span>
               )}
-              <button
-                onClick={() => onEdit(bus)}
-                className="p-1.5 rounded-lg text-on-surface-muted hover:text-info hover:bg-info-container transition-colors"
-                title="Editar"
-              >
-                <Pencil className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => onDeactivate(bus._id)}
-                disabled={deactivatingId === bus._id}
-                className="p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-colors"
-                title="Desativar"
-              >
-                {deactivatingId === bus._id
-                  ? <Hourglass className="w-4 h-4" />
-                  : <Ban className="w-4 h-4" />}
-              </button>
+              {onEdit && (
+                <button
+                  onClick={() => onEdit(bus)}
+                  className="p-1.5 rounded-lg text-on-surface-muted hover:text-info hover:bg-info-container transition-colors"
+                  title="Editar"
+                >
+                  <Pencil className="size-4" />
+                </button>
+              )}
+              {onDeactivate && (
+                <button
+                  onClick={() => onDeactivate(bus._id)}
+                  disabled={deactivatingId === bus._id}
+                  className="p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-colors"
+                  title="Desativar"
+                >
+                  {deactivatingId === bus._id
+                    ? <Hourglass className="size-4" />
+                    : <Ban className="size-4" />}
+                </button>
+              )}
+              {onReactivate && (
+                <button
+                  onClick={() => onReactivate(bus._id)}
+                  disabled={reactivatingId === bus._id}
+                  className="p-1.5 rounded-lg text-on-surface-muted hover:text-success hover:bg-success-container transition-colors"
+                  title="Reativar"
+                >
+                  {reactivatingId === bus._id
+                    ? <Hourglass className="size-4" />
+                    : <RotateCcw className="size-4" />}
+                </button>
+              )}
             </div>
           </div>
 
@@ -169,13 +200,15 @@ export function BusTable({ buses, loading, onEdit, onDeactivate, onViewStudents,
           </div>
 
           {/* Botão de ver alunos */}
-          <button
-            onClick={() => onViewStudents(bus)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-outline-variant text-on-surface-variant text-xs font-medium hover:bg-surface-container-low hover:text-info transition-colors"
-          >
-            <Users className="w-4 h-4" />
-            Ver alunos cadastrados
-          </button>
+          {onViewStudents && (
+            <button
+              onClick={() => onViewStudents(bus)}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-outline-variant text-on-surface-variant text-xs font-medium hover:bg-surface-container-low hover:text-info transition-colors"
+            >
+              <Users className="size-4" />
+              Ver alunos cadastrados
+            </button>
+          )}
         </div>
       ))}
     </div>

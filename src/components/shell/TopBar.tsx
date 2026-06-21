@@ -2,12 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { getInitials } from "@/lib/utils/string";
-import type { EmployeeUser } from "@/types/employeeAuth";
-
-interface TopBarProps {
-  user: EmployeeUser | null;
-}
 
 function getPageTitle(pathname: string): string {
   const titles: Record<string, string> = {
@@ -15,7 +9,6 @@ function getPageTitle(pathname: string): string {
     "/admin/info":             "Informações",
     "/admin/enrollment-period":"Período de Inscrição",
     "/admin/employees":        "Funcionários",
-    "/admin/employees/new":    "Novo Funcionário",
     "/admin/students":         "Estudantes",
     "/admin/cards":            "Carteirinhas",
     "/admin/universities":     "Instituições",
@@ -32,7 +25,7 @@ function getPageTitle(pathname: string): string {
   return "Painel Administrativo";
 }
 
-export function TopBar({ user }: TopBarProps) {
+export function TopBar() {
   const pathname = usePathname();
   const pageTitle = getPageTitle(pathname);
 
@@ -43,20 +36,6 @@ export function TopBar({ user }: TopBarProps) {
 
         <div className="flex items-center gap-2">
           <ThemeToggle className="text-on-surface-variant hover:bg-surface-container-low" />
-          <div className="w-px h-6 bg-outline-variant/40 mx-1" />
-          <div className="flex items-center gap-2.5">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-semibold text-on-surface leading-tight">
-                {user?.name ?? "Administrador"}
-              </p>
-              <p className="text-xs text-on-surface-variant">
-                {user?.role === "admin" ? "Administradora" : "Funcionária"}
-              </p>
-            </div>
-            <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold text-sm shrink-0">
-              {user?.name ? getInitials(user.name) : "A"}
-            </div>
-          </div>
         </div>
       </div>
     </header>

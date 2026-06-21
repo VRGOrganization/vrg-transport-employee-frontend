@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { ArrowUpRight, TrendingUp, AlertTriangle } from "lucide-react";
 import Link from "next/link";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 
 interface SubInfo {
   text: string;
@@ -18,6 +19,8 @@ interface DashboardStatCardProps {
   accent?: Accent;
   subInfo?: SubInfo;
   href?: string;
+  tooltipContent?: string;
+  tooltipAriaLabel?: string;
 }
 
 const accentStyles: Record<Accent, { icon: string; badge: string }> = {
@@ -43,6 +46,8 @@ export function DashboardStatCard({
   accent = "primary",
   subInfo,
   href,
+  tooltipContent,
+  tooltipAriaLabel,
 }: DashboardStatCardProps) {
   const displayValue =
     typeof value === "number"
@@ -69,7 +74,7 @@ export function DashboardStatCard({
     <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm p-6 hover:shadow-md transition-shadow duration-200">
       {/* Top row: icon + status badge */}
       <div className="flex items-start justify-between mb-4">
-        <Icon className={`w-5.5 h-5.5 ${accentStyle.icon}`} />
+        <Icon className={`size-5.5 ${accentStyle.icon}`} />
         {badge ? (
           <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wide ${accentStyle.badge}`}>
             {badge}
@@ -80,10 +85,10 @@ export function DashboardStatCard({
             aria-label={`Ir para ${label}`}
             className="rounded-lg p-1 -m-1 text-on-surface-variant/40 hover:text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all duration-200"
           >
-            <ArrowUpRight className="w-4.5 h-4.5" />
+            <ArrowUpRight className="size-4.5" />
           </Link>
         ) : (
-          <ArrowUpRight className="w-4.5 h-4.5 text-on-surface-variant/40" />
+          <ArrowUpRight className="size-4.5 text-on-surface-variant/40" />
         )}
       </div>
 
@@ -93,12 +98,17 @@ export function DashboardStatCard({
       </p>
 
       {/* Label */}
-      <p className="text-sm text-on-surface-variant mb-3">{label}</p>
+      <p className="text-sm text-on-surface-variant mb-3 flex items-center gap-1">
+        {label}
+        {tooltipContent && (
+          <InfoTooltip content={tooltipContent} ariaLabel={tooltipAriaLabel} />
+        )}
+      </p>
 
       {/* SubInfo */}
       {subInfo && (
         <p className={`text-xs font-medium flex items-center gap-1 ${subInfoColor}`}>
-          {SubInfoIcon && <SubInfoIcon className="w-3.5 h-3.5" />}
+          {SubInfoIcon && <SubInfoIcon className="size-3.5" />}
           {subInfo.text}
         </p>
       )}

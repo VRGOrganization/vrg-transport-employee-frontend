@@ -20,7 +20,8 @@ export function UpdateRequestDiff({
   pendingImagesByType,
   loadingImages,
 }: UpdateRequestDiffProps) {
-  if (request.type !== "update" || request.status !== "pending") return null;
+  if (request.type !== "update") return null;
+  if (request.status !== "pending" && request.status !== "approved") return null;
 
   return (
     <div className="rounded-xl border border-secondary/30 bg-secondary/5 p-4 space-y-3">

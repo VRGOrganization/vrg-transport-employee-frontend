@@ -5,8 +5,8 @@ export function Footer() {
     <footer className="w-full bg-surface-container-low border-t border-outline-variant/20">
       <div className="max-w-7xl mx-auto w-full px-8 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 opacity-60 grayscale hover:grayscale-0 transition-all">
-            <Building2 className="w-8 h-8 text-primary" />
+          <div className="size-10 opacity-60 grayscale hover:grayscale-0 transition-all">
+            <Building2 className="size-8 text-primary" />
           </div>
           <div>
             <p className="font-headline font-bold text-primary text-sm">

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MapPin } from "lucide-react";
 import { busRouteApi } from "@/lib/universityApi";
 import type { BusRoute } from "@/types/university.types";
+import { PanelCard } from "@/components/ui/PanelCard";
 
 interface BusRouteSelectorPanelProps {
   value?: string | null;
@@ -57,7 +58,7 @@ export default function BusRouteSelectorPanel({
   );
 
   return (
-    <div className={`${className ?? ""} rounded-2xl border border-outline-variant bg-surface-container-lowest p-4`}>
+    <PanelCard as="div" className={className}>
       <div className="mb-3 text-sm text-on-surface-variant">Rota para aprovação</div>
 
       {loading ? (
@@ -85,7 +86,7 @@ export default function BusRouteSelectorPanel({
                   )}
                 </div>
                 <div className="mt-1 flex items-start gap-2 text-xs text-on-surface-variant">
-                  <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <MapPin className="mt-0.5 size-3.5 shrink-0" />
                   <span className="line-clamp-2">{summarizeDestinations(route)}</span>
                 </div>
               </div>
@@ -100,7 +101,7 @@ export default function BusRouteSelectorPanel({
             <div className="text-xs text-on-surface-variant">Rota selecionada</div>
             <div className="text-base font-semibold text-on-surface">{selected?.lineNumber ?? "–"}</div>
             <div className="mt-1 flex items-start gap-2 text-xs text-on-surface-variant">
-              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <MapPin className="mt-0.5 size-3.5 shrink-0" />
               <span className="line-clamp-2">{selected ? summarizeDestinations(selected) : ""}</span>
             </div>
           </div>
@@ -114,6 +115,6 @@ export default function BusRouteSelectorPanel({
           </button>
         </div>
       )}
-    </div>
+    </PanelCard>
   );
 }

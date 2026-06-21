@@ -24,7 +24,7 @@ const COLUMNS: Column<BanlistEntry>[] = [
     label: "Estudante",
     render: (entry) => (
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-error/10 flex items-center justify-center text-error font-bold text-xs flex-shrink-0">
+        <div className="size-9 rounded-full bg-error/10 flex items-center justify-center text-error font-bold text-xs flex-shrink-0">
           {entry.name.charAt(0).toUpperCase()}
         </div>
         <div>
@@ -35,7 +35,7 @@ const COLUMNS: Column<BanlistEntry>[] = [
     ),
     skeleton: () => (
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-surface-container-high animate-pulse flex-shrink-0" />
+        <div className="size-9 rounded-full bg-surface-container-high animate-pulse flex-shrink-0" />
         <div className="h-3 w-36 bg-surface-container-high rounded animate-pulse" />
       </div>
     ),
@@ -124,9 +124,9 @@ export default function BanlistPage() {
         <button
           onClick={(e) => { e.stopPropagation(); setUnbanTarget(entry); }}
           title="Remover banimento"
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-success hover:bg-success/10 transition-colors ml-auto"
+          className="size-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-success hover:bg-success/10 transition-colors ml-auto"
         >
-          <ShieldCheck className="w-4 h-4" />
+          <ShieldCheck className="size-4" />
         </button>
       ) : (
         <span className="text-xs text-on-surface-variant/50 italic mr-2">—</span>

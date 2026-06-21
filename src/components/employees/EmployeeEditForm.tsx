@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { StatusBanner } from "@/components/ui/StatusBanner";
@@ -26,8 +26,6 @@ export function EmployeeEditForm({ employee, generalError, onCancel, onPrepareCo
     name: employee.name,
     email: employee.email,
     registrationId: employee.registrationId,
-    password: "",
-    confirmPassword: "",
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -66,11 +64,6 @@ export function EmployeeEditForm({ employee, generalError, onCancel, onPrepareCo
       payload.registrationId = data.registrationId.trim();
       changes.push({ label: "Matrícula", from: employee.registrationId, to: data.registrationId.trim() });
     }
-    if (data.password) {
-      payload.password = data.password;
-      changes.push({ label: "Senha", from: "••••••••", to: "(nova senha definida)" });
-    }
-
     if (changes.length === 0) {
       setFieldErrors({ _form: "Nenhuma alteração foi feita" });
       return;
@@ -87,7 +80,7 @@ export function EmployeeEditForm({ employee, generalError, onCancel, onPrepareCo
           onClick={onCancel}
           className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="size-5" />
         </button>
         <h3 className="font-headline font-semibold text-lg text-on-surface flex-1">Editar Funcionário</h3>
       </div>
@@ -124,41 +117,11 @@ export function EmployeeEditForm({ employee, generalError, onCancel, onPrepareCo
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-            Nova senha <span className="normal-case font-normal">(opcional)</span>
-          </label>
-          <Input
-            type="password"
-            icon="lock"
-            placeholder="Deixe em branco para não alterar"
-            value={values.password}
-            onChange={set("password")}
-            error={fieldErrors.password}
-          />
-        </div>
-
-        {values.password && (
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-              Confirmar nova senha
-            </label>
-            <Input
-              type="password"
-              icon="lock"
-              placeholder="••••••••"
-              value={values.confirmPassword}
-              onChange={set("confirmPassword")}
-              error={fieldErrors.confirmPassword}
-            />
-          </div>
-        )}
-
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="outline" size="sm" fullWidth onClick={onCancel}>
             Cancelar
           </Button>
-          <Button type="submit" variant="primary" size="sm" fullWidth icon="check">
+          <Button type="submit" variant="primary" size="sm" fullWidth icon={<Check className="size-4" />}>
             Salvar alterações
           </Button>
         </div>

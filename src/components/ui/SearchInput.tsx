@@ -23,7 +23,7 @@ export function SearchInput({ value, onChange, placeholder, className = "w-80" }
       {value && (
         <button
           onClick={() => onChange("")}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface cursor-pointer"
         >
           <span className="material-symbols-outlined text-[15px]">close</span>
         </button>

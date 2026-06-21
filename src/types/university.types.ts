@@ -6,12 +6,19 @@ export interface University {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  pendingCount?: number;
+  waitlistedCount?: number;
 }
+
+export type CourseModel = "Bacharel" | "Técnico" | "Licenciatura";
+
+export const COURSE_MODEL_OPTIONS: CourseModel[] = ["Bacharel", "Técnico", "Licenciatura"];
 
 export interface Course {
   _id: string;
   name: string;
   universityId: string | { _id: string; name: string; acronym: string };
+  model: CourseModel | null;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -61,6 +68,7 @@ export interface BusStudent {
         name?: string;
         acronym?: string;
       };
+  days?: string[];
 }
 
 export interface BusRouteDestination {

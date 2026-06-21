@@ -111,7 +111,7 @@ export function CardStatusChart({
             className="flex items-center gap-1.5 text-xs text-on-surface-variant"
           >
             <span
-              className="w-2.5 h-2.5 rounded-sm shrink-0"
+              className="size-2.5 rounded-sm shrink-0"
               style={{ background: color }}
             />
             {label} {pct(value)}

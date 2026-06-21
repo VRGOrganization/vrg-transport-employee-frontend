@@ -8,18 +8,17 @@ import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 interface PageShellProps {
   brand: SideNavBrand;
   navItems: readonly NavItem[];
-  showUserFooter?: boolean;
   children: ReactNode;
 }
 
-export function PageShell({ brand, navItems, showUserFooter, children }: PageShellProps) {
-  const { user, logout } = useEmployeeAuth();
+export function PageShell({ brand, navItems, children }: PageShellProps) {
+  const { logout } = useEmployeeAuth();
 
   return (
     <div className="min-h-screen w-full bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-      <SideNav brand={brand} items={navItems} onLogout={logout} showUserFooter={showUserFooter} />
+      <SideNav brand={brand} items={navItems} onLogout={logout} />
       <div className="min-w-0 w-full flex flex-col">
-        <TopBar user={user} />
+        <TopBar />
         {children}
       </div>
     </div>

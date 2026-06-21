@@ -1,4 +1,4 @@
-import { Pencil } from "lucide-react";
+import { Pencil, UserCheck } from "lucide-react";
 import { Student } from "@/types/student";
 import { getInitials } from "@/lib/utils/string";
 
@@ -8,9 +8,11 @@ interface StudentCardProps {
   onClick: () => void;
   /** Clique no botão de edição — redireciona para /admin/students/edit?id= */
   onEdit: () => void;
+  /** Clique no botão de reativação — exibido apenas para estudantes desativados */
+  onReactivate?: () => void;
 }
 
-export function StudentCard({ student, onClick, onEdit }: StudentCardProps) {
+export function StudentCard({ student, onClick, onEdit, onReactivate }: StudentCardProps) {
   const isInactive = !student.active;
 
   return (
@@ -25,7 +27,7 @@ export function StudentCard({ student, onClick, onEdit }: StudentCardProps) {
       <button onClick={onClick} className="flex items-center gap-4 flex-1 min-w-0 text-left cursor-pointer">
         {/* Avatar */}
         <div
-          className={`w-12 h-12 rounded-full flex items-center justify-center font-headline font-bold text-sm shrink-0 ${
+          className={`size-12 rounded-full flex items-center justify-center font-headline font-bold text-sm shrink-0 ${
             isInactive ? "bg-outline-variant text-on-surface-variant" : "bg-primary text-white"
           }`}
         >
@@ -56,6 +58,20 @@ export function StudentCard({ student, onClick, onEdit }: StudentCardProps) {
         </div>
       </button>
 
+      {/* Reactivate button — exibido apenas para estudantes desativados */}
+      {isInactive && onReactivate && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onReactivate();
+          }}
+          title="Reativar estudante"
+          className="shrink-0 p-2 rounded-xl text-on-surface-variant hover:text-success hover:bg-success/10 transition-colors"
+        >
+          <UserCheck className="size-5" />
+        </button>
+      )}
+
       {/* Edit button — isolated so it doesn't trigger onClick */}
       <button
         onClick={(e) => {
@@ -65,7 +81,7 @@ export function StudentCard({ student, onClick, onEdit }: StudentCardProps) {
         title="Editar estudante"
         className="shrink-0 p-2 rounded-xl text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors"
       >
-        <Pencil className="w-5 h-5" />
+        <Pencil className="size-5" />
       </button>
     </div>
   );
@@ -74,13 +90,13 @@ export function StudentCard({ student, onClick, onEdit }: StudentCardProps) {
 export function StudentCardSkeleton() {
   return (
     <div className="flex items-center gap-4 bg-surface-container-lowest border border-outline-variant rounded-2xl p-5">
-      <div className="w-12 h-12 rounded-full bg-surface-container-high animate-pulse shrink-0" />
+      <div className="size-12 rounded-full bg-surface-container-high animate-pulse shrink-0" />
       <div className="flex-1 space-y-2">
         <div className="h-4 bg-surface-container-high rounded animate-pulse w-3/4" />
         <div className="h-3 bg-surface-container-high rounded animate-pulse w-1/2" />
         <div className="h-3 bg-surface-container-high rounded animate-pulse w-1/3" />
       </div>
-      <div className="w-8 h-8 rounded-xl bg-surface-container-high animate-pulse shrink-0" />
+      <div className="size-8 rounded-xl bg-surface-container-high animate-pulse shrink-0" />
     </div>
   );
 }

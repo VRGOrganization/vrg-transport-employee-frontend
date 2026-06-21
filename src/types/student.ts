@@ -58,7 +58,7 @@ export interface LicenseRequestRecord {
   studentId: string;
   type: "initial" | "update";
   changedDocuments: string[];
-  status: "pending" | "approved" | "rejected" | "waitlisted" | "partially_waitlisted" | "cancelled";
+  status: "pending" | "approved" | "rejected" | "waitlisted" | "cancelled";
   rejectionReason: string | null;
   rejectedAt: string | null;
   licenseId: string | null;
@@ -72,10 +72,10 @@ export interface StudentFormData {
   email: string;
   telephone: string;
   institution: string;
-  shift: "diurno" | "noturno" | "";
+  shift: "Manhã" | "Tarde" | "Noite" | "Integral" | "";
+  bloodType: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-" | "";
+  degree: string;
   cpf: string;
-  password: string;
-  confirmPassword: string;
 }
 
 export interface StudentFormErrors {
@@ -84,9 +84,9 @@ export interface StudentFormErrors {
   telephone: string;
   institution: string;
   shift: string;
+  bloodType: string;
+  degree: string;
   cpf: string;
-  password: string;
-  confirmPassword: string;
   general: string;
 }
 
@@ -96,17 +96,20 @@ export const EMPTY_STUDENT_ERRORS: StudentFormErrors = {
   telephone: "",
   institution: "",
   shift: "",
+  bloodType: "",
+  degree: "",
   cpf: "",
-  password: "",
-  confirmPassword: "",
   general: "",
 };
 
-export const INSTITUTIONS = [
-    
+export type StudentShift = "Manhã" | "Tarde" | "Noite" | "Integral";
+
+export const SHIFTS: { value: StudentShift; label: string; icon: string }[] = [
+  { value: "Manhã",    label: "Manhã",    icon: "wb_sunny"    },
+  { value: "Tarde",    label: "Tarde",    icon: "wb_twilight" },
+  { value: "Noite",    label: "Noite",    icon: "dark_mode"   },
+  { value: "Integral", label: "Integral", icon: "schedule"    },
 ];
 
-export const SHIFTS: { value: "diurno" | "noturno"; label: string; icon: string }[] = [
-  { value: "diurno", label: "Diurno", icon: "light_mode" },
-  { value: "noturno", label: "Noturno", icon: "dark_mode" },
-];
+export const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] as const;
+export type BloodType = typeof BLOOD_TYPES[number];

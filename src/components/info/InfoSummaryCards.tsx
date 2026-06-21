@@ -53,9 +53,9 @@ function InfoCard({ card }: { card: SummaryCard }) {
           </span>
         )}
         {card.pulse && (
-          <span className="flex h-3 w-3 relative mt-1">
+          <span className="flex size-3 relative mt-1">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-secondary" />
+            <span className="relative inline-flex rounded-full size-3 bg-secondary" />
           </span>
         )}
       </div>

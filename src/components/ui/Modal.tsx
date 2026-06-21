@@ -13,6 +13,10 @@ interface ModalProps {
   hideClose?: boolean;
   children: ReactNode;
   footer?: ReactNode;
+  /** Full-width content rendered before the padded children area (e.g. gradient headers) */
+  header?: ReactNode;
+  /** Remove default px-6 pb-6 padding from the children wrapper */
+  noPadding?: boolean;
 }
 
 const SIZE_CLASSES = {
@@ -27,10 +31,12 @@ export function Modal({
   onClose,
   title,
   size = "md",
-  closeOnBackdrop = true,
+  closeOnBackdrop = false,
   hideClose = false,
   children,
   footer,
+  header,
+  noPadding = false,
 }: ModalProps) {
   useEffect(() => {
     if (!open) return;
@@ -62,6 +68,7 @@ export function Modal({
           SIZE_CLASSES[size],
         )}
       >
+        {header}
         {(title || !hideClose) && (
           <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
             {title && (
@@ -72,14 +79,14 @@ export function Modal({
             {!hideClose && (
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors ml-auto"
+                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors ml-auto cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="size-5" />
               </button>
             )}
           </div>
         )}
-        <div className="px-6 pb-6 flex-1">{children}</div>
+        <div className={cn("flex-1", !noPadding && "px-6 pb-6")}>{children}</div>
         {footer && (
           <div className="px-6 pb-6 pt-2 border-t border-outline-variant/30 shrink-0">
             {footer}

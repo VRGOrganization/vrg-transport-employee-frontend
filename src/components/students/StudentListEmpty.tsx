@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { AlertCircle, GraduationCap, UserX } from "lucide-react";
+import { AlertCircle, GraduationCap, UserX, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ResultState } from "@/components/ui/ResultState";
 
@@ -9,9 +8,10 @@ interface StudentListEmptyProps {
   tab: Tab;
   onRetry?: () => void;
   isError?: boolean;
+  onAdd?: () => void;
 }
 
-export function StudentListEmpty({ tab, onRetry, isError }: StudentListEmptyProps) {
+export function StudentListEmpty({ tab, onRetry, isError, onAdd }: StudentListEmptyProps) {
   if (isError) {
     return (
       <div className="py-16">
@@ -45,12 +45,10 @@ export function StudentListEmpty({ tab, onRetry, isError }: StudentListEmptyProp
             : "Estudantes desativados aparecerão aqui"
         }
         size="sm"
-        actions={isActive ? (
-          <Link href="/admin/students/new">
-            <Button variant="primary" size="sm" icon="person_add">
-              Adicionar estudante
-            </Button>
-          </Link>
+        actions={isActive && onAdd ? (
+          <Button variant="primary" size="sm" icon={<UserPlus className="size-4" />} onClick={onAdd}>
+            Adicionar estudante
+          </Button>
         ) : undefined}
       />
     </div>

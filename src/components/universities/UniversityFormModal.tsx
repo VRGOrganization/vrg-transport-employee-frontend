@@ -51,7 +51,6 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit }: Props)
       open={open}
       onClose={onClose}
       title={initial ? "Editar Faculdade" : "Nova Faculdade"}
-      closeOnOverlay={!loading}
       actions={
         <div className="flex gap-3">
           <Button variant="outline" fullWidth onClick={onClose} disabled={loading}>
@@ -72,7 +71,7 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit }: Props)
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ex: Universidade Federal Fluminense"
-            className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-2.5 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
         <div>
@@ -84,7 +83,7 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit }: Props)
             onChange={(e) => setAcronym(e.target.value.toUpperCase())}
             placeholder="Ex: UFF"
             maxLength={20}
-            className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary uppercase"
+            className="w-full px-4 py-2.5 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary uppercase"
           />
         </div>
         <div>
@@ -95,7 +94,7 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit }: Props)
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             placeholder="Ex: Rua Miguel de Frias, 9 - Niterói"
-            className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-2.5 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
       </div>

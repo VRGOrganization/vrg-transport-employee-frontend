@@ -1,6 +1,5 @@
 "use client";
 
-import { Download, Loader2 } from "lucide-react";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { getInitials, AVATAR_COLORS } from "@/lib/utils/string";
@@ -39,7 +38,7 @@ const COLUMNS: Column<UserRow>[] = [
     render: (row, idx) => (
       <div className="flex items-center gap-3">
         <div
-          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${AVATAR_COLORS[idx % AVATAR_COLORS.length]}`}
+          className={`size-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${AVATAR_COLORS[idx % AVATAR_COLORS.length]}`}
         >
           {getInitials(row.name)}
         </div>
@@ -48,7 +47,7 @@ const COLUMNS: Column<UserRow>[] = [
     ),
     skeleton: () => (
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-surface-container-high animate-pulse shrink-0" />
+        <div className="size-8 rounded-full bg-surface-container-high animate-pulse shrink-0" />
         <div className="h-3 w-32 bg-surface-container-high rounded animate-pulse" />
       </div>
     ),
@@ -108,10 +107,7 @@ interface DashboardUsersTableProps {
   pageSize: PageSize;
   onPageChange: (p: number) => void;
   onPageSizeChange: (s: PageSize) => void;
-  exportLoading: boolean;
-  onExport: () => void;
-  exportLabel: string;
-  exportTooltip: string;
+  onRowClick?: (row: UserRow) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -129,10 +125,7 @@ export function DashboardUsersTable({
   pageSize,
   onPageChange,
   onPageSizeChange,
-  exportLoading,
-  onExport,
-  exportLabel,
-  exportTooltip,
+  onRowClick,
 }: DashboardUsersTableProps) {
   const sectionHeader = (
     <div className="px-6 py-3.5 border-b border-outline-variant/30 flex items-center justify-between gap-4 flex-wrap">
@@ -167,19 +160,6 @@ export function DashboardUsersTable({
           ))}
         </div>
 
-        <button
-          onClick={onExport}
-          disabled={exportLoading}
-          title={exportTooltip}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
-        >
-          {exportLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Download className="w-4 h-4" />
-          )}
-          {exportLoading ? "Exportando..." : exportLabel}
-        </button>
       </div>
     </div>
   );
@@ -190,6 +170,7 @@ export function DashboardUsersTable({
       columns={COLUMNS}
       rows={rows}
       rowKey={(r) => r.id}
+      onRowClick={onRowClick}
       loading={loading}
       empty={
         <p className="text-center text-on-surface-variant text-sm">

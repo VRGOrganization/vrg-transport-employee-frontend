@@ -45,7 +45,7 @@ describe("Side navigation por perfil", () => {
 
   it("deve ocultar item de gerenciar funcionario para perfil employee", () => {
     pathnameState.value = "/employee/dashboard";
-    render(<SideNav brand={EMPLOYEE_BRAND} items={EMPLOYEE_NAV_ITEMS} onLogout={vi.fn()} showUserFooter={false} />);
+    render(<SideNav brand={EMPLOYEE_BRAND} items={EMPLOYEE_NAV_ITEMS} onLogout={vi.fn()} />);
 
     expect(screen.queryByText("Gerenciar Funcionário")).not.toBeInTheDocument();
     expect(screen.queryByText("Período de Inscrição")).not.toBeInTheDocument();

@@ -157,7 +157,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               placeholder="Ex: Ônibus 03"
-              className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2.5 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <div>
@@ -170,7 +170,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
               value={capacity}
               onChange={(e) => setCapacity(e.target.value)}
               placeholder="Ex: 48"
-              className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2.5 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
@@ -179,7 +179,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
             <select
               value={shift}
               onChange={(e) => setShift(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2.5 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">Nenhum</option>
               <option value="Manhã">Manhã</option>
@@ -197,7 +197,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
                 slots.map((s) => (
                   <div key={s.universityId} className="flex items-center justify-between gap-3 py-1 px-2 rounded-lg border border-outline-variant">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-md bg-info-container flex items-center justify-center text-sm font-medium text-info">{s.acronym ?? s.name?.charAt(0) ?? "U"}</div>
+                      <div className="size-8 rounded-md bg-info-container flex items-center justify-center text-sm font-medium text-info">{s.acronym ?? s.name?.charAt(0) ?? "U"}</div>
                       <div className="text-sm">
                         <div className="font-medium text-on-surface">{s.acronym ?? s.name}</div>
                         <div className="text-xxs text-on-surface-muted">Prioridade P{s.priorityOrder}{s.filledSlots ? ` • ${s.filledSlots}` : ""}</div>
@@ -214,7 +214,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
                         )}
                         title="Mover para cima"
                       >
-                        <ArrowUp className="w-4 h-4" />
+                        <ArrowUp className="size-4" />
                       </button>
                       <button
                         type="button"
@@ -226,7 +226,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
                         )}
                         title="Mover para baixo"
                       >
-                        <ArrowDown className="w-4 h-4" />
+                        <ArrowDown className="size-4" />
                       </button>
                       <button type="button" onClick={() => handleRemove(s.universityId)} className="text-error text-sm">Remover</button>
                     </div>

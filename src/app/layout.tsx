@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { ThemeProvider } from "@/providers/ThemeProvider";
+import { Toaster } from "@/components/ui/Toaster";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -39,6 +40,7 @@ export default function RootLayout({
           <div className="min-h-screen w-full flex flex-col">
             {children}
           </div>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

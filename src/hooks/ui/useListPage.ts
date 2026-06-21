@@ -9,6 +9,8 @@ interface UseListPageOptions<T, Tab extends string> {
   fetcher: (tab: Tab) => Promise<T[]>;
   searchFields: (item: T) => string[];
   errorMessage?: string;
+  reloadOnTabChange?: boolean;
+  sortFn?: (a: T, b: T) => number;
 }
 
 export function useListPage<T, Tab extends string>({
@@ -17,6 +19,8 @@ export function useListPage<T, Tab extends string>({
   fetcher,
   searchFields,
   errorMessage = "Não foi possível carregar os dados",
+  reloadOnTabChange = false,
+  sortFn,
 }: UseListPageOptions<T, Tab>) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [items, setItems] = useState<Record<Tab, T[] | null>>(
@@ -52,24 +56,27 @@ export function useListPage<T, Tab extends string>({
       setTab(t);
       setSearchRaw("");
       setPage(1);
-      if (items[t] === null) {
+      if (reloadOnTabChange || items[t] === null) {
         load(t);
       } else {
         setLoading(false);
       }
     },
-    [items, load],
+    [items, load, reloadOnTabChange],
   );
 
   const current = items[tab] ?? [];
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return current;
-    const q = search.toLowerCase();
-    return current.filter((item) =>
-      searchFields(item).some((f) => f.toLowerCase().includes(q)),
-    );
-  }, [current, search, searchFields]);
+    let result = search.trim()
+      ? current.filter((item) => {
+          const q = search.toLowerCase();
+          return searchFields(item).some((f) => f.toLowerCase().includes(q));
+        })
+      : current;
+    if (sortFn) result = [...result].sort(sortFn);
+    return result;
+  }, [current, search, searchFields, sortFn]);
 
   const paginated = useMemo(
     () => filtered.slice((page - 1) * pageSize, page * pageSize),
@@ -88,6 +95,14 @@ export function useListPage<T, Tab extends string>({
 
   const reload = useCallback(() => load(tab), [load, tab]);
 
+  // Recarrega aba atual e invalida cache das demais (re-fetch lazy no próximo switch)
+  const reloadAll = useCallback(() => {
+    setItems((prev) =>
+      Object.fromEntries(tabs.map((t) => [t, t === tab ? prev[t] : null])) as Record<Tab, T[] | null>,
+    );
+    load(tab);
+  }, [load, tab, tabs]);
+
   return {
     tab,
     setTab: handleTabChange,
@@ -104,5 +119,6 @@ export function useListPage<T, Tab extends string>({
     total: filtered.length,
     totalPages: Math.max(1, Math.ceil(filtered.length / pageSize)),
     reload,
+    reloadAll,
   };
 }

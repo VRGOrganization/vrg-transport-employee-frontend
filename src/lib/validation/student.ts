@@ -1,40 +1,53 @@
 import { z } from "zod";
-import { PASSWORD_REGEX } from "@/lib/constants";
+
+const PASSWORD_POLICY_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/;
 
 const studentBaseSchema = z.object({
   name: z
-    .string({ error: "Nome e obrigatorio" })
+    .string({ error: "Nome é obrigatório" })
     .trim()
-    .min(1, "Nome e obrigatorio")
-    .max(100, "Nome deve ter no maximo 100 caracteres"),
+    .min(1, "Nome é obrigatório")
+    .max(100, "Nome deve ter no máximo 100 caracteres"),
   email: z
-    .string({ error: "Email e obrigatorio" })
+    .string({ error: "Email é obrigatório" })
     .trim()
-    .min(1, "Email e obrigatorio")
-    .email("Email invalido"),
+    .min(1, "Email é obrigatório")
+    .email("Email inválido"),
   telephone: z
-    .string({ error: "Telefone e obrigatorio" })
+    .string({ error: "Telefone é obrigatório" })
     .trim()
-    .min(1, "Telefone e obrigatorio"),
-  institution: z
-    .string({ error: "Selecione uma instituicao" })
-    .min(1, "Selecione uma instituicao"),
-  shift: z
-    .string({ error: "Selecione um turno" })
-    .refine((value) => value === "diurno" || value === "noturno", "Selecione um turno"),
+    .min(1, "Telefone é obrigatório"),
+  institution: z.string().optional(),
+  shift: z.string().optional(),
+  bloodType: z.string().optional(),
+  degree: z.string().optional(),
   cpf: z
-    .string({ error: "CPF e obrigatorio" })
+    .string({ error: "CPF é obrigatório" })
     .trim()
-    .regex(/^\d{11}$/, "CPF deve conter 11 digitos"),
-  password: z.string().optional(),
-  confirmPassword: z.string().optional(),
+    .regex(/^\d{11}$/, "CPF deve conter 11 dígitos"),
 });
 
-export const studentCreateSchema = studentBaseSchema.extend({
-  password: z
-    .string({ error: "Senha e obrigatoria" })
-    .regex(PASSWORD_REGEX, { error: "Senha deve conter maiuscula, minuscula e numero" }),
-  confirmPassword: z.string().optional(),
-});
-
+export { PASSWORD_POLICY_REGEX };
+export const studentCreateSchema = studentBaseSchema;
 export const studentEditSchema = studentBaseSchema;
+
+export const studentAdminCreateSchema = z.object({
+  name: z
+    .string({ error: "Nome é obrigatório" })
+    .trim()
+    .min(1, "Nome é obrigatório")
+    .max(100, "Nome deve ter no máximo 100 caracteres"),
+  email: z
+    .string({ error: "Email é obrigatório" })
+    .trim()
+    .min(1, "Email é obrigatório")
+    .email("Email inválido"),
+  telephone: z
+    .string({ error: "Telefone é obrigatório" })
+    .trim()
+    .min(1, "Telefone é obrigatório"),
+  cpf: z
+    .string({ error: "CPF é obrigatório" })
+    .trim()
+    .regex(/^\d{11}$/, "CPF deve conter exatamente 11 dígitos"),
+});

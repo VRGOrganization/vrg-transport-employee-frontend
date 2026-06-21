@@ -6,10 +6,11 @@ export interface StudentCreatePayload {
   name: string;
   email: string;
   telephone: string;
-  cpf?: string;
-  institution: string;
-  shift: string;
-  password?: string;
+  cpf: string;
+  institution?: string;
+  shift?: string;
+  bloodType?: string;
+  degree?: string;
 }
 
 export interface StudentUpdatePayload {
@@ -17,10 +18,12 @@ export interface StudentUpdatePayload {
   telephone?: string;
   institution?: string;
   shift?: string;
+  bloodType?: string;
+  degree?: string;
 }
 
 export const studentService = {
-  list:         ()                                => http.get<Paginated<Student>>("/student").then(resolvePaginated),
+  list:         ()                                => http.get<Student[]>("/student/all"),
   listInactive: ()                                => http.get<Paginated<Student>>("/student/inactive").then(resolvePaginated),
   getById:      (id: string)                      => http.get<Student>(`/student/${id}`),
   create:       (data: StudentCreatePayload)      => http.post<Student>("/student", data),

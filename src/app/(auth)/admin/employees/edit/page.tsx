@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { employeeService } from "@/services/employeeService";
+import { employeeBaseSchema } from "@/lib/validation/employee";
 import {
   Badge,
   CheckCircle2,
@@ -77,7 +78,7 @@ function EditEmployeeContent() {
           registrationId: data.registrationId,
         });
       } catch (err: unknown) {
-        console.error("Erro ao buscar funcionário:", err);
+        if (process.env.NODE_ENV !== "production") console.error("Erro ao buscar funcionário:", err);
         setErrors((prev) => ({ ...prev, general: "Não foi possível carregar os dados do funcionário" }));
       } finally {
         setLoading(false);
@@ -93,24 +94,18 @@ function EditEmployeeContent() {
   };
 
   const validate = (): boolean => {
-    const next = { ...emptyErrors };
-
-    if (!formData.name.trim()) {
-      next.name = "Nome é obrigatório";
+    const result = employeeBaseSchema.safeParse(formData);
+    if (!result.success) {
+      const fe = result.error.flatten().fieldErrors;
+      setErrors((prev) => ({
+        ...prev,
+        name: fe.name?.[0] ?? "",
+        email: fe.email?.[0] ?? "",
+        registrationId: fe.registrationId?.[0] ?? "",
+      }));
+      return false;
     }
-
-    if (!formData.email.trim()) {
-      next.email = "Email é obrigatório";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      next.email = "Email inválido";
-    }
-
-    if (!formData.registrationId.trim()) {
-      next.registrationId = "Matrícula é obrigatória";
-    }
-
-    setErrors(next);
-    return Object.values(next).every((msg) => msg === "");
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -174,7 +169,7 @@ function EditEmployeeContent() {
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <Loader2 className="size-8 text-primary animate-spin" />
       </div>
     );
   }
@@ -208,7 +203,7 @@ function EditEmployeeContent() {
                     </label>
                     <Input
                       type="text"
-                      icon={<User className="w-5 h-5" />}
+                      icon={<User className="size-5" />}
                       placeholder="Nome do funcionário"
                       value={formData.name}
                       onChange={set("name")}
@@ -222,7 +217,7 @@ function EditEmployeeContent() {
                     </label>
                     <Input
                       type="email"
-                      icon={<Mail className="w-5 h-5" />}
+                      icon={<Mail className="size-5" />}
                       placeholder="email@exemplo.com"
                       value={formData.email}
                       onChange={set("email")}
@@ -236,7 +231,7 @@ function EditEmployeeContent() {
                     </label>
                     <Input
                       type="text"
-                      icon={<Badge className="w-5 h-5" />}
+                      icon={<Badge className="size-5" />}
                       placeholder="MAT123456"
                       value={formData.registrationId}
                       onChange={set("registrationId")}
@@ -248,7 +243,7 @@ function EditEmployeeContent() {
                     <div className="flex items-center gap-2">
                       {success && (
                         <div className="flex items-center gap-1.5 text-success text-sm font-medium animate-in fade-in slide-in-from-left-2">
-                          <CheckCircle2 className="w-4 h-4" />
+                          <CheckCircle2 className="size-4" />
                           Alterações salvas!
                         </div>
                       )}
@@ -258,7 +253,7 @@ function EditEmployeeContent() {
                       variant="primary"
                       size="md"
                       loading={saving}
-                      icon="check"
+                      icon={<CheckCircle2 className="size-4" />}
                     >
                       Salvar Alterações
                     </Button>
@@ -271,7 +266,7 @@ function EditEmployeeContent() {
                 {employee?.active ? (
                   <div className="bg-error-container/20 border border-error-border/30 rounded-2xl p-6">
                     <div className="flex items-center gap-3 text-error mb-4">
-                      <AlertTriangle className="w-5 h-5" />
+                      <AlertTriangle className="size-5" />
                       <h3 className="font-bold text-sm uppercase tracking-wider">Zona de Perigo</h3>
                     </div>
                     <p className="text-sm text-on-surface-variant mb-5 leading-relaxed">
@@ -282,7 +277,7 @@ function EditEmployeeContent() {
                       variant="outline"
                       fullWidth
                       className="border-error text-error hover:bg-error/5"
-                      icon={<Trash2 className="w-4 h-4" />}
+                      icon={<Trash2 className="size-4" />}
                       onClick={() => setShowDeleteConfirm(true)}
                     >
                       Desativar Funcionário
@@ -291,7 +286,7 @@ function EditEmployeeContent() {
                 ) : (
                   <div className="bg-success-container/20 border border-success/30 rounded-2xl p-6">
                     <div className="flex items-center gap-3 text-success mb-4">
-                      <CheckCircle2 className="w-5 h-5" />
+                      <CheckCircle2 className="size-5" />
                       <h3 className="font-bold text-sm uppercase tracking-wider">Reativação</h3>
                     </div>
                     <p className="text-sm text-on-surface-variant mb-5 leading-relaxed">
@@ -302,7 +297,7 @@ function EditEmployeeContent() {
                       variant="outline"
                       fullWidth
                       className="border-success text-success hover:bg-success/5"
-                      icon={<CheckCircle2 className="w-4 h-4" />}
+                      icon={<CheckCircle2 className="size-4" />}
                       onClick={() => setShowActivateConfirm(true)}
                     >
                       Ativar Funcionário
@@ -329,7 +324,7 @@ function EditEmployeeContent() {
               fullWidth
               className="bg-error hover:bg-error/90 border-none text-white font-bold"
               loading={deactivating}
-              icon={<UserX className="w-4 h-4" />}
+              icon={<UserX className="size-4" />}
               onClick={handleDeactivate}
             >
               Sim, desativar
@@ -339,7 +334,7 @@ function EditEmployeeContent() {
       >
         <div className="flex flex-col items-center gap-3 py-4 text-center">
           <div className="p-4 bg-error/10 rounded-full">
-            <UserX className="w-9 h-9 text-error" />
+            <UserX className="size-9 text-error" />
           </div>
           <p className="text-sm text-on-surface-variant max-w-xs">
             O funcionário <span className="font-semibold text-on-surface">{employee?.name}</span> perderá
@@ -364,7 +359,7 @@ function EditEmployeeContent() {
               fullWidth
               className="bg-success hover:bg-success/90 border-none text-white font-bold"
               loading={activating}
-              icon={<CheckCircle2 className="w-4 h-4" />}
+              icon={<CheckCircle2 className="size-4" />}
               onClick={handleActivate}
             >
               Sim, reativar
@@ -374,7 +369,7 @@ function EditEmployeeContent() {
       >
         <div className="flex flex-col items-center gap-3 py-4 text-center">
           <div className="p-4 bg-success/10 rounded-full">
-            <CheckCircle2 className="w-9 h-9 text-success" />
+            <CheckCircle2 className="size-9 text-success" />
           </div>
           <p className="text-sm text-on-surface-variant max-w-xs">
             O funcionário <span className="font-semibold text-on-surface">{employee?.name}</span> recuperará
@@ -390,7 +385,7 @@ export default function AdminEmployeeEditPage() {
   return (
     <Suspense fallback={
       <div className="flex h-screen w-screen items-center justify-center bg-surface">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <Loader2 className="size-8 text-primary animate-spin" />
       </div>
     }>
       <EditEmployeeContent />

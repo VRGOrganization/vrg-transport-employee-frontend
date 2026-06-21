@@ -1,5 +1,14 @@
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck, CalendarDays } from "lucide-react";
 import { DAY_LABELS, type LicenseRecord, type StudentRecord } from "@/types/cards.types";
+
+const DAY_ORDER = ["SEG", "TER", "QUA", "QUI", "SEX"] as const;
+
+const PERIOD_STYLE: Record<string, string> = {
+  "Manhã":    "bg-amber-50  text-amber-700  border-amber-200",
+  "Tarde":    "bg-orange-50 text-orange-700 border-orange-200",
+  "Noite":    "bg-violet-50 text-violet-700 border-violet-200",
+  "Integral": "bg-teal-50   text-teal-700   border-teal-200",
+};
 
 interface StudentInfoCardProps {
   student: StudentRecord;
@@ -13,7 +22,7 @@ export function StudentInfoCard({ student, currentLicense }: StudentInfoCardProp
         <h2 className="font-semibold text-on-surface">{student.name}</h2>
         {currentLicense ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-xs font-semibold text-success">
-            <BadgeCheck className="h-3.5 w-3.5" />
+            <BadgeCheck className="size-3.5" />
             Carteirinha ativa
           </span>
         ) : (
@@ -40,20 +49,73 @@ export function StudentInfoCard({ student, currentLicense }: StudentInfoCardProp
       </div>
 
       <div className="border-t border-outline-variant/20 pt-4">
-        <h4 className="mb-2 text-sm font-semibold text-on-surface">Grade informada</h4>
-        {student.schedule && student.schedule.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {student.schedule.map((item, index) => (
-              <span
-                key={`${item.day}-${item.period}-${index}`}
-                className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary"
-              >
-                {DAY_LABELS[item.day] ?? item.day} · {item.period}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-xs text-on-surface-variant">Sem grade cadastrada.</p>
+        <div className="mb-4 flex items-center gap-2">
+          <CalendarDays className="size-4 text-primary" />
+          <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+            Grade informada
+          </h4>
+        </div>
+        {student.schedule && student.schedule.length > 0 ? (() => {
+          const byDay = DAY_ORDER.reduce((acc, d) => {
+            acc[d] = (student.schedule ?? []).filter((s) => s.day === d);
+            return acc;
+          }, {} as Record<string, NonNullable<StudentRecord["schedule"]>>);
+          return (
+            <div className="grid grid-cols-5 gap-2">
+              {DAY_ORDER.map((day) => {
+                const items = byDay[day] ?? [];
+                const active = items.length > 0;
+                return (
+                  <div
+                    key={day}
+                    className={`flex flex-col items-center gap-2 rounded-2xl border p-2 transition-all ${
+                      active
+                        ? "border-primary/20 bg-primary/5 shadow-sm"
+                        : "border-outline-variant/15 bg-surface-container-low/40"
+                    }`}
+                  >
+                    <div
+                      className={`flex size-9 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold tracking-wider ${
+                        active
+                          ? "bg-primary text-on-primary shadow-md"
+                          : "bg-surface-container-high text-on-surface-variant/35"
+                      }`}
+                    >
+                      {day}
+                    </div>
+                    <p
+                      className={`text-[8px] font-bold uppercase leading-none tracking-widest ${
+                        active ? "text-primary/60" : "text-on-surface-variant/30"
+                      }`}
+                    >
+                      {DAY_LABELS[day] ?? day}
+                    </p>
+                    <div className="mt-0.5 flex w-full flex-col gap-1">
+                      {active ? (
+                        items.map((item, i) => (
+                          <span
+                            key={i}
+                            className={`w-full rounded-full border px-1 py-0.5 text-center text-[9px] font-semibold ${
+                              PERIOD_STYLE[item.period] ??
+                              "border-outline-variant bg-surface-container text-on-surface-variant"
+                            }`}
+                          >
+                            {item.period}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-center text-[11px] text-on-surface-variant/25">—</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })() : (
+          <p className="rounded-lg border border-dashed border-outline-variant/40 bg-surface-container-low p-4 text-center text-sm text-on-surface-variant">
+            Sem grade cadastrada.
+          </p>
         )}
       </div>
     </div>
