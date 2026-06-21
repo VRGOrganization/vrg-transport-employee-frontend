@@ -19,6 +19,12 @@ export interface ReissueCandidate {
   availableSlots: number;
 }
 
+export interface LicenseRequestReviewCounts {
+  enrollmentPeriodId: string | null;
+  reissueCount: number;
+  documentResendCount: number;
+}
+
 export interface ApproveReissueBody {
   allocationId?: string;
   day?: string;
@@ -56,6 +62,11 @@ export interface ApproveReissueBatchResult {
 }
 
 export const licenseRequestService = {
+  getReviewCounts: (periodId?: string) => {
+    const query = periodId ? `?enrollmentPeriodId=${encodeURIComponent(periodId)}` : "";
+    return http.get<LicenseRequestReviewCounts>(`/license-request/review-counts${query}`);
+  },
+
   listReissueCandidates: (periodId?: string) => {
     const query = periodId ? `?enrollmentPeriodId=${encodeURIComponent(periodId)}` : "";
     return http.get<ReissueCandidate[]>(`/license-request/reissue-candidates${query}`);
