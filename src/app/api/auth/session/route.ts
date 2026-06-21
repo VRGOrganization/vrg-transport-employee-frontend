@@ -61,15 +61,16 @@ export async function GET(request: NextRequest) {
     const userId = meData.userId;
 
     const defaultName = meData.userType === "admin" ? "Administrador" : "Funcionário";
-    const resolvedName = defaultName;
 
     const response = NextResponse.json({
       ok: true,
       user: {
         id: userId,
         role: meData.userType,
-        identifier: userId,
-        name: resolvedName,
+        identifier: typeof meData.identifier === "string" ? meData.identifier : userId,
+        name: typeof meData.name === "string" && meData.name.trim()
+          ? meData.name
+          : defaultName,
       },
     });
 

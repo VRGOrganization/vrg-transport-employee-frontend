@@ -1,7 +1,8 @@
-import { Eye } from "lucide-react";
-import { useMemo, useState } from "react";
-import { ImageLightbox } from "@/components/cards/CardPageComponents";
-import { employeeApi } from "@/lib/employeeApi";
+import { Eye, History } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ImageLightbox, DocumentPreview } from "@/components/cards/CardPageComponents";
+import { http } from "@/services/http";
+import { PanelCard } from "@/components/ui/PanelCard";
 import type {
   ImageRecord,
   LicenseRecord,
@@ -10,9 +11,12 @@ import type {
   PreviewItem,
   StudentRecord,
 } from "@/types/cards.types";
-import type { BusRoute, Bus } from "@/types/university.types";
+import { AllocationSummaryCard } from "./AllocationSummaryCard";
 import { ApprovalFooter } from "./ApprovalFooter";
 import { DocumentsGrid } from "./DocumentsGrid";
+import { ImageHistoryDrawer } from "./ImageHistoryDrawer";
+import { LicenseDetailsCard } from "./LicenseDetailsCard";
+import { PriorityBadge } from "./PriorityBadge";
 import { StudentInfoCard } from "./StudentInfoCard";
 import { UpdateRequestDiff } from "./UpdateRequestDiff";
 
@@ -22,18 +26,21 @@ interface StudentDetailPanelProps {
   loadingSelected: boolean;
   currentLicense: LicenseRecord | null;
   currentLicenseRequest: LicenseRequestRecord | null;
-  selectedBusRoute: BusRoute | Bus | null;
   pendingImagesByType: Partial<Record<PhotoType, string>>;
   profileImage: string | null;
   enrollmentImage: string | null;
   scheduleImage: string | null;
+  academicPeriodImage: string | null;
   governmentImage: string | null;
   proofOfResidenceImage: string | null;
   selectedLicensePreview: string | null;
+  fullLicense?: LicenseRecord | null;
   onReload: () => Promise<void>;
   onOpenRejectModal: () => void;
   printingSingle: boolean;
   onPrintSingle: () => void;
+  /** Mostra o diff "antes/depois" dos documentos. Só na aba Revisão. */
+  showUpdateDiff?: boolean;
 }
 
 export function StudentDetailPanel({
@@ -42,36 +49,64 @@ export function StudentDetailPanel({
   loadingSelected,
   currentLicense,
   currentLicenseRequest,
-  selectedBusRoute,
   pendingImagesByType,
   profileImage,
   enrollmentImage,
   scheduleImage,
+  academicPeriodImage,
   governmentImage,
   proofOfResidenceImage,
   selectedLicensePreview,
+  fullLicense,
   onReload,
   onOpenRejectModal,
   printingSingle,
   onPrintSingle,
+  showUpdateDiff = false,
 }: StudentDetailPanelProps) {
   const [approving, setApproving] = useState(false);
   const [approveMessage, setApproveMessage] = useState("");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
-  const previewItems = useMemo<PreviewItem[]>(() => {
-    const base: PreviewItem[] = [
+  useEffect(() => {
+    setHistoryOpen(false);
+  }, [selected?._id]);
+
+  const cardPreviewItem = useMemo<PreviewItem | null>(
+    () =>
+      selectedLicensePreview
+        ? { title: "Preview da Carteirinha", dataUrl: selectedLicensePreview }
+        : null,
+    [selectedLicensePreview],
+  );
+
+  const licensePreviewItems = useMemo<PreviewItem[]>(
+    () => [
       { title: "Foto 3x4", dataUrl: profileImage },
       { title: "Comprovante de Matrícula", dataUrl: enrollmentImage },
       { title: "Imagem da Grade Horária", dataUrl: scheduleImage },
+      { title: "Calendário Acadêmico", dataUrl: academicPeriodImage },
+    ],
+    [profileImage, enrollmentImage, scheduleImage, academicPeriodImage],
+  );
+
+  const personalPreviewItems = useMemo<PreviewItem[]>(
+    () => [
       { title: "Documento de identidade", dataUrl: governmentImage },
       { title: "Comprovante de residência", dataUrl: proofOfResidenceImage },
-    ];
-    if (selectedLicensePreview) {
-      base.push({ title: "Preview da Carteirinha", dataUrl: selectedLicensePreview });
-    }
-    return base;
-  }, [profileImage, enrollmentImage, scheduleImage, governmentImage, proofOfResidenceImage, selectedLicensePreview]);
+    ],
+    [governmentImage, proofOfResidenceImage],
+  );
+
+  const previewItems = useMemo(
+    () => [
+      ...(cardPreviewItem ? [cardPreviewItem] : []),
+      ...licensePreviewItems,
+      ...personalPreviewItems,
+    ],
+    [cardPreviewItem, licensePreviewItems, personalPreviewItems],
+  );
 
   const availablePreviewIndexes = useMemo(
     () => previewItems.map((item, i) => (item.dataUrl ? i : -1)).filter((i) => i >= 0),
@@ -84,21 +119,10 @@ export function StudentDetailPanel({
       setApproveMessage("A solicitação ainda não está apta para aprovação.");
       return;
     }
-    if (!selected.institution?.trim()) {
-      setApproveMessage("Não é possível criar a carteirinha sem instituição no cadastro.");
-      return;
-    }
-    const selectedBusIdentifier = (selectedBusRoute as any)?.identifier ?? (selectedBusRoute as any)?.lineNumber ?? null;
-    if (!selectedBusIdentifier) {
-      setApproveMessage("Selecione uma rota antes de criar a carteirinha.");
-      return;
-    }
     setApproving(true);
     setApproveMessage("");
     try {
-      await employeeApi.patch(`/license-request/approve/${currentLicenseRequest._id}`, {
-        institution: selected.institution,
-        bus: selectedBusIdentifier,
+      await http.patch(`/license-request/${currentLicenseRequest._id}/approve`, {
         ...(profileImage ? { photo: profileImage } : {}),
       });
       setApproveMessage("Carteirinha criada com sucesso.");
@@ -113,28 +137,68 @@ export function StudentDetailPanel({
 
   if (!selected) {
     return (
-      <section className="relative h-full min-h-0 rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 md:p-5 flex flex-col">
+      <PanelCard as="section" className="relative h-full min-h-0 md:p-5 flex flex-col">
         <div className="flex flex-1 min-h-96 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-outline-variant bg-surface text-center text-on-surface-variant">
-          <Eye className="h-8 w-8" />
+          <Eye className="size-8" />
           <p className="font-medium">Selecione um aluno para revisar.</p>
           <p className="max-w-xs text-xs">
             Você verá documentos, informações acadêmicas e poderá aprovar a criação da
             carteirinha.
           </p>
         </div>
-      </section>
+      </PanelCard>
     );
   }
 
   return (
-    <section className="relative h-full min-h-0 rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 md:p-5 flex flex-col">
+    <PanelCard as="section" className="relative h-full min-h-0 md:p-5 flex flex-col">
       <div className="flex flex-1 min-h-0 flex-col">
         <div className="flex-1 min-h-0 space-y-4 overflow-y-auto pb-4 pr-1">
           <StudentInfoCard student={selected} currentLicense={currentLicense} />
 
+          <div className="flex justify-end">
+            <button
+              onClick={() => setHistoryOpen(true)}
+              className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-primary transition-colors px-2 py-1.5 rounded-lg hover:bg-surface-container-high"
+            >
+              <History className="size-3.5" />
+              Histórico de documentos
+            </button>
+          </div>
+
+          {(fullLicense ?? currentLicense) && (
+            <LicenseDetailsCard license={(fullLicense ?? currentLicense)!} />
+          )}
+
+          {/* ── Bloco de prioridade e alocação ─────────────────── */}
+          {currentLicenseRequest &&
+            (currentLicenseRequest.priorityLevel != null ||
+              (currentLicenseRequest.allocationSummary?.length ?? 0) > 0) && (
+              <div className="space-y-2">
+                {currentLicenseRequest.priorityLevel != null && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-on-surface-variant">Prioridade:</span>
+                    <PriorityBadge
+                      level={currentLicenseRequest.priorityLevel}
+                      ruleName={currentLicenseRequest.priorityRuleName}
+                    />
+                  </div>
+                )}
+
+                {currentLicenseRequest.allocationSummary &&
+                  currentLicenseRequest.allocationSummary.length > 0 && (
+                    <AllocationSummaryCard
+                      allocations={currentLicenseRequest.allocationSummary}
+                      transportMode={currentLicenseRequest.transportMode}
+                    />
+                  )}
+              </div>
+            )}
+          {/* ─────────────────────────────────────────────────────── */}
+
           <div className="border-t border-outline-variant/20" />
 
-          {currentLicenseRequest && (
+          {showUpdateDiff && currentLicenseRequest && (
             <UpdateRequestDiff
               request={currentLicenseRequest}
               savedImages={selectedImages}
@@ -143,8 +207,27 @@ export function StudentDetailPanel({
             />
           )}
 
+          {cardPreviewItem && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-on-surface">
+                Preview da Carteirinha
+              </h3>
+              <DocumentPreview
+                title="Preview da Carteirinha"
+                dataUrl={cardPreviewItem.dataUrl}
+                loading={false}
+                onOpen={
+                  cardPreviewItem.dataUrl
+                    ? () => setLightboxIndex(previewItems.indexOf(cardPreviewItem))
+                    : undefined
+                }
+              />
+            </div>
+          )}
+
           <DocumentsGrid
-            items={previewItems}
+            licenseItems={licensePreviewItems}
+            personalItems={personalPreviewItems}
             loadingImages={loadingSelected}
             onOpenLightbox={setLightboxIndex}
           />
@@ -154,8 +237,6 @@ export function StudentDetailPanel({
           currentLicense={currentLicense}
           currentLicenseRequest={currentLicenseRequest}
           selectedLicensePreview={selectedLicensePreview}
-          selectedBusRouteLabel={(selectedBusRoute as any)?.lineNumber ?? (selectedBusRoute as any)?.identifier ?? ""}
-          hasInstitution={!!selected.institution?.trim()}
           approving={approving}
           printingSingle={printingSingle}
           approveMessage={approveMessage}
@@ -174,6 +255,14 @@ export function StudentDetailPanel({
           onNavigate={setLightboxIndex}
         />
       )}
-    </section>
+
+      {historyOpen && (
+        <ImageHistoryDrawer
+          studentId={selected._id}
+          studentName={selected.name}
+          onClose={() => setHistoryOpen(false)}
+        />
+      )}
+    </PanelCard>
   );
 }

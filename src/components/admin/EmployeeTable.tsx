@@ -1,19 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { UserPlus } from "lucide-react";
 import Link from "next/link";
-import { Pencil, Trash2, ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
-import { EmployeeModal } from "@/components/admin/EmployeeModal";
-
-export interface Employee {
-  _id: string;
-  name: string;
-  email: string;
-  registrationId: string;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import { EmployeeModal } from "@/components/employees/EmployeeModal";
+import type { Employee } from "@/types/employee";
+import { DataTable, type Column } from "@/components/ui/DataTable";
+import { Avatar } from "@/components/ui/Avatar";
+import type { PageSize } from "@/lib/constants";
 
 interface EmployeeTableProps {
   employees: Employee[];
@@ -22,28 +16,15 @@ interface EmployeeTableProps {
   onDeleted: (id: string) => void;
 }
 
-const PAGE_SIZE = 5;
-
-function getInitials(name: string) {
-  const parts = name.trim().split(" ");
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-const avatarColors = [
-  "bg-primary-fixed text-primary",
-  "bg-secondary-fixed text-secondary",
-  "bg-primary-fixed-dim text-tertiary",
-  "bg-info-container text-on-info",
-  "bg-success-container text-on-success",
-];
-
 export function EmployeeTable({ employees, loading, onUpdated, onDeleted }: EmployeeTableProps) {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<PageSize>(10);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-  const totalPages = Math.max(1, Math.ceil(employees.length / PAGE_SIZE));
-  const paginated = employees.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const handlePageSizeChange = (size: PageSize) => {
+    setPageSize(size);
+    setPage(1);
+  };
 
   const handleUpdated = (updated: Employee) => {
     onUpdated(updated);
@@ -53,155 +34,85 @@ export function EmployeeTable({ employees, loading, onUpdated, onDeleted }: Empl
   const handleDeleted = (id: string) => {
     onDeleted(id);
     setSelectedEmployee(null);
-   
-    const newTotal = employees.length - 1;
-    const newPages = Math.max(1, Math.ceil(newTotal / PAGE_SIZE));
-    if (page > newPages) setPage(newPages);
+    const newTotalPages = Math.max(1, Math.ceil((employees.length - 1) / pageSize));
+    if (page > newTotalPages) setPage(newTotalPages);
   };
+
+  const paginated = employees.slice((page - 1) * pageSize, page * pageSize);
+
+  const columns: Column<Employee>[] = [
+    {
+      key: "name",
+      label: "Nome do Funcionário",
+      render: (emp) => (
+        <div className="flex items-center gap-4">
+          <Avatar name={emp.name} size="sm" />
+          <span className="font-semibold text-on-surface">{emp.name}</span>
+        </div>
+      ),
+      skeleton: () => (
+        <div className="flex items-center gap-4">
+          <div className="size-9 rounded-full bg-surface-container-high animate-pulse shrink-0" />
+          <div className="h-4 w-32 bg-surface-container-high rounded animate-pulse" />
+        </div>
+      ),
+    },
+    {
+      key: "email",
+      label: "E-mail",
+      render: (emp) => <span className="text-on-surface-variant">{emp.email}</span>,
+    },
+    {
+      key: "actions",
+      label: "Ações",
+      align: "right",
+      render: (emp) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => setSelectedEmployee(emp)}
+            className="p-2 text-primary hover:bg-primary-fixed rounded-lg transition-colors inline-flex"
+            title="Editar"
+          >
+            <span className="material-symbols-outlined text-xl">edit</span>
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <>
-      <section className="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden mb-8">
-        {/* Header */}
-        <div className="px-8 py-6 border-b border-surface-container-low flex justify-between items-center">
-          <h2 className="font-headline text-xl font-bold text-primary">
-            Lista de Usuários
-          </h2>
-          <Link
-            href="/admin/employees/new"
-            className="bg-secondary text-white px-6 py-2 rounded-xl font-bold hover:bg-secondary/90 active:scale-95 transition-all flex items-center gap-2 text-sm"
-          >
-            <UserPlus className="w-4 h-4" />
-            Novo Funcionário
-          </Link>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-surface-container-low">
-                <th className="px-8 py-4 text-xs font-bold text-on-surface-variant tracking-wider uppercase">
-                  Nome do Funcionário
-                </th>
-                <th className="px-8 py-4 text-xs font-bold text-on-surface-variant tracking-wider uppercase">
-                  E-mail
-                </th>
-                <th className="px-8 py-4 text-xs font-bold text-on-surface-variant tracking-wider uppercase text-right">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-surface-container-low">
-              {loading ? (
-                /* Skeleton rows */
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-surface-container-high animate-pulse" />
-                        <div className="h-4 w-32 bg-surface-container-high rounded animate-pulse" />
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="h-4 w-48 bg-surface-container-high rounded animate-pulse" />
-                    </td>
-                    <td className="px-8 py-5 text-right">
-                      <div className="h-8 w-20 bg-surface-container-high rounded animate-pulse ml-auto" />
-                    </td>
-                  </tr>
-                ))
-              ) : paginated.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="px-8 py-12 text-center text-on-surface-variant text-sm">
-                    Nenhum funcionário ativo encontrado.
-                  </td>
-                </tr>
-              ) : (
-                paginated.map((emp, idx) => {
-                  const colorClass = avatarColors[idx % avatarColors.length];
-                  return (
-                    <tr
-                      key={emp._id}
-                      className="hover:bg-surface-container-low transition-colors cursor-pointer"
-                      onClick={() => setSelectedEmployee(emp)}
-                    >
-                      <td className="px-8 py-5">
-                        <div className="flex items-center gap-4">
-                          <div
-                            className={`w-10 h-10 rounded-full ${colorClass} flex items-center justify-center font-bold text-sm shrink-0`}
-                          >
-                            {getInitials(emp.name)}
-                          </div>
-                          <span className="font-semibold text-on-surface">{emp.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-8 py-5 text-on-surface-variant">{emp.email}</td>
-                      <td className="px-8 py-5 text-right" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => setSelectedEmployee(emp)}
-                          className="p-2 text-primary hover:bg-primary-fixed rounded-lg transition-colors inline-flex"
-                          title="Editar"
-                        >
-                          <Pencil className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => setSelectedEmployee(emp)}
-                          className="p-2 text-error hover:bg-error-container rounded-lg transition-colors inline-flex ml-2"
-                          title="Desativar"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="px-8 py-4 bg-surface-container-lowest flex justify-between items-center text-sm font-medium text-on-surface-variant">
-          <span>
-            Exibindo {Math.min(paginated.length, PAGE_SIZE)} de {employees.length} funcionários
-          </span>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="w-10 h-10 rounded-lg flex items-center justify-center border border-outline-variant hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      <DataTable
+        columns={columns}
+        rows={paginated}
+        rowKey={(e) => e._id}
+        loading={loading}
+        total={employees.length}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={handlePageSizeChange}
+        onRowClick={setSelectedEmployee}
+        className="mb-8"
+        empty={
+          <p className="text-center text-on-surface-variant text-sm">
+            Nenhum funcionário ativo encontrado.
+          </p>
+        }
+        header={
+          <div className="px-6 py-5 border-b border-outline-variant/20 flex justify-between items-center">
+            <h2 className="font-headline text-xl font-bold text-primary">Lista de Usuários</h2>
+            <Link
+              href="/admin/employees/new"
+              className="bg-secondary text-white px-6 py-2 rounded-xl font-bold hover:bg-secondary/90 active:scale-95 transition-all flex items-center gap-2 text-sm"
             >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setPage(i + 1)}
-                className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors text-sm font-bold ${
-                  page === i + 1
-                    ? "bg-primary text-white"
-                    : "border border-outline-variant hover:bg-surface-container-low text-primary"
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
-
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="w-10 h-10 rounded-lg flex items-center justify-center border border-outline-variant hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+              <UserPlus className="size-4" />
+              Novo Funcionário
+            </Link>
           </div>
-        </div>
-      </section>
+        }
+      />
 
-      {/* Employee Modal */}
       {selectedEmployee && (
         <EmployeeModal
           employee={selectedEmployee}

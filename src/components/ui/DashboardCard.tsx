@@ -15,17 +15,11 @@ export function DashboardCard({ icon, title, description, href }: DashboardCardP
     >
       <div className="flex items-start justify-between">
         <div className="p-3 bg-primary/10 rounded-xl">
-          <span
-            className="material-symbols-outlined text-primary"
-            style={{ fontSize: "28px" }}
-          >
+          <span className="material-symbols-outlined text-primary text-[28px]">
             {icon}
           </span>
         </div>
-        <span
-          className="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors"
-          style={{ fontSize: "20px" }}
-        >
+        <span className="material-symbols-outlined text-xl text-outline-variant group-hover:text-primary transition-colors">
           arrow_forward
         </span>
       </div>

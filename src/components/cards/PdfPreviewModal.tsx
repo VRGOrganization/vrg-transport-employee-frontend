@@ -1,5 +1,5 @@
 import { Printer } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 
 interface PdfPreviewModalProps {
@@ -9,7 +9,12 @@ interface PdfPreviewModalProps {
 }
 
 export function PdfPreviewModal({ pdfUrl, title, onClose }: PdfPreviewModalProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    dialogRef.current?.showModal();
+  }, []);
 
   const handlePrint = () => {
     frameRef.current?.contentWindow?.focus();
@@ -17,10 +22,10 @@ export function PdfPreviewModal({ pdfUrl, title, onClose }: PdfPreviewModalProps
   };
 
   return (
-    <div
-      className="fixed inset-0 z-60 flex items-center justify-center bg-black/75 p-4"
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      ref={dialogRef}
+      className="fixed inset-0 z-60 m-0 flex h-full max-h-none w-full max-w-none items-center justify-center bg-black/75 p-4"
+      onClose={onClose}
     >
       <div className="flex h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-white/20 bg-surface-container-lowest shadow-2xl">
         <div className="flex items-center justify-between border-b border-outline-variant bg-surface px-4 py-3">
@@ -29,7 +34,7 @@ export function PdfPreviewModal({ pdfUrl, title, onClose }: PdfPreviewModalProps
             <Button
               variant="outline"
               size="sm"
-              icon={<Printer className="h-4 w-4" />}
+              icon={<Printer className="size-4" />}
               onClick={handlePrint}
             >
               Imprimir
@@ -46,6 +51,6 @@ export function PdfPreviewModal({ pdfUrl, title, onClose }: PdfPreviewModalProps
           className="h-full w-full border-0 bg-white"
         />
       </div>
-    </div>
+    </dialog>
   );
 }

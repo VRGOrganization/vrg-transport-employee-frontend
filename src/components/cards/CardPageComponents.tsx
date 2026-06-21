@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from "react";
+import { type ComponentType, type ReactNode, useEffect, useRef } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { getDownloadName, isPdfDataUrl } from "@/lib/cardUtils";
+import { PanelCard } from "@/components/ui/PanelCard";
 
 export function FilterButton({
   active,
@@ -25,10 +26,10 @@ export function FilterButton({
   return (
     <button
       onClick={onClick}
-      className={`rounded-lg px-3 py-1.5 font-medium transition ${
+      className={`cursor-pointer rounded-lg px-3 py-1.5 font-medium transition ${
         active
           ? "bg-surface-container-lowest text-on-surface shadow"
-          : "text-on-surface-variant"
+          : "text-on-surface-variant hover:text-on-surface"
       }`}
     >
       {children}
@@ -46,13 +47,13 @@ export function StatBox({
   value: number;
 }) {
   return (
-    <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-4">
+    <PanelCard>
       <div className="mb-2 inline-flex rounded-lg bg-primary/10 p-2">
-        <Icon className="h-4 w-4 text-primary" />
+        <Icon className="size-4 text-primary" />
       </div>
       <p className="text-xl font-bold text-on-surface">{value}</p>
       <p className="text-xs text-on-surface-variant">{label}</p>
-    </div>
+    </PanelCard>
   );
 }
 
@@ -80,7 +81,7 @@ export function DocumentPreview({
               download={getDownloadName(title, dataUrl)}
               className="inline-flex items-center gap-1 rounded-md border border-outline-variant bg-surface-container-low px-2 py-1 text-[11px] text-on-surface hover:bg-surface-container"
             >
-              <Download className="h-3.5 w-3.5" />
+              <Download className="size-3.5" />
               Baixar
             </a>
             {onOpen && (
@@ -89,7 +90,7 @@ export function DocumentPreview({
                 onClick={onOpen}
                 className="inline-flex items-center gap-1 rounded-md border border-outline-variant bg-surface-container-low px-2 py-1 text-[11px] text-on-surface hover:bg-surface-container"
               >
-                <Maximize2 className="h-3.5 w-3.5" />
+                <Maximize2 className="size-3.5" />
                 Ampliar
               </button>
             )}
@@ -99,7 +100,7 @@ export function DocumentPreview({
 
       <div className="relative flex h-48 items-center justify-center overflow-hidden rounded-lg border border-outline-variant bg-surface-container-low md:h-56">
         {loading ? (
-          <Loader2 className="h-5 w-5 animate-spin text-on-surface-variant" />
+          <Loader2 className="size-5 animate-spin text-on-surface-variant" />
         ) : dataUrl ? (
           <>
             {isPdf ? (
@@ -117,14 +118,14 @@ export function DocumentPreview({
                 onClick={onOpen}
                 className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md bg-black/60 px-2 py-1 text-[11px] text-white hover:bg-black/75"
               >
-                <Eye className="h-3.5 w-3.5" />
+                <Eye className="size-3.5" />
                 {isPdf ? "Ler melhor" : "Ver melhor"}
               </button>
             )}
           </>
         ) : (
           <div className="flex flex-col items-center gap-1 text-on-surface-variant">
-            <FileImage className="h-5 w-5" />
+            <FileImage className="size-5" />
             <span className="text-[11px]">Sem arquivo</span>
           </div>
         )}
@@ -146,10 +147,15 @@ export function ImageLightbox({
   onClose: () => void;
   onNavigate: (index: number) => void;
 }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const currentPos = availableIndexes.indexOf(currentIndex);
   const canNavigate = availableIndexes.length > 1;
   const item = items[currentIndex];
   const currentIsPdf = isPdfDataUrl(item?.dataUrl ?? null);
+
+  useEffect(() => {
+    dialogRef.current?.showModal();
+  }, []);
 
   const goPrev = () => {
     if (!canNavigate || currentPos < 0) return;
@@ -166,7 +172,11 @@ export function ImageLightbox({
   if (!item?.dataUrl) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true">
+    <dialog
+      ref={dialogRef}
+      className="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none items-center justify-center bg-black/80 p-4"
+      onClose={onClose}
+    >
       <div className="relative flex w-full max-w-5xl flex-col gap-3 rounded-2xl border border-white/20 bg-black/60 p-3 md:p-4">
         <div className="flex items-center justify-between gap-2 text-white">
           <div>
@@ -179,7 +189,7 @@ export function ImageLightbox({
               download={getDownloadName(item.title, item.dataUrl)}
               className="inline-flex items-center gap-1 rounded-md border border-white/30 bg-white/10 px-3 py-1.5 text-xs text-white hover:bg-white/20"
             >
-              <Download className="h-3.5 w-3.5" />
+              <Download className="size-3.5" />
               Baixar
             </a>
             <button
@@ -188,7 +198,7 @@ export function ImageLightbox({
               className="inline-flex items-center justify-center rounded-lg border border-white/30 bg-white/10 p-2 hover:bg-white/20"
               aria-label="Fechar visualização"
             >
-              <X className="h-4 w-4" />
+              <X className="size-4" />
             </button>
           </div>
         </div>
@@ -211,7 +221,7 @@ export function ImageLightbox({
                 className="absolute left-2 inline-flex items-center justify-center rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
                 aria-label="Imagem anterior"
               >
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className="size-5" />
               </button>
               <button
                 type="button"
@@ -219,7 +229,7 @@ export function ImageLightbox({
                 className="absolute right-2 inline-flex items-center justify-center rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
                 aria-label="Próxima imagem"
               >
-                <ChevronRight className="h-5 w-5" />
+                <ChevronRight className="size-5" />
               </button>
             </>
           )}
@@ -233,7 +243,7 @@ export function ImageLightbox({
               rel="noreferrer"
               className="inline-flex items-center gap-1 rounded-md border border-white/30 bg-white/10 px-3 py-1.5 text-xs text-white hover:bg-white/20"
             >
-              <ExternalLink className="h-3.5 w-3.5" />
+              <ExternalLink className="size-3.5" />
               Abrir PDF em nova aba
             </a>
           </div>
@@ -262,13 +272,13 @@ export function ImageLightbox({
                 <div className="flex h-20 items-center justify-center overflow-hidden rounded border border-white/20 bg-black/40">
                   {hasData ? (
                     isPdfDataUrl(preview.dataUrl) ? (
-                      <FileText className="h-4 w-4 text-white/70" />
+                      <FileText className="size-4 text-white/70" />
                     ) : (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={preview.dataUrl!} alt={preview.title} className="h-full w-full object-cover" />
                     )
                   ) : (
-                    <FileImage className="h-4 w-4 text-white/40" />
+                    <FileImage className="size-4 text-white/40" />
                   )}
                 </div>
               </button>
@@ -276,6 +286,6 @@ export function ImageLightbox({
           })}
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

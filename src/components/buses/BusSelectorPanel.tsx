@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Bus as BusIcon } from "lucide-react";
 import { busApi, universityApi } from "@/lib/universityApi";
 import type { Bus } from "@/types/university.types";
 import BusReleaseModal from "./BusReleaseModal";
+import { PanelCard } from "@/components/ui/PanelCard";
 
 interface BusSelectorPanelProps {
   value?: string | null;
@@ -25,7 +27,7 @@ export default function BusSelectorPanel({
   const [releaseOpen, setReleaseOpen] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
+    const mountState = { cancelled: false };
 
     const load = async () => {
       setLoading(true);
@@ -33,7 +35,7 @@ export default function BusSelectorPanel({
       try {
         const res = await busApi.listWithQueueCounts();
         const data = Array.isArray(res) ? res : (res as any)?.data ?? [];
-        if (!cancelled) setBuses(data as Bus[]);
+        if (!mountState.cancelled) setBuses(data as Bus[]);
 
         // If slots contain only university IDs (strings), load universities to resolve acronyms
         const ids = new Set<string>();
@@ -46,7 +48,7 @@ export default function BusSelectorPanel({
           });
         });
 
-        if (!cancelled && ids.size > 0) {
+        if (!mountState.cancelled && ids.size > 0) {
           try {
             const all = await universityApi.list();
             const arr = Array.isArray(all) ? all : (all as any)?.data ?? [];
@@ -54,21 +56,21 @@ export default function BusSelectorPanel({
             arr.forEach((u: any) => {
               if (u && u._id) map[u._id] = { acronym: u.acronym, name: u.name };
             });
-            if (!cancelled) setUniversitiesMap(map);
+            if (!mountState.cancelled) setUniversitiesMap(map);
           } catch (e) {
             // ignore university fetch errors silently
           }
         }
       } catch (err) {
-        if (!cancelled) setError("Não foi possível carregar os ônibus");
+        if (!mountState.cancelled) setError("Não foi possível carregar os ônibus");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!mountState.cancelled) setLoading(false);
       }
     };
 
     void load();
     return () => {
-      cancelled = true;
+      mountState.cancelled = true;
     };
   }, []);
 
@@ -76,7 +78,7 @@ export default function BusSelectorPanel({
   const selectedAssignments = ((selected?.universitySlots ?? selected?.universityIds ?? []) as any[]);
 
   return (
-    <div className={`${className ?? ""} rounded-2xl border border-outline-variant bg-surface-container-lowest p-4`}>
+    <PanelCard as="div" className={className}>
       <div className="mb-3 text-sm text-on-surface-variant">Ônibus</div>
 
       {loading ? (
@@ -87,6 +89,17 @@ export default function BusSelectorPanel({
         </div>
       ) : !value ? (
         <div className="space-y-2">
+          {buses.length === 0 && !error && (
+            <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+              <BusIcon className="size-10 text-on-surface-variant/30" />
+              <p className="text-sm font-medium text-on-surface-variant">
+                Nenhum ônibus cadastrado
+              </p>
+              <p className="text-xs text-on-surface-muted">
+                Cadastre ônibus na seção de Frota para continuar.
+              </p>
+            </div>
+          )}
           {buses.map((b) => {
             const slots = (b.universitySlots ?? b.universityIds ?? []) as any[];
             const acronyms = slots
@@ -109,7 +122,7 @@ export default function BusSelectorPanel({
                 key={b._id}
                 type="button"
                 onClick={() => onChange?.(b._id)}
-                className={`w-full text-left rounded-xl border p-3 bg-surface hover:border-primary transition flex items-center justify-between ${
+                className={`w-full cursor-pointer text-left rounded-xl border p-3 bg-surface hover:border-primary hover:bg-surface-container-low transition flex items-center justify-between ${
                   value === b._id ? "border-primary bg-primary/10" : "border-outline-variant"
                 }`}
               >
@@ -205,6 +218,6 @@ export default function BusSelectorPanel({
           }
         }}
       />
-    </div>
+    </PanelCard>
   );
 }

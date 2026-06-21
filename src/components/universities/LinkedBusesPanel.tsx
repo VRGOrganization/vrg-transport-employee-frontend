@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Bus, Plus, X, Hourglass, Unlink } from "lucide-react";
 import type { Bus as BusType, University } from "@/types/university.types";
 import { busApi } from "@/lib/universityApi";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface Props {
   university: University;
@@ -16,6 +17,8 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
   const [linking, setLinking] = useState(false);
   const [selectedBusId, setSelectedBusId] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [pendingUnlink, setPendingUnlink] = useState<BusType | null>(null);
+  const [unlinkError, setUnlinkError] = useState("");
 
   const linkedBuses = allBuses.filter((bus) => {
     const inSlots = (bus.universitySlots ?? []).some((s) =>
@@ -50,11 +53,16 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
     }
   };
 
-  const handleUnlink = async (busId: string) => {
-    setLoadingId(busId);
+  const handleConfirmUnlink = async () => {
+    if (!pendingUnlink) return;
+    setLoadingId(pendingUnlink._id);
+    setUnlinkError("");
     try {
-      await busApi.unlinkUniversity(busId, university._id);
+      await busApi.unlinkUniversity(pendingUnlink._id, university._id);
       onBusesChanged();
+      setPendingUnlink(null);
+    } catch {
+      setUnlinkError("Não foi possível desvincular o ônibus. Tente novamente.");
     } finally {
       setLoadingId(null);
     }
@@ -69,9 +77,9 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
         {availableBuses.length > 0 && (
           <button
             onClick={() => setLinking((v) => !v)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-success hover:bg-success/90 text-white text-xs font-medium rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-success hover:bg-success/90 text-white text-xs font-medium rounded-lg transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-success/40"
           >
-            {linking ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+            {linking ? <X className="size-3.5" /> : <Plus className="size-3.5" />}
             {linking ? "Cancelar" : "Vincular ônibus"}
           </button>
         )}
@@ -82,7 +90,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
           <select
             value={selectedBusId}
             onChange={(e) => setSelectedBusId(e.target.value)}
-            className="flex-1 px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-success"
+            className="flex-1 px-3 py-2 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-success"
           >
             <option value="">Selecione um ônibus</option>
             {availableBuses.map((bus) => (
@@ -95,10 +103,10 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
             onClick={handleLink}
             disabled={!selectedBusId || !!loadingId}
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+              "px-4 py-2 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-success/40",
               !selectedBusId || !!loadingId
                 ? "bg-success/50 text-white cursor-not-allowed"
-                : "bg-success hover:bg-success/90 text-white"
+                : "bg-success hover:bg-success/90 text-white cursor-pointer"
             )}
           >
             Vincular
@@ -108,7 +116,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
 
       {linkedBuses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-on-surface-muted">
-          <Bus className="w-10 h-10 mb-2" />
+          <Bus className="size-10 mb-2" />
           <p className="text-sm">Nenhum ônibus vinculado</p>
           {allBuses.length === 0 && (
             <p className="text-xs mt-1 text-center">
@@ -124,7 +132,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
               className="flex items-center justify-between px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant group"
             >
               <div className="flex items-center gap-3">
-                <Bus className="w-4.5 h-4.5 text-success" />
+                <Bus className="size-4.5 text-success" />
                 <div>
                   <p className="text-sm font-medium text-on-surface">
                     {bus.identifier}
@@ -133,20 +141,50 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
                 </div>
               </div>
               <button
-                onClick={() => handleUnlink(bus._id)}
+                onClick={() => setPendingUnlink(bus)}
                 disabled={loadingId === bus._id}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-all"
+                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-all cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-error/30"
                 title="Desvincular"
               >
                 {loadingId === bus._id
-                  ? <Hourglass className="w-4 h-4" />
-                  : <Unlink className="w-4 h-4" />
+                  ? <Hourglass className="size-4" />
+                  : <Unlink className="size-4" />
                 }
               </button>
             </li>
           ))}
         </ul>
       )}
+
+      <ConfirmModal
+        open={!!pendingUnlink}
+        onClose={() => { setPendingUnlink(null); setUnlinkError(""); }}
+        onConfirm={handleConfirmUnlink}
+        loading={!!loadingId}
+        error={unlinkError}
+        title="Desvincular Ônibus"
+        icon={Unlink}
+        variant="warning"
+        confirmLabel="Sim, desvincular"
+        description={
+          pendingUnlink && (
+            <>
+              <p className="text-base font-bold text-on-surface">
+                {pendingUnlink.identifier}
+                {pendingUnlink.capacity != null && (
+                  <span className="ml-2 text-sm font-normal text-on-surface-variant">
+                    · {pendingUnlink.capacity} vagas
+                  </span>
+                )}
+              </p>
+              <p className="mt-2">
+                O ônibus será desvinculado de <span className="font-semibold">{university.acronym}</span>.
+                Você pode vincular novamente a qualquer momento.
+              </p>
+            </>
+          )
+        }
+      />
     </div>
   );
 }

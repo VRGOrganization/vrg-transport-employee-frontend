@@ -60,11 +60,11 @@ export function TripDistributionChart({ data = DEFAULT_DATA }: TripDistributionC
         </div>
         <div className="flex gap-4 text-xs font-semibold text-on-surface-variant">
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 bg-blue-500 rounded-full" />
+            <span className="size-3 bg-blue-500 rounded-full" />
             <span>Diurno</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 bg-indigo-800 rounded-full" />
+            <span className="size-3 bg-indigo-800 rounded-full" />
             <span>Noturno</span>
           </div>
         </div>

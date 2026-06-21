@@ -18,7 +18,7 @@ export function FleetStatus({ items = DEFAULT_FLEET }: FleetStatusProps) {
   return (
     <div className="bg-surface-container-high dark:bg-slate-800/50 p-6 rounded-xl space-y-4">
       <h2 className="text-lg font-bold font-headline text-primary flex items-center gap-2">
-        <span className="material-symbols-outlined" style={{ fontSize: "22px" }}>
+        <span className="material-symbols-outlined text-[22px]">
           directions_bus
         </span>
         Status da Frota

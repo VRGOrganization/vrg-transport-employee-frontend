@@ -1,11 +1,10 @@
 import { XCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { employeeApi } from "@/lib/employeeApi";
-import {
-  REJECTION_REASONS,
-  type LicenseRequestRecord,
-  type RejectionReason,
+import { http } from "@/services/http";
+import type {
+  LicenseRequestRecord,
+  RejectionReasonConfig,
 } from "@/types/cards.types";
 
 interface RejectModalProps {
@@ -21,20 +20,46 @@ export function RejectModal({
   onSuccess,
   onReload,
 }: RejectModalProps) {
-  const [selectedReason, setSelectedReason] = useState<RejectionReason | "">("");
+  const [reasons, setReasons] = useState<RejectionReasonConfig[]>([]);
+  const [selectedLabels, setSelectedLabels] = useState<Set<string>>(new Set());
+  const [customMessage, setCustomMessage] = useState("");
   const [rejecting, setRejecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  useEffect(() => {
+    http
+      .get<RejectionReasonConfig[]>("/license-request/rejection-reasons")
+      .then(setReasons)
+      .catch(() => setReasons([]));
+  }, []);
+
+  const toggleReason = (label: string) => {
+    setSelectedLabels((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  };
+
+  const hasPersonalDocReason = reasons.some(
+    (r) => (r.isPersonalDocumentReason ?? false) && selectedLabels.has(r.label),
+  );
+
+  const cardReasons = reasons.filter((r) => !(r.isPersonalDocumentReason ?? false));
+  const personalDocReasons = reasons.filter((r) => r.isPersonalDocumentReason ?? false);
+
   const handleReject = async () => {
-    if (!selectedReason) {
-      setErrorMessage("Selecione um motivo de recusa.");
+    if (selectedLabels.size === 0) {
+      setErrorMessage("Selecione ao menos um motivo de recusa.");
       return;
     }
     setRejecting(true);
     setErrorMessage("");
     try {
-      await employeeApi.patch(`/license-request/reject/${currentLicenseRequest._id}`, {
-        reason: selectedReason,
+      await http.patch(`/license-request/${currentLicenseRequest._id}/reject`, {
+        reasons: Array.from(selectedLabels),
+        ...(customMessage.trim() ? { customMessage: customMessage.trim() } : {}),
       });
       onSuccess("Carteirinha recusada. O aluno foi notificado por e-mail.");
       await onReload();
@@ -47,43 +72,120 @@ export function RejectModal({
     }
   };
 
+  const reasonItemClass = (label: string, isPersonalDoc: boolean) => {
+    const selected = selectedLabels.has(label);
+    const base = "flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm border transition-all cursor-pointer";
+    if (isPersonalDoc) {
+      return `${base} ${
+        selected
+          ? "border-warning bg-warning/10 text-warning font-medium"
+          : "border-warning/40 bg-surface-container-low text-on-surface hover:border-warning/60"
+      }`;
+    }
+    return `${base} ${
+      selected
+        ? "border-error bg-error/10 text-error font-medium"
+        : "border-outline-variant bg-surface-container-low text-on-surface hover:border-error/40"
+    }`;
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={() => !rejecting && onClose()}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-surface p-6 space-y-4 shadow-xl"
+        className="w-full max-w-md rounded-2xl bg-surface p-6 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-error/10 flex items-center justify-center shrink-0">
-            <XCircle className="h-5 w-5 text-error" />
+          <div className="size-10 rounded-xl bg-error/10 flex items-center justify-center shrink-0">
+            <XCircle className="size-5 text-error" />
           </div>
           <div>
             <h2 className="font-bold text-on-surface text-base">Recusar carteirinha</h2>
-            <p className="text-xs text-on-surface-variant">Selecione o motivo da recusa</p>
+            <p className="text-xs text-on-surface-variant">Selecione os motivos da recusa</p>
           </div>
         </div>
 
         <div className="space-y-2">
-          {REJECTION_REASONS.map((reason) => (
-            <button
-              key={reason}
-              type="button"
-              onClick={() => setSelectedReason(reason)}
-              className={`w-full text-left px-4 py-3 rounded-xl text-sm border transition-all ${
-                selectedReason === reason
-                  ? "border-error bg-error/10 text-error font-medium"
-                  : "border-outline-variant bg-surface-container-low text-on-surface hover:border-error/40"
-              }`}
-            >
-              {reason}
-            </button>
-          ))}
+          {cardReasons.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">
+                Documentos da carteirinha
+              </p>
+              {cardReasons.map((reason) => (
+                <label
+                  key={reason.label}
+                  className={reasonItemClass(reason.label, false)}
+                >
+                  <input
+                    type="checkbox"
+                    className="accent-error"
+                    checked={selectedLabels.has(reason.label)}
+                    onChange={() => toggleReason(reason.label)}
+                  />
+                  {reason.label}
+                </label>
+              ))}
+            </div>
+          )}
+
+          {personalDocReasons.length > 0 && (
+            <div className="space-y-2 mt-3">
+              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">
+                Documentos pessoais
+              </p>
+              {personalDocReasons.map((reason) => (
+                <label
+                  key={reason.label}
+                  className={reasonItemClass(reason.label, true)}
+                >
+                  <input
+                    type="checkbox"
+                    className="accent-warning"
+                    checked={selectedLabels.has(reason.label)}
+                    onChange={() => toggleReason(reason.label)}
+                  />
+                  {reason.label}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-xs text-on-surface-variant mb-1">
+            Observação adicional (opcional)
+          </label>
+          <textarea
+            className="w-full rounded-xl border border-on-surface-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface resize-none focus:outline-none focus:border-primary"
+            rows={3}
+            maxLength={300}
+            placeholder="Observação adicional para o aluno…"
+            value={customMessage}
+            onChange={(e) => setCustomMessage(e.target.value)}
+          />
         </div>
 
         {errorMessage && <p className="text-xs text-error">{errorMessage}</p>}
+
+        {hasPersonalDocReason && (
+          <div className="flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2.5">
+            <span
+              className="material-symbols-outlined text-warning shrink-0"
+              style={{ fontSize: "16px" }}
+            >
+              warning
+            </span>
+            <p className="text-xs text-warning leading-relaxed">
+              <strong>Atenção:</strong> Os motivos selecionados incluem documentos pessoais.
+              Os documentos de identidade e comprovante de residência do aluno serão{" "}
+              <strong>invalidados automaticamente</strong> e ele precisará reenviá-los antes
+              de fazer uma nova solicitação.
+            </p>
+          </div>
+        )}
 
         <div className="flex gap-2 pt-2">
           <button
@@ -98,7 +200,7 @@ export function RejectModal({
             variant="primary"
             size="md"
             loading={rejecting}
-            disabled={!selectedReason || rejecting}
+            disabled={selectedLabels.size === 0 || rejecting}
             onClick={handleReject}
             className="flex-1 bg-error hover:bg-error/90"
           >

@@ -22,7 +22,7 @@ describe("EmployeeAdminLoginForm", () => {
     render(<EmployeeAdminLoginForm />);
 
     await userEvent.type(screen.getByPlaceholderText("••••••••"), "Senha123");
-    await userEvent.click(screen.getByRole("button", { name: "Acessar Sistema" }));
+    await userEvent.click(screen.getByRole("button", { name: "Acessar sistema" }));
 
     expect(await screen.findByText("Login deve ter no minimo 3 caracteres")).toBeInTheDocument();
     expect(loginMock).not.toHaveBeenCalled();
@@ -34,8 +34,8 @@ describe("EmployeeAdminLoginForm", () => {
 
     await userEvent.type(screen.getByPlaceholderText("email@dominio.com ou MAT123456"), "MAT123456");
     await userEvent.type(screen.getByPlaceholderText("••••••••"), "Senha123");
-    await userEvent.selectOptions(screen.getByRole("combobox"), "admin");
-    await userEvent.click(screen.getByRole("button", { name: "Acessar Sistema" }));
+    await userEvent.click(screen.getByRole("button", { name: "Administrador" }));
+    await userEvent.click(screen.getByRole("button", { name: "Acessar sistema" }));
 
     expect(await screen.findByText("Credenciais invalidas")).toBeInTheDocument();
     expect(loginMock).toHaveBeenCalledTimes(1);
@@ -46,7 +46,7 @@ describe("EmployeeAdminLoginForm", () => {
 
     await userEvent.type(screen.getByPlaceholderText("email@dominio.com ou MAT123456"), "MAT123456");
     await userEvent.type(screen.getByPlaceholderText("••••••••"), "123");
-    await userEvent.click(screen.getByRole("button", { name: "Acessar Sistema" }));
+    await userEvent.click(screen.getByRole("button", { name: "Acessar sistema" }));
 
     expect(await screen.findByText("Senha deve ter no minimo 6 caracteres")).toBeInTheDocument();
     expect(loginMock).not.toHaveBeenCalled();
@@ -56,12 +56,12 @@ describe("EmployeeAdminLoginForm", () => {
     render(<EmployeeAdminLoginForm />);
 
     await userEvent.tab();
-    expect(screen.getByRole("combobox")).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Funcionário" })).toHaveFocus();
+
+    await userEvent.tab();
+    expect(screen.getByRole("button", { name: "Administrador" })).toHaveFocus();
 
     await userEvent.tab();
     expect(screen.getByPlaceholderText("email@dominio.com ou MAT123456")).toHaveFocus();
-
-    await userEvent.tab();
-    expect(screen.getByPlaceholderText("••••••••")).toHaveFocus();
   });
 });

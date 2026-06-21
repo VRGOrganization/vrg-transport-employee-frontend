@@ -1,12 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, RotateCcw } from "lucide-react";
+import { EnrollmentPeriodBanner } from "@/components/admin/EnrollmentPeriodBanner";
 import { EnrollmentPeriodModal } from "@/components/admin/EnrollmentPeriodModal";
-import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
-import { SideNav } from "@/components/layout/SideNav";
-import { TopBar } from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/Button";
-import { employeeApi } from "@/lib/employeeApi";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { toast } from "@/lib/toast";
+import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
+import { PanelCard } from "@/components/ui/PanelCard";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { http } from "@/services/http";
+import { resolvePaginated, type Paginated } from "@/types/api";
 import type {
   LicenseRequestRecord,
   StudentRecord,
@@ -17,7 +22,6 @@ import type { EnrollmentPeriod, WaitlistEntry } from "@/types/enrollmentPeriod";
 interface EnrollmentPeriodPayload {
   startDate: string;
   endDate: string;
-  totalSlots: number;
   licenseValidityMonths: number;
 }
 
@@ -26,6 +30,18 @@ function formatDate(dateValue: string | null | undefined): string {
   const date = new Date(dateValue);
   if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleDateString("pt-BR");
+}
+
+function computeLicenseExpiry(endDate: string | null | undefined, months: number | null | undefined): string {
+  if (!endDate || !months || months < 1) return "";
+  try {
+    const base = new Date(`${endDate.slice(0, 10)}T00:00:00`);
+    if (Number.isNaN(base.getTime())) return "";
+    base.setMonth(base.getMonth() + months);
+    return base.toLocaleDateString("pt-BR");
+  } catch {
+    return "";
+  }
 }
 
 function formatDateTime(dateValue: string | null | undefined): string {
@@ -57,11 +73,7 @@ function buildFallbackStudent(studentId: string): StudentRecord {
 }
 
 export default function AdminEnrollmentPeriodPage() {
-  const { user, logout } = useEmployeeAuth();
-
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [feedback, setFeedback] = useState("");
 
   const [periods, setPeriods] = useState<EnrollmentPeriod[]>([]);
   const [activePeriod, setActivePeriod] = useState<EnrollmentPeriod | null>(null);
@@ -72,6 +84,13 @@ export default function AdminEnrollmentPeriodPage() {
   const [editingPeriod, setEditingPeriod] = useState<EnrollmentPeriod | null>(null);
   const [periodSaving, setPeriodSaving] = useState(false);
   const [periodModalError, setPeriodModalError] = useState("");
+
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [closingPeriod, setClosingPeriod] = useState(false);
+
+  const [showReopenConfirm, setShowReopenConfirm] = useState(false);
+  const [pendingReopenId, setPendingReopenId] = useState<string | null>(null);
+  const [reopeningPeriod, setReopeningPeriod] = useState(false);
 
   // Nota: o fluxo de liberação por período foi removido. As liberações
   // agora ocorrem por ônibus (patch /bus/:id/release-slots). Mantemos a
@@ -111,21 +130,19 @@ export default function AdminEnrollmentPeriodPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    setError("");
     try {
-      let resolvedActive: EnrollmentPeriod | null = null;
-      try {
-        resolvedActive = await employeeApi.get<EnrollmentPeriod>("/enrollment-period/active");
-      } catch (err: unknown) {
-        const apiError = err as { status?: number };
-        if (apiError.status !== 404) {
-          throw err;
-        }
-      }
+      const resolvedActive: EnrollmentPeriod | null = await enrollmentPeriodService.getActive().then(
+        (res) => (res && typeof res === "object" && "_id" in res ? res : null),
+        (err: unknown) => {
+          const apiError = err as { status?: number };
+          if (apiError.status !== 404) throw err;
+          return null;
+        },
+      );
 
       const [periodsResponse, studentsResponse] = await Promise.all([
-        employeeApi.get<EnrollmentPeriod[]>("/enrollment-period"),
-        employeeApi.get<StudentsResponse>("/student"),
+        enrollmentPeriodService.list(),
+        http.get<StudentsResponse>("/student"),
       ]);
 
       const sortedPeriods = [...periodsResponse].sort(
@@ -138,16 +155,16 @@ export default function AdminEnrollmentPeriodPage() {
       setStudents(normalizeStudents(studentsResponse));
 
       if (resolvedActive?._id) {
-        const queue = await employeeApi.get<LicenseRequestRecord[]>(
-          `/enrollment-period/${resolvedActive._id}/waitlist`,
+        const queueRes = await http.get<Paginated<LicenseRequestRecord>>(
+          `/enrollment-period/${resolvedActive._id}/waitlisted`,
         );
-        setWaitlistRequests(queue);
+        setWaitlistRequests(resolvePaginated(queueRes));
       } else {
         setWaitlistRequests([]);
       }
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      setError(apiError.message ?? "Não foi possível carregar os dados do período de inscrição.");
+      toast.error(apiError.message ?? "Não foi possível carregar os dados do período de inscrição.");
     } finally {
       setLoading(false);
     }
@@ -175,11 +192,11 @@ export default function AdminEnrollmentPeriodPage() {
     setPeriodModalError("");
     try {
       if (editingPeriod) {
-        await employeeApi.patch<EnrollmentPeriod>(`/enrollment-period/${editingPeriod._id}`, payload);
-        setFeedback("Período atualizado com sucesso.");
+        await enrollmentPeriodService.update(editingPeriod._id, payload);
+        toast.success("Período atualizado com sucesso.");
       } else {
-        await employeeApi.post<EnrollmentPeriod>("/enrollment-period", payload);
-        setFeedback("Novo período aberto com sucesso.");
+        await enrollmentPeriodService.create(payload);
+        toast.success("Novo período aberto com sucesso.");
       }
       setModalOpen(false);
       setEditingPeriod(null);
@@ -192,42 +209,56 @@ export default function AdminEnrollmentPeriodPage() {
     }
   };
 
-  const handleClosePeriod = async () => {
+  const handleClosePeriod = () => {
     if (!activePeriod) return;
-    const confirmed = window.confirm("Deseja encerrar o período ativo? A fila atual será encerrada.");
-    if (!confirmed) return;
+    setShowCloseConfirm(true);
+  };
 
+  const handleCloseConfirmed = async () => {
+    if (!activePeriod) return;
+    setClosingPeriod(true);
     try {
-      await employeeApi.patch(`/enrollment-period/${activePeriod._id}/close`, {});
-      setFeedback("Período encerrado com sucesso.");
+      await enrollmentPeriodService.close(activePeriod._id);
+      setShowCloseConfirm(false);
+      toast.success("Período encerrado com sucesso.");
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      setError(apiError.message ?? "Falha ao encerrar o período.");
+      toast.error(apiError.message ?? "Falha ao encerrar o período.");
+      setShowCloseConfirm(false);
+    } finally {
+      setClosingPeriod(false);
     }
   };
 
-  const handleReopen = async (periodId: string) => {
+  const handleReopen = (periodId: string) => {
+    setPendingReopenId(periodId);
+    setShowReopenConfirm(true);
+  };
+
+  const handleReopenConfirmed = async () => {
+    if (!pendingReopenId) return;
+    setReopeningPeriod(true);
     try {
-      await employeeApi.patch(`/enrollment-period/${periodId}/reopen`, {});
-      setFeedback("Período reaberto com sucesso.");
+      await enrollmentPeriodService.reopen(pendingReopenId);
+      setShowReopenConfirm(false);
+      setPendingReopenId(null);
+      toast.success("Período reaberto com sucesso.");
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      setError(apiError.message ?? "Falha ao reabrir o período.");
+      toast.error(apiError.message ?? "Falha ao reabrir o período.");
+      setShowReopenConfirm(false);
+    } finally {
+      setReopeningPeriod(false);
     }
   };
 
   // Note: preview/confirm release flow removed. Use the Bus UI for releases.
 
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[16rem_1fr]">
-      <SideNav activePath="/admin/enrollment-period" onLogout={logout} />
-
-      <div className="flex flex-1 flex-col">
-        <TopBar user={user} />
-
-        <main className="px-6 py-5 bg-surface flex flex-col gap-5">
+    <>
+      <main className="px-6 py-5 bg-surface flex flex-col gap-5">
           <div className="mx-auto w-full  space-y-6">
             <header className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -241,19 +272,11 @@ export default function AdminEnrollmentPeriodPage() {
               </Button>
             </header>
 
-            {feedback && (
-              <div className="rounded-xl border border-success/40 bg-success/10 px-4 py-3 text-sm text-success">
-                {feedback}
-              </div>
+            {activePeriod?.endDate && (
+              <EnrollmentPeriodBanner endDate={activePeriod.endDate} />
             )}
 
-            {error && (
-              <div className="rounded-xl border border-error/40 bg-error/10 px-4 py-3 text-sm text-error">
-                {error}
-              </div>
-            )}
-
-            <section className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-5">
+            <PanelCard as="section" className="p-5">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-on-surface">Estado atual</h2>
                 <div className="flex flex-wrap gap-2">
@@ -297,10 +320,18 @@ export default function AdminEnrollmentPeriodPage() {
                       </p>
                     </div>
                     <div className="rounded-xl border border-outline-variant bg-surface p-3">
-                      <p className="text-xs text-on-surface-variant">Validade</p>
+                      <p className="text-xs text-on-surface-variant">Validade da carteirinha</p>
                       <p className="font-medium text-on-surface">
                         {activePeriod.licenseValidityMonths} meses
                       </p>
+                      {computeLicenseExpiry(activePeriod.endDate, activePeriod.licenseValidityMonths) && (
+                        <p className="text-xs text-on-surface-variant mt-0.5">
+                          até{" "}
+                          <strong className="text-on-surface">
+                            {computeLicenseExpiry(activePeriod.endDate, activePeriod.licenseValidityMonths)}
+                          </strong>
+                        </p>
+                      )}
                     </div>
                     <div className="rounded-xl border border-outline-variant bg-surface p-3">
                       <p className="text-xs text-on-surface-variant">Status</p>
@@ -314,7 +345,13 @@ export default function AdminEnrollmentPeriodPage() {
 
                   <div className="rounded-xl border border-outline-variant bg-surface p-3">
                     <div className="mb-2 flex items-center justify-between text-sm">
-                      <span className="text-on-surface-variant">Vagas preenchidas</span>
+                      <span className="flex items-center gap-1 text-on-surface-variant">
+                        Ocupação (vaga-dia)
+                        <InfoTooltip
+                          ariaLabel="O que é vaga-dia?"
+                          content="Vagas em vaga-dia: 1 vaga de ônibus equivale a 5 (segunda a sexta). O total é a soma das vagas dos ônibus ativos × 5."
+                        />
+                      </span>
                       <span className="font-medium text-on-surface">
                         {activePeriod.filledSlots} / {activePeriod.totalSlots}
                       </span>
@@ -330,9 +367,9 @@ export default function AdminEnrollmentPeriodPage() {
               ) : (
                 <p className="text-sm text-on-surface-variant">Nenhum período aberto no momento.</p>
               )}
-            </section>
+            </PanelCard>
 
-            <section className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-5">
+            <PanelCard as="section" className="p-5">
               <h2 className="mb-4 text-lg font-semibold text-on-surface">Histórico de períodos</h2>
 
               {periods.length === 0 ? (
@@ -344,8 +381,16 @@ export default function AdminEnrollmentPeriodPage() {
                       <tr>
                         <th className="px-3 py-2 text-left font-medium">Abertura</th>
                         <th className="px-3 py-2 text-left font-medium">Encerramento</th>
-                        <th className="px-3 py-2 text-left font-medium">Vagas</th>
-                        <th className="px-3 py-2 text-left font-medium">Preenchidas</th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          <span className="flex items-center gap-1">
+                            Total (vaga-dia)
+                            <InfoTooltip
+                              ariaLabel="O que é vaga-dia?"
+                              content="Vagas em vaga-dia: 1 vaga de ônibus equivale a 5 (segunda a sexta). O total é a soma das vagas dos ônibus ativos × 5."
+                            />
+                          </span>
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium">Ocupadas (vaga-dia)</th>
                         <th className="px-3 py-2 text-left font-medium">Validade</th>
                         <th className="px-3 py-2 text-left font-medium">Status</th>
                         <th className="px-3 py-2 text-left font-medium">Ação</th>
@@ -353,7 +398,7 @@ export default function AdminEnrollmentPeriodPage() {
                     </thead>
                     <tbody>
                       {periods.map((period) => (
-                        <tr key={period._id} className="border-t border-outline-variant/40">
+                        <tr key={period._id} className="border-t border-outline-variant/40 hover:bg-surface-container-low/50 transition-colors">
                           <td className="px-3 py-2 text-on-surface">{formatDate(period.startDate)}</td>
                           <td className="px-3 py-2 text-on-surface-variant">
                             {formatDateTime(period.closedAt)}
@@ -393,27 +438,20 @@ export default function AdminEnrollmentPeriodPage() {
                   </table>
                 </div>
               )}
-            </section>
+            </PanelCard>
 
             {activePeriod && (
-              <section className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-5">
+              <PanelCard as="section" className="p-5">
                 <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-on-surface">Fila de espera</h2>
-                    <p className="text-sm text-on-surface-variant">
-                      Libere vagas em lote para promover solicitações da fila para pendente.
-                    </p>
-                  </div>
-
-                  <div className="text-sm text-on-surface-variant">
-                    Liberação de vagas agora é feita por ônibus. Use a tela de Ônibus
-                    para liberar vagas por ônibus e promover a fila.
+                    
                   </div>
                 </div>
 
                 {waitlistEntries.length === 0 ? (
                   <p className="text-sm text-on-surface-variant">
-                    Não há alunos na fila de espera deste período.
+        
                   </p>
                 ) : (
                   <div className="overflow-x-auto rounded-xl border border-outline-variant">
@@ -429,7 +467,7 @@ export default function AdminEnrollmentPeriodPage() {
                       </thead>
                       <tbody>
                         {waitlistEntries.map((entry) => (
-                          <tr key={entry.request._id} className="border-t border-outline-variant/40">
+                          <tr key={entry.request._id} className="border-t border-outline-variant/40 hover:bg-surface-container-low/50 transition-colors">
                             <td className="px-3 py-2 font-medium text-on-surface">
                               #{entry.filaPosition}
                             </td>
@@ -447,11 +485,36 @@ export default function AdminEnrollmentPeriodPage() {
                     </table>
                   </div>
                 )}
-              </section>
+              </PanelCard>
             )}
           </div>
         </main>
-      </div>
+
+      <ConfirmModal
+        open={showCloseConfirm}
+        onClose={() => setShowCloseConfirm(false)}
+        onConfirm={handleCloseConfirmed}
+        loading={closingPeriod}
+        title="Encerrar período"
+        description="Deseja encerrar o período ativo? Alunos na fila de espera terão suas solicitações canceladas e as vagas dos ônibus serão resetadas."
+        icon={AlertTriangle}
+        variant="danger"
+        confirmLabel="Encerrar"
+        cancelLabel="Cancelar"
+      />
+
+      <ConfirmModal
+        open={showReopenConfirm}
+        onClose={() => { setShowReopenConfirm(false); setPendingReopenId(null); }}
+        onConfirm={handleReopenConfirmed}
+        loading={reopeningPeriod}
+        title="Reabrir período"
+        description="Deseja reabrir este período de inscrição? Ele voltará a aceitar novas solicitações de alunos."
+        icon={RotateCcw}
+        variant="warning"
+        confirmLabel="Reabrir"
+        cancelLabel="Cancelar"
+      />
 
       <EnrollmentPeriodModal
         open={modalOpen}
@@ -467,7 +530,7 @@ export default function AdminEnrollmentPeriodPage() {
       />
 
       {/* Preview/confirm period-level release removed (use Bus UI) */}
-    </div>
+    </>
   );
 }
 

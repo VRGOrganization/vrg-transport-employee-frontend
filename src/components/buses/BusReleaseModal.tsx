@@ -3,6 +3,9 @@
 import { useMemo, useState } from "react";
 import type { Bus } from "@/types/university.types";
 import { busApi } from "@/lib/universityApi";
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import { Button } from "@/components/ui/Button";
+import { StatusBanner } from "@/components/ui/StatusBanner";
 
 interface BusReleaseModalProps {
   open: boolean;
@@ -37,25 +40,22 @@ export default function BusReleaseModal({ open, bus, onClose, onSuccess }: BusRe
 
   const preview = useMemo(() => {
     const q = quantity ?? totalWaitlisted ?? 0;
-    let remaining = Math.max(0, Math.floor(q));
     const plan: Array<{ universityAcronym?: string; priorityOrder: number; promote: number; waitlistedCount: number }> = [];
-    for (const slot of waitlistedByPriority) {
-      if (remaining <= 0) break;
+    waitlistedByPriority.reduce((remaining, slot) => {
+      if (remaining <= 0) return 0;
       const avail = slot.waitlistedCount || 0;
-      if (avail <= 0) continue;
+      if (avail <= 0) return remaining;
       if (avail <= remaining) {
         plan.push({ universityAcronym: slot.universityAcronym, priorityOrder: slot.priorityOrder, promote: avail, waitlistedCount: avail });
-        remaining -= avail;
-        continue;
+        return remaining - avail;
       }
       plan.push({ universityAcronym: slot.universityAcronym, priorityOrder: slot.priorityOrder, promote: remaining, waitlistedCount: avail });
-      remaining = 0;
-      break;
-    }
+      return 0;
+    }, Math.max(0, Math.floor(q)));
     return plan;
   }, [quantity, totalWaitlisted, waitlistedByPriority]);
 
-  if (!open || !bus) return null;
+  if (!bus) return null;
 
   const handleConfirm = async () => {
     setError("");
@@ -73,50 +73,61 @@ export default function BusReleaseModal({ open, bus, onClose, onSuccess }: BusRe
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
-        <h2 className="text-lg font-bold text-on-surface mb-4">Liberar vagas — {bus.identifier}</h2>
-
-        <p className="text-sm text-on-surface-variant mb-4">Total na fila: <strong>{totalWaitlisted}</strong>. Selecione quantas vagas deseja liberar.</p>
-
-        <div className="mb-4">
-          <label className="block text-sm text-on-surface-variant mb-2">Quantas vagas liberar?</label>
-          <input
-            type="number"
-            min={1}
-            max={Math.max(1, totalWaitlisted)}
-            value={quantity ?? ''}
-            onChange={(e) => setQuantity(e.target.value ? Math.max(0, parseInt(e.target.value, 10)) : null)}
-            placeholder={`${totalWaitlisted}`}
-            className="w-full px-4 py-2.5 rounded-md border border-outline-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title={`Liberar vagas — ${bus.identifier}`}
+      actions={
+        <div className="flex gap-3">
+          <Button variant="outline" fullWidth onClick={onClose} disabled={loading}>
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            fullWidth
+            onClick={handleConfirm}
+            loading={loading}
+            disabled={quantity !== null && quantity <= 0}
+          >
+            Confirmar
+          </Button>
         </div>
+      }
+    >
+      <p className="text-sm text-on-surface-variant mb-4">
+        Total na fila: <strong>{totalWaitlisted}</strong>. Selecione quantas vagas deseja liberar.
+      </p>
 
-        <div className="mb-4">
-          <div className="text-sm text-on-surface-variant mb-2">Preview de promoções por prioridade</div>
-          <div className="space-y-2 text-sm">
-            {preview.length === 0 ? (
-              <div className="text-xs text-on-surface-muted italic">Nenhuma promoção prevista com a quantidade selecionada.</div>
-            ) : (
-              preview.map((p, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <div className="text-sm text-on-surface">P{p.priorityOrder} {p.universityAcronym ? `· ${p.universityAcronym}` : ''}</div>
-                  <div className="text-sm font-medium text-on-surface">{p.promote} promovido(s)</div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+      <div className="mb-4">
+        <label className="block text-sm text-on-surface-variant mb-2">Quantas vagas liberar?</label>
+        <input
+          type="number"
+          min={1}
+          max={Math.max(1, totalWaitlisted)}
+          value={quantity ?? ''}
+          onChange={(e) => setQuantity(e.target.value ? Math.max(0, parseInt(e.target.value, 10)) : null)}
+          placeholder={`${totalWaitlisted}`}
+          className="w-full px-4 py-2.5 rounded-md border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
 
-        {error && <div className="text-sm text-error mb-3">{error}</div>}
-
-        <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-lg border border-outline-variant text-on-surface-variant text-sm hover:bg-surface-container-low transition-colors">Cancelar</button>
-          <button onClick={handleConfirm} disabled={loading || (quantity !== null && quantity <= 0)} className="flex-1 px-4 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-white text-sm transition-colors">
-            {loading ? 'Processando...' : 'Confirmar'}
-          </button>
+      <div className="mb-4">
+        <div className="text-sm text-on-surface-variant mb-2">Preview de promoções por prioridade</div>
+        <div className="space-y-2 text-sm">
+          {preview.length === 0 ? (
+            <div className="text-xs text-on-surface-muted italic">Nenhuma promoção prevista com a quantidade selecionada.</div>
+          ) : (
+            preview.map((p, idx) => (
+              <div key={idx} className="flex items-center justify-between">
+                <div className="text-sm text-on-surface">P{p.priorityOrder} {p.universityAcronym ? `· ${p.universityAcronym}` : ''}</div>
+                <div className="text-sm font-medium text-on-surface">{p.promote} promovido(s)</div>
+              </div>
+            ))
+          )}
         </div>
       </div>
-    </div>
+
+      {error && <StatusBanner variant="error" className="mt-2">{error}</StatusBanner>}
+    </BottomSheet>
   );
 }
