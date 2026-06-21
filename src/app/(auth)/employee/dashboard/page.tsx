@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { studentService } from "@/services/studentService";
+import { licenseRequestService } from "@/services/licenseRequestService";
 import { http } from "@/services/http";
 import { StudentTable } from "@/components/employee/StudentTable";
 import { Footer } from "@/components/layout/Footer";
@@ -18,6 +19,8 @@ interface DashboardStats {
   activeStudents: number | null;
   withCard: number | null;
   pendingRequests: number | null;
+  documentResendCount: number | null;
+  reissueCount: number | null;
 }
 
 // ── Página ───────────────────────────────────────────────────────────────────
@@ -29,14 +32,17 @@ export default function EmployeeDashboardPage() {
     activeStudents: null,
     withCard: null,
     pendingRequests: null,
+    documentResendCount: null,
+    reissueCount: null,
   });
   const [loadingStudents, setLoadingStudents] = useState(true);
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [studentsResult, licensesResult] = await Promise.allSettled([
+      const [studentsResult, licensesResult, reviewCountsResult] = await Promise.allSettled([
         studentService.list(),
         http.get<LicenseRecord[]>("/license/all"),
+        licenseRequestService.getReviewCounts(),
       ]);
 
       if (studentsResult.status === "fulfilled") {
@@ -61,6 +67,14 @@ export default function EmployeeDashboardPage() {
           activeStudents: activeStudents.length,
           withCard,
           pendingRequests: pending,
+          documentResendCount:
+            reviewCountsResult.status === "fulfilled"
+              ? reviewCountsResult.value.documentResendCount
+              : null,
+          reissueCount:
+            reviewCountsResult.status === "fulfilled"
+              ? reviewCountsResult.value.reissueCount
+              : null,
         });
       }
 
@@ -82,7 +96,7 @@ export default function EmployeeDashboardPage() {
   return (
     <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-6 mb-12">
             <DashboardStatCard
               icon="school"
               label="Alunos Ativos"
@@ -103,6 +117,20 @@ export default function EmployeeDashboardPage() {
               value={stats.pendingRequests}
               badge="URGENTE"
               accent="secondary"
+            />
+            <DashboardStatCard
+              icon="upload_file"
+              label="Reenvio de documentos"
+              value={stats.documentResendCount}
+              badge="REVISÃO"
+              accent="secondary"
+            />
+            <DashboardStatCard
+              icon="event_repeat"
+              label="Reemissão por dia"
+              value={stats.reissueCount}
+              badge="REVISÃO"
+              accent="tertiary"
             />
           </div>
 
