@@ -1,5 +1,6 @@
 import { Check, Square } from "lucide-react";
 import type { LicenseRequestRecord, StudentRecord } from "@/types/cards.types";
+import { toTitleCase } from "@/lib/utils/string";
 
 interface StudentListItemProps {
   student: StudentRecord;
@@ -70,7 +71,7 @@ export function StudentListItem({
       className={`flex w-full justify-between overflow-hidden rounded-xl border outline-none transition focus-visible:ring-2 focus-visible:ring-primary/40 ${sizeClass} ${stateClass} ${interactionClass} ${batchClass}`}
     >
       <div className="min-w-0 flex-1 text-left">
-        <p className={large ? "truncate font-extrabold text-2xl text-on-surface" : "truncate font-semibold text-on-surface"}>{student.name}</p>
+        <p className={large ? "truncate font-extrabold text-2xl text-on-surface" : "truncate font-semibold text-on-surface"}>{toTitleCase(student.name)}</p>
         {!large && (
           <>
             <p className="truncate text-xs text-on-surface-variant">{student.email}</p>

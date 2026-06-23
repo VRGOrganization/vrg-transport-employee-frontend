@@ -1,6 +1,6 @@
 import { Pencil, UserCheck } from "lucide-react";
 import { Student } from "@/types/student";
-import { getInitials } from "@/lib/utils/string";
+import { getInitials, toTitleCase } from "@/lib/utils/string";
 
 interface StudentCardProps {
   student: Student;
@@ -37,7 +37,7 @@ export function StudentCard({ student, onClick, onEdit, onReactivate }: StudentC
         {/* Info */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="font-semibold text-on-surface truncate">{student.name}</p>
+            <p className="font-semibold text-on-surface truncate">{toTitleCase(student.name)}</p>
             {student.shift && (
               <span
                 className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${

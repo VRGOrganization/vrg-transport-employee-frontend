@@ -32,9 +32,11 @@ export const universityService = {
 };
 
 export const courseService = {
-  list:           ()                                           => http.get<Course[]>("/course"),
-  listByUniversity: (universityId: string)                    => http.get<Course[]>(`/course/by-university/${universityId}`),
-  create:         (data: { name: string; universityId: string; model?: CourseModel }) => http.post<Course>("/course", data),
-  update:         (id: string, data: { name?: string; model?: CourseModel | null })   => http.patch<Course>(`/course/${id}`, data),
-  deactivate:     (id: string)                                => http.delete<{ message: string }>(`/course/${id}`),
+  list:                     ()                                                          => http.get<Course[]>("/course"),
+  listByUniversity:         (universityId: string)                                     => http.get<Course[]>(`/course/by-university/${universityId}`),
+  listInactiveByUniversity: (universityId: string)                                     => http.get<Course[]>(`/course/inactive/by-university/${universityId}`),
+  create:                   (data: { name: string; universityId: string; model?: CourseModel }) => http.post<Course>("/course", data),
+  update:                   (id: string, data: { name?: string; model?: CourseModel | null })   => http.patch<Course>(`/course/${id}`, data),
+  deactivate:               (id: string)                                               => http.delete<{ message: string }>(`/course/${id}`),
+  reactivate:               (id: string)                                               => http.patch<{ message: string }>(`/course/${id}/reactivate`, {}),
 };

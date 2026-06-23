@@ -143,11 +143,14 @@ export default function AdminDashboardPage() {
 
       if (activePeriodResult.status === "fulfilled") {
         const p = activePeriodResult.value;
-        setActivePeriod(p ?? null);
-        setStats((prev) => ({
-          ...prev,
-          fleetLabel: `${p.filledSlots}/${p.totalSlots}`,
-        }));
+        const hasActivePeriod = !!p && typeof p.totalSlots === "number";
+        setActivePeriod(hasActivePeriod ? p : null);
+        if (hasActivePeriod) {
+          setStats((prev) => ({
+            ...prev,
+            fleetLabel: `${p.filledSlots}/${p.totalSlots}`,
+          }));
+        }
       }
 
       rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -222,7 +225,7 @@ export default function AdminDashboardPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <main className="px-6 py-5 bg-surface flex flex-col gap-5">
+    <main className="px-6 py-5 bg-surface flex flex-col gap-5 min-w-0 overflow-x-hidden">
 
       {activePeriod?.endDate && (
         <EnrollmentPeriodBanner endDate={activePeriod.endDate} />

@@ -128,7 +128,7 @@ export function DashboardUsersTable({
   onRowClick,
 }: DashboardUsersTableProps) {
   const sectionHeader = (
-    <div className="px-6 py-3.5 border-b border-outline-variant/30 flex items-center justify-between gap-4 flex-wrap">
+    <div className="px-6 py-3.5 border-b border-outline-variant/30 flex items-center justify-between gap-4 flex-wrap min-w-0">
       <div>
         <h2 className="font-bold text-on-surface text-sm">Usuários do sistema</h2>
         <p className="text-xs text-on-surface-variant mt-0.5">

@@ -10,6 +10,7 @@ import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
 import { UnbanModal } from "@/components/admin/UnbanModal";
 import type { PageSize } from "@/lib/constants";
+import { toTitleCase } from "@/lib/utils/string";
 
 type Tab = "active" | "inactive";
 
@@ -28,7 +29,7 @@ const COLUMNS: Column<BanlistEntry>[] = [
           {entry.name.charAt(0).toUpperCase()}
         </div>
         <div>
-          <p className="text-sm font-medium text-on-surface">{entry.name}</p>
+          <p className="text-sm font-medium text-on-surface">{toTitleCase(entry.name)}</p>
           <p className="text-xs text-on-surface-variant">{entry.email}</p>
         </div>
       </div>

@@ -6,7 +6,7 @@ import { LicenseRecord, StudentRecord } from "@/types/cards.types";
 interface UsePdfPrintReturn {
   pdfPreviewUrl: string | null;
   pdfPreviewTitle: string;
-  pdfFrameRef: React.RefObject<HTMLIFrameElement  | null >; 
+  pdfFrameRef: React.RefObject<HTMLIFrameElement  | null >;
   printingSingle: boolean;
   printingBatch: boolean;
   selectedForBatch: string[];
@@ -14,6 +14,7 @@ interface UsePdfPrintReturn {
   closePdfPreview: () => void;
   handlePrintFromPreview: () => void;
   toggleBatchSelection: (studentId: string) => void;
+  setBatchSelection: (ids: string[]) => void;
   handlePrintSingle: (
     selected: StudentRecord | null,
     printableCardsByStudentId: Map<string, PrintableCard>,
@@ -62,6 +63,10 @@ export function usePdfPrint(): UsePdfPrintReturn {
     setSelectedForBatch((prev) =>
       prev.includes(studentId) ? prev.filter((id) => id !== studentId) : [...prev, studentId],
     );
+  }, []);
+
+  const setBatchSelection = useCallback((ids: string[]) => {
+    setSelectedForBatch(ids);
   }, []);
 
   const buildPrintableMap = useCallback(
@@ -149,6 +154,7 @@ export function usePdfPrint(): UsePdfPrintReturn {
     closePdfPreview,
     handlePrintFromPreview,
     toggleBatchSelection,
+    setBatchSelection,
     handlePrintSingle,
     handlePrintBatch,
     buildPrintableMap,

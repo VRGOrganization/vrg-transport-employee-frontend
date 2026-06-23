@@ -411,6 +411,7 @@ export default function UniversitiesPage() {
         initial={editing}
         onClose={() => setEditing(null)}
         onSubmit={handleEdit}
+        onCoursesChanged={handleCoursesChanged}
       />
       <DeactivateUniversityModal
         university={pendingDeactivate}

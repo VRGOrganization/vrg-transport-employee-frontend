@@ -9,6 +9,7 @@ import { SelectField } from "@/components/ui/SelectField";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { Button } from "@/components/ui/Button";
 import { studentService } from "@/services/studentService";
+import { toTitleCase } from "@/lib/utils/string";
 import type { Student } from "@/types/student";
 
 const SHIFT_OPTIONS = [
@@ -111,7 +112,7 @@ export function StudentModal({ student, isBanned = false, onClose, onUpdated, on
         icon={UserX}
         variant="danger"
         description={
-          <>O estudante <strong>{student.name}</strong> perderá acesso ao sistema imediatamente. O cadastro poderá ser reativado posteriormente.</>
+          <>O estudante <strong>{toTitleCase(student.name)}</strong> perderá acesso ao sistema imediatamente. O cadastro poderá ser reativado posteriormente.</>
         }
         confirmLabel="Sim, desativar"
       />
@@ -130,7 +131,7 @@ export function StudentModal({ student, isBanned = false, onClose, onUpdated, on
         icon={UserCheck}
         variant="success"
         description={
-          <>O estudante <strong>{student.name}</strong> recuperará acesso ao sistema imediatamente.</>
+          <>O estudante <strong>{toTitleCase(student.name)}</strong> recuperará acesso ao sistema imediatamente.</>
         }
         confirmLabel="Sim, reativar"
       />

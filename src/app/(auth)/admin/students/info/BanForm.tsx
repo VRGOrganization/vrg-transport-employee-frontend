@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { Ban, Loader2, AlertCircle, ChevronDown, ChevronUp, ShieldAlert } from "lucide-react";
 import type { Student } from "@/types/student";
 import { banlistService } from "@/services/banlistService";
+import { toTitleCase } from "@/lib/utils/string";
 
 const BAN_TERMS = `Ao prosseguir com esta ação administrativa, declaro, sob plena consciência e responsabilidade, que estou ciente e em total concordância com as seguintes disposições e consequências jurídico-administrativas do banimento:
 
@@ -45,7 +46,7 @@ export function BanForm({ student, onCancel, onBanned }: BanFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!banReasons.trim()) { setError("Informe o motivo do banimento."); return; }
-    if (banConfirmName.trim() !== student.name.trim()) { setError("O nome de confirmação não confere com o nome do estudante."); return; }
+    if (banConfirmName.trim().toLowerCase() !== student.name.trim().toLowerCase()) { setError("O nome de confirmação não confere com o nome do estudante."); return; }
     if (!agreed) { setError("Você deve ler e concordar com os termos antes de continuar."); return; }
 
     setLoading(true);
@@ -123,7 +124,7 @@ export function BanForm({ student, onCancel, onBanned }: BanFormProps) {
             Confirme o nome do estudante <span className="text-error">*</span>
           </label>
           <p className="text-[11px] text-on-surface-variant mb-1">
-            Digite exatamente: <span className="font-bold text-on-surface select-all">{student.name}</span>
+            Digite exatamente: <span className="font-bold text-on-surface select-all">{toTitleCase(student.name)}</span>
           </p>
           <input
             type="text"
@@ -217,7 +218,7 @@ export function BanForm({ student, onCancel, onBanned }: BanFormProps) {
         </button>
         <button
           type="submit"
-          disabled={loading || !agreed || !banReasons.trim() || banConfirmName.trim() !== student.name.trim()}
+          disabled={loading || !agreed || !banReasons.trim() || banConfirmName.trim().toLowerCase() !== student.name.trim().toLowerCase()}
           className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full bg-error text-white hover:bg-error/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : <Ban className="size-4" />}
