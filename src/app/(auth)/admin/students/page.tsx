@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
 import { getShiftLabel } from "@/lib/constants";
+import { toTitleCase } from "@/lib/utils/string";
 import { buildStudentsCsv, downloadCsv } from "@/lib/csvUtils";
 import { StudentCreateModal } from "@/components/students/StudentCreateModal";
 import { StudentDocumentsModal } from "@/components/students/StudentDocumentsModal";
@@ -39,7 +40,7 @@ const STUDENT_COLUMNS: Column<Student>[] = [
     render: (s) => (
       <div className="flex items-center gap-3">
         <Avatar name={s.name} size="sm" />
-        <span className="text-sm font-medium text-on-surface">{s.name}</span>
+        <span className="text-sm font-medium text-on-surface">{toTitleCase(s.name)}</span>
       </div>
     ),
     skeleton: () => (
@@ -86,7 +87,7 @@ const BAN_COLUMNS: Column<BanlistEntry>[] = [
           {e.name.charAt(0).toUpperCase()}
         </div>
         <div>
-          <p className="text-sm font-medium text-on-surface">{e.name}</p>
+          <p className="text-sm font-medium text-on-surface">{toTitleCase(e.name)}</p>
           <p className="text-xs text-on-surface-variant">{e.email}</p>
         </div>
       </div>

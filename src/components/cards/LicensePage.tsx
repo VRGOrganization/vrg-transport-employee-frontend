@@ -96,6 +96,7 @@ export function LicensePage({ role }: LicensePageProps) {
     selectedForBatch,
     closePdfPreview,
     toggleBatchSelection,
+    setBatchSelection,
     handlePrintSingle,
     handlePrintBatch,
     buildPrintableMap,
@@ -182,6 +183,7 @@ export function LicensePage({ role }: LicensePageProps) {
                         printableCardsByStudentId={printableCardsByStudentId}
                         onSelectStudent={selectStudent}
                         onToggleBatch={toggleBatchSelection}
+                        onSetBatch={setBatchSelection}
                         onPrintBatch={() =>
                           handlePrintBatch(printableCardsByStudentId, setApproveMessage)
                         }

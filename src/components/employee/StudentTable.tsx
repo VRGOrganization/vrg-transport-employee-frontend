@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Student } from "@/types/student";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { toTitleCase } from "@/lib/utils/string";
 import { Avatar } from "@/components/ui/Avatar";
 import type { PageSize } from "@/lib/constants";
 
@@ -39,7 +40,7 @@ export function StudentTable({ students, loading, onDeleted }: StudentTableProps
       render: (student) => (
         <div className="flex items-center gap-4">
           <Avatar name={student.name} size="sm" />
-          <span className="font-semibold text-on-surface">{student.name}</span>
+          <span className="font-semibold text-on-surface">{toTitleCase(student.name)}</span>
         </div>
       ),
       skeleton: () => (
