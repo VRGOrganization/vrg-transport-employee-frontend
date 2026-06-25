@@ -8,7 +8,10 @@ export const AVATAR_COLORS = [
 ] as const;
 
 export function toTitleCase(str: string): string {
-  return str.replace(/\b\w/g, (c) => c.toUpperCase());
+  return str
+    .split(" ")
+    .map((word) => (word ? word[0].toUpperCase() + word.slice(1).toLowerCase() : ""))
+    .join(" ");
 }
 
 export function getInitials(name: string): string {

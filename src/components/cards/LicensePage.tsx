@@ -86,6 +86,7 @@ export function LicensePage({ role }: LicensePageProps) {
     proofOfResidenceImage,
     selectedLicensePreview,
     selectStudent,
+    clearSelection,
   } = useStudentSelection(licenses, licenseRequests);
 
   const {
@@ -101,6 +102,10 @@ export function LicensePage({ role }: LicensePageProps) {
     handlePrintBatch,
     buildPrintableMap,
   } = usePdfPrint();
+
+  // Limpa seleção ao trocar de aba ou ao voltar para a tela de universidades
+  useEffect(() => { clearSelection(); }, [activeFilter, clearSelection]);
+  useEffect(() => { clearSelection(); }, [selectedUniversityId, clearSelection]);
 
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [approveMessage, setApproveMessage] = useState("");
