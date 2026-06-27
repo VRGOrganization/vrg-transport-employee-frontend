@@ -80,7 +80,7 @@ export function DayUsageChart({ byDay }: DayUsageChartProps) {
 
         chart.getDatasetMeta(0).data.forEach((bar, index) => {
           const value = data.datasets[0].data[index];
-          if (value > 0) {
+          if (typeof value === "number" && value > 0) {
             ctx.fillText(String(value), bar.x, bar.y - 6);
           }
         });
