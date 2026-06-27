@@ -1,4 +1,4 @@
-import { Bus, Printer, XCircle } from "lucide-react";
+import { Bus, ClipboardCheck, Printer, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { isPdfDataUrl } from "@/lib/cardUtils";
 import type { LicenseRecord, LicenseRequestRecord } from "@/types/cards.types";
@@ -12,6 +12,7 @@ interface ApprovalFooterProps {
   approveMessage: string;
   onApprove: () => void;
   onRejectOpen: () => void;
+  onRevisionOpen: () => void;
   onPrintSingle: () => void;
 }
 
@@ -24,14 +25,20 @@ export function ApprovalFooter({
   approveMessage,
   onApprove,
   onRejectOpen,
+  onRevisionOpen,
   onPrintSingle,
 }: ApprovalFooterProps) {
   const isPending = currentLicenseRequest?.status === "pending";
+  // Revisão já reenviada pelo aluno: pode ser aprovada/recusada/devolvida.
+  const isResubmittedRevision =
+    currentLicenseRequest?.status === "revision" &&
+    currentLicenseRequest?.revisionStage === "resubmitted";
   const hasWaitlistedAllocation =
     currentLicenseRequest?.allocationSummary?.some((allocation) => allocation.status === "waitlisted") ?? false;
   const isPartiallyWaitlisted = !!currentLicense && hasWaitlistedAllocation;
   const isWaitlisted = currentLicenseRequest?.status === "waitlisted";
-  const canApprove = isPending;
+  const canActOnRequest = isPending || isResubmittedRevision;
+  const canApprove = canActOnRequest;
   const canPrint = !!selectedLicensePreview && !isPdfDataUrl(selectedLicensePreview ?? "");
 
   // Carteirinha já criada: só faz sentido reimprimir. Sem rota, recusar ou aprovar.
@@ -44,7 +51,7 @@ export function ApprovalFooter({
           </div>
         )}
         {isPartiallyWaitlisted && (
-          <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          <p className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
             Parcialmente na fila de espera. Alguns dias/períodos aguardam vagas.
           </p>
         )}
@@ -71,8 +78,8 @@ export function ApprovalFooter({
           A universidade e os ônibus da carteirinha serão derivados da solicitação aprovada.
         </p>
         {isWaitlisted && (
-          <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-            {`Na fila de espera${currentLicenseRequest?.filaPosition ? ` (posição ${currentLicenseRequest.filaPosition})` : ""}. A aprovação fica disponível após promoção para pendente.`}
+          <p className="mt-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
+            Na fila de espera. A aprovação fica disponível após promoção para pendente.
           </p>
         )}
       </div>
@@ -98,28 +105,28 @@ export function ApprovalFooter({
         <Button
           variant="outline"
           size="md"
-          icon={<Printer className="size-4" />}
-          disabled={!canPrint || printingSingle}
-          loading={printingSingle}
-          onClick={onPrintSingle}
-        >
-          Impressão única
-        </Button>
-
-        <Button
-          variant="outline"
-          size="md"
           icon={<XCircle className="size-4" />}
-          disabled={!isPending}
+          disabled={!canActOnRequest}
           onClick={onRejectOpen}
           className="text-error border-error/40 hover:bg-error/5"
         >
           Recusar
         </Button>
 
+        <Button
+          variant="outline"
+          size="md"
+          icon={<ClipboardCheck className="size-4" />}
+          disabled={!canActOnRequest}
+          onClick={onRevisionOpen}
+          className="text-primary border-primary/40 hover:bg-primary/5"
+        >
+          Solicitar revisão
+        </Button>
+
         {isWaitlisted ? (
-          <span className="rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700">
-            {`Na fila de espera${currentLicenseRequest?.filaPosition ? ` - posição ${currentLicenseRequest.filaPosition}` : ""}`}
+          <span className="rounded-full border border-warning/40 bg-warning/10 px-4 py-2 text-xs font-semibold text-warning">
+            Na fila de espera
           </span>
         ) : (
           <Button

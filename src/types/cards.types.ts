@@ -52,15 +52,28 @@ export interface LicenseRecord {
   updatedAt?: string;
 }
 
+export type RevisionStage = "pending_student" | "resubmitted";
+
 export interface LicenseRequestRecord {
   _id: string;
   studentId: string;
   type: "initial" | "update";
   changedDocuments: string[];
   pendingImages?: Array<{ photoType: string; dataUrl: string }>;
-  status: "pending" | "approved" | "rejected" | "waitlisted" | "cancelled";
+  status:
+    | "pending"
+    | "approved"
+    | "rejected"
+    | "revision"
+    | "waitlisted"
+    | "cancelled";
   rejectionReason: string | null;
   rejectedAt: string | null;
+  // Revisão
+  revisionStage?: RevisionStage | null;
+  revisionReasons?: string[];
+  revisionFields?: string[];
+  revisionMessage?: string | null;
   licenseId: string | null;
   enrollmentPeriodId?: string | null;
   filaPosition?: number | null;
@@ -132,6 +145,15 @@ export const DAY_LABELS: Record<string, string> = {
   QUA: "Quarta",
   QUI: "Quinta",
   SEX: "Sexta",
+};
+
+export type RevisionFieldKey = "institution" | "degree" | "shift" | "schedule";
+
+export const REVISION_FIELD_LABELS: Record<RevisionFieldKey, string> = {
+  institution: "Instituição",
+  degree: "Curso",
+  shift: "Turno",
+  schedule: "Grade horária",
 };
 
 export const PHOTO_TYPE_LABELS: Record<PhotoType, string> = {

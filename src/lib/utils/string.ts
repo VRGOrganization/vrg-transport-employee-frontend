@@ -7,6 +7,13 @@ export const AVATAR_COLORS = [
   "bg-rose-100 text-rose-700",
 ] as const;
 
+export function toTitleCase(str: string): string {
+  return str
+    .split(" ")
+    .map((word) => (word ? word[0].toUpperCase() + word.slice(1).toLowerCase() : ""))
+    .join(" ");
+}
+
 export function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
   if (!parts[0]) return "?";

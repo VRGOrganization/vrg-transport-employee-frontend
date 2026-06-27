@@ -138,12 +138,17 @@ export function useCardsData(university?: University | null): UseCardsDataReturn
     [licenseRequests],
   );
 
-  // Alunos com solicitação de atualização (type "update") pendente — aba "Revisão".
+  // Aba "Revisão": atualizações de documentos pendentes (type "update") +
+  // pedidos enviados para revisão (status "revision").
   const reviewStudentIds = useMemo(
     () =>
       new Set(
         licenseRequests
-          .filter((r) => r.type === "update" && r.status === "pending")
+          .filter(
+            (r) =>
+              (r.type === "update" && r.status === "pending") ||
+              r.status === "revision",
+          )
           .map((r) => r.studentId),
       ),
     [licenseRequests],

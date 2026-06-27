@@ -1,4 +1,5 @@
-import { Printer, Search } from "lucide-react";
+import { Check, Printer, Search } from "lucide-react";
+import { useRef, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { FilterButton } from "@/components/cards/CardPageComponents";
 import type { StudentFilter } from "@/types/cards.types";
@@ -8,9 +9,13 @@ interface StudentListToolbarProps {
   filter: StudentFilter;
   selectedForBatchCount: number;
   printingBatch: boolean;
+  isAllSelected: boolean;
+  isSomeSelected: boolean;
+  hasApproved: boolean;
   onSearchChange: (value: string) => void;
   onFilterChange: (filter: StudentFilter) => void;
   onPrintBatch: () => void;
+  onSelectAll: () => void;
   showReview?: boolean;
 }
 
@@ -19,11 +24,23 @@ export function StudentListToolbar({
   filter,
   selectedForBatchCount,
   printingBatch,
+  isAllSelected,
+  isSomeSelected,
+  hasApproved,
   onSearchChange,
   onFilterChange,
   onPrintBatch,
+  onSelectAll,
   showReview = false,
 }: StudentListToolbarProps) {
+  const checkboxRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (checkboxRef.current) {
+      checkboxRef.current.indeterminate = isSomeSelected;
+    }
+  }, [isSomeSelected]);
+
   return (
     <div className="mb-4 space-y-3">
       <div className="flex flex-col gap-3">
@@ -86,10 +103,31 @@ export function StudentListToolbar({
 
       {filter === "with-card" && (
         <div className="flex items-center justify-between gap-2 rounded-xl border border-outline-variant bg-surface p-2">
-          <p className="text-xs text-on-surface-variant">
-            Selecionadas para lote:{" "}
-            <strong className="text-on-surface">{selectedForBatchCount}</strong>
-          </p>
+          <label className="flex items-center gap-2.5 cursor-pointer select-none min-w-0">
+            <input
+              ref={checkboxRef}
+              type="checkbox"
+              checked={isAllSelected}
+              onChange={onSelectAll}
+              disabled={!hasApproved}
+              aria-label="Selecionar todos para impressão em lote"
+              className="sr-only"
+            />
+            <span
+              aria-hidden="true"
+              className={`size-4 rounded border-2 flex items-center justify-center transition-colors shrink-0 ${
+                isAllSelected
+                  ? "bg-primary border-primary"
+                  : "border-on-surface-variant bg-transparent"
+              } ${!hasApproved ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              {isAllSelected && <Check className="size-3 text-white" strokeWidth={3} />}
+            </span>
+            <p className="text-xs text-on-surface-variant">
+              Selecionadas para lote:{" "}
+              <strong className="text-on-surface">{selectedForBatchCount}</strong>
+            </p>
+          </label>
           <Button
             variant="outline"
             size="sm"

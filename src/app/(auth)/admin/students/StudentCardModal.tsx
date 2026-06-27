@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { http } from "@/services/http";
 import { Student } from "@/types/student";
+import { toTitleCase } from "@/lib/utils/string";
 import { LicenseRecord } from "@/types/cards.types";
 import { extractLicenseImage, buildCardsPdfUrl } from "@/lib/cardUtils";
 import { Button } from "@/components/ui/Button";
@@ -86,7 +87,7 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
                 Carteirinha
               </h2>
               <p className="text-sm text-on-surface-variant mt-0.5">
-                {student.name}
+                {toTitleCase(student.name)}
               </p>
             </div>
             <button

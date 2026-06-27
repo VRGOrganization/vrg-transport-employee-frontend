@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, ShieldCheck, Loader2, AlertCircle, Calendar } from "lucide-react";
 import { banlistService } from "@/services/banlistService";
+import { toTitleCase } from "@/lib/utils/string";
 import type { BanlistEntry } from "@/types/banlist";
 
 interface UnbanModalProps {
@@ -75,7 +76,7 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
               {entry.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="font-semibold text-on-surface text-sm">{entry.name}</p>
+              <p className="font-semibold text-on-surface text-sm">{toTitleCase(entry.name)}</p>
               <p className="text-xs text-on-surface-variant">{entry.email}</p>
             </div>
           </div>

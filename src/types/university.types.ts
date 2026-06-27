@@ -7,6 +7,7 @@ export interface University {
   createdAt: string;
   updatedAt: string;
   pendingCount?: number;
+  revisionCount?: number;
   waitlistedCount?: number;
 }
 
