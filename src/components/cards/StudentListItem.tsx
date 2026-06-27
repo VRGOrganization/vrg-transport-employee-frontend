@@ -32,6 +32,7 @@ export function StudentListItem({
     (latestRequest?.allocationSummary?.some((allocation) => allocation.status === "waitlisted") ?? false);
   const isRejected = latestRequest?.status === "rejected";
   const isCancelled = latestRequest?.status === "cancelled";
+  const isRevision = latestRequest?.status === "revision";
 
   const isSelectable = selectable;
 
@@ -113,13 +114,15 @@ export function StudentListItem({
           <span
             className={`rounded-full px-2 py-1 text-[11px] font-semibold ${
               isPartiallyWaitlisted
-                  ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                  ? "bg-warning/15 text-warning"
                 : hasCard
                   ? "bg-success/15 text-success"
                 : isWaitlisted
-                  ? "bg-warning-container text-on-warning"
-                : isPending
                   ? "bg-warning/20 text-warning"
+                : isPending
+                  ? "bg-primary/15 text-primary"
+                  : isRevision
+                    ? "bg-primary/15 text-primary"
                   : isRejected
                     ? "bg-error/15 text-error"
                     : isCancelled
@@ -128,19 +131,35 @@ export function StudentListItem({
             }`}
           >
             {isPartiallyWaitlisted
-                ? `Parcial${latestRequest?.filaPosition ? ` (#${latestRequest.filaPosition})` : ""}`
+                ? "Parcial"
               : hasCard
                 ? "Com carteirinha"
               : isWaitlisted
-                ? `Na fila${latestRequest?.filaPosition ? ` (#${latestRequest.filaPosition})` : ""}`
+                ? "Na fila"
               : isPending
                 ? "Pendente"
+                : isRevision
+                  ? "Em revisão"
                 : isRejected
                   ? "Recusada"
                   : isCancelled
                     ? "Cancelada"
                     : "Sem solicitação"}
           </span>
+
+          {isRevision && (
+            <span
+              className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
+                latestRequest?.revisionStage === "resubmitted"
+                  ? "bg-success/15 text-success"
+                  : "bg-warning/20 text-warning"
+              }`}
+            >
+              {latestRequest?.revisionStage === "resubmitted"
+                ? "Reenviado"
+                : "Aguardando aluno"}
+            </span>
+          )}
 
           {latestRequest?.type === "update" && (
             <span className="rounded-full bg-secondary/15 px-2 py-1 text-[10px] font-semibold text-secondary">

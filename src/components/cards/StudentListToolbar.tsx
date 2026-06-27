@@ -1,4 +1,4 @@
-import { Printer, Search } from "lucide-react";
+import { Check, Printer, Search } from "lucide-react";
 import { useRef, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { FilterButton } from "@/components/cards/CardPageComponents";
@@ -111,8 +111,18 @@ export function StudentListToolbar({
               onChange={onSelectAll}
               disabled={!hasApproved}
               aria-label="Selecionar todos para impressão em lote"
-              className="size-4 rounded border-2 border-on-surface-variant accent-primary cursor-pointer disabled:cursor-not-allowed"
+              className="sr-only"
             />
+            <span
+              aria-hidden="true"
+              className={`size-4 rounded border-2 flex items-center justify-center transition-colors shrink-0 ${
+                isAllSelected
+                  ? "bg-primary border-primary"
+                  : "border-on-surface-variant bg-transparent"
+              } ${!hasApproved ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              {isAllSelected && <Check className="size-3 text-white" strokeWidth={3} />}
+            </span>
             <p className="text-xs text-on-surface-variant">
               Selecionadas para lote:{" "}
               <strong className="text-on-surface">{selectedForBatchCount}</strong>
