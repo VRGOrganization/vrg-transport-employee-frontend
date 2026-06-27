@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { GraduationCap, UserX, CheckCircle2, ShieldBan, ShieldCheck, ArrowUpAZ, ArrowDownAZ } from "lucide-react";
+import { GraduationCap, ShieldBan, ShieldCheck, ArrowUpAZ, ArrowDownAZ } from "lucide-react";
 import { studentService } from "@/services/studentService";
 import { banlistService } from "@/services/banlistService";
 import type { Student } from "@/types/student";
@@ -20,17 +20,14 @@ import { StudentDocumentsModal } from "@/components/students/StudentDocumentsMod
 import { StudentInfoModal } from "./StudentInfoModal";
 import { StudentCardModal } from "./StudentCardModal";
 import { UnbanModal } from "@/components/admin/UnbanModal";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { toast } from "@/lib/toast";
 import type { PageSize } from "@/lib/constants";
 
-type StudentTab = "active" | "inactive";
-type Tab = StudentTab | "banned";
+type Tab = "active" | "banned";
 
 const TAB_ITEMS = [
-  { key: "active" as Tab,   label: "Ativos",      icon: "check_circle" },
-  { key: "inactive" as Tab, label: "Desativados",  icon: "person_off"  },
-  { key: "banned" as Tab,   label: "Banidos",      icon: "block"       },
+  { key: "active" as Tab, label: "Ativos",  icon: "check_circle" },
+  { key: "banned" as Tab, label: "Banidos", icon: "block"        },
 ];
 
 // Funcionário não gerencia banimentos.
@@ -139,9 +136,6 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   const [createOpen, setCreateOpen]           = useState(false);
   const [viewingStudent, setViewingStudent]   = useState<Student | null>(null);
   const [docsStudent, setDocsStudent]         = useState<Student | null>(null);
-  const [toggleTarget, setToggleTarget]       = useState<Student | null>(null);
-  const [toggleLoading, setToggleLoading]     = useState(false);
-  const [toggleError, setToggleError]         = useState("");
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("view");
@@ -151,25 +145,18 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   const [viewingCardStudent, setViewingCard]  = useState<Student | null>(null);
   const [unbanTarget, setUnbanTarget]         = useState<BanlistEntry | null>(null);
   const [openDropdownId, setOpenDropdownId]   = useState<string | null>(null);
-  const [, setBannedIds]                      = useState<Set<string>>(new Set());
 
-  // ── Student tabs (active / inactive) ─────────────────────────────
-  const studentFetcher = useCallback(
-    async (t: StudentTab) => {
-      // Funcionário não acessa a banlist (endpoint admin-only).
-      if (!isAdmin) {
-        return t === "active" ? studentService.list() : studentService.listInactive();
-      }
-      const [students, activeBans] = await Promise.all([
-        t === "active" ? studentService.list() : studentService.listInactive(),
-        banlistService.list(true).catch(() => [] as BanlistEntry[]),
-      ]);
-      const ids = new Set(activeBans.map((b) => b.studentId));
-      setBannedIds(ids);
-      return students.filter((s) => !ids.has(s._id));
-    },
-    [isAdmin],
-  );
+  // ── Lista de estudantes ativos ───────────────────────────────────
+  const studentFetcher = useCallback(async () => {
+    // Funcionário não acessa a banlist (endpoint admin-only).
+    if (!isAdmin) return studentService.list();
+    const [students, activeBans] = await Promise.all([
+      studentService.list(),
+      banlistService.list(true).catch(() => [] as BanlistEntry[]),
+    ]);
+    const ids = new Set(activeBans.map((b) => b.studentId));
+    return students.filter((s) => !ids.has(s._id));
+  }, [isAdmin]);
 
   const [sortAsc, setSortAsc] = useState(true);
 
@@ -182,22 +169,21 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   );
 
   const {
-    tab: studentTab, setTab: setStudentTab,
     search: studentSearch, setSearch: setStudentSearch,
     page: studentPage, setPage: setStudentPage,
     pageSize: studentPageSize, setPageSize: setStudentPageSize,
     loading: studentLoading, error: studentError,
     filtered: studentFiltered,
     paginated: studentPaginated, total: studentTotal, reloadAll: studentReloadAll,
-  } = useListPage<Student, StudentTab>({
-    tabs: ["active", "inactive"],
+  } = useListPage<Student, "active">({
+    tabs: ["active"],
     initialTab: "active",
     fetcher: studentFetcher,
     searchFields: (s) => [s.name, s.email, s.institution ?? ""],
     sortFn,
   });
 
-  // ── Banned tab ────────────────────────────────────────────────────
+  // ── Banidos (admin) ──────────────────────────────────────────────
   const banFetcher = useCallback(
     () => (isAdmin ? banlistService.list(true) : Promise.resolve([] as BanlistEntry[])),
     [isAdmin],
@@ -217,42 +203,13 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
     errorMessage: "Não foi possível carregar os banimentos.",
   });
 
-  // ── Tab switching ─────────────────────────────────────────────────
-  const handleTabChange = (t: Tab) => {
-    setTopTab(t);
-    if (t !== "banned") setStudentTab(t as StudentTab);
-  };
-
-  const handleConfirmToggle = async () => {
-    if (!toggleTarget) return;
-    setToggleLoading(true);
-    setToggleError("");
-    try {
-      if (toggleTarget.active) {
-        await studentService.deactivate(toggleTarget._id);
-        toast.success(`${toggleTarget.name} foi desativado com sucesso.`);
-      } else {
-        await studentService.reactivate(toggleTarget._id);
-        toast.success(`${toggleTarget.name} foi reativado com sucesso.`);
-      }
-      setToggleTarget(null);
-      studentReloadAll();
-    } catch (err: unknown) {
-      const e = err as { message?: string };
-      setToggleError(e.message ?? "Erro ao alterar status do estudante");
-    } finally {
-      setToggleLoading(false);
-    }
-  };
-
   const [exportLoading, setExportLoading] = useState(false);
 
   const handleExport = async () => {
     setExportLoading(true);
     try {
       const today = new Date().toISOString().slice(0, 10);
-      const label = studentTab === "active" ? "ativos" : "desativados";
-      downloadCsv(buildStudentsCsv(studentFiltered as Parameters<typeof buildStudentsCsv>[0]), `alunos_${label}_${today}.csv`);
+      downloadCsv(buildStudentsCsv(studentFiltered as Parameters<typeof buildStudentsCsv>[0]), `alunos_${today}.csv`);
       toast.success(`${studentTotal} ${studentTotal === 1 ? "aluno exportado" : "alunos exportados"} com sucesso.`);
     } catch {
       toast.error("Erro ao exportar. Tente novamente.");
@@ -267,24 +224,6 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
     banReload();
     studentReloadAll();
     if (name) toast.success(`${name} foi banido do sistema.`);
-  };
-
-  // ── Status toggle column ──────────────────────────────────────────
-  const statusColumn: Column<Student> = {
-    key: "status",
-    label: "Status",
-    render: (student) => (
-      <button
-        onClick={(e) => { e.stopPropagation(); setToggleTarget(student); }}
-        className={`text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer transition-colors ${
-          student.active
-            ? "bg-success-container text-on-success border-success/30 hover:bg-success/20 hover:border-success/50"
-            : "bg-surface-container-high text-on-surface-variant border-outline-variant/50 hover:bg-surface-container-highest hover:border-outline-variant"
-        }`}
-      >
-        {student.active ? "Ativo" : "Inativo"}
-      </button>
-    ),
   };
 
   // ── Student action column ─────────────────────────────────────────
@@ -341,16 +280,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
     ),
   };
 
-  // STUDENT_COLUMNS: [name, email, institution, shift, createdAt] (status removed — now interactive)
-  const studentColumns = [
-    STUDENT_COLUMNS[0], // name
-    STUDENT_COLUMNS[1], // email
-    STUDENT_COLUMNS[2], // institution
-    STUDENT_COLUMNS[3], // shift
-    statusColumn,
-    STUDENT_COLUMNS[4], // createdAt
-    actionsColumn,
-  ];
+  const studentColumns = [...STUDENT_COLUMNS, actionsColumn];
   const banColumns = [...BAN_COLUMNS, banActionsColumn];
 
   const isBanned = topTab === "banned";
@@ -365,8 +295,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
             <h1 className="text-2xl font-extrabold text-on-surface tracking-tight">Estudantes</h1>
             {isStudentTab && !studentLoading && !studentError && (
               <p className="text-sm text-on-surface-variant mt-1">
-                {studentTotal} {studentTotal === 1 ? "estudante" : "estudantes"}{" "}
-                {studentTab === "active" ? "ativos" : "desativados"}
+                {studentTotal} {studentTotal === 1 ? "estudante" : "estudantes"}
               </p>
             )}
             {isBanned && !banLoading && !banError && (
@@ -384,7 +313,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
 
         {/* Toolbar */}
         <div className="px-4 pb-3 flex items-center gap-3">
-          <Tabs items={isAdmin ? TAB_ITEMS : STUDENT_ONLY_TAB_ITEMS} value={topTab} onChange={handleTabChange} />
+          <Tabs items={isAdmin ? TAB_ITEMS : STUDENT_ONLY_TAB_ITEMS} value={topTab} onChange={setTopTab} />
           {isStudentTab && (
             <button
               onClick={() => setSortAsc((v) => !v)}
@@ -407,14 +336,12 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
             error={studentError ? <ErrorState message={studentError} onRetry={studentReloadAll} /> : undefined}
             empty={
               <EmptyState
-                icon={studentTab === "active" ? GraduationCap : UserX}
-                title={studentTab === "active" ? "Nenhum estudante ativo" : "Nenhum estudante desativado"}
+                icon={GraduationCap}
+                title="Nenhum estudante"
                 description={
                   studentSearch
                     ? "Nenhum estudante encontrado para esta busca."
-                    : studentTab === "active"
-                    ? "Adicione o primeiro estudante ao sistema."
-                    : "Estudantes desativados aparecerão aqui."
+                    : "Adicione o primeiro estudante ao sistema."
                 }
               />
             }
@@ -430,7 +357,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
             }}
             onExport={isAdmin ? handleExport : undefined}
             exportLoading={exportLoading}
-            exportLabel={studentTab === "active" ? "Exportar Ativos" : "Exportar Desativados"}
+            exportLabel="Exportar"
             className="mx-4 mb-4"
           />
         )}
@@ -489,24 +416,6 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
           studentId={docsStudent._id}
           studentName={docsStudent.name}
           onClose={() => setDocsStudent(null)}
-        />
-      )}
-      {toggleTarget && (
-        <ConfirmModal
-          open
-          onClose={() => { setToggleError(""); setToggleTarget(null); }}
-          onConfirm={handleConfirmToggle}
-          loading={toggleLoading}
-          error={toggleError}
-          title={toggleTarget.active ? "Desativar estudante?" : "Reativar estudante?"}
-          icon={toggleTarget.active ? UserX : CheckCircle2}
-          variant={toggleTarget.active ? "danger" : "success"}
-          description={
-            toggleTarget.active
-              ? <><strong>{toggleTarget.name}</strong> perderá acesso ao sistema imediatamente. O cadastro poderá ser reativado posteriormente.</>
-              : <><strong>{toggleTarget.name}</strong> recuperará acesso ao sistema imediatamente.</>
-          }
-          confirmLabel={toggleTarget.active ? "Sim, desativar" : "Sim, reativar"}
         />
       )}
       {viewingCardStudent && (
