@@ -48,6 +48,7 @@ export interface ImageHistory {
     | "LicenseImage"
     | "GovernmentId"
     | "ProofOfResidence";
+  // Presigned URL assinada (http(s)) ou base64/data URL legado — use normalizeMediaSource/resolveToDataUrl.
   photo3x4: string | null;
   documentImage: string | null;
   replacedAt: string;
