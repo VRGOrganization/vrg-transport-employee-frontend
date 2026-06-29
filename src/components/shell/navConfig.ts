@@ -14,14 +14,14 @@ import {
 import type { NavItem, SideNavBrand } from "./SideNav";
 
 export const ADMIN_NAV_ITEMS: readonly NavItem[] = [
-  { icon: LayoutDashboard, label: "Painel",               href: "/admin/dashboard"          },
-  { icon: Info,            label: "Informações",           href: "/admin/info"               },
-  { icon: CalendarDays,    label: "Período de Inscrição",  href: "/admin/enrollment-period"  },
-  { icon: Users,           label: "Funcionários",          href: "/admin/employees"          },
-  { icon: GraduationCap,   label: "Estudantes",            href: "/admin/students"           },
-  { icon: IdCard,          label: "Carteirinhas",          href: "/admin/cards"              },
-  { icon: Building2,       label: "Instituições",          href: "/admin/universities"       },
-  { icon: Bus,             label: "Frota",                 href: "/admin/buses"              },
+  { icon: LayoutDashboard,   label: "Painel",               href: "/admin/dashboard"          },
+  { icon: Info,              label: "Informações",           href: "/admin/info"               },
+  { icon: Users,             label: "Funcionários",          href: "/admin/employees"          },
+  { icon: GraduationCap,     label: "Estudantes",            href: "/admin/students"           },
+  { icon: Building2,         label: "Instituições",          href: "/admin/universities"       },
+  { icon: Bus,               label: "Frota",                 href: "/admin/buses"              },
+  { icon: CalendarDays,      label: "Período de Inscrição",  href: "/admin/enrollment-period"  },
+  { icon: IdCard,            label: "Carteirinhas",          href: "/admin/cards"              },
   { icon: SlidersHorizontal, label: "Prioridades",           href: "/admin/priority-rules"     },
 ];
 

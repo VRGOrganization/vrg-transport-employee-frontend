@@ -471,9 +471,9 @@ export default function AdminEnrollmentPeriodPage() {
                             <td className="px-3 py-2 font-medium text-on-surface">
                               #{entry.filaPosition}
                             </td>
-                            <td className="px-3 py-2 text-on-surface">{entry.student.name}</td>
+                            <td className="px-3 py-2 text-on-surface capitalize">{entry.student.name}</td>
                             <td className="px-3 py-2 text-on-surface-variant">{entry.student.email}</td>
-                            <td className="px-3 py-2 text-on-surface-variant">
+                            <td className="px-3 py-2 text-on-surface-variant capitalize">
                               {entry.student.institution ?? "Não informada"}
                             </td>
                             <td className="px-3 py-2 text-on-surface-variant">

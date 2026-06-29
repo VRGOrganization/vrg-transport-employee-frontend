@@ -196,12 +196,9 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
               ) : (
                 slots.map((s) => (
                   <div key={s.universityId} className="flex items-center justify-between gap-3 py-1 px-2 rounded-lg border border-outline-variant">
-                    <div className="flex items-center gap-3">
-                      <div className="size-8 rounded-md bg-info-container flex items-center justify-center text-sm font-medium text-info">{s.acronym ?? s.name?.charAt(0) ?? "U"}</div>
-                      <div className="text-sm">
-                        <div className="font-medium text-on-surface">{s.acronym ?? s.name}</div>
-                        <div className="text-xxs text-on-surface-muted">Prioridade P{s.priorityOrder}{s.filledSlots ? ` • ${s.filledSlots}` : ""}</div>
-                      </div>
+                    <div className="text-sm">
+                      <div className="font-medium text-on-surface">{s.acronym ?? s.name}</div>
+                      <div className="text-xxs text-on-surface-muted">Prioridade P{s.priorityOrder}{s.filledSlots ? ` • ${s.filledSlots}` : ""}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button

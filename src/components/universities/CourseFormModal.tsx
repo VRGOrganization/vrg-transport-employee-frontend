@@ -34,6 +34,10 @@ export function CourseFormModal({ open, initial, universityName, onClose, onSubm
       setError("O nome do curso é obrigatório.");
       return;
     }
+    if (!model) {
+      setError("O modelo do curso é obrigatório.");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -80,13 +84,13 @@ export function CourseFormModal({ open, initial, universityName, onClose, onSubm
           <label className="block text-sm font-medium text-on-surface-variant mb-1">
             Modelo
           </label>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {COURSE_MODEL_OPTIONS.map((option) => (
               <button
                 key={option}
                 type="button"
                 onClick={() => setModel(model === option ? "" : option)}
-                className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+                className={`py-2 rounded-lg border text-sm font-medium transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 ${
                   model === option
                     ? "bg-primary text-white border-primary"
                     : "border-outline-variant text-on-surface-variant hover:border-primary/50 hover:text-on-surface"
@@ -96,9 +100,6 @@ export function CourseFormModal({ open, initial, universityName, onClose, onSubm
               </button>
             ))}
           </div>
-          {!model && (
-            <p className="text-xs text-on-surface-muted mt-1">Opcional</p>
-          )}
         </div>
       </div>
 
