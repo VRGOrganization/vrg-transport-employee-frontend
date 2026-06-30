@@ -108,6 +108,8 @@ interface DashboardUsersTableProps {
   onPageChange: (p: number) => void;
   onPageSizeChange: (s: PageSize) => void;
   onRowClick?: (row: UserRow) => void;
+  /** Funcionário vê apenas alunos: sem filtro por tipo. Default: "admin". */
+  role?: "admin" | "employee";
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -126,13 +128,17 @@ export function DashboardUsersTable({
   onPageChange,
   onPageSizeChange,
   onRowClick,
+  role = "admin",
 }: DashboardUsersTableProps) {
+  const isAdmin = role === "admin";
   const sectionHeader = (
     <div className="px-6 py-3.5 border-b border-outline-variant/30 flex items-center justify-between gap-4 flex-wrap min-w-0">
       <div>
-        <h2 className="font-bold text-on-surface text-sm">Usuários do sistema</h2>
+        <h2 className="font-bold text-on-surface text-sm">
+          {isAdmin ? "Usuários do sistema" : "Alunos"}
+        </h2>
         <p className="text-xs text-on-surface-variant mt-0.5">
-          {totalFiltered} de {totalAll} registros · funcionários e alunos
+          {totalFiltered} de {totalAll} registros · {isAdmin ? "funcionários e alunos" : "alunos"}
         </p>
       </div>
 
@@ -143,22 +149,24 @@ export function DashboardUsersTable({
           placeholder="Buscar por nome ou identificador…"
         />
 
-        <div className="flex items-center gap-1 p-1 bg-surface-container rounded-lg border border-outline-variant/30">
-          {(["Todos", "Aluno", "Funcionário"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => onFilterChange(f)}
-              className={[
-                "px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150 cursor-pointer border-2",
-                filter === f
-                  ? "bg-primary text-on-primary shadow-sm border-primary"
-                  : "text-on-surface-variant hover:text-on-surface border-transparent hover:border-outline-variant/40",
-              ].join(" ")}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
+        {isAdmin && (
+          <div className="flex items-center gap-1 p-1 bg-surface-container rounded-lg border border-outline-variant/30">
+            {(["Todos", "Aluno", "Funcionário"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => onFilterChange(f)}
+                className={[
+                  "px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150 cursor-pointer border-2",
+                  filter === f
+                    ? "bg-primary text-on-primary shadow-sm border-primary"
+                    : "text-on-surface-variant hover:text-on-surface border-transparent hover:border-outline-variant/40",
+                ].join(" ")}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        )}
 
       </div>
     </div>

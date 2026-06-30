@@ -2,6 +2,7 @@ export type PrintableImageFormat = "JPEG" | "PNG" | "WEBP";
 
 export interface PrintableCard {
   studentName: string;
+  /** Presigned URL assinada, data URL ou base64 legado. buildCardsPdfUrl resolve para data URL antes de imprimir. */
   imageData: string;
 }
 
@@ -14,6 +15,72 @@ export function detectMimeFromBase64(base64Value: string): string {
   if (normalized.startsWith("UklGR")) return "image/webp";
 
   return "image/jpeg";
+}
+
+/**
+ * `true` quando o valor é uma fonte remota (presigned URL http(s) ou blob:),
+ * cujos bytes precisam ser obtidos via `fetch` antes de imprimir/baixar.
+ * `false` para base64 cru ou data URL (já portam os bytes).
+ */
+export function isRemoteMediaSource(value: string | null | undefined): boolean {
+  if (!value) return false;
+  const trimmed = value.trim();
+  return trimmed.startsWith("blob:") || /^https?:\/\//i.test(trimmed);
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error("Falha ao ler arquivo de mídia"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+/**
+ * Normaliza o valor e garante um data URL utilizável por jsPDF.
+ * - data URL / base64 legado → retorna o data URL direto;
+ * - presigned URL ou blob: → busca os bytes (a URL já é assinada) e converte
+ *   para data URL.
+ */
+export async function resolveToDataUrl(value: string | null | undefined): Promise<string | null> {
+  const normalized = normalizeMediaSource(value);
+  if (!normalized) return null;
+  if (!isRemoteMediaSource(normalized)) return normalized;
+
+  const res = await fetch(normalized);
+  if (!res.ok) throw new Error(`Falha ao baixar mídia (${res.status})`);
+  const blob = await res.blob();
+  return blobToDataUrl(blob);
+}
+
+/**
+ * Dispara o download de uma mídia com o nome desejado.
+ * - data URL / base64 legado → âncora com `href` direto;
+ * - presigned URL ou blob: → busca os bytes via `fetch` e baixa via objectURL,
+ *   porque o atributo `download` é ignorado em href cross-origin.
+ */
+export async function downloadMedia(value: string | null | undefined, filename: string): Promise<void> {
+  const normalized = normalizeMediaSource(value);
+  if (!normalized) return;
+
+  let href = normalized;
+  let revoke = false;
+  if (isRemoteMediaSource(normalized)) {
+    const res = await fetch(normalized);
+    if (!res.ok) throw new Error(`Falha ao baixar arquivo (${res.status})`);
+    const blob = await res.blob();
+    href = URL.createObjectURL(blob);
+    revoke = true;
+  }
+
+  const anchor = document.createElement("a");
+  anchor.href = href;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  if (revoke) URL.revokeObjectURL(href);
 }
 
 export function normalizeMediaSource(value: string | null | undefined): string | null {
@@ -87,6 +154,16 @@ export async function getImageSize(dataUrl: string): Promise<{ width: number; he
 
 export async function buildCardsPdfUrl(cards: PrintableCard[], _title: string): Promise<string> {
   void _title;
+  // Presigned URL não é aceita por jsPDF (addImage) nem por <img>.src cross-origin
+  // sem CORS: resolve cada carteirinha para data URL antes de medir/desenhar.
+  const resolvedCards: PrintableCard[] = await Promise.all(
+    cards.map(async (card) => ({
+      ...card,
+      imageData: (await resolveToDataUrl(card.imageData)) ?? card.imageData,
+    })),
+  );
+  cards = resolvedCards;
+
   const [{ jsPDF }] = await Promise.all([
     import("jspdf"),
     Promise.all(cards.map((card) => getImageSize(card.imageData))),

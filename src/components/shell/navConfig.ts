@@ -7,7 +7,6 @@ import {
   IdCard,
   Building2,
   Bus,
-  BarChart2,
   User,
   SlidersHorizontal,
 } from "lucide-react";
@@ -29,7 +28,6 @@ export const EMPLOYEE_NAV_ITEMS: readonly NavItem[] = [
   { icon: LayoutDashboard, label: "Painel do Funcionário",  href: "/employee/dashboard" },
   { icon: GraduationCap,   label: "Gerenciar Estudantes",   href: "/employee/students"  },
   { icon: IdCard,          label: "Gerenciar Carteirinhas", href: "/employee/cards"     },
-  { icon: BarChart2,       label: "Estatísticas de Aluno",  href: "/employee/info"      },
 ];
 
 export const ADMIN_BRAND: SideNavBrand = {

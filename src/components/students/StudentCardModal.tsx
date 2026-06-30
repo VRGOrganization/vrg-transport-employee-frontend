@@ -3,7 +3,7 @@ import { http } from "@/services/http";
 import { Student } from "@/types/student";
 import { toTitleCase } from "@/lib/utils/string";
 import { LicenseRecord } from "@/types/cards.types";
-import { extractLicenseImage, buildCardsPdfUrl } from "@/lib/cardUtils";
+import { extractLicenseImage, buildCardsPdfUrl, downloadMedia, getDownloadName } from "@/lib/cardUtils";
 import { Button } from "@/components/ui/Button";
 import { Printer, Download, X } from "lucide-react";
 import { PdfPreviewModal } from "@/components/cards/PdfPreviewModal";
@@ -66,14 +66,9 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
 
   const handleDownload = () => {
     if (!image) return;
-    const a = document.createElement("a");
-    a.href = image;
-    a.download = `carteirinha-${student.name
-      .replace(/\s+/g, "-")
-      .toLowerCase()}.jpg`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    // image pode ser presigned URL ou base64 legado; downloadMedia trata ambos
+    // (URL → fetch dos bytes assinados, pois o atributo download é ignorado cross-origin).
+    void downloadMedia(image, getDownloadName(`carteirinha ${student.name}`, image));
   };
 
   return (

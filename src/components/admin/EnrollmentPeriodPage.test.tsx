@@ -51,22 +51,22 @@ vi.mock("@/services/http", () => ({
   },
 }));
 
-import AdminEnrollmentPeriodPage from "./page";
+import { EnrollmentPeriodPage } from "./EnrollmentPeriodPage";
 
-describe("AdminEnrollmentPeriodPage — vaga-dia labels", () => {
+describe("EnrollmentPeriodPage — vaga-dia labels", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('renders "Ocupação (vaga-dia)" label in the progress card', async () => {
-    render(<AdminEnrollmentPeriodPage />);
+    render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
       expect(screen.getByText("Ocupação (vaga-dia)")).toBeInTheDocument();
     });
   });
 
   it('renders InfoTooltip button next to the occupancy label', async () => {
-    render(<AdminEnrollmentPeriodPage />);
+    render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
       expect(
         screen.getAllByRole("button", { name: "O que é vaga-dia?" }).length
@@ -75,21 +75,21 @@ describe("AdminEnrollmentPeriodPage — vaga-dia labels", () => {
   });
 
   it('table header shows "Total (vaga-dia)"', async () => {
-    render(<AdminEnrollmentPeriodPage />);
+    render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
       expect(screen.getByText("Total (vaga-dia)")).toBeInTheDocument();
     });
   });
 
   it('table header shows "Ocupadas (vaga-dia)"', async () => {
-    render(<AdminEnrollmentPeriodPage />);
+    render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
       expect(screen.getByText("Ocupadas (vaga-dia)")).toBeInTheDocument();
     });
   });
 
   it("does not alter the slot numbers from the backend", async () => {
-    render(<AdminEnrollmentPeriodPage />);
+    render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
       expect(screen.getByText("70 / 350")).toBeInTheDocument();
     });

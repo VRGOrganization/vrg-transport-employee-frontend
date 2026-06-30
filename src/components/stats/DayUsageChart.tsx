@@ -66,7 +66,27 @@ export function DayUsageChart({ byDay }: DayUsageChartProps) {
 
     const days: (keyof DayUsageStats)[] = ["SEG", "TER", "QUA", "QUI", "SEX"];
     const values = days.map((d) => byDay[d]);
-    const maxVal = Math.max(...values);
+    const maxVal = Math.max(...values, 1); // Avoid 0 max
+
+    const dataLabelsPlugin = {
+      id: "dataLabels",
+      afterDatasetsDraw(chart: Chart) {
+        const { ctx, data } = chart;
+        ctx.save();
+        ctx.font = "bold 13px sans-serif";
+        ctx.fillStyle = textColor;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+
+        chart.getDatasetMeta(0).data.forEach((bar, index) => {
+          const value = data.datasets[0].data[index];
+          if (typeof value === "number" && value > 0) {
+            ctx.fillText(String(value), bar.x, bar.y - 6);
+          }
+        });
+        ctx.restore();
+      },
+    };
 
     chartRef.current = new Chart(canvasRef.current, {
       type: "bar",
@@ -79,17 +99,28 @@ export function DayUsageChart({ byDay }: DayUsageChartProps) {
             backgroundColor: values.map((v) =>
               v === maxVal ? barPrimary : barSecondary
             ),
-            borderRadius: 5,
+            borderRadius: 6,
             borderSkipped: false,
+            barPercentage: 0.6,
           },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        layout: {
+          padding: {
+            top: 25, // space for the text on top
+          }
+        },
         plugins: {
           legend: { display: false },
           tooltip: {
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            titleFont: { size: 13, weight: "bold" },
+            bodyFont: { size: 14 },
+            padding: 10,
+            cornerRadius: 8,
             callbacks: {
               label: (ctx) => ` ${ctx.parsed.y} alunos`,
             },
@@ -97,26 +128,31 @@ export function DayUsageChart({ byDay }: DayUsageChartProps) {
         },
         scales: {
           x: {
-            grid: { color: gridColor },
+            grid: { display: false },
             ticks: {
               color: textColor,
-              font: { size: 12 },
-              autoSkip: false,
-              maxRotation: 0,
+              font: { size: 12, weight: "bold" },
             },
+            border: { display: false }
           },
           y: {
-            grid: { color: gridColor },
+            grid: {
+              color: gridColor,
+              lineWidth: 1,
+            },
+            border: { display: false, dash: [4, 4] },
             ticks: {
               color: textColor,
               font: { size: 12 },
-              stepSize: 20,
+              padding: 10,
+              stepSize: Math.ceil(maxVal / 5) || 1, // dynamically adjust steps
             },
             min: 0,
-            suggestedMax: Math.ceil(maxVal * 1.2),
+            suggestedMax: Math.ceil(maxVal * 1.1),
           },
         },
       },
+      plugins: [dataLabelsPlugin],
     });
 
     return () => {

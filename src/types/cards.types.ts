@@ -40,6 +40,7 @@ export interface LicenseRecord {
   studentId: string;
   employeeId?: string;
   enrollmentPeriodId?: string | null;
+  /** Presigned URL assinada (http(s)) ou base64/data URL legado. Use normalizeMediaSource/resolveToDataUrl. */
   imageLicense: string;
   status: "active" | "inactive" | "expired" | "rejected";
   existing?: boolean;
@@ -105,6 +106,8 @@ export interface ImageRecord {
   _id: string;
   studentId: string;
   photoType: PhotoType;
+  // Campos de imagem: presigned URL assinada (http(s)) ou base64/data URL legado.
+  // Sempre passe por normalizeMediaSource (exibição) ou resolveToDataUrl (print/download).
   photo3x4: string | null;
   documentImage: string | null;
   studentCard: string | null;
