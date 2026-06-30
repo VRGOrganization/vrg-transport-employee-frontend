@@ -17,6 +17,7 @@ import { AcceptDocumentsButton } from "@/components/cards/AcceptDocumentsButton"
 import { ReissueCandidatesSection } from "@/components/cards/ReissueCandidatesSection";
 import { PdfPreviewModal } from "@/components/cards/PdfPreviewModal";
 import { RejectModal } from "@/components/cards/RejectModal";
+import { RequestRevisionModal } from "@/components/cards/RequestRevisionModal";
 import type { University } from "@/types/university.types";
 import type { StudentFilter } from "@/types/cards.types";
 
@@ -86,6 +87,7 @@ export function LicensePage({ role }: LicensePageProps) {
     proofOfResidenceImage,
     selectedLicensePreview,
     selectStudent,
+    clearSelection,
   } = useStudentSelection(licenses, licenseRequests);
 
   const {
@@ -96,12 +98,18 @@ export function LicensePage({ role }: LicensePageProps) {
     selectedForBatch,
     closePdfPreview,
     toggleBatchSelection,
+    setBatchSelection,
     handlePrintSingle,
     handlePrintBatch,
     buildPrintableMap,
   } = usePdfPrint();
 
+  // Limpa seleção ao trocar de aba ou ao voltar para a tela de universidades
+  useEffect(() => { clearSelection(); }, [activeFilter, clearSelection]);
+  useEffect(() => { clearSelection(); }, [selectedUniversityId, clearSelection]);
+
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [revisionModalOpen, setRevisionModalOpen] = useState(false);
   const [approveMessage, setApproveMessage] = useState("");
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
 
@@ -182,6 +190,7 @@ export function LicensePage({ role }: LicensePageProps) {
                         printableCardsByStudentId={printableCardsByStudentId}
                         onSelectStudent={selectStudent}
                         onToggleBatch={toggleBatchSelection}
+                        onSetBatch={setBatchSelection}
                         onPrintBatch={() =>
                           handlePrintBatch(printableCardsByStudentId, setApproveMessage)
                         }
@@ -203,15 +212,18 @@ export function LicensePage({ role }: LicensePageProps) {
                         </div>
                       )}
 
-                      {activeFilter === "review" && selected && (
-                        <div className="mt-4">
-                          <AcceptDocumentsButton
-                            licenseRequest={currentLicenseRequest}
-                            profileImage={profileImage}
-                            onSuccess={reload}
-                          />
-                        </div>
-                      )}
+                      {activeFilter === "review" &&
+                        selected &&
+                        currentLicenseRequest?.type === "update" &&
+                        currentLicenseRequest?.status === "pending" && (
+                          <div className="mt-4">
+                            <AcceptDocumentsButton
+                              licenseRequest={currentLicenseRequest}
+                              profileImage={profileImage}
+                              onSuccess={reload}
+                            />
+                          </div>
+                        )}
 
                       {activeFilter === "review" && (
                         <div className="mt-4">
@@ -242,6 +254,7 @@ export function LicensePage({ role }: LicensePageProps) {
                 selectedLicensePreview={selectedLicensePreview}
                 onReload={reload}
                 onOpenRejectModal={() => setRejectModalOpen(true)}
+                onOpenRevisionModal={() => setRevisionModalOpen(true)}
                 printingSingle={printingSingle}
                 onPrintSingle={() =>
                   handlePrintSingle(selected, printableCardsByStudentId, setApproveMessage)
@@ -265,6 +278,15 @@ export function LicensePage({ role }: LicensePageProps) {
         <RejectModal
           currentLicenseRequest={currentLicenseRequest}
           onClose={() => setRejectModalOpen(false)}
+          onSuccess={setApproveMessage}
+          onReload={reload}
+        />
+      )}
+
+      {revisionModalOpen && currentLicenseRequest && (
+        <RequestRevisionModal
+          currentLicenseRequest={currentLicenseRequest}
+          onClose={() => setRevisionModalOpen(false)}
           onSuccess={setApproveMessage}
           onReload={reload}
         />

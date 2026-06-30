@@ -7,12 +7,13 @@ export interface University {
   createdAt: string;
   updatedAt: string;
   pendingCount?: number;
+  revisionCount?: number;
   waitlistedCount?: number;
 }
 
-export type CourseModel = "Bacharel" | "Técnico" | "Licenciatura";
+export type CourseModel = "Técnico" | "Tecnólogo" | "Bacharel" | "Licenciatura" | "Mestrado" | "Doutorado";
 
-export const COURSE_MODEL_OPTIONS: CourseModel[] = ["Bacharel", "Técnico", "Licenciatura"];
+export const COURSE_MODEL_OPTIONS: CourseModel[] = ["Técnico", "Tecnólogo", "Bacharel", "Licenciatura", "Mestrado", "Doutorado"];
 
 export interface Course {
   _id: string;

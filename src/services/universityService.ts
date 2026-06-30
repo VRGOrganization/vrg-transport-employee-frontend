@@ -7,7 +7,7 @@ export const universityService = {
   listWithQueueCounts: async () => {
     const [universityList, queueResult] = await Promise.all([
       http.get<Paginated<University>>("/university").then(resolvePaginated),
-      http.get<{ enrollmentPeriodId: string | null; universities: Array<{ universityId: string; pendingCount: number; waitlistedCount: number }> }>("/university/queue"),
+      http.get<{ enrollmentPeriodId: string | null; universities: Array<{ universityId: string; pendingCount: number; revisionCount: number; waitlistedCount: number }> }>("/university/queue"),
     ]);
     const queueMapById = new Map(
       (queueResult.universities ?? []).map((q) => [q.universityId, q]),
@@ -18,6 +18,7 @@ export const universityService = {
       return {
         ...university,
         pendingCount: q?.pendingCount ?? university.pendingCount ?? 0,
+        revisionCount: q?.revisionCount ?? university.revisionCount ?? 0,
         waitlistedCount: q?.waitlistedCount ?? university.waitlistedCount ?? 0,
       };
     });
@@ -32,9 +33,11 @@ export const universityService = {
 };
 
 export const courseService = {
-  list:           ()                                           => http.get<Course[]>("/course"),
-  listByUniversity: (universityId: string)                    => http.get<Course[]>(`/course/by-university/${universityId}`),
-  create:         (data: { name: string; universityId: string; model?: CourseModel }) => http.post<Course>("/course", data),
-  update:         (id: string, data: { name?: string; model?: CourseModel | null })   => http.patch<Course>(`/course/${id}`, data),
-  deactivate:     (id: string)                                => http.delete<{ message: string }>(`/course/${id}`),
+  list:                     ()                                                          => http.get<Course[]>("/course"),
+  listByUniversity:         (universityId: string)                                     => http.get<Course[]>(`/course/by-university/${universityId}`),
+  listInactiveByUniversity: (universityId: string)                                     => http.get<Course[]>(`/course/inactive/by-university/${universityId}`),
+  create:                   (data: { name: string; universityId: string; model?: CourseModel }) => http.post<Course>("/course", data),
+  update:                   (id: string, data: { name?: string; model?: CourseModel | null })   => http.patch<Course>(`/course/${id}`, data),
+  deactivate:               (id: string)                                               => http.delete<{ message: string }>(`/course/${id}`),
+  reactivate:               (id: string)                                               => http.patch<{ message: string }>(`/course/${id}/reactivate`, {}),
 };

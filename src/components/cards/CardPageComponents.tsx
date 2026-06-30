@@ -11,7 +11,7 @@ import {
   Maximize2,
   X,
 } from "lucide-react";
-import { getDownloadName, isPdfDataUrl } from "@/lib/cardUtils";
+import { downloadMedia, getDownloadName, isPdfDataUrl } from "@/lib/cardUtils";
 import { PanelCard } from "@/components/ui/PanelCard";
 
 export function FilterButton({
@@ -76,14 +76,14 @@ export function DocumentPreview({
         <p className="text-xs font-semibold text-on-surface">{title}</p>
         {dataUrl && (
           <div className="flex items-center gap-1">
-            <a
-              href={dataUrl}
-              download={getDownloadName(title, dataUrl)}
+            <button
+              type="button"
+              onClick={() => void downloadMedia(dataUrl, getDownloadName(title, dataUrl))}
               className="inline-flex items-center gap-1 rounded-md border border-outline-variant bg-surface-container-low px-2 py-1 text-[11px] text-on-surface hover:bg-surface-container"
             >
               <Download className="size-3.5" />
               Baixar
-            </a>
+            </button>
             {onOpen && (
               <button
                 type="button"
@@ -184,14 +184,14 @@ export function ImageLightbox({
             <p className="text-xs text-white/70">Clique na miniatura para trocar de documento.</p>
           </div>
           <div className="flex items-center gap-2">
-            <a
-              href={item.dataUrl}
-              download={getDownloadName(item.title, item.dataUrl)}
+            <button
+              type="button"
+              onClick={() => void downloadMedia(item.dataUrl, getDownloadName(item.title, item.dataUrl))}
               className="inline-flex items-center gap-1 rounded-md border border-white/30 bg-white/10 px-3 py-1.5 text-xs text-white hover:bg-white/20"
             >
               <Download className="size-3.5" />
               Baixar
-            </a>
+            </button>
             <button
               type="button"
               onClick={onClose}

@@ -1,15 +1,18 @@
-import { Eye, History } from "lucide-react";
+import { ChevronDown, Eye, History } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ImageLightbox, DocumentPreview } from "@/components/cards/CardPageComponents";
 import { http } from "@/services/http";
 import { PanelCard } from "@/components/ui/PanelCard";
-import type {
-  ImageRecord,
-  LicenseRecord,
-  LicenseRequestRecord,
-  PhotoType,
-  PreviewItem,
-  StudentRecord,
+import {
+  PHOTO_TYPE_LABELS,
+  REVISION_FIELD_LABELS,
+  type ImageRecord,
+  type LicenseRecord,
+  type LicenseRequestRecord,
+  type PhotoType,
+  type PreviewItem,
+  type RevisionFieldKey,
+  type StudentRecord,
 } from "@/types/cards.types";
 import { AllocationSummaryCard } from "./AllocationSummaryCard";
 import { ApprovalFooter } from "./ApprovalFooter";
@@ -37,6 +40,7 @@ interface StudentDetailPanelProps {
   fullLicense?: LicenseRecord | null;
   onReload: () => Promise<void>;
   onOpenRejectModal: () => void;
+  onOpenRevisionModal: () => void;
   printingSingle: boolean;
   onPrintSingle: () => void;
   /** Mostra o diff "antes/depois" dos documentos. Só na aba Revisão. */
@@ -60,6 +64,7 @@ export function StudentDetailPanel({
   fullLicense,
   onReload,
   onOpenRejectModal,
+  onOpenRevisionModal,
   printingSingle,
   onPrintSingle,
   showUpdateDiff = false,
@@ -68,6 +73,7 @@ export function StudentDetailPanel({
   const [approveMessage, setApproveMessage] = useState("");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [previaOpen, setPreviaOpen] = useState(true);
 
   useEffect(() => {
     setHistoryOpen(false);
@@ -76,7 +82,7 @@ export function StudentDetailPanel({
   const cardPreviewItem = useMemo<PreviewItem | null>(
     () =>
       selectedLicensePreview
-        ? { title: "Preview da Carteirinha", dataUrl: selectedLicensePreview }
+        ? { title: "Prévia da Carteirinha", dataUrl: selectedLicensePreview }
         : null,
     [selectedLicensePreview],
   );
@@ -115,7 +121,11 @@ export function StudentDetailPanel({
 
   const handleApprove = async () => {
     if (!selected || approving || !currentLicenseRequest) return;
-    if (currentLicenseRequest.status !== "pending") {
+    const isApprovable =
+      currentLicenseRequest.status === "pending" ||
+      (currentLicenseRequest.status === "revision" &&
+        currentLicenseRequest.revisionStage === "resubmitted");
+    if (!isApprovable) {
       setApproveMessage("A solicitação ainda não está apta para aprovação.");
       return;
     }
@@ -196,6 +206,51 @@ export function StudentDetailPanel({
             )}
           {/* ─────────────────────────────────────────────────────── */}
 
+          {currentLicenseRequest?.status === "revision" && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs text-on-surface space-y-1.5">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  Em revisão
+                </p>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                    currentLicenseRequest.revisionStage === "resubmitted"
+                      ? "bg-success/15 text-success"
+                      : "bg-warning/20 text-warning"
+                  }`}
+                >
+                  {currentLicenseRequest.revisionStage === "resubmitted"
+                    ? "Reenviado pelo aluno"
+                    : "Aguardando aluno"}
+                </span>
+              </div>
+              {(currentLicenseRequest.changedDocuments?.length ?? 0) > 0 && (
+                <p>
+                  <span className="font-medium">Documentos:</span>{" "}
+                  {currentLicenseRequest
+                    .changedDocuments!.map((d) => PHOTO_TYPE_LABELS[d as PhotoType] ?? d)
+                    .join(", ")}
+                </p>
+              )}
+              {(currentLicenseRequest.revisionFields?.length ?? 0) > 0 && (
+                <p>
+                  <span className="font-medium">Informações:</span>{" "}
+                  {currentLicenseRequest
+                    .revisionFields!.map(
+                      (f) => REVISION_FIELD_LABELS[f as RevisionFieldKey] ?? f,
+                    )
+                    .join(", ")}
+                </p>
+              )}
+              {currentLicenseRequest.revisionMessage && (
+                <p>
+                  <span className="font-medium">Observação:</span>{" "}
+                  {currentLicenseRequest.revisionMessage}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="border-t border-outline-variant/20" />
 
           {showUpdateDiff && currentLicenseRequest && (
@@ -208,20 +263,33 @@ export function StudentDetailPanel({
           )}
 
           {cardPreviewItem && (
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-on-surface">
-                Preview da Carteirinha
-              </h3>
-              <DocumentPreview
-                title="Preview da Carteirinha"
-                dataUrl={cardPreviewItem.dataUrl}
-                loading={false}
-                onOpen={
-                  cardPreviewItem.dataUrl
-                    ? () => setLightboxIndex(previewItems.indexOf(cardPreviewItem))
-                    : undefined
-                }
-              />
+            <div className="rounded-xl border border-outline-variant/40 overflow-hidden">
+              <div className="px-4 py-3 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setPreviaOpen((v) => !v)}
+                  className="flex items-center justify-between w-full cursor-pointer"
+                >
+                  <h3 className="text-sm font-semibold text-on-surface">
+                    Prévia da Carteirinha
+                  </h3>
+                  <ChevronDown
+                    className={`size-4 text-on-surface-variant transition-transform duration-200 ${previaOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {previaOpen && (
+                  <DocumentPreview
+                    title="Prévia da Carteirinha"
+                    dataUrl={cardPreviewItem.dataUrl}
+                    loading={false}
+                    onOpen={
+                      cardPreviewItem.dataUrl
+                        ? () => setLightboxIndex(previewItems.indexOf(cardPreviewItem))
+                        : undefined
+                    }
+                  />
+                )}
+              </div>
             </div>
           )}
 
@@ -242,6 +310,7 @@ export function StudentDetailPanel({
           approveMessage={approveMessage}
           onApprove={handleApprove}
           onRejectOpen={onOpenRejectModal}
+          onRevisionOpen={onOpenRevisionModal}
           onPrintSingle={onPrintSingle}
         />
       </div>

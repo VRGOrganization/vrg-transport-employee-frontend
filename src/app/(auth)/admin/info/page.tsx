@@ -1,12 +1,7 @@
 "use client";
 
-import { StatsDashboard } from "@/components/stats/StatsDashboard";
+import { StatsPage } from "@/components/stats/StatsPage";
 
 export default function AdminInfoPage() {
-  return (
-    <main className="flex-1 p-8">
-      <StatsDashboard />
-    </main>
-  );
+  return <StatsPage role="admin" />;
 }
-

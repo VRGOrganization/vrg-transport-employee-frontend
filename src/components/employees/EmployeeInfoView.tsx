@@ -32,7 +32,7 @@ export function EmployeeInfoView({ employee, onEdit, onRequestDelete, onRequestA
       <div className="flex items-center gap-4 mb-5">
         <Avatar name={employee.name} size="lg" />
         <div>
-          <p className="font-semibold text-on-surface text-base">{employee.name}</p>
+          <p className="font-semibold text-on-surface text-base capitalize">{employee.name}</p>
           <span
             className={`text-xs px-2 py-0.5 rounded-full font-medium ${
               employee.active ? "bg-success/10 text-success" : "bg-error/10 text-error"

@@ -93,7 +93,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
         variant="danger"
         description={
           <>
-            O funcionário <strong>{employee.name}</strong> perderá acesso ao sistema imediatamente.
+            O funcionário <strong className="capitalize">{employee.name}</strong> perderá acesso ao sistema imediatamente.
             O cadastro poderá ser reativado posteriormente.
           </>
         }
@@ -115,7 +115,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
         variant="success"
         description={
           <>
-            O funcionário <strong>{employee.name}</strong> recuperará acesso ao sistema imediatamente.
+            O funcionário <strong className="capitalize">{employee.name}</strong> recuperará acesso ao sistema imediatamente.
           </>
         }
         confirmLabel="Sim, reativar"

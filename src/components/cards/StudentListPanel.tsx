@@ -31,6 +31,7 @@ interface StudentListPanelProps {
   printableCardsByStudentId: Map<string, PrintableCard>;
   onSelectStudent: (student: StudentRecord) => void;
   onToggleBatch: (studentId: string) => void;
+  onSetBatch: (ids: string[]) => void;
   onPrintBatch: () => void;
   largeItems?: boolean;
   bus?: Bus | null;
@@ -56,6 +57,7 @@ export function StudentListPanel({
   bus = null,
   onSelectStudent,
   onToggleBatch,
+  onSetBatch,
   onPrintBatch,
   largeItems = false,
   showReview = false,
@@ -130,11 +132,16 @@ export function StudentListPanel({
     return null;
   }, [bus, licenseRequests, filter]);
 
-  // Alunos com solicitação de atualização (type "update") pendente — aba "Revisão".
+  // Aba "Revisão": atualizações de documentos pendentes (type "update") +
+  // pedidos enviados para revisão (status "revision").
   const reviewStudentIds = useMemo(() => {
     return new Set(
       licenseRequests
-        .filter((r) => r.type === "update" && r.status === "pending")
+        .filter(
+          (r) =>
+            (r.type === "update" && r.status === "pending") ||
+            r.status === "revision",
+        )
         .map((r) => r.studentId),
     );
   }, [licenseRequests]);
@@ -209,6 +216,25 @@ export function StudentListPanel({
     }
   }, [licenseRequests, filter, priorityFilteredStudentIds]);
 
+  // Select all logic (only relevant for "with-card" filter)
+  const approvedStudentIds = useMemo(
+    () => (filter === "with-card" ? filteredStudents.map((s) => s._id) : []),
+    [filter, filteredStudents],
+  );
+  const isAllSelected =
+    approvedStudentIds.length > 0 &&
+    approvedStudentIds.every((id) => selectedForBatch.includes(id));
+  const isSomeSelected =
+    !isAllSelected && approvedStudentIds.some((id) => selectedForBatch.includes(id));
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      onSetBatch([]);
+    } else {
+      onSetBatch(approvedStudentIds);
+    }
+  };
+
   const emptyMessage =
     filter === "pending"
       ? "Nenhuma solicitação pendente encontrada."
@@ -225,9 +251,13 @@ export function StudentListPanel({
         filter={filter}
         selectedForBatchCount={selectedForBatch.length}
         printingBatch={printingBatch}
+        isAllSelected={isAllSelected}
+        isSomeSelected={isSomeSelected}
+        hasApproved={approvedStudentIds.length > 0}
         onSearchChange={setSearch}
         onFilterChange={setFilter}
         onPrintBatch={onPrintBatch}
+        onSelectAll={handleSelectAll}
         showReview={showReview}
       />
 

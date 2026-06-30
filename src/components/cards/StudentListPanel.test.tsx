@@ -44,6 +44,7 @@ function renderPanel(props: Partial<StudentListPanelProps> = {}) {
     printableCardsByStudentId: new Map(),
     onSelectStudent: () => {},
     onToggleBatch: () => {},
+    onSetBatch: () => {},
     onPrintBatch: () => {},
     largeItems: false,
   };

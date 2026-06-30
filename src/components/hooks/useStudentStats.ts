@@ -10,6 +10,12 @@ import {
   StudentsResponse,
 } from "@/types/cards.types";
 
+type StudentStatsFilters = {
+  busId?: string;
+  universityId?: string;
+  shift?: string;
+};
+
 type UseStudentStatsResult = {
   stats: StudentDashboardStats | null;
   loading: boolean;
@@ -37,11 +43,15 @@ function resolveId(value: unknown): string | null {
   return null;
 }
 
-export function useStudentStats(): UseStudentStatsResult {
+export function useStudentStats(filters?: StudentStatsFilters): UseStudentStatsResult {
   const [stats, setStats] = useState<StudentDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+
+  const busId = filters?.busId;
+  const universityId = filters?.universityId;
+  const shift = filters?.shift;
 
   useEffect(() => {
     const mountState = { cancelled: false };
@@ -72,13 +82,42 @@ export function useStudentStats(): UseStudentStatsResult {
           studentId: resolveId(r.studentId) ?? r.studentId,
         }));
 
-        // Filtros de negócio (seguindo a lógica do useCardsData)
-        const activeStudents = allStudents.filter((s) => s.active);
+        // Filtros de negócio base
+        let activeStudents = allStudents.filter((s) => s.active);
+
+        // Aplicação de Filtros (Ônibus, Faculdade, Turno)
+        if (shift) {
+          activeStudents = activeStudents.filter((s) => s.shift === shift);
+        }
+        if (busId || universityId) {
+          activeStudents = activeStudents.filter((s) => {
+            const studentReqs = allRequests.filter((r) => r.studentId === s._id);
+
+            if (busId) {
+              const matchesBus = studentReqs.some((r) => {
+                return (
+                  r.busId === busId ||
+                  resolveId(r.busId) === busId ||
+                  (r.allocationSummary && r.allocationSummary.some((a) => a.busId === busId)) ||
+                  (r.accessBusIdentifiers && r.accessBusIdentifiers.includes(busId))
+                );
+              });
+              if (!matchesBus) return false;
+            }
+
+            if (universityId) {
+              const matchesUniv = studentReqs.some((r) => {
+                return r.universityId === universityId || resolveId(r.universityId) === universityId;
+              });
+              if (!matchesUniv) return false;
+            }
+
+            return true;
+          });
+        }
+
         const licensedStudentIds = new Set(allLicenses.map((l) => resolveId(l.studentId) ?? l.studentId));
         const licensedActiveStudents = activeStudents.filter((s) => licensedStudentIds.has(s._id));
-        
-        // IDs de alunos que possuem QUALQUER solicitação (pendente, aprovada, rejeitada ou fila)
-        const studentIdsWithAnyRequest = new Set(allRequests.map((r) => r.studentId));
         
         // IDs de alunos com solicitação especificamente PENDENTE
         const pendingStudentIds = new Set(
@@ -89,13 +128,17 @@ export function useStudentStats(): UseStudentStatsResult {
 
         // Recálculo das métricas básicas
         const totalActive = activeStudents.length;
-        const withCard = licensedActiveStudents.length;
-        const pending = activeStudents.filter((s) => pendingStudentIds.has(s._id)).length;
         
-        // "Sem solicitação" = Ativos que não tem carteirinha E não tem nenhuma solicitação registrada
-        const withoutAnything = activeStudents.filter(
-          (s) => !licensedStudentIds.has(s._id) && !studentIdsWithAnyRequest.has(s._id)
+        // Carteirinha emitida = Ativos que tem carteirinha (mesmo que tenham solicitação de atualização)
+        const withCard = licensedActiveStudents.length;
+        
+        // Solicitação pendente = Ativos que NÃO tem carteirinha MAS tem solicitação pendente
+        const pending = activeStudents.filter(
+          (s) => !licensedStudentIds.has(s._id) && pendingStudentIds.has(s._id)
         ).length;
+        
+        // Sem solicitação = O restante (Ativos que não tem carteirinha E não tem solicitação pendente)
+        const withoutAnything = totalActive - withCard - pending;
 
         // --- Recálculo de Transporte (Baseado em quem tem carteirinha) ---
         const totalUsingTransport = licensedActiveStudents.length;
@@ -165,7 +208,7 @@ export function useStudentStats(): UseStudentStatsResult {
     return () => {
       mountState.cancelled = true;
     };
-  }, [tick]);
+  }, [tick, busId, universityId, shift]);
 
   return {
     stats,

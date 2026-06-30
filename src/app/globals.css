@@ -272,11 +272,11 @@ input:-webkit-autofill:focus {
    DAY PICKER — EnrollmentPeriodModal
    ════════════════════════════════════════ */
 
-.edp-picker {
+.vrg-calendar {
   --rdp-accent-color: var(--color-primary);
-  --rdp-accent-background-color: var(--color-info-container);
-  --rdp-range_middle-background-color: var(--color-info-container);
-  --rdp-range_middle-color: var(--color-on-info);
+  --rdp-accent-background-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  --rdp-range_middle-background-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  --rdp-range_middle-color: var(--color-on-surface);
   --rdp-range_start-color: var(--color-on-primary);
   --rdp-range_end-color: var(--color-on-primary);
   --rdp-range_start-date-background-color: var(--color-primary);
@@ -286,52 +286,83 @@ input:-webkit-autofill:focus {
   --rdp-disabled-opacity: 0.45;
   --rdp-outside-opacity: 1;
   --rdp-today-color: var(--color-primary);
-  --rdp-day-height: 36px;
-  --rdp-day-width: 36px;
-  --rdp-day_button-height: 34px;
-  --rdp-day_button-width: 34px;
+  --rdp-day-height: 30px;
+  --rdp-day-width: 30px;
+  --rdp-day_button-height: 28px;
+  --rdp-day_button-width: 28px;
+  --rdp-nav-height: 28px;
+  font-size: 0.78rem;
   width: 100%;
 }
-.edp-picker .rdp-months {
+.vrg-calendar .rdp-months {
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 8px;
   width: 100%;
   max-width: 100% !important;
 }
-.edp-picker .rdp-month { width: 100%; min-width: 0; }
-.edp-picker .rdp-weekday {
-  font-size: 11px; font-weight: 600; text-transform: uppercase;
+.vrg-calendar .rdp-month { width: 100%; min-width: 0; }
+.vrg-calendar .rdp-weekday {
+  font-size: 11px; font-weight: 500; text-transform: uppercase;
   letter-spacing: 0.04em; color: var(--color-on-surface-variant); opacity: 1;
 }
-.edp-picker .rdp-month_caption { color: var(--color-on-surface); }
-.edp-picker .rdp-button_previous,
-.edp-picker .rdp-button_next { color: var(--color-primary); }
-.edp-picker .rdp-day_button {
-  color: var(--color-on-surface); border-radius: 9999px;
+.vrg-calendar .rdp-month_caption {
+  color: var(--color-on-surface); font-weight: 600;
+}
+.vrg-calendar .rdp-button_previous,
+.vrg-calendar .rdp-button_next {
+  color: var(--color-primary); border-radius: 0.5rem;
+  transition: background-color 120ms ease;
+}
+.vrg-calendar .rdp-button_previous:hover:not(:disabled),
+.vrg-calendar .rdp-button_next:hover:not(:disabled) {
+  background-color: var(--color-surface-container-high);
+}
+/* Células estilo shadcn: cantos levemente arredondados (rounded-md) */
+.vrg-calendar .rdp-day_button {
+  color: var(--color-on-surface); border-radius: 0.5rem;
+  font-size: 0.875rem;
   transition: background-color 120ms ease, color 120ms ease;
 }
-.edp-picker .rdp-day_button:hover:not(:disabled) {
+.vrg-calendar .rdp-day_button:hover:not(:disabled) {
   background-color: var(--color-surface-container-high); color: var(--color-on-surface);
 }
-.edp-picker .rdp-outside .rdp-day_button { color: var(--color-on-surface-muted); }
-.edp-picker .rdp-disabled .rdp-day_button { color: var(--color-outline); }
-.edp-picker .rdp-selected { font-size: inherit; font-weight: 600; }
-.edp-picker .rdp-range_middle .rdp-day_button { color: var(--color-on-info); }
-.edp-picker .rdp-range_start .rdp-day_button,
-.edp-picker .rdp-range_end .rdp-day_button { color: var(--color-on-primary); }
-.edp-picker .rdp-month_grid { border-collapse: collapse; table-layout: fixed; width: 100%; }
-.edp-picker .rdp-month_grid td,
-.edp-picker .rdp-month_grid th { padding: 1px; text-align: center; }
+.vrg-calendar .rdp-outside .rdp-day_button { color: var(--color-on-surface-muted); }
+.vrg-calendar .rdp-disabled .rdp-day_button { color: var(--color-outline); }
+.vrg-calendar .rdp-today:not(.rdp-selected) .rdp-day_button {
+  color: var(--color-primary); font-weight: 600;
+}
+.vrg-calendar .rdp-selected { font-size: inherit; font-weight: 600; }
+/* Barra de intervalo contínua e suave (variáveis CSS não sobrepõem o style.css do rdp) */
+.vrg-calendar .rdp-range_middle {
+  background-color: color-mix(in srgb, var(--color-primary) 15%, transparent) !important;
+}
+.vrg-calendar .rdp-range_middle .rdp-day_button {
+  color: var(--color-on-surface);
+  background-color: transparent !important;
+  border-radius: 0;
+}
+/* Cantos arredondados nas pontas do intervalo */
+.vrg-calendar .rdp-range_start { border-top-left-radius: 0.5rem; border-bottom-left-radius: 0.5rem; }
+.vrg-calendar .rdp-range_end { border-top-right-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
+.dark .vrg-calendar .rdp-range_middle {
+  background-color: color-mix(in srgb, var(--color-primary) 22%, transparent) !important;
+}
+.vrg-calendar .rdp-range_start .rdp-day_button,
+.vrg-calendar .rdp-range_end .rdp-day_button { color: var(--color-on-primary); }
+.vrg-calendar .rdp-month_grid { border-collapse: collapse; table-layout: fixed; width: 100%; }
+.vrg-calendar .rdp-month_grid td,
+.vrg-calendar .rdp-month_grid th { padding: 1px; text-align: center; }
 @media (max-width: 640px) {
-  .edp-picker {
-    --rdp-day-height: 30px;
-    --rdp-day-width: 30px;
-    --rdp-day_button-height: 28px;
-    --rdp-day_button-width: 28px;
+  .vrg-calendar {
+    --rdp-day-height: 26px;
+    --rdp-day-width: 26px;
+    --rdp-day_button-height: 24px;
+    --rdp-day_button-width: 24px;
+    font-size: 0.72rem;
   }
-  .edp-picker .rdp-weekday { font-size: 10px; }
-  .edp-picker .rdp-months { grid-template-columns: 1fr; gap: 8px; }
+  .vrg-calendar .rdp-weekday { font-size: 9px; }
+  .vrg-calendar .rdp-months { grid-template-columns: 1fr; gap: 6px; }
 }
 
 /* ── Toast animations ── */

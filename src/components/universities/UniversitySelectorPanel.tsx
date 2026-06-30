@@ -91,8 +91,22 @@ export default function UniversitySelectorPanel({
                     {university.name}
                   </div>
                 </div>
-                <div className="shrink-0 rounded-full bg-surface-container-high px-2 py-0.5 text-xs font-medium text-on-surface-variant">
-                  {university.pendingCount ?? 0} pendentes
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {(university.pendingCount ?? 0) > 0 && (
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                      {university.pendingCount} pendentes
+                    </span>
+                  )}
+                  {(university.waitlistedCount ?? 0) > 0 && (
+                    <span className="rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning">
+                      {university.waitlistedCount} em fila
+                    </span>
+                  )}
+                  {(university.revisionCount ?? 0) > 0 && (
+                    <span className="rounded-full bg-warning/15 px-2 py-0.5 text-xs font-medium text-warning">
+                      {university.revisionCount} em revisão
+                    </span>
+                  )}
                 </div>
               </div>
             </button>

@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { DocumentPreview } from "@/components/cards/CardPageComponents";
 import type { PreviewItem } from "@/types/cards.types";
 
@@ -8,43 +10,45 @@ interface DocumentsGridProps {
   onOpenLightbox: (index: number) => void;
 }
 
+function CollapsibleSection({
+  title,
+  children,
+  defaultOpen = true,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="px-4 py-3 space-y-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center justify-between w-full group cursor-pointer"
+      >
+        <h3 className="text-sm font-semibold text-on-surface">{title}</h3>
+        <ChevronDown
+          className={`size-4 text-on-surface-variant transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && children}
+    </div>
+  );
+}
+
 export function DocumentsGrid({
   licenseItems,
   personalItems,
   loadingImages,
   onOpenLightbox,
 }: DocumentsGridProps) {
-  const allItems = [...licenseItems, ...personalItems];
+  const allItems = [...personalItems, ...licenseItems];
 
   return (
-    <div className="space-y-5">
-      {licenseItems.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-on-surface">
-            Documentos da Solicitação
-          </h3>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {licenseItems.map((item) => {
-              const index = allItems.indexOf(item);
-              return (
-                <DocumentPreview
-                  key={item.title}
-                  title={item.title}
-                  dataUrl={item.dataUrl}
-                  loading={item.title !== "Preview da Carteirinha" && loadingImages}
-                  onOpen={item.dataUrl ? () => onOpenLightbox(index) : undefined}
-                />
-              );
-            })}
-          </div>
-        </div>
-      )}
-
+    <div className="rounded-xl border border-outline-variant/40 divide-y divide-outline-variant/40 overflow-hidden">
       {personalItems.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-on-surface">
-            Documentos Pessoais
-          </h3>
+        <CollapsibleSection title="Documentos Pessoais">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {personalItems.map((item) => {
               const index = allItems.indexOf(item);
@@ -59,7 +63,26 @@ export function DocumentsGrid({
               );
             })}
           </div>
-        </div>
+        </CollapsibleSection>
+      )}
+
+      {licenseItems.length > 0 && (
+        <CollapsibleSection title="Documentos da Solicitação">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {licenseItems.map((item) => {
+              const index = allItems.indexOf(item);
+              return (
+                <DocumentPreview
+                  key={item.title}
+                  title={item.title}
+                  dataUrl={item.dataUrl}
+                  loading={item.title !== "Prévia da Carteirinha" && loadingImages}
+                  onOpen={item.dataUrl ? () => onOpenLightbox(index) : undefined}
+                />
+              );
+            })}
+          </div>
+        </CollapsibleSection>
       )}
     </div>
   );

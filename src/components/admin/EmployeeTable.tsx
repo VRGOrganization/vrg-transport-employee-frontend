@@ -47,7 +47,7 @@ export function EmployeeTable({ employees, loading, onUpdated, onDeleted }: Empl
       render: (emp) => (
         <div className="flex items-center gap-4">
           <Avatar name={emp.name} size="sm" />
-          <span className="font-semibold text-on-surface">{emp.name}</span>
+          <span className="font-semibold text-on-surface capitalize">{emp.name}</span>
         </div>
       ),
       skeleton: () => (

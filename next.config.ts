@@ -6,6 +6,14 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: "/sw.js",
+        headers: [{ key: "Cache-Control", value: "no-cache" }],
+      },
+      {
+        source: "/manifest.json",
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400" }],
+      },
+      {
         source: "/:path*",
         headers: [
           {
@@ -17,6 +25,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob:",
               `connect-src 'self'${isProd ? "" : " ws: wss:"}`,
               "font-src 'self' data: https://fonts.gstatic.com",
+              "worker-src 'self'",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
