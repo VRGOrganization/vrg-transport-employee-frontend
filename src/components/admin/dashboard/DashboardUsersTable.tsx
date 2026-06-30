@@ -42,7 +42,7 @@ const COLUMNS: Column<UserRow>[] = [
         >
           {getInitials(row.name)}
         </div>
-        <span className="text-sm font-medium text-on-surface">{row.name}</span>
+        <span className="text-sm font-medium text-on-surface capitalize">{row.name}</span>
       </div>
     ),
     skeleton: () => (
