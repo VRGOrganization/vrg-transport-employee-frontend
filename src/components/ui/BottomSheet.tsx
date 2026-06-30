@@ -37,9 +37,17 @@ export function BottomSheet({
       className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={closeOnOverlay ? (e) => { if (e.target === e.currentTarget) onClose(); } : undefined}
     >
-      <div className={cn("bg-surface-container-lowest rounded-2xl shadow-xl w-full max-h-[90vh] overflow-y-auto", maxWidth, className)}>
+      <div className={cn("relative bg-surface-container-lowest rounded-2xl shadow-xl w-full max-h-[90vh] overflow-y-auto", maxWidth, className)}>
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors z-10"
+          aria-label="Fechar"
+        >
+          <X className="size-5" />
+        </button>
+
         {(title || Icon) && (
-          <div className="flex items-center gap-3 px-6 pt-6 pb-4">
+          <div className="flex items-center gap-3 px-6 pt-6 pb-4 pr-12">
             {Icon && (
               <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                 <Icon className="size-5 text-primary" />
@@ -53,13 +61,6 @@ export function BottomSheet({
                 <p className="text-sm text-on-surface-variant mt-0.5">{description}</p>
               )}
             </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors shrink-0"
-              aria-label="Fechar"
-            >
-              <X className="size-5" />
-            </button>
           </div>
         )}
 

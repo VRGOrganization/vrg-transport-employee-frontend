@@ -13,19 +13,24 @@ function ShiftBar({ label, value, max, color }: ShiftBarProps) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
 
   return (
-    <div className="flex items-center gap-2.5 mb-2.5">
-      <span className="text-xs text-on-surface-muted w-14 text-right shrink-0">
-        {label}
-      </span>
-      <div className="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+    <div className="mb-4 last:mb-0">
+      <div className="flex justify-between items-end mb-1.5">
+        <span className="text-sm font-semibold text-on-surface tracking-tight">
+          {label}
+        </span>
+        <span className="text-sm font-bold" style={{ color }}>
+          {value} <span className="text-xs text-on-surface-muted font-normal">alunos</span>
+        </span>
+      </div>
+      <div className="flex-1 h-3 bg-surface-container-high rounded-full overflow-hidden relative shadow-inner">
         <div
-          className="h-full rounded-full transition-all duration-300"
-          style={{ width: `${pct}%`, background: color }}
+          className="absolute top-0 left-0 h-full rounded-full transition-all duration-700 ease-out shadow-sm"
+          style={{ 
+            width: `${pct}%`, 
+            background: `linear-gradient(90deg, ${color}DD, ${color})`
+          }}
         />
       </div>
-      <span className="text-xs text-on-surface-muted w-7 text-right shrink-0">
-        {value}
-      </span>
     </div>
   );
 }

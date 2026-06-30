@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { DayPicker } from "react-day-picker";
 import type { DateRange } from "react-day-picker";
-import { ptBR } from "react-day-picker/locale";
-import "react-day-picker/dist/style.css";
 import { addMonths, format, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/Button";
+import { Calendar } from "@/components/ui/Calendar";
 import { Modal } from "@/components/ui/Modal";
 import type { EnrollmentPeriod } from "@/types/enrollmentPeriod";
 
@@ -242,32 +240,20 @@ export function EnrollmentPeriodModal({
       size="xl"
       title={period ? "Editar período de inscrição" : "Abrir novo período de inscrição"}
     >
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form className="space-y-3" onSubmit={handleSubmit}>
         <div>
           <label className="mb-1 block text-sm font-medium text-on-surface">Período</label>
-          <div className="rounded-xl border border-outline-variant bg-surface-container-low p-3">
-            <DayPicker
-              className="edp-picker"
+          <div className="rounded-xl border border-outline-variant bg-surface-container-low p-2">
+            <Calendar
               mode="range"
               selected={range}
               onSelect={handleRangeSelect}
               numberOfMonths={months}
-              locale={ptBR}
               disabled={{ before: startOfDay(new Date()) }}
-              styles={{
-                months: {
-                  display: "grid",
-                  gridTemplateColumns: months === 2 ? "repeat(2, minmax(0, 1fr))" : "1fr",
-                  gap: "16px",
-                  width: "100%",
-                  maxWidth: "100%",
-                },
-                month: { width: "100%", minWidth: 0 },
-              }}
             />
-            <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="mt-2 grid grid-cols-2 gap-2">
               <div>
-                <label className="mb-1 block text-xs font-medium text-on-surface-variant">
+                <label className="mb-0.5 block text-xs font-medium text-on-surface-variant">
                   Data de início
                 </label>
                 <input
@@ -280,11 +266,11 @@ export function EnrollmentPeriodModal({
                     const iso = parseBRDate(startDateText);
                     if (iso) setStartDateText(isoToBR(iso));
                   }}
-                  className="h-11 w-full rounded-xl border-2 border-on-surface-variant bg-surface-container-low px-3 text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="h-8 w-full rounded-lg border border-on-surface-variant bg-surface-container-low px-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-on-surface-variant">
+                <label className="mb-0.5 block text-xs font-medium text-on-surface-variant">
                   Data de fim
                 </label>
                 <input
@@ -298,12 +284,12 @@ export function EnrollmentPeriodModal({
                     const iso = parseBRDate(endDateText);
                     if (iso) setEndDateText(isoToBR(iso));
                   }}
-                  className="h-11 w-full rounded-xl border-2 border-on-surface-variant bg-surface-container-low px-3 text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="h-8 w-full rounded-lg border border-on-surface-variant bg-surface-container-low px-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-40 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
             {(form.startDate || form.endDate) && (
-              <div className="mt-3 flex justify-end">
+              <div className="mt-1.5 flex justify-end">
                 <Button
                   type="button"
                   variant="outline"
@@ -319,23 +305,23 @@ export function EnrollmentPeriodModal({
           {errors.endDate && <p className="mt-1 text-xs text-error">{errors.endDate}</p>}
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-on-surface">
+            <label className="mb-0.5 block text-sm font-medium text-on-surface">
               Capacidade (vagas-dia)
             </label>
-            <div className="h-11 flex items-center rounded-xl border-2 border-outline-variant/50 bg-surface-container-low px-3 text-sm text-on-surface-variant">
+            <div className="h-9 flex items-center rounded-lg border border-outline-variant/50 bg-surface-container-low px-3 text-sm text-on-surface-variant">
               {period?.totalSlots != null
                 ? `${period.totalSlots} vagas-dia (derivado dos ônibus)`
                 : "Calculado automaticamente pelo backend"}
             </div>
-            <p className="mt-1 text-xs text-on-surface-variant">
+            <p className="mt-0.5 text-xs text-on-surface-variant">
               Capacidade = soma dos ônibus ativos × dias úteis. Não editável.
             </p>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-on-surface">
+            <label className="mb-0.5 block text-sm font-medium text-on-surface">
               Validade da carteirinha (meses)
             </label>
             <input
@@ -344,17 +330,17 @@ export function EnrollmentPeriodModal({
               step={1}
               value={form.licenseValidityMonths}
               onChange={(event) => setField("licenseValidityMonths", event.target.value)}
-              className="h-11 w-full rounded-xl border-2 border-on-surface-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+              className="h-9 w-full rounded-lg border border-on-surface-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Ex: 6"
             />
             {errors.licenseValidityMonths ? (
-              <p className="mt-1 text-xs text-error">{errors.licenseValidityMonths}</p>
+              <p className="mt-0.5 text-xs text-error">{errors.licenseValidityMonths}</p>
             ) : licenseExpiryDate ? (
-              <p className="mt-1 text-xs text-on-surface-variant">
+              <p className="mt-0.5 text-xs text-on-surface-variant">
                 Carteirinhas vencerão em <strong className="text-on-surface">{licenseExpiryDate}</strong>.
               </p>
             ) : (
-              <p className="mt-1 text-xs text-on-surface-variant">
+              <p className="mt-0.5 text-xs text-on-surface-variant">
                 Defina o período acima para ver a data de vencimento.
               </p>
             )}
@@ -367,7 +353,7 @@ export function EnrollmentPeriodModal({
           </div>
         )}
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" size="sm" disabled={loading} onClick={onClose}>
             Cancelar
           </Button>

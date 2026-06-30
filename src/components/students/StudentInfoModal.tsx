@@ -12,9 +12,11 @@ interface StudentInfoModalProps {
   student: Student;
   onClose: () => void;
   onBanned?: () => void;
+  /** Permite banir o estudante (somente admin). Default: true. */
+  canBan?: boolean;
 }
 
-export function StudentInfoModal({ student, onClose, onBanned }: StudentInfoModalProps) {
+export function StudentInfoModal({ student, onClose, onBanned, canBan = true }: StudentInfoModalProps) {
   const [view, setView] = useState<View>("info");
 
   const handleClose = view === "ban-form" ? () => setView("info") : onClose;
@@ -30,7 +32,7 @@ export function StudentInfoModal({ student, onClose, onBanned }: StudentInfoModa
         <StudentInfoView
           student={student}
           onClose={onClose}
-          onBan={() => setView("ban-form")}
+          onBan={canBan ? () => setView("ban-form") : undefined}
         />
       )}
       {view === "ban-form" && (
