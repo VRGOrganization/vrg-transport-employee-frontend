@@ -20,6 +20,16 @@ const postMock = vi.mocked(http.post);
 const deleteMock = vi.mocked(http.delete);
 
 describe("noticeService", () => {
+  it("listNotices gets /employee/notices", async () => {
+    const notices = [{ id: "notice-1", title: "Aviso" }];
+    getMock.mockResolvedValueOnce(notices);
+
+    const result = await noticeService.listNotices();
+
+    expect(getMock).toHaveBeenCalledWith("/employee/notices");
+    expect(result).toBe(notices);
+  });
+
   it("createNotice posts to /employee/notices with the given body", async () => {
     const input = { type: "message" as const, title: "Aviso", expiresInDays: 7 };
     postMock.mockResolvedValueOnce({ id: "notice-1" });

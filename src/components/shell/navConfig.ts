@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   Info,
+  Bell,
   CalendarDays,
   Users,
   GraduationCap,
@@ -21,6 +22,7 @@ export const ADMIN_NAV_ITEMS: readonly NavItem[] = [
   { icon: Bus,               label: "Frota",                 href: "/admin/buses"              },
   { icon: CalendarDays,      label: "Período de Inscrição",  href: "/admin/enrollment-period"  },
   { icon: IdCard,            label: "Carteirinhas",          href: "/admin/cards"              },
+  { icon: Bell,              label: "Avisos",                href: "/admin/notices"            },
   { icon: SlidersHorizontal, label: "Prioridades",           href: "/admin/priority-rules"     },
 ];
 
@@ -28,6 +30,7 @@ export const EMPLOYEE_NAV_ITEMS: readonly NavItem[] = [
   { icon: LayoutDashboard, label: "Painel do Funcionário",  href: "/employee/dashboard" },
   { icon: GraduationCap,   label: "Gerenciar Estudantes",   href: "/employee/students"  },
   { icon: IdCard,          label: "Gerenciar Carteirinhas", href: "/employee/cards"     },
+  { icon: Bell,            label: "Avisos",                 href: "/employee/notices"   },
 ];
 
 export const ADMIN_BRAND: SideNavBrand = {

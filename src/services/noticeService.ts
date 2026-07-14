@@ -52,6 +52,8 @@ export interface PollResults {
 }
 
 export const noticeService = {
+  listNotices: () => http.get<Notice[]>("/employee/notices"),
+
   createNotice: (input: CreateNoticeInput) => http.post<Notice>("/employee/notices", input),
 
   cancelScheduledNotice: (noticeId: string) =>
