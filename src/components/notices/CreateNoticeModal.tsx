@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { FieldShell } from "@/components/ui/FieldShell";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import { noticeService } from "@/services/noticeService";
 import type { CreateNoticeInput, Notice, NoticeType } from "@/services/noticeService";
@@ -17,8 +18,7 @@ interface Props {
   onCreated: (notice: Notice) => void;
 }
 
-const MIN_EXPIRES_DAYS = 1;
-const MAX_EXPIRES_DAYS = 30;
+const EXPIRES_DAYS_OPTIONS = [1, 3, 7, 15, 30] as const;
 const MIN_POLL_OPTIONS = 2;
 
 export function CreateNoticeModal({ open, onClose, onCreated }: Props) {
@@ -51,8 +51,8 @@ export function CreateNoticeModal({ open, onClose, onCreated }: Props) {
 
   const validate = (): string | null => {
     const days = Number(expiresInDays);
-    if (!Number.isInteger(days) || days < MIN_EXPIRES_DAYS || days > MAX_EXPIRES_DAYS) {
-      return `O prazo deve ser entre ${MIN_EXPIRES_DAYS} e ${MAX_EXPIRES_DAYS} dias.`;
+    if (!EXPIRES_DAYS_OPTIONS.includes(days as (typeof EXPIRES_DAYS_OPTIONS)[number])) {
+      return "Escolha um prazo de expiração válido.";
     }
     if (type === "poll") {
       const filled = pollOptions.map((o) => o.trim()).filter(Boolean);
@@ -132,23 +132,39 @@ export function CreateNoticeModal({ open, onClose, onCreated }: Props) {
   return (
     <Modal open={open} onClose={handleClose} title="Novo aviso" size="md">
       <div className="space-y-4">
-        <div className="flex gap-2">
-          <Button
+        <div
+          role="radiogroup"
+          aria-label="Tipo de aviso"
+          className="inline-flex rounded-xl border border-on-surface-variant overflow-hidden"
+        >
+          <button
             type="button"
-            variant={type === "message" ? "primary" : "outline"}
-            size="sm"
+            role="radio"
+            aria-checked={type === "message"}
             onClick={() => setType("message")}
+            className={cn(
+              "px-4 py-2 text-sm font-semibold transition-colors cursor-pointer",
+              type === "message"
+                ? "bg-primary text-white"
+                : "text-on-surface-variant hover:bg-surface-container-high",
+            )}
           >
             Mensagem
-          </Button>
-          <Button
+          </button>
+          <button
             type="button"
-            variant={type === "poll" ? "primary" : "outline"}
-            size="sm"
+            role="radio"
+            aria-checked={type === "poll"}
             onClick={() => setType("poll")}
+            className={cn(
+              "px-4 py-2 text-sm font-semibold transition-colors cursor-pointer border-l border-on-surface-variant",
+              type === "poll"
+                ? "bg-primary text-white"
+                : "text-on-surface-variant hover:bg-surface-container-high",
+            )}
           >
             Enquete
-          </Button>
+          </button>
         </div>
 
         <FieldShell label={type === "poll" ? "Pergunta" : "Título"} required>
@@ -201,26 +217,52 @@ export function CreateNoticeModal({ open, onClose, onCreated }: Props) {
                 Adicionar opção
               </Button>
             </div>
-            <label className="flex items-center gap-2 text-sm mt-3">
-              <input
-                type="checkbox"
-                checked={allowMultiple}
-                onChange={(e) => setAllowMultiple(e.target.checked)}
-              />
-              Permitir múltiplas escolhas
-            </label>
+            <div className="flex items-center justify-between gap-3 mt-3 px-3 py-2.5 rounded-xl border border-on-surface-variant">
+              <span id="allow-multiple-label" className="text-sm text-on-surface">
+                Permitir múltiplas escolhas
+              </span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={allowMultiple}
+                aria-labelledby="allow-multiple-label"
+                onClick={() => setAllowMultiple((v) => !v)}
+                className={cn(
+                  "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors cursor-pointer",
+                  allowMultiple ? "bg-primary" : "bg-surface-container-high border border-on-surface-variant",
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "inline-block size-4 transform rounded-full bg-white transition-transform",
+                    allowMultiple ? "translate-x-6" : "translate-x-1",
+                  )}
+                />
+              </button>
+            </div>
           </FieldShell>
         )}
 
-        <FieldShell label="Expira em (dias)" required>
-          <Input
-            aria-label="Expira em (dias)"
-            type="number"
-            min={MIN_EXPIRES_DAYS}
-            max={MAX_EXPIRES_DAYS}
-            value={expiresInDays}
-            onChange={(e) => setExpiresInDays(e.target.value)}
-          />
+        <FieldShell label="Expira em" required>
+          <div className="flex flex-wrap gap-2">
+            {EXPIRES_DAYS_OPTIONS.map((days) => (
+              <button
+                key={days}
+                type="button"
+                aria-pressed={Number(expiresInDays) === days}
+                onClick={() => setExpiresInDays(String(days))}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-sm font-semibold border transition-colors cursor-pointer",
+                  Number(expiresInDays) === days
+                    ? "bg-primary text-white border-primary"
+                    : "border-on-surface-variant text-on-surface-variant hover:bg-surface-container-high",
+                )}
+              >
+                {days} {days === 1 ? "dia" : "dias"}
+              </button>
+            ))}
+          </div>
         </FieldShell>
 
         {error && <p className="text-sm text-error">{error}</p>}

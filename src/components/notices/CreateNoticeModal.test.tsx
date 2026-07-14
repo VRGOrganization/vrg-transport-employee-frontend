@@ -35,7 +35,7 @@ describe("CreateNoticeModal", () => {
   it("alterna para type=poll esconde o campo body e mostra a lista de opções", async () => {
     render(<CreateNoticeModal open onClose={vi.fn()} onCreated={vi.fn()} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Enquete" }));
+    await userEvent.click(screen.getByRole("radio", { name: "Enquete" }));
 
     expect(screen.queryByLabelText("Mensagem")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Opção 1")).toBeInTheDocument();
@@ -45,7 +45,7 @@ describe("CreateNoticeModal", () => {
   it("submeter enquete com só 1 opção preenchida gera erro client-side e não chama createNotice", async () => {
     render(<CreateNoticeModal open onClose={vi.fn()} onCreated={vi.fn()} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Enquete" }));
+    await userEvent.click(screen.getByRole("radio", { name: "Enquete" }));
     await userEvent.type(screen.getByLabelText("Título"), "Qual seu curso?");
     await userEvent.type(screen.getByLabelText("Opção 1"), "Sim");
     await userEvent.click(screen.getByRole("button", { name: /enviar/i }));
@@ -54,17 +54,52 @@ describe("CreateNoticeModal", () => {
     expect(createNoticeMock).not.toHaveBeenCalled();
   });
 
-  it("submeter com expiresInDays=31 gera erro client-side e não chama createNotice", async () => {
+  it("prazo de expiração é escolhido entre opções fixas (1, 3, 7, 15, 30 dias), padrão 7", async () => {
+    const notice = makeNotice();
+    createNoticeMock.mockResolvedValueOnce(notice);
     render(<CreateNoticeModal open onClose={vi.fn()} onCreated={vi.fn()} />);
 
-    await userEvent.type(screen.getByLabelText("Título"), "Aviso importante");
-    const expiresInput = screen.getByLabelText("Expira em (dias)");
-    await userEvent.clear(expiresInput);
-    await userEvent.type(expiresInput, "31");
-    await userEvent.click(screen.getByRole("button", { name: /enviar/i }));
+    expect(screen.getByRole("button", { name: "7 dias" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
 
-    expect(screen.getByText(/entre 1 e 30/i)).toBeInTheDocument();
-    expect(createNoticeMock).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "15 dias" }));
+    await userEvent.type(screen.getByLabelText("Título"), "Aviso importante");
+    await userEvent.click(screen.getByRole("button", { name: /enviar/i }));
+    await userEvent.click(screen.getByRole("button", { name: /sim, publicar/i }));
+
+    await waitFor(() =>
+      expect(createNoticeMock).toHaveBeenCalledWith(
+        expect.objectContaining({ expiresInDays: 15 }),
+      ),
+    );
+  });
+
+  it("switch 'Permitir múltiplas escolhas' é acessível e alterna allowMultiple", async () => {
+    const notice = makeNotice();
+    createNoticeMock.mockResolvedValueOnce(notice);
+    render(<CreateNoticeModal open onClose={vi.fn()} onCreated={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole("radio", { name: "Enquete" }));
+
+    const toggle = screen.getByRole("switch", { name: /permitir múltiplas escolhas/i });
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+
+    await userEvent.type(screen.getByLabelText("Título"), "Qual seu curso?");
+    await userEvent.type(screen.getByLabelText("Opção 1"), "Sim");
+    await userEvent.type(screen.getByLabelText("Opção 2"), "Não");
+    await userEvent.click(screen.getByRole("button", { name: /enviar/i }));
+    await userEvent.click(screen.getByRole("button", { name: /sim, publicar/i }));
+
+    await waitFor(() =>
+      expect(createNoticeMock).toHaveBeenCalledWith(
+        expect.objectContaining({ allowMultiple: true }),
+      ),
+    );
   });
 
   it("clicar Enviar abre modal de confirmação antes de chamar createNotice", async () => {
