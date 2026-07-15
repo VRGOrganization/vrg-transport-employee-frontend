@@ -1,32 +1,70 @@
 "use client";
 
 import type { ApiError } from "@/types/api";
+import { PROXY_CSRF_ERROR_HEADER } from "@/lib/csrfProxyMarker";
 
 export const API_BASE_URL = "/api/v1";
 
+interface CsrfMeta {
+  headerName: string;
+  token: string;
+}
+
 const httpState = {
-  onUnauthorized: null as (() => void) | null
+  onUnauthorized: null as (() => void) | null,
+  ensureCsrf: null as
+    | ((forceRefresh?: boolean) => Promise<CsrfMeta | null>)
+    | null,
 };
 
-export function configureHttp(opts: { onUnauthorized: () => void }) {
+export function configureHttp(opts: {
+  onUnauthorized: () => void;
+  ensureCsrf?: (forceRefresh?: boolean) => Promise<CsrfMeta | null>;
+}) {
   httpState.onUnauthorized = opts.onUnauthorized;
+  httpState.ensureCsrf = opts.ensureCsrf ?? null;
 }
 
 export function resetHttpState(): void {
   httpState.onUnauthorized = null;
+  httpState.ensureCsrf = null;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const headers: HeadersInit = {
-    ...(!(options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
-    ...options.headers,
+  const method = (options.method ?? "GET").toUpperCase();
+  const requiresCsrf = method !== "GET" && method !== "HEAD";
+
+  const execute = async (csrf: CsrfMeta | null): Promise<Response> => {
+    const headers: Record<string, string> = {
+      ...(!(options.body instanceof FormData)
+        ? { "Content-Type": "application/json" }
+        : {}),
+      ...(options.headers as Record<string, string> | undefined),
+    };
+    if (csrf) headers[csrf.headerName] = csrf.token;
+
+    return fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers,
+      credentials: "include",
+    });
   };
 
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers,
-    credentials: "include",
-  });
+  let res = await execute(
+    requiresCsrf && httpState.ensureCsrf ? await httpState.ensureCsrf() : null,
+  );
+
+  // Token CSRF pode ter expirado — renova uma vez e reenvia. Só reenvia se
+  // o 403 tiver o marcador de origem-proxy (PROXY_CSRF_ERROR_HEADER) — um
+  // 403 de negócio real (ex.: guard de role, ownership check em
+  // cancel-scheduled-notice/delete-notice) não tem esse header e não é
+  // reenviado; presumir "é CSRF" por status sozinho arriscaria reenviar
+  // uma mutação que o backend rejeitou por outro motivo.
+  const isCsrfRejection =
+    res.status === 403 && res.headers.has(PROXY_CSRF_ERROR_HEADER);
+  if (requiresCsrf && isCsrfRejection && httpState.ensureCsrf) {
+    res = await execute(await httpState.ensureCsrf(true));
+  }
 
   const data = await res.json().catch(() => ({}));
 

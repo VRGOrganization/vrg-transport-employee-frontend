@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   configureEmployeeApi,
@@ -14,7 +14,13 @@ import {
   csrfBootstrapSchema,
   employeeAuthResponseSchema,
   employeeLoginRequestSchema,
+  parseCsrfMeta,
 } from "@/lib/validation/auth";
+
+interface CsrfMeta {
+  headerName: string;
+  token: string;
+}
 
 const AUTH_SNAPSHOT_KEY = "vrg:employee-auth-snapshot";
 const AUTH_SNAPSHOT_TTL_MS = 24 * 60 * 60 * 1000;
@@ -84,6 +90,7 @@ export function useEmployeeAuth() {
   const [user, setUser] = useState<EmployeeUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const csrfRef = useRef<CsrfMeta | null>(null);
 
   const clearSession = useCallback(() => {
     clearAuthSnapshot();
@@ -103,10 +110,45 @@ export function useEmployeeAuth() {
     router.push("/login");
   }, [clearSession, router]);
 
+  const updateCsrfMeta = useCallback((payload: unknown) => {
+    const csrfMeta = parseCsrfMeta(payload);
+    if (csrfMeta) {
+      csrfRef.current = csrfMeta;
+    }
+  }, []);
+
+  // Fix #04: alimenta o header CSRF das chamadas de negócio via
+  // services/http.ts (aprovar carteirinha, banir aluno, editar ônibus,
+  // etc. — que passam pelo proxy /api/v1/[...path], agora validando CSRF).
+  // Mesmo padrão do student-frontend (AuthContext.tsx:ensureCsrf) — cacheia
+  // e só refaz o fetch em forceRefresh ou se ainda não tiver token.
+  const ensureCsrf = useCallback(
+    async (forceRefresh = false): Promise<CsrfMeta | null> => {
+      if (!forceRefresh && csrfRef.current) {
+        return csrfRef.current;
+      }
+
+      try {
+        const res = await fetch("/api/auth/session", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
+
+        const payload = await res.json().catch(() => ({}));
+        updateCsrfMeta(payload);
+        return csrfRef.current;
+      } catch {
+        return null;
+      }
+    },
+    [updateCsrfMeta],
+  );
+
   useEffect(() => {
     resetEmployeeApiState();
-    configureEmployeeApi({ onUnauthorized: handleUnauthorized });
-  }, [handleUnauthorized]);
+    configureEmployeeApi({ onUnauthorized: handleUnauthorized, ensureCsrf });
+  }, [handleUnauthorized, ensureCsrf]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -122,6 +164,9 @@ export function useEmployeeAuth() {
           cache: "no-store",
         });
 
+        const payload = await response.json().catch(() => ({}));
+        updateCsrfMeta(payload);
+
         if (!response.ok) {
           if (response.status === 401) {
             clearSession();
@@ -132,7 +177,6 @@ export function useEmployeeAuth() {
           return;
         }
 
-        const payload = await response.json().catch(() => ({}));
         const sessionResult = employeeAuthResponseSchema.safeParse(payload);
 
         if (!sessionResult.success) {

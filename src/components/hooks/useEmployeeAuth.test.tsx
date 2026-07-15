@@ -191,4 +191,94 @@ describe("useEmployeeAuth", () => {
     expect(result.current.user).toBeNull();
     expect(window.localStorage.getItem("vrg:employee-auth-snapshot")).toBeNull();
   });
+
+  // Fix #04: ensureCsrf é o que alimenta o header CSRF das chamadas de
+  // negócio via services/http.ts — sem isso, o proxy (agora validando
+  // CSRF) rejeitaria toda ação mutante do app de funcionário.
+  describe("ensureCsrf (fix #04)", () => {
+    it("configureEmployeeApi recebe uma funcao ensureCsrf", async () => {
+      fetchMock.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: "Sessao nao encontrada" }), {
+          status: 401,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+
+      renderHook(() => useEmployeeAuth());
+
+      await waitFor(() => {
+        expect(mocks.configureEmployeeApiMock).toHaveBeenCalled();
+      });
+
+      const call = mocks.configureEmployeeApiMock.mock.calls[0][0];
+      expect(typeof call.ensureCsrf).toBe("function");
+    });
+
+    it("ensureCsrf busca /api/auth/session e retorna o par csrf; cacheia sem forceRefresh", async () => {
+      fetchMock.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: "Sessao nao encontrada" }), {
+          status: 401,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+
+      const { result } = renderHook(() => useEmployeeAuth());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      const ensureCsrf = mocks.configureEmployeeApiMock.mock.calls[0][0]
+        .ensureCsrf as (forceRefresh?: boolean) => Promise<unknown>;
+
+      fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            message: "Sessao nao encontrada",
+            csrf: { headerName: "x-csrf-token", token: "tok-a" },
+          }),
+          { status: 401, headers: { "content-type": "application/json" } },
+        ),
+      );
+
+      const first = await ensureCsrf();
+      expect(first).toEqual({ headerName: "x-csrf-token", token: "tok-a" });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+
+      const second = await ensureCsrf();
+      expect(second).toEqual({ headerName: "x-csrf-token", token: "tok-a" });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("ensureCsrf(true) refaz o fetch e substitui o token cacheado", async () => {
+      fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            message: "Sessao nao encontrada",
+            csrf: { headerName: "x-csrf-token", token: "tok-a" },
+          }),
+          { status: 401, headers: { "content-type": "application/json" } },
+        ),
+      );
+
+      const { result } = renderHook(() => useEmployeeAuth());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      const ensureCsrf = mocks.configureEmployeeApiMock.mock.calls[0][0]
+        .ensureCsrf as (forceRefresh?: boolean) => Promise<unknown>;
+
+      await ensureCsrf();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            csrf: { headerName: "x-csrf-token", token: "tok-b" },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      );
+
+      const refreshed = await ensureCsrf(true);
+      expect(refreshed).toEqual({ headerName: "x-csrf-token", token: "tok-b" });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
 });
