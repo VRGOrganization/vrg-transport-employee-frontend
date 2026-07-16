@@ -85,6 +85,7 @@ export function LicensePage({ role }: LicensePageProps) {
     academicPeriodImage,
     governmentImage,
     proofOfResidenceImage,
+    transportCardProofImage,
     selectedLicensePreview,
     selectStudent,
     clearSelection,
@@ -251,6 +252,7 @@ export function LicensePage({ role }: LicensePageProps) {
                 academicPeriodImage={academicPeriodImage}
                 governmentImage={governmentImage}
                 proofOfResidenceImage={proofOfResidenceImage}
+                transportCardProofImage={transportCardProofImage}
                 selectedLicensePreview={selectedLicensePreview}
                 onReload={reload}
                 onOpenRejectModal={() => setRejectModalOpen(true)}

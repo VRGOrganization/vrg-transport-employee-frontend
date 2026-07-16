@@ -5,7 +5,8 @@ export type PhotoType =
   | "AcademicPeriodProof"
   | "LicenseImage"
   | "GovernmentId"
-  | "ProofOfResidence";
+  | "ProofOfResidence"
+  | "TransportCardProof";
 
 export interface StudentRecord {
   _id: string;
@@ -86,6 +87,7 @@ export interface LicenseRequestRecord {
   priorityLevel?: number | null;
   priorityRuleName?: string | null;
   transportMode?: "regular" | "weekly" | null;
+  alreadyUsesTransport?: boolean;
   cardNote?: string | null;
   createdAt: string;
 }
@@ -167,4 +169,5 @@ export const PHOTO_TYPE_LABELS: Record<PhotoType, string> = {
   LicenseImage: "Carteirinha",
   GovernmentId: "Documento de identidade",
   ProofOfResidence: "Comprovante de residência",
+  TransportCardProof: "Carteirinha de Transporte Atual",
 };

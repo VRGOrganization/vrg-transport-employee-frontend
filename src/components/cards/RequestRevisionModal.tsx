@@ -40,6 +40,12 @@ export function RequestRevisionModal({
   onSuccess,
   onReload,
 }: RequestRevisionModalProps) {
+  // O comprovante de uso do transporte só é revisável quando o aluno declarou
+  // que já utiliza o sistema (do contrário ele nunca enviou esse documento).
+  const revisionDocuments: PhotoType[] = currentLicenseRequest.alreadyUsesTransport
+    ? [...REVISION_DOCUMENTS, "TransportCardProof"]
+    : REVISION_DOCUMENTS;
+
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState("");
@@ -123,7 +129,7 @@ export function RequestRevisionModal({
           <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">
             Documentos a reenviar
           </p>
-          {REVISION_DOCUMENTS.map((doc) => (
+          {revisionDocuments.map((doc) => (
             <label key={doc} className={itemClass(selectedDocs.has(doc))}>
               <input
                 type="checkbox"
