@@ -36,6 +36,7 @@ interface StudentDetailPanelProps {
   academicPeriodImage: string | null;
   governmentImage: string | null;
   proofOfResidenceImage: string | null;
+  transportCardProofImage: string | null;
   selectedLicensePreview: string | null;
   fullLicense?: LicenseRecord | null;
   onReload: () => Promise<void>;
@@ -60,6 +61,7 @@ export function StudentDetailPanel({
   academicPeriodImage,
   governmentImage,
   proofOfResidenceImage,
+  transportCardProofImage,
   selectedLicensePreview,
   fullLicense,
   onReload,
@@ -87,14 +89,33 @@ export function StudentDetailPanel({
     [selectedLicensePreview],
   );
 
+  const showTransportCardProof =
+    currentLicenseRequest?.alreadyUsesTransport === true ||
+    transportCardProofImage != null;
+
   const licensePreviewItems = useMemo<PreviewItem[]>(
     () => [
       { title: "Foto 3x4", dataUrl: profileImage },
       { title: "Comprovante de Matrícula", dataUrl: enrollmentImage },
       { title: "Imagem da Grade Horária", dataUrl: scheduleImage },
       { title: "Calendário Acadêmico", dataUrl: academicPeriodImage },
+      ...(showTransportCardProof
+        ? [
+            {
+              title: "Carteirinha de Transporte Atual",
+              dataUrl: transportCardProofImage,
+            },
+          ]
+        : []),
     ],
-    [profileImage, enrollmentImage, scheduleImage, academicPeriodImage],
+    [
+      profileImage,
+      enrollmentImage,
+      scheduleImage,
+      academicPeriodImage,
+      showTransportCardProof,
+      transportCardProofImage,
+    ],
   );
 
   const personalPreviewItems = useMemo<PreviewItem[]>(
@@ -179,6 +200,19 @@ export function StudentDetailPanel({
           {(fullLicense ?? currentLicense) && (
             <LicenseDetailsCard license={(fullLicense ?? currentLicense)!} />
           )}
+
+          {/* ── Já usa o transporte (declaração do aluno) ────────── */}
+          {currentLicenseRequest?.alreadyUsesTransport === true && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-on-surface-variant">
+                Já usa o transporte:
+              </span>
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                Sim
+              </span>
+            </div>
+          )}
+          {/* ─────────────────────────────────────────────────────── */}
 
           {/* ── Bloco de prioridade e alocação ─────────────────── */}
           {currentLicenseRequest &&

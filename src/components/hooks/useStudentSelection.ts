@@ -27,6 +27,7 @@ interface UseStudentSelectionReturn {
   academicPeriodImage: string | null;
   governmentImage: string | null;
   proofOfResidenceImage: string | null;
+  transportCardProofImage: string | null;
   selectedLicensePreview: string | null;
   selectStudent: (student: StudentRecord) => Promise<void>;
   clearSelection: () => void;
@@ -82,6 +83,7 @@ licenseRequests: LicenseRequestRecord[],
       if (normalized === "licenseimage") return "LicenseImage";
       if (normalized === "governmentid") return "GovernmentId";
       if (normalized === "proofofresidence") return "ProofOfResidence";
+      if (normalized === "transportcardproof") return "TransportCardProof";
       return null;
     };
 
@@ -130,6 +132,12 @@ licenseRequests: LicenseRequestRecord[],
   const proofOfResidenceImage = normalizeMediaSource(
     pendingImagesByType.ProofOfResidence ??
       selectedImages.find((img) => img.photoType === "ProofOfResidence")?.documentImage ??
+      null,
+  );
+
+  const transportCardProofImage = normalizeMediaSource(
+    pendingImagesByType.TransportCardProof ??
+      selectedImages.find((img) => img.photoType === "TransportCardProof")?.documentImage ??
       null,
   );
 
@@ -215,6 +223,7 @@ licenseRequests: LicenseRequestRecord[],
     academicPeriodImage,
     governmentImage,
     proofOfResidenceImage,
+    transportCardProofImage,
     selectedLicensePreview,
     selectStudent,
     clearSelection,

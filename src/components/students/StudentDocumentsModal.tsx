@@ -27,6 +27,7 @@ const DOC_ICON: Record<PhotoType, string> = {
   LicenseImage:        "badge",
   GovernmentId:        "credit_card",
   ProofOfResidence:    "home",
+  TransportCardProof:  "directions_bus",
 };
 
 const DOC_ORDER: PhotoType[] = [
