@@ -27,7 +27,11 @@ const nextConfig: NextConfig = {
               `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               `img-src 'self' data: blob:${storagePublicOrigin ? ` ${storagePublicOrigin}` : ""}`,
-              `connect-src 'self'${isProd ? "" : " ws: wss:"}`,
+              // Download de documento faz fetch() direto na presigned URL do
+              // storage (cardUtils.ts:downloadMedia) — isso é connect-src, não
+              // img-src/frame-src. Sem essa origem aqui, o fetch é bloqueado
+              // pelo CSP mesmo com URL assinada válida.
+              `connect-src 'self'${isProd ? "" : " ws: wss:"}${storagePublicOrigin ? ` ${storagePublicOrigin}` : ""}`,
               "font-src 'self' data: https://fonts.gstatic.com",
               "worker-src 'self'",
               "object-src 'none'",
