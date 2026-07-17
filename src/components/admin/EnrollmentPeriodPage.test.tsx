@@ -5,8 +5,11 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 const { activePeriodStub } = vi.hoisted(() => ({
   activePeriodStub: {
     _id: "p1",
-    startDate: "2030-01-01T00:00:00.000Z",
-    endDate: "2030-12-31T23:59:59.999Z",
+    startDate: "2030-06-01T00:00:00.000Z",
+    endDate: "2030-06-15T23:59:59.999Z",
+    // Distinta de startDate/endDate de propósito — simula uma repescagem
+    // aberta meses depois do início real do ciclo.
+    cycleStartDate: "2030-01-01T00:00:00.000Z",
     totalSlots: 350,
     filledSlots: 70,
     licenseValidityMonths: 6,
@@ -36,6 +39,8 @@ vi.mock("@/services/enrollmentPeriodService", () => ({
   enrollmentPeriodService: {
     getActive: vi.fn().mockResolvedValue(activePeriodStub),
     list: vi.fn().mockResolvedValue([activePeriodStub]),
+    scheduleReset: vi.fn(),
+    openWindow: vi.fn(),
   },
 }));
 
@@ -52,6 +57,7 @@ vi.mock("@/services/http", () => ({
 }));
 
 import { EnrollmentPeriodPage } from "./EnrollmentPeriodPage";
+import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
 
 describe("EnrollmentPeriodPage — vaga-dia labels", () => {
   beforeEach(() => {
@@ -92,6 +98,51 @@ describe("EnrollmentPeriodPage — vaga-dia labels", () => {
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
       expect(screen.getByText("70 / 350")).toBeInTheDocument();
+    });
+  });
+});
+
+describe("EnrollmentPeriodPage — prévia de validade usa cycleStartDate", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("computes 'carteirinha válida até' from cycleStartDate, not endDate (regression)", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      // cycleStartDate (2030-01-01) + 6 meses = 01/07/2030
+      expect(screen.getByText("01/07/2030")).toBeInTheDocument();
+    });
+    // endDate (2030-06-15) + 6 meses seria 15/12/2030 — não deve aparecer.
+    expect(screen.queryByText("15/12/2030")).not.toBeInTheDocument();
+  });
+});
+
+describe("EnrollmentPeriodPage — botão de repescagem", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(activePeriodStub as never);
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([activePeriodStub] as never);
+  });
+
+  it("hides 'Abrir repescagem' when a window is already open (startDate present)", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /editar/i })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: /abrir repescagem/i })).not.toBeInTheDocument();
+  });
+
+  it("shows 'Abrir repescagem' when the cycle is alive but no window is open (startDate null)", async () => {
+    vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue({
+      ...activePeriodStub,
+      startDate: null,
+      endDate: null,
+    } as never);
+
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /abrir repescagem/i })).toBeInTheDocument();
     });
   });
 });

@@ -129,18 +129,21 @@ export function EnrollmentPeriodModal({
     return () => window.removeEventListener("resize", update);
   }, [open]);
 
+  // Validade ancorada em startDate (data de início do ciclo), não endDate —
+  // mesma regra usada pelo backend desde o Núcleo 02. Na criação, o ciclo
+  // ainda não existe, então startDate do form É o futuro cycleStartDate.
   const licenseExpiryDate = useMemo(() => {
-    if (!form.endDate) return null;
+    if (!form.startDate) return null;
     const m = Number(form.licenseValidityMonths);
     if (!Number.isInteger(m) || m < 1) return null;
     try {
-      const base = new Date(`${form.endDate}T00:00:00`);
+      const base = new Date(`${form.startDate}T00:00:00`);
       if (Number.isNaN(base.getTime())) return null;
       return format(addMonths(base, m), "dd/MM/yyyy");
     } catch {
       return null;
     }
-  }, [form.endDate, form.licenseValidityMonths]);
+  }, [form.startDate, form.licenseValidityMonths]);
 
   const setField = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));

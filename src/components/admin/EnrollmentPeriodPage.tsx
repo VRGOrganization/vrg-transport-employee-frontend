@@ -4,6 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { EnrollmentPeriodBanner } from "@/components/admin/EnrollmentPeriodBanner";
 import { EnrollmentPeriodModal } from "@/components/admin/EnrollmentPeriodModal";
+import { ScheduleResetModal } from "@/components/admin/ScheduleResetModal";
+import {
+  OpenRepescagemModal,
+  type OpenRepescagemFormPayload,
+} from "@/components/admin/OpenRepescagemModal";
 import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { toast } from "@/lib/toast";
@@ -32,10 +37,10 @@ function formatDate(dateValue: string | null | undefined): string {
   return date.toLocaleDateString("pt-BR");
 }
 
-function computeLicenseExpiry(endDate: string | null | undefined, months: number | null | undefined): string {
-  if (!endDate || !months || months < 1) return "";
+function computeLicenseExpiry(cycleStartDate: string | null | undefined, months: number | null | undefined): string {
+  if (!cycleStartDate || !months || months < 1) return "";
   try {
-    const base = new Date(`${endDate.slice(0, 10)}T00:00:00`);
+    const base = new Date(`${cycleStartDate.slice(0, 10)}T00:00:00`);
     if (Number.isNaN(base.getTime())) return "";
     base.setMonth(base.getMonth() + months);
     return base.toLocaleDateString("pt-BR");
@@ -93,6 +98,14 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
   const [pendingReopenId, setPendingReopenId] = useState<string | null>(null);
   const [reopeningPeriod, setReopeningPeriod] = useState(false);
 
+  const [showScheduleResetModal, setShowScheduleResetModal] = useState(false);
+  const [scheduleResetSaving, setScheduleResetSaving] = useState(false);
+  const [scheduleResetError, setScheduleResetError] = useState("");
+
+  const [showRepescagemModal, setShowRepescagemModal] = useState(false);
+  const [repescagemSaving, setRepescagemSaving] = useState(false);
+  const [repescagemError, setRepescagemError] = useState("");
+
   // Nota: o fluxo de liberação por período foi removido. As liberações
   // agora ocorrem por ônibus (patch /bus/:id/release-slots). Mantemos a
   // exibição da fila, mas removemos o preview/confirm legados.
@@ -148,7 +161,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
       const sortedPeriods = [...periodsResponse].sort(
         (a, b) =>
-          new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
+          new Date(b.cycleStartDate).getTime() - new Date(a.cycleStartDate).getTime(),
       );
 
       setPeriods(sortedPeriods);
@@ -257,6 +270,55 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
   // Note: preview/confirm release flow removed. Use the Bus UI for releases.
 
+  const handleOpenScheduleReset = () => {
+    setScheduleResetError("");
+    setShowScheduleResetModal(true);
+  };
+
+  const handleScheduleResetSubmit = async (days: number) => {
+    if (!activePeriod) return;
+    setScheduleResetSaving(true);
+    setScheduleResetError("");
+    try {
+      const updated = await enrollmentPeriodService.scheduleReset(activePeriod._id, days);
+      setShowScheduleResetModal(false);
+      const formattedReset = formatDateTime(updated.resetScheduledFor);
+      toast.success(`Reset agendado para ${formattedReset}.`);
+      await loadData();
+    } catch (err: unknown) {
+      const apiError = err as { message?: string };
+      setScheduleResetError(apiError.message ?? "Não foi possível agendar o encerramento antecipado.");
+    } finally {
+      setScheduleResetSaving(false);
+    }
+  };
+
+  const handleOpenRepescagem = () => {
+    setRepescagemError("");
+    setShowRepescagemModal(true);
+  };
+
+  const handleRepescagemSubmit = async (payload: OpenRepescagemFormPayload) => {
+    if (!activePeriod) return;
+    setRepescagemSaving(true);
+    setRepescagemError("");
+    try {
+      await enrollmentPeriodService.openWindow(activePeriod._id, payload);
+      setShowRepescagemModal(false);
+      toast.success("Janela de repescagem aberta com sucesso.");
+      await loadData();
+    } catch (err: unknown) {
+      const apiError = err as { message?: string };
+      setRepescagemError(apiError.message ?? "Não foi possível abrir a janela de repescagem.");
+    } finally {
+      setRepescagemSaving(false);
+    }
+  };
+
+  // Repescagem só faz sentido com ciclo vivo e nenhuma janela aberta no
+  // momento — activePeriod.startDate vem null quando não há janela ativa.
+  const canOpenRepescagem = Boolean(activePeriod && !activePeriod.startDate);
+
   return (
     <>
       <main className="px-6 py-5 bg-surface flex flex-col gap-5">
@@ -286,6 +348,14 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                       <Button variant="outline" size="sm" onClick={handleOpenEdit}>
                         Editar
                       </Button>
+                      <Button variant="outline" size="sm" onClick={handleOpenScheduleReset}>
+                        Encerrar em X dias
+                      </Button>
+                      {canOpenRepescagem && (
+                        <Button variant="outline" size="sm" onClick={handleOpenRepescagem}>
+                          Abrir repescagem
+                        </Button>
+                      )}
                       <Button variant="primary" size="sm" onClick={handleClosePeriod}>
                         Encerrar período
                       </Button>
@@ -325,11 +395,11 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                       <p className="font-medium text-on-surface">
                         {activePeriod.licenseValidityMonths} meses
                       </p>
-                      {computeLicenseExpiry(activePeriod.endDate, activePeriod.licenseValidityMonths) && (
+                      {computeLicenseExpiry(activePeriod.cycleStartDate, activePeriod.licenseValidityMonths) && (
                         <p className="text-xs text-on-surface-variant mt-0.5">
                           até{" "}
                           <strong className="text-on-surface">
-                            {computeLicenseExpiry(activePeriod.endDate, activePeriod.licenseValidityMonths)}
+                            {computeLicenseExpiry(activePeriod.cycleStartDate, activePeriod.licenseValidityMonths)}
                           </strong>
                         </p>
                       )}
@@ -342,6 +412,14 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                       <p className="text-xs text-on-surface-variant">Fila de espera</p>
                       <p className="font-medium text-on-surface">{waitlistEntries.length} aguardando</p>
                     </div>
+                    {activePeriod.resetScheduledFor && (
+                      <div className="rounded-xl border border-outline-variant bg-surface p-3">
+                        <p className="text-xs text-on-surface-variant">Reset agendado para</p>
+                        <p className="font-medium text-on-surface">
+                          {formatDateTime(activePeriod.resetScheduledFor)}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="rounded-xl border border-outline-variant bg-surface p-3">
@@ -400,7 +478,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                     <tbody>
                       {periods.map((period) => (
                         <tr key={period._id} className="border-t border-outline-variant/40 hover:bg-surface-container-low/50 transition-colors">
-                          <td className="px-3 py-2 text-on-surface">{formatDate(period.startDate)}</td>
+                          <td className="px-3 py-2 text-on-surface">{formatDate(period.cycleStartDate)}</td>
                           <td className="px-3 py-2 text-on-surface-variant">
                             {formatDateTime(period.closedAt)}
                           </td>
@@ -528,6 +606,28 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
           setEditingPeriod(null);
         }}
         onSubmit={handleSavePeriod}
+      />
+
+      <ScheduleResetModal
+        open={showScheduleResetModal}
+        loading={scheduleResetSaving}
+        serverError={scheduleResetError}
+        onClose={() => {
+          if (scheduleResetSaving) return;
+          setShowScheduleResetModal(false);
+        }}
+        onSubmit={handleScheduleResetSubmit}
+      />
+
+      <OpenRepescagemModal
+        open={showRepescagemModal}
+        loading={repescagemSaving}
+        serverError={repescagemError}
+        onClose={() => {
+          if (repescagemSaving) return;
+          setShowRepescagemModal(false);
+        }}
+        onSubmit={handleRepescagemSubmit}
       />
 
       {/* Preview/confirm period-level release removed (use Bus UI) */}
