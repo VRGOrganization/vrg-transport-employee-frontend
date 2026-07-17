@@ -7,19 +7,19 @@ import { universityService } from "@/services/universityService";
 import type { University } from "@/types/university.types";
 import type { EnrollmentWindowEligibilityScope } from "@/types/enrollmentPeriod";
 
-export interface OpenRepescagemFormPayload {
+export interface OpenEnrollmentWindowFormPayload {
   startDate: string;
   endDate: string;
   eligibilityScope: EnrollmentWindowEligibilityScope;
   eligibleUniversityIds?: string[];
 }
 
-interface OpenRepescagemModalProps {
+interface OpenEnrollmentWindowModalProps {
   open: boolean;
   loading: boolean;
   serverError: string;
   onClose: () => void;
-  onSubmit: (payload: OpenRepescagemFormPayload) => Promise<void>;
+  onSubmit: (payload: OpenEnrollmentWindowFormPayload) => Promise<void>;
 }
 
 interface FormErrors {
@@ -43,13 +43,13 @@ const SCOPE_OPTIONS: Array<{
   { value: "specific_universities", label: "Faculdades específicas" },
 ];
 
-export function OpenRepescagemModal({
+export function OpenEnrollmentWindowModal({
   open,
   loading,
   serverError,
   onClose,
   onSubmit,
-}: OpenRepescagemModalProps) {
+}: OpenEnrollmentWindowModalProps) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [eligibilityScope, setEligibilityScope] =
@@ -111,7 +111,7 @@ export function OpenRepescagemModal({
     setErrors((prev) => ({ ...prev, eligibleUniversityIds: "" }));
   };
 
-  const validate = (): OpenRepescagemFormPayload | null => {
+  const validate = (): OpenEnrollmentWindowFormPayload | null => {
     const nextErrors: FormErrors = { ...EMPTY_ERRORS };
 
     if (!startDate) nextErrors.startDate = "Data de início é obrigatória.";
@@ -155,15 +155,15 @@ export function OpenRepescagemModal({
   };
 
   return (
-    <Modal open={open} onClose={loading ? () => {} : onClose} size="lg" title="Abrir raia de repescagem">
+    <Modal open={open} onClose={loading ? () => {} : onClose} size="lg" title="Abrir janela de inscrição">
       <form className="space-y-3" onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
-            <label htmlFor="repescagem-start-date" className="mb-0.5 block text-sm font-medium text-on-surface">
+            <label htmlFor="window-start-date" className="mb-0.5 block text-sm font-medium text-on-surface">
               Data de início
             </label>
             <input
-              id="repescagem-start-date"
+              id="window-start-date"
               type="date"
               value={startDate}
               onChange={(event) => {
@@ -175,11 +175,11 @@ export function OpenRepescagemModal({
             {errors.startDate && <p className="mt-1 text-xs text-error">{errors.startDate}</p>}
           </div>
           <div>
-            <label htmlFor="repescagem-end-date" className="mb-0.5 block text-sm font-medium text-on-surface">
+            <label htmlFor="window-end-date" className="mb-0.5 block text-sm font-medium text-on-surface">
               Data de fim
             </label>
             <input
-              id="repescagem-end-date"
+              id="window-end-date"
               type="date"
               value={endDate}
               onChange={(event) => {
@@ -255,7 +255,7 @@ export function OpenRepescagemModal({
             Cancelar
           </Button>
           <Button type="submit" variant="primary" size="sm" loading={loading}>
-            Abrir repescagem
+            Abrir janela
           </Button>
         </div>
       </form>

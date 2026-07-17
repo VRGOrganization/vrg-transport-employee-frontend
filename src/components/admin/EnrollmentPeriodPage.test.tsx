@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 const { activePeriodStub } = vi.hoisted(() => ({
@@ -39,8 +39,12 @@ vi.mock("@/services/enrollmentPeriodService", () => ({
   enrollmentPeriodService: {
     getActive: vi.fn().mockResolvedValue(activePeriodStub),
     list: vi.fn().mockResolvedValue([activePeriodStub]),
-    scheduleReset: vi.fn(),
+    create: vi.fn().mockResolvedValue(activePeriodStub),
+    update: vi.fn().mockResolvedValue(activePeriodStub),
+    close: vi.fn().mockResolvedValue({ ...activePeriodStub, active: false }),
+    scheduleReset: vi.fn().mockResolvedValue(activePeriodStub),
     openWindow: vi.fn(),
+    closeWindow: vi.fn().mockResolvedValue({}),
   },
 }));
 
@@ -118,22 +122,25 @@ describe("EnrollmentPeriodPage — prévia de validade usa cycleStartDate", () =
   });
 });
 
-describe("EnrollmentPeriodPage — botão de repescagem", () => {
+describe("EnrollmentPeriodPage — ações condicionadas ao estado da janela (Núcleo 11)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(activePeriodStub as never);
     vi.mocked(enrollmentPeriodService.list).mockResolvedValue([activePeriodStub] as never);
   });
 
-  it("hides 'Abrir repescagem' when a window is already open (startDate present)", async () => {
+  it("with an open window: shows 'Editar' and 'Fechar janela', hides 'Abrir janela de inscrição'", async () => {
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /editar/i })).toBeInTheDocument();
     });
-    expect(screen.queryByRole("button", { name: /abrir repescagem/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /fechar janela/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /abrir janela de inscrição/i }),
+    ).not.toBeInTheDocument();
   });
 
-  it("shows 'Abrir repescagem' when the cycle is alive but no window is open (startDate null)", async () => {
+  it("with no window open: shows 'Abrir janela de inscrição', hides 'Editar' and 'Fechar janela'", async () => {
     vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue({
       ...activePeriodStub,
       startDate: null,
@@ -142,7 +149,49 @@ describe("EnrollmentPeriodPage — botão de repescagem", () => {
 
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /abrir repescagem/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /abrir janela de inscrição/i }),
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: /^editar$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /fechar janela/i })).not.toBeInTheDocument();
+  });
+
+  it("with no live cycle: shows only 'Abrir novo período', which opens the piscina-only modal", async () => {
+    vi.mocked(enrollmentPeriodService.getActive).mockRejectedValue({ status: 404 });
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([] as never);
+
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByText("Abrir novo período")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Abrir novo período" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Abrir novo período de inscrição")).toBeInTheDocument();
+    });
+    expect(screen.queryByLabelText(/data de fim/i)).not.toBeInTheDocument();
+  });
+
+  it("clicking 'Fechar janela' and confirming calls closeWindow with the cycle id", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /fechar janela/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /fechar janela/i }));
+    await waitFor(() => {
+      expect(
+        screen.getByText(/deseja fechar a janela de inscrição atual/i),
+      ).toBeInTheDocument();
+    });
+
+    const confirmButtons = screen.getAllByRole("button", { name: "Fechar janela" });
+    fireEvent.click(confirmButtons[confirmButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(enrollmentPeriodService.closeWindow).toHaveBeenCalledWith(activePeriodStub._id);
     });
   });
 });
@@ -260,6 +309,91 @@ describe("EnrollmentPeriodPage — selo de status com três estados (Núcleo 10)
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
       expect(screen.getByText("ENCERRADO")).toBeInTheDocument();
+    });
+  });
+});
+
+describe("EnrollmentPeriodPage — confirmação reforçada de 'Encerrar período' (Núcleo 11)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(activePeriodStub as never);
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([activePeriodStub] as never);
+  });
+
+  it("keeps the confirm button disabled until 'ENCERRAR' is typed, and only then calls close()", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Encerrar período" })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Encerrar período" }));
+
+    const confirmButton = await screen.findByRole("button", { name: "Encerrar" });
+    expect(confirmButton).toBeDisabled();
+    expect(enrollmentPeriodService.close).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText(/digite ENCERRAR/i), {
+      target: { value: "ENCERRAR" },
+    });
+    await waitFor(() => expect(confirmButton).not.toBeDisabled());
+
+    fireEvent.click(confirmButton);
+
+    await waitFor(() => {
+      expect(enrollmentPeriodService.close).toHaveBeenCalledWith(activePeriodStub._id);
+    });
+  });
+
+  it("shows the waitlist count and occupancy as part of the impact summary", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Encerrar período" })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Encerrar período" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(new RegExp(`${activePeriodStub.filledSlots} de ${activePeriodStub.totalSlots} vagas-dia`)),
+      ).toBeInTheDocument();
+    });
+  });
+});
+
+describe("EnrollmentPeriodPage — confirmação reforçada em duas etapas de 'Encerrar em X dias' (Núcleo 11)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(activePeriodStub as never);
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([activePeriodStub] as never);
+  });
+
+  it("step 1 collects the days, step 2 requires the confirmation word before scheduling", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Encerrar em X dias" })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Encerrar em X dias" }));
+    fireEvent.change(await screen.findByLabelText(/quantos dias/i), {
+      target: { value: "5" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /confirmar/i }));
+
+    const scheduleButton = await screen.findByRole("button", { name: "Agendar" });
+    expect(scheduleButton).toBeDisabled();
+    expect(enrollmentPeriodService.scheduleReset).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText(/digite ENCERRAR/i), {
+      target: { value: "ENCERRAR" },
+    });
+    await waitFor(() => expect(scheduleButton).not.toBeDisabled());
+    fireEvent.click(scheduleButton);
+
+    await waitFor(() => {
+      expect(enrollmentPeriodService.scheduleReset).toHaveBeenCalledWith(
+        activePeriodStub._id,
+        5,
+      );
     });
   });
 });

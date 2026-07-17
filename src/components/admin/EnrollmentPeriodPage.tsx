@@ -4,13 +4,18 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { EnrollmentPeriodBanner } from "@/components/admin/EnrollmentPeriodBanner";
 import { EnrollmentPeriodModal } from "@/components/admin/EnrollmentPeriodModal";
+import {
+  OpenPeriodModal,
+  type OpenPeriodFormPayload,
+} from "@/components/admin/OpenPeriodModal";
 import { ScheduleResetModal } from "@/components/admin/ScheduleResetModal";
 import {
-  OpenRepescagemModal,
-  type OpenRepescagemFormPayload,
-} from "@/components/admin/OpenRepescagemModal";
+  OpenEnrollmentWindowModal,
+  type OpenEnrollmentWindowFormPayload,
+} from "@/components/admin/OpenEnrollmentWindowModal";
 import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { ReinforcedConfirmModal } from "@/components/ui/ReinforcedConfirmModal";
 import { toast } from "@/lib/toast";
 import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
 import { PanelCard } from "@/components/ui/PanelCard";
@@ -71,8 +76,8 @@ interface CycleStatusBadge {
 }
 
 // Ciclo vivo pode estar com janela aberta ou não (ex.: janela original
-// fechou, ainda sem repescagem) — as duas situações são bem diferentes e
-// não devem compartilhar o mesmo selo "ABERTO".
+// fechou, nenhuma nova janela aberta ainda) — as duas situações são bem
+// diferentes e não devem compartilhar o mesmo selo "ABERTO".
 function getActiveCycleStatus(period: EnrollmentPeriod): CycleStatusBadge {
   if (period.startDate && period.endDate) {
     return { label: "INSCRIÇÃO ABERTA", className: "text-success" };
@@ -102,8 +107,11 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [waitlistRequests, setWaitlistRequests] = useState<LicenseRequestRecord[]>([]);
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingPeriod, setEditingPeriod] = useState<EnrollmentPeriod | null>(null);
+  const [showOpenPeriodModal, setShowOpenPeriodModal] = useState(false);
+  const [openPeriodSaving, setOpenPeriodSaving] = useState(false);
+  const [openPeriodError, setOpenPeriodError] = useState("");
+
+  const [showEditModal, setShowEditModal] = useState(false);
   const [periodSaving, setPeriodSaving] = useState(false);
   const [periodModalError, setPeriodModalError] = useState("");
 
@@ -111,12 +119,17 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
   const [closingPeriod, setClosingPeriod] = useState(false);
 
   const [showScheduleResetModal, setShowScheduleResetModal] = useState(false);
-  const [scheduleResetSaving, setScheduleResetSaving] = useState(false);
-  const [scheduleResetError, setScheduleResetError] = useState("");
+  const [pendingResetDays, setPendingResetDays] = useState<number | null>(null);
+  const [showScheduleResetConfirm, setShowScheduleResetConfirm] = useState(false);
+  const [scheduleResetConfirmSaving, setScheduleResetConfirmSaving] = useState(false);
+  const [scheduleResetConfirmError, setScheduleResetConfirmError] = useState("");
 
-  const [showRepescagemModal, setShowRepescagemModal] = useState(false);
-  const [repescagemSaving, setRepescagemSaving] = useState(false);
-  const [repescagemError, setRepescagemError] = useState("");
+  const [showWindowModal, setShowWindowModal] = useState(false);
+  const [windowSaving, setWindowSaving] = useState(false);
+  const [windowError, setWindowError] = useState("");
+
+  const [showCloseWindowConfirm, setShowCloseWindowConfirm] = useState(false);
+  const [closingWindow, setClosingWindow] = useState(false);
 
   // Nota: o fluxo de liberação por período foi removido. As liberações
   // agora ocorrem por ônibus (patch /bus/:id/release-slots). Mantemos a
@@ -201,32 +214,41 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
     void loadData();
   }, [loadData]);
 
-  const handleOpenCreate = () => {
-    setEditingPeriod(null);
-    setPeriodModalError("");
-    setModalOpen(true);
+  const handleOpenCreatePeriod = () => {
+    setOpenPeriodError("");
+    setShowOpenPeriodModal(true);
+  };
+
+  const handleCreatePeriod = async (payload: OpenPeriodFormPayload) => {
+    setOpenPeriodSaving(true);
+    setOpenPeriodError("");
+    try {
+      await enrollmentPeriodService.create(payload);
+      toast.success("Novo período aberto com sucesso.");
+      setShowOpenPeriodModal(false);
+      await loadData();
+    } catch (err: unknown) {
+      const apiError = err as { message?: string };
+      setOpenPeriodError(apiError.message ?? "Não foi possível abrir o período.");
+    } finally {
+      setOpenPeriodSaving(false);
+    }
   };
 
   const handleOpenEdit = () => {
     if (!activePeriod) return;
-    setEditingPeriod(activePeriod);
     setPeriodModalError("");
-    setModalOpen(true);
+    setShowEditModal(true);
   };
 
   const handleSavePeriod = async (payload: EnrollmentPeriodPayload) => {
+    if (!activePeriod) return;
     setPeriodSaving(true);
     setPeriodModalError("");
     try {
-      if (editingPeriod) {
-        await enrollmentPeriodService.update(editingPeriod._id, payload);
-        toast.success("Período atualizado com sucesso.");
-      } else {
-        await enrollmentPeriodService.create(payload);
-        toast.success("Novo período aberto com sucesso.");
-      }
-      setModalOpen(false);
-      setEditingPeriod(null);
+      await enrollmentPeriodService.update(activePeriod._id, payload);
+      toast.success("Período atualizado com sucesso.");
+      setShowEditModal(false);
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
@@ -261,53 +283,95 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
   // Note: preview/confirm release flow removed. Use the Bus UI for releases.
 
   const handleOpenScheduleReset = () => {
-    setScheduleResetError("");
     setShowScheduleResetModal(true);
   };
 
+  // Passo 1 (dias) só decide o prazo; a confirmação reforçada (passo 2) é
+  // quem de fato dispara o agendamento, já que ao vencer o prazo a mesma
+  // cascata de "Encerrar período" roda sozinha (cron).
   const handleScheduleResetSubmit = async (days: number) => {
-    if (!activePeriod) return;
-    setScheduleResetSaving(true);
-    setScheduleResetError("");
+    setPendingResetDays(days);
+    setShowScheduleResetModal(false);
+    setScheduleResetConfirmError("");
+    setShowScheduleResetConfirm(true);
+  };
+
+  const handleScheduleResetConfirmed = async () => {
+    if (!activePeriod || pendingResetDays == null) return;
+    setScheduleResetConfirmSaving(true);
+    setScheduleResetConfirmError("");
     try {
-      const updated = await enrollmentPeriodService.scheduleReset(activePeriod._id, days);
-      setShowScheduleResetModal(false);
+      const updated = await enrollmentPeriodService.scheduleReset(
+        activePeriod._id,
+        pendingResetDays,
+      );
+      setShowScheduleResetConfirm(false);
+      setPendingResetDays(null);
       const formattedReset = formatDateTime(updated.resetScheduledFor);
       toast.success(`Reset agendado para ${formattedReset}.`);
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      setScheduleResetError(apiError.message ?? "Não foi possível agendar o encerramento antecipado.");
+      setScheduleResetConfirmError(
+        apiError.message ?? "Não foi possível agendar o encerramento antecipado.",
+      );
     } finally {
-      setScheduleResetSaving(false);
+      setScheduleResetConfirmSaving(false);
     }
   };
 
-  const handleOpenRepescagem = () => {
-    setRepescagemError("");
-    setShowRepescagemModal(true);
+  const handleOpenWindow = () => {
+    setWindowError("");
+    setShowWindowModal(true);
   };
 
-  const handleRepescagemSubmit = async (payload: OpenRepescagemFormPayload) => {
+  const handleWindowSubmit = async (payload: OpenEnrollmentWindowFormPayload) => {
     if (!activePeriod) return;
-    setRepescagemSaving(true);
-    setRepescagemError("");
+    setWindowSaving(true);
+    setWindowError("");
     try {
       await enrollmentPeriodService.openWindow(activePeriod._id, payload);
-      setShowRepescagemModal(false);
-      toast.success("Janela de repescagem aberta com sucesso.");
+      setShowWindowModal(false);
+      toast.success("Janela de inscrição aberta com sucesso.");
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      setRepescagemError(apiError.message ?? "Não foi possível abrir a janela de repescagem.");
+      setWindowError(apiError.message ?? "Não foi possível abrir a janela de inscrição.");
     } finally {
-      setRepescagemSaving(false);
+      setWindowSaving(false);
     }
   };
 
-  // Repescagem só faz sentido com ciclo vivo e nenhuma janela aberta no
-  // momento — activePeriod.startDate vem null quando não há janela ativa.
-  const canOpenRepescagem = Boolean(activePeriod && !activePeriod.startDate);
+  const handleCloseWindow = () => {
+    if (!activePeriod) return;
+    setShowCloseWindowConfirm(true);
+  };
+
+  const handleCloseWindowConfirmed = async () => {
+    if (!activePeriod) return;
+    setClosingWindow(true);
+    try {
+      await enrollmentPeriodService.closeWindow(activePeriod._id);
+      setShowCloseWindowConfirm(false);
+      toast.success("Janela de inscrição fechada com sucesso.");
+      await loadData();
+    } catch (err: unknown) {
+      const apiError = err as { message?: string };
+      toast.error(apiError.message ?? "Falha ao fechar a janela de inscrição.");
+      setShowCloseWindowConfirm(false);
+    } finally {
+      setClosingWindow(false);
+    }
+  };
+
+  // A janela só faz sentido abrir/editar/fechar com ciclo vivo —
+  // activePeriod.startDate vem null quando não há janela ativa no momento.
+  const hasOpenWindow = Boolean(activePeriod?.startDate);
+  const canOpenWindow = Boolean(activePeriod && !hasOpenWindow);
+
+  const cascadeImpactDescription = activePeriod
+    ? `${waitlistEntries.length} pedido(s) na fila de espera serão cancelados definitivamente e a ocupação atual (${activePeriod.filledSlots} de ${activePeriod.totalSlots} vagas-dia) será liberada. Carteirinhas vinculadas a este período serão expiradas.`
+    : "";
 
   return (
     <>
@@ -335,23 +399,30 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                 <div className="flex flex-wrap gap-2">
                   {activePeriod ? (
                     <>
-                      <Button variant="outline" size="sm" onClick={handleOpenEdit}>
-                        Editar
-                      </Button>
+                      {hasOpenWindow && (
+                        <>
+                          <Button variant="outline" size="sm" onClick={handleOpenEdit}>
+                            Editar
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={handleCloseWindow}>
+                            Fechar janela
+                          </Button>
+                        </>
+                      )}
+                      {canOpenWindow && (
+                        <Button variant="outline" size="sm" onClick={handleOpenWindow}>
+                          Abrir janela de inscrição
+                        </Button>
+                      )}
                       <Button variant="outline" size="sm" onClick={handleOpenScheduleReset}>
                         Encerrar em X dias
                       </Button>
-                      {canOpenRepescagem && (
-                        <Button variant="outline" size="sm" onClick={handleOpenRepescagem}>
-                          Abrir repescagem
-                        </Button>
-                      )}
                       <Button variant="primary" size="sm" onClick={handleClosePeriod}>
                         Encerrar período
                       </Button>
                     </>
                   ) : (
-                    <Button variant="primary" size="sm" onClick={handleOpenCreate}>
+                    <Button variant="primary" size="sm" onClick={handleOpenCreatePeriod}>
                       Abrir novo período
                     </Button>
                   )}
@@ -549,52 +620,93 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
           </div>
         </main>
 
-      <ConfirmModal
+      <ReinforcedConfirmModal
         open={showCloseConfirm}
         onClose={() => setShowCloseConfirm(false)}
         onConfirm={handleCloseConfirmed}
         loading={closingPeriod}
         title="Encerrar período"
-        description="Deseja encerrar o período ativo? Alunos na fila de espera terão suas solicitações canceladas e as vagas dos ônibus serão resetadas."
-        icon={AlertTriangle}
-        variant="danger"
+        description={cascadeImpactDescription}
+        confirmWord="ENCERRAR"
         confirmLabel="Encerrar"
         cancelLabel="Cancelar"
       />
 
-      <EnrollmentPeriodModal
-        open={modalOpen}
-        period={editingPeriod}
-        loading={periodSaving}
-        serverError={periodModalError}
+      <OpenPeriodModal
+        open={showOpenPeriodModal}
+        loading={openPeriodSaving}
+        serverError={openPeriodError}
         onClose={() => {
-          if (periodSaving) return;
-          setModalOpen(false);
-          setEditingPeriod(null);
+          if (openPeriodSaving) return;
+          setShowOpenPeriodModal(false);
         }}
-        onSubmit={handleSavePeriod}
+        onSubmit={handleCreatePeriod}
       />
+
+      {activePeriod && (
+        <EnrollmentPeriodModal
+          open={showEditModal}
+          period={activePeriod}
+          loading={periodSaving}
+          serverError={periodModalError}
+          onClose={() => {
+            if (periodSaving) return;
+            setShowEditModal(false);
+          }}
+          onSubmit={handleSavePeriod}
+        />
+      )}
 
       <ScheduleResetModal
         open={showScheduleResetModal}
-        loading={scheduleResetSaving}
-        serverError={scheduleResetError}
-        onClose={() => {
-          if (scheduleResetSaving) return;
-          setShowScheduleResetModal(false);
-        }}
+        loading={false}
+        serverError=""
+        onClose={() => setShowScheduleResetModal(false)}
         onSubmit={handleScheduleResetSubmit}
       />
 
-      <OpenRepescagemModal
-        open={showRepescagemModal}
-        loading={repescagemSaving}
-        serverError={repescagemError}
+      <ReinforcedConfirmModal
+        open={showScheduleResetConfirm}
         onClose={() => {
-          if (repescagemSaving) return;
-          setShowRepescagemModal(false);
+          if (scheduleResetConfirmSaving) return;
+          setShowScheduleResetConfirm(false);
         }}
-        onSubmit={handleRepescagemSubmit}
+        onConfirm={handleScheduleResetConfirmed}
+        loading={scheduleResetConfirmSaving}
+        error={scheduleResetConfirmError}
+        title="Confirmar encerramento em X dias"
+        description={
+          pendingResetDays != null
+            ? `Isso agendará o encerramento em ${pendingResetDays} dia(s). Quando o prazo chegar, a mesma cascata do encerramento imediato roda automaticamente: ${cascadeImpactDescription}`
+            : cascadeImpactDescription
+        }
+        confirmWord="ENCERRAR"
+        confirmLabel="Agendar"
+        cancelLabel="Cancelar"
+      />
+
+      <OpenEnrollmentWindowModal
+        open={showWindowModal}
+        loading={windowSaving}
+        serverError={windowError}
+        onClose={() => {
+          if (windowSaving) return;
+          setShowWindowModal(false);
+        }}
+        onSubmit={handleWindowSubmit}
+      />
+
+      <ConfirmModal
+        open={showCloseWindowConfirm}
+        onClose={() => setShowCloseWindowConfirm(false)}
+        onConfirm={handleCloseWindowConfirmed}
+        loading={closingWindow}
+        title="Fechar janela"
+        description="Deseja fechar a janela de inscrição atual? Novos alunos não poderão mais enviar solicitações até que uma nova janela seja aberta. O ciclo e a fila de espera não são afetados."
+        icon={AlertTriangle}
+        variant="warning"
+        confirmLabel="Fechar janela"
+        cancelLabel="Cancelar"
       />
 
       {/* Preview/confirm period-level release removed (use Bus UI) */}

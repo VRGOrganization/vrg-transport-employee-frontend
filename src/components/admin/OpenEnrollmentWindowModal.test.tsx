@@ -15,7 +15,7 @@ vi.mock("@/services/universityService", () => ({
   },
 }));
 
-import { OpenRepescagemModal } from "./OpenRepescagemModal";
+import { OpenEnrollmentWindowModal } from "./OpenEnrollmentWindowModal";
 import { universityService } from "@/services/universityService";
 
 const baseProps = {
@@ -26,20 +26,26 @@ const baseProps = {
   onSubmit: vi.fn(() => Promise.resolve()),
 };
 
-describe("OpenRepescagemModal", () => {
+describe("OpenEnrollmentWindowModal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(universityService.list).mockResolvedValue(universitiesStub as never);
   });
 
+  it("shows a generic title, not tied to 'repescagem'", () => {
+    render(<OpenEnrollmentWindowModal {...baseProps} />);
+    expect(screen.getByText("Abrir janela de inscrição")).toBeInTheDocument();
+    expect(screen.queryByText(/repescagem/i)).not.toBeInTheDocument();
+  });
+
   it("defaults to 'Todos os alunos' and does not show the multi-select", () => {
-    render(<OpenRepescagemModal {...baseProps} />);
+    render(<OpenEnrollmentWindowModal {...baseProps} />);
     expect(screen.getByLabelText("Todos os alunos")).toBeChecked();
     expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
   });
 
   it("shows the university multi-select only when 'Faculdades específicas' is selected", async () => {
-    render(<OpenRepescagemModal {...baseProps} />);
+    render(<OpenEnrollmentWindowModal {...baseProps} />);
     fireEvent.click(screen.getByLabelText("Faculdades específicas"));
 
     await waitFor(() => {
@@ -50,14 +56,14 @@ describe("OpenRepescagemModal", () => {
 
   it("requires at least one university when scope is 'Faculdades específicas'", async () => {
     const onSubmit = vi.fn(() => Promise.resolve());
-    render(<OpenRepescagemModal {...baseProps} onSubmit={onSubmit} />);
+    render(<OpenEnrollmentWindowModal {...baseProps} onSubmit={onSubmit} />);
 
     fireEvent.change(screen.getByLabelText("Data de início"), { target: { value: "2030-04-01" } });
     fireEvent.change(screen.getByLabelText("Data de fim"), { target: { value: "2030-04-03" } });
     fireEvent.click(screen.getByLabelText("Faculdades específicas"));
     await waitFor(() => screen.getByText(/U1 — Universidade Um/));
 
-    fireEvent.click(screen.getByRole("button", { name: /abrir repescagem/i }));
+    fireEvent.click(screen.getByRole("button", { name: /abrir janela/i }));
 
     expect(await screen.findByText(/selecione ao menos uma faculdade/i)).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
@@ -65,11 +71,11 @@ describe("OpenRepescagemModal", () => {
 
   it("submits eligibilityScope=all without eligibleUniversityIds", async () => {
     const onSubmit = vi.fn(() => Promise.resolve());
-    render(<OpenRepescagemModal {...baseProps} onSubmit={onSubmit} />);
+    render(<OpenEnrollmentWindowModal {...baseProps} onSubmit={onSubmit} />);
 
     fireEvent.change(screen.getByLabelText("Data de início"), { target: { value: "2030-04-01" } });
     fireEvent.change(screen.getByLabelText("Data de fim"), { target: { value: "2030-04-03" } });
-    fireEvent.click(screen.getByRole("button", { name: /abrir repescagem/i }));
+    fireEvent.click(screen.getByRole("button", { name: /abrir janela/i }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
     const payload = onSubmit.mock.calls[0][0];
@@ -79,7 +85,7 @@ describe("OpenRepescagemModal", () => {
 
   it("submits eligibilityScope=specific_universities with selected ids", async () => {
     const onSubmit = vi.fn(() => Promise.resolve());
-    render(<OpenRepescagemModal {...baseProps} onSubmit={onSubmit} />);
+    render(<OpenEnrollmentWindowModal {...baseProps} onSubmit={onSubmit} />);
 
     fireEvent.change(screen.getByLabelText("Data de início"), { target: { value: "2030-04-01" } });
     fireEvent.change(screen.getByLabelText("Data de fim"), { target: { value: "2030-04-03" } });
@@ -87,7 +93,7 @@ describe("OpenRepescagemModal", () => {
     await waitFor(() => screen.getByText(/U1 — Universidade Um/));
     fireEvent.click(screen.getByText(/U1 — Universidade Um/));
 
-    fireEvent.click(screen.getByRole("button", { name: /abrir repescagem/i }));
+    fireEvent.click(screen.getByRole("button", { name: /abrir janela/i }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
     const payload = onSubmit.mock.calls[0][0];
@@ -97,9 +103,9 @@ describe("OpenRepescagemModal", () => {
 
   it("requires start and end dates", async () => {
     const onSubmit = vi.fn(() => Promise.resolve());
-    render(<OpenRepescagemModal {...baseProps} onSubmit={onSubmit} />);
+    render(<OpenEnrollmentWindowModal {...baseProps} onSubmit={onSubmit} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /abrir repescagem/i }));
+    fireEvent.click(screen.getByRole("button", { name: /abrir janela/i }));
 
     expect(await screen.findByText(/data de início é obrigatória/i)).toBeInTheDocument();
     expect(screen.getByText(/data de fim é obrigatória/i)).toBeInTheDocument();
@@ -107,7 +113,7 @@ describe("OpenRepescagemModal", () => {
   });
 
   it("shows server error", () => {
-    render(<OpenRepescagemModal {...baseProps} serverError="Já existe uma janela de inscrição ativa." />);
+    render(<OpenEnrollmentWindowModal {...baseProps} serverError="Já existe uma janela de inscrição ativa." />);
     expect(screen.getByText("Já existe uma janela de inscrição ativa.")).toBeInTheDocument();
   });
 });

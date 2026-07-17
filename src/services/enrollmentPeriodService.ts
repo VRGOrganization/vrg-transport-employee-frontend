@@ -18,7 +18,7 @@ export interface OpenEnrollmentWindowPayload {
 export const enrollmentPeriodService = {
   getActive: ()                      => http.get<EnrollmentPeriod>("/enrollment-period/active"),
   list:      ()                      => http.get<Paginated<EnrollmentPeriod>>("/enrollment-period").then(resolvePaginated),
-  create:    (data: { startDate: string; endDate: string; licenseValidityMonths?: number }) =>
+  create:    (data: { startDate: string; licenseValidityMonths: number }) =>
                http.post<EnrollmentPeriod>("/enrollment-period", data),
   update:    (id: string, data: Partial<{ startDate: string; endDate: string; licenseValidityMonths?: number }>) =>
                http.patch<EnrollmentPeriod>(`/enrollment-period/${id}`, data),
@@ -27,4 +27,6 @@ export const enrollmentPeriodService = {
                http.patch<EnrollmentPeriod>(`/enrollment-period/${id}/schedule-reset`, { days }),
   openWindow: (cycleId: string, data: OpenEnrollmentWindowPayload) =>
                http.post<EnrollmentWindow>(`/enrollment-period/${cycleId}/window`, data),
+  closeWindow: (cycleId: string) =>
+               http.patch<EnrollmentWindow>(`/enrollment-period/${cycleId}/window/close`, {}),
 };
