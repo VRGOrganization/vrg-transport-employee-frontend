@@ -23,7 +23,6 @@ export const enrollmentPeriodService = {
   update:    (id: string, data: Partial<{ startDate: string; endDate: string; licenseValidityMonths?: number }>) =>
                http.patch<EnrollmentPeriod>(`/enrollment-period/${id}`, data),
   close:     (id: string)            => http.patch<EnrollmentPeriod>(`/enrollment-period/${id}/close`, {}),
-  reopen:    (id: string)            => http.patch<EnrollmentPeriod>(`/enrollment-period/${id}/reopen`, {}),
   scheduleReset: (id: string, days: number) =>
                http.patch<EnrollmentPeriod>(`/enrollment-period/${id}/schedule-reset`, { days }),
   openWindow: (cycleId: string, data: OpenEnrollmentWindowPayload) =>

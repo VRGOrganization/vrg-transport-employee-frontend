@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 const { activePeriodStub } = vi.hoisted(() => ({
   activePeriodStub: {
@@ -143,6 +143,123 @@ describe("EnrollmentPeriodPage — botão de repescagem", () => {
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /abrir repescagem/i })).toBeInTheDocument();
+    });
+  });
+});
+
+describe("EnrollmentPeriodPage — funcionalidade de reabrir removida (Núcleo 10)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("não mostra nenhum botão/texto de reabertura com ciclo vivo", async () => {
+    vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(activePeriodStub as never);
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([activePeriodStub] as never);
+
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /editar/i })).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/reabrir/i)).not.toBeInTheDocument();
+  });
+
+  it("não mostra nenhum botão/texto de reabertura sem ciclo vivo, mesmo com histórico de ciclo encerrado", async () => {
+    const closedPeriod = {
+      ...activePeriodStub,
+      _id: "p0",
+      active: false,
+      startDate: null,
+      endDate: null,
+      closedAt: "2030-02-01T00:00:00.000Z",
+    };
+    vi.mocked(enrollmentPeriodService.getActive).mockRejectedValue({ status: 404 });
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([closedPeriod] as never);
+
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByText("Histórico de ciclos")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Abrir novo período")).toBeInTheDocument();
+    expect(screen.queryByText(/reabrir/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("EnrollmentPeriodPage — computeLicenseExpiry usa Date, não corte de string (regressão de fuso)", () => {
+  const originalTZ = process.env.TZ;
+
+  afterEach(() => {
+    process.env.TZ = originalTZ;
+    vi.clearAllMocks();
+  });
+
+  it("resolve o dia local correto pra um cycleStartDate perto da virada do dia UTC", async () => {
+    // Europe/Paris = UTC+1 no inverno (sem DST) — 23:30 UTC de um dia vira
+    // 00:30 do dia SEGUINTE no horário local. O bug antigo (slice(0,10) na
+    // string ISO) usava o dia UTC (15), não o dia local (16) — motivo desta
+    // regressão.
+    process.env.TZ = "Europe/Paris";
+    const period = {
+      ...activePeriodStub,
+      cycleStartDate: "2030-01-15T23:30:00.000Z",
+      startDate: null,
+      endDate: null,
+      licenseValidityMonths: 6,
+    };
+    vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(period as never);
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([period] as never);
+
+    render(<EnrollmentPeriodPage role="admin" />);
+
+    await waitFor(() => {
+      expect(screen.getByText("16/07/2030")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("15/07/2030")).not.toBeInTheDocument();
+  });
+});
+
+describe("EnrollmentPeriodPage — selo de status com três estados (Núcleo 10)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("mostra INSCRIÇÃO ABERTA quando o ciclo está vivo com janela aberta", async () => {
+    vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(activePeriodStub as never);
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([activePeriodStub] as never);
+
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByText("INSCRIÇÃO ABERTA")).toBeInTheDocument();
+    });
+  });
+
+  it("mostra CICLO ATIVO — SEM INSCRIÇÃO ABERTA quando o ciclo está vivo sem janela aberta", async () => {
+    const noWindow = { ...activePeriodStub, startDate: null, endDate: null };
+    vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(noWindow as never);
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([noWindow] as never);
+
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(
+        screen.getByText("CICLO ATIVO — SEM INSCRIÇÃO ABERTA"),
+      ).toBeInTheDocument();
+    });
+    expect(screen.getByText(/equipe pode continuar/i)).toBeInTheDocument();
+  });
+
+  it("mostra ENCERRADO na tabela de histórico quando não há ciclo vivo", async () => {
+    const closedPeriod = {
+      ...activePeriodStub,
+      _id: "p0",
+      active: false,
+      startDate: null,
+      endDate: null,
+    };
+    vi.mocked(enrollmentPeriodService.getActive).mockRejectedValue({ status: 404 });
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([closedPeriod] as never);
+
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByText("ENCERRADO")).toBeInTheDocument();
     });
   });
 });

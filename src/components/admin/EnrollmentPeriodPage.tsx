@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { EnrollmentPeriodBanner } from "@/components/admin/EnrollmentPeriodBanner";
 import { EnrollmentPeriodModal } from "@/components/admin/EnrollmentPeriodModal";
 import { ScheduleResetModal } from "@/components/admin/ScheduleResetModal";
@@ -39,14 +39,10 @@ function formatDate(dateValue: string | null | undefined): string {
 
 function computeLicenseExpiry(cycleStartDate: string | null | undefined, months: number | null | undefined): string {
   if (!cycleStartDate || !months || months < 1) return "";
-  try {
-    const base = new Date(`${cycleStartDate.slice(0, 10)}T00:00:00`);
-    if (Number.isNaN(base.getTime())) return "";
-    base.setMonth(base.getMonth() + months);
-    return base.toLocaleDateString("pt-BR");
-  } catch {
-    return "";
-  }
+  const base = new Date(cycleStartDate);
+  if (Number.isNaN(base.getTime())) return "";
+  base.setMonth(base.getMonth() + months);
+  return base.toLocaleDateString("pt-BR");
 }
 
 function formatDateTime(dateValue: string | null | undefined): string {
@@ -66,6 +62,26 @@ function toProgressValue(period: EnrollmentPeriod): number {
   if (period.totalSlots <= 0) return 0;
   const raw = (period.filledSlots / period.totalSlots) * 100;
   return Math.max(0, Math.min(100, raw));
+}
+
+interface CycleStatusBadge {
+  label: string;
+  className: string;
+  supportText?: string;
+}
+
+// Ciclo vivo pode estar com janela aberta ou não (ex.: janela original
+// fechou, ainda sem repescagem) — as duas situações são bem diferentes e
+// não devem compartilhar o mesmo selo "ABERTO".
+function getActiveCycleStatus(period: EnrollmentPeriod): CycleStatusBadge {
+  if (period.startDate && period.endDate) {
+    return { label: "INSCRIÇÃO ABERTA", className: "text-success" };
+  }
+  return {
+    label: "CICLO ATIVO — SEM INSCRIÇÃO ABERTA",
+    className: "text-warning",
+    supportText: "A equipe pode continuar processando a fila normalmente.",
+  };
 }
 
 function buildFallbackStudent(studentId: string): StudentRecord {
@@ -94,10 +110,6 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [closingPeriod, setClosingPeriod] = useState(false);
 
-  const [showReopenConfirm, setShowReopenConfirm] = useState(false);
-  const [pendingReopenId, setPendingReopenId] = useState<string | null>(null);
-  const [reopeningPeriod, setReopeningPeriod] = useState(false);
-
   const [showScheduleResetModal, setShowScheduleResetModal] = useState(false);
   const [scheduleResetSaving, setScheduleResetSaving] = useState(false);
   const [scheduleResetError, setScheduleResetError] = useState("");
@@ -115,6 +127,11 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
     [students],
   );
 
+  const cycleStatus = useMemo(
+    () => (activePeriod ? getActiveCycleStatus(activePeriod) : null),
+    [activePeriod],
+  );
+
   const mapRequestToWaitlistEntry = useCallback(
     (request: LicenseRequestRecord): WaitlistEntry => ({
       request,
@@ -123,10 +140,6 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
     }),
     [studentMap],
   );
-
-  const latestClosedPeriod = useMemo(() => {
-    return periods.find((period) => !period.active) ?? null;
-  }, [periods]);
 
   const waitlistEntries = useMemo(() => {
     return waitlistRequests
@@ -245,29 +258,6 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
     }
   };
 
-  const handleReopen = (periodId: string) => {
-    setPendingReopenId(periodId);
-    setShowReopenConfirm(true);
-  };
-
-  const handleReopenConfirmed = async () => {
-    if (!pendingReopenId) return;
-    setReopeningPeriod(true);
-    try {
-      await enrollmentPeriodService.reopen(pendingReopenId);
-      setShowReopenConfirm(false);
-      setPendingReopenId(null);
-      toast.success("Período reaberto com sucesso.");
-      await loadData();
-    } catch (err: unknown) {
-      const apiError = err as { message?: string };
-      toast.error(apiError.message ?? "Falha ao reabrir o período.");
-      setShowReopenConfirm(false);
-    } finally {
-      setReopeningPeriod(false);
-    }
-  };
-
   // Note: preview/confirm release flow removed. Use the Bus UI for releases.
 
   const handleOpenScheduleReset = () => {
@@ -361,20 +351,9 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                       </Button>
                     </>
                   ) : (
-                    <>
-                      <Button variant="primary" size="sm" onClick={handleOpenCreate}>
-                        Abrir novo período
-                      </Button>
-                      {latestClosedPeriod && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => void handleReopen(latestClosedPeriod._id)}
-                        >
-                          Reabrir último período
-                        </Button>
-                      )}
-                    </>
+                    <Button variant="primary" size="sm" onClick={handleOpenCreate}>
+                      Abrir novo período
+                    </Button>
                   )}
                 </div>
               </div>
@@ -385,9 +364,17 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
                     <div className="rounded-xl border border-outline-variant bg-surface p-3">
-                      <p className="text-xs text-on-surface-variant">Período</p>
+                      <p className="text-xs text-on-surface-variant">Ciclo iniciado em</p>
                       <p className="font-medium text-on-surface">
-                        {formatDate(activePeriod.startDate)} - {formatDate(activePeriod.endDate)}
+                        {formatDate(activePeriod.cycleStartDate)}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-outline-variant bg-surface p-3">
+                      <p className="text-xs text-on-surface-variant">Janela de inscrição atual</p>
+                      <p className="font-medium text-on-surface">
+                        {activePeriod.startDate && activePeriod.endDate
+                          ? `${formatDate(activePeriod.startDate)} - ${formatDate(activePeriod.endDate)}`
+                          : "Nenhuma janela aberta"}
                       </p>
                     </div>
                     <div className="rounded-xl border border-outline-variant bg-surface p-3">
@@ -406,7 +393,14 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                     </div>
                     <div className="rounded-xl border border-outline-variant bg-surface p-3">
                       <p className="text-xs text-on-surface-variant">Status</p>
-                      <p className="font-medium text-success">ABERTO</p>
+                      <p className={`font-medium ${cycleStatus?.className}`}>
+                        {cycleStatus?.label}
+                      </p>
+                      {cycleStatus?.supportText && (
+                        <p className="text-xs text-on-surface-variant mt-0.5">
+                          {cycleStatus.supportText}
+                        </p>
+                      )}
                     </div>
                     <div className="rounded-xl border border-outline-variant bg-surface p-3">
                       <p className="text-xs text-on-surface-variant">Fila de espera</p>
@@ -449,7 +443,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
             </PanelCard>
 
             <PanelCard as="section" className="p-5">
-              <h2 className="mb-4 text-lg font-semibold text-on-surface">Histórico de períodos</h2>
+              <h2 className="mb-4 text-lg font-semibold text-on-surface">Histórico de ciclos</h2>
 
               {periods.length === 0 ? (
                 <p className="text-sm text-on-surface-variant">Nenhum período cadastrado ainda.</p>
@@ -472,7 +466,6 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                         <th className="px-3 py-2 text-left font-medium">Ocupadas (vaga-dia)</th>
                         <th className="px-3 py-2 text-left font-medium">Validade</th>
                         <th className="px-3 py-2 text-left font-medium">Status</th>
-                        <th className="px-3 py-2 text-left font-medium">Ação</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -497,19 +490,6 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                              >
                               {period.active ? "ABERTO" : "ENCERRADO"}
                             </span>
-                          </td>
-                          <td className="px-3 py-2">
-                            {!period.active ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => void handleReopen(period._id)}
-                              >
-                                Reabrir
-                              </Button>
-                            ) : (
-                              <span className="text-xs text-on-surface-variant">-</span>
-                            )}
                           </td>
                         </tr>
                       ))}
@@ -579,19 +559,6 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
         icon={AlertTriangle}
         variant="danger"
         confirmLabel="Encerrar"
-        cancelLabel="Cancelar"
-      />
-
-      <ConfirmModal
-        open={showReopenConfirm}
-        onClose={() => { setShowReopenConfirm(false); setPendingReopenId(null); }}
-        onConfirm={handleReopenConfirmed}
-        loading={reopeningPeriod}
-        title="Reabrir período"
-        description="Deseja reabrir este período de inscrição? Ele voltará a aceitar novas solicitações de alunos."
-        icon={RotateCcw}
-        variant="warning"
-        confirmLabel="Reabrir"
         cancelLabel="Cancelar"
       />
 
