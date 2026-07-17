@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
-              "frame-src 'self' data: blob:",
+              `frame-src 'self' data: blob:${storagePublicOrigin ? ` ${storagePublicOrigin}` : ""}`,
               "frame-ancestors 'none'",
               "upgrade-insecure-requests",
             ].join("; "),
