@@ -37,11 +37,34 @@ const EMPTY_ERRORS: FormErrors = {
 const SCOPE_OPTIONS: Array<{
   value: EnrollmentWindowEligibilityScope;
   label: string;
+  description: string;
 }> = [
-  { value: "all", label: "Todos os alunos" },
-  { value: "has_university", label: "Só alunos com faculdade cadastrada" },
-  { value: "specific_universities", label: "Faculdades específicas" },
+  {
+    value: "all",
+    label: "Todos os alunos",
+    description: "Qualquer aluno pode enviar solicitação nessa janela.",
+  },
+  {
+    value: "has_university",
+    label: "Só alunos com faculdade cadastrada",
+    description: "Exclui alunos sem faculdade vinculada ao cadastro.",
+  },
+  {
+    value: "specific_universities",
+    label: "Faculdades específicas",
+    description: "Restringe a uma ou mais faculdades escolhidas abaixo.",
+  },
 ];
+
+function optionItemClass(selected: boolean): string {
+  const base =
+    "flex items-start gap-3 w-full px-4 py-3 rounded-xl text-sm border transition-all cursor-pointer";
+  return `${base} ${
+    selected
+      ? "border-primary bg-primary/10 text-primary"
+      : "border-outline-variant bg-surface-container-low text-on-surface hover:border-primary/40"
+  }`;
+}
 
 export function OpenEnrollmentWindowModal({
   open,
@@ -193,31 +216,44 @@ export function OpenEnrollmentWindowModal({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-on-surface">
+          <label className="mb-1.5 block text-sm font-medium text-on-surface">
             Quem pode participar
           </label>
-          <div className="space-y-1.5">
-            {SCOPE_OPTIONS.map((option) => (
-              <label key={option.value} className="flex items-center gap-2 text-sm text-on-surface">
-                <input
-                  type="radio"
-                  name="eligibilityScope"
-                  value={option.value}
-                  checked={eligibilityScope === option.value}
-                  onChange={() => {
-                    setEligibilityScope(option.value);
-                    setErrors((prev) => ({ ...prev, eligibleUniversityIds: "" }));
-                  }}
-                />
-                {option.label}
-              </label>
-            ))}
+          <div className="space-y-2">
+            {SCOPE_OPTIONS.map((option) => {
+              const selected = eligibilityScope === option.value;
+              return (
+                <label key={option.value} className={optionItemClass(selected)}>
+                  <input
+                    type="radio"
+                    name="eligibilityScope"
+                    value={option.value}
+                    checked={selected}
+                    onChange={() => {
+                      setEligibilityScope(option.value);
+                      setErrors((prev) => ({ ...prev, eligibleUniversityIds: "" }));
+                    }}
+                    className="mt-0.5 accent-primary"
+                  />
+                  <span>
+                    <span className="block font-medium">{option.label}</span>
+                    <span
+                      className={`block text-xs ${
+                        selected ? "text-primary/80" : "text-on-surface-variant"
+                      }`}
+                    >
+                      {option.description}
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
           </div>
         </div>
 
         {eligibilityScope === "specific_universities" && (
           <div>
-            <label className="mb-1 block text-sm font-medium text-on-surface">Faculdades</label>
+            <label className="mb-1.5 block text-sm font-medium text-on-surface">Faculdades</label>
             {universitiesLoading ? (
               <p className="text-sm text-on-surface-variant">Carregando faculdades...</p>
             ) : universitiesError ? (
@@ -225,17 +261,30 @@ export function OpenEnrollmentWindowModal({
             ) : universities.length === 0 ? (
               <p className="text-sm text-on-surface-variant">Nenhuma faculdade cadastrada.</p>
             ) : (
-              <div className="max-h-48 space-y-1.5 overflow-y-auto rounded-xl border border-outline-variant p-2">
-                {universities.map((university) => (
-                  <label key={university._id} className="flex items-center gap-2 text-sm text-on-surface">
-                    <input
-                      type="checkbox"
-                      checked={selectedUniversityIds.includes(university._id)}
-                      onChange={() => toggleUniversity(university._id)}
-                    />
-                    {university.acronym} — {university.name}
-                  </label>
-                ))}
+              <div className="max-h-48 space-y-1.5 overflow-y-auto rounded-xl border border-outline-variant bg-surface-container-low p-2">
+                {universities.map((university) => {
+                  const selected = selectedUniversityIds.includes(university._id);
+                  return (
+                    <label
+                      key={university._id}
+                      className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm border transition-all cursor-pointer ${
+                        selected
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-transparent text-on-surface hover:bg-surface-container-high"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleUniversity(university._id)}
+                        className="accent-primary"
+                      />
+                      <span>
+                        {university.acronym} — {university.name}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             )}
             {errors.eligibleUniversityIds && (
