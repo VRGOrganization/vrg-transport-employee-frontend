@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bell, Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { EmptyState, ErrorState } from "@/components/ui/states";
+import { Tabs } from "@/components/ui/Tabs";
 import { CreateNoticeModal } from "./CreateNoticeModal";
 import { NoticeListItem } from "./NoticeListItem";
 import { UndoPublishBanner } from "./UndoPublishBanner";
@@ -14,6 +15,13 @@ interface NoticesPageProps {
   role: "admin" | "employee";
 }
 
+type NoticeTab = "staff" | "system";
+
+const TAB_ITEMS = [
+  { key: "staff" as NoticeTab, label: "Enviadas por funcionários", icon: "person" },
+  { key: "system" as NoticeTab, label: "Sistema", icon: "smart_toy" },
+];
+
 export function NoticesPage({ role }: NoticesPageProps) {
   void role;
 
@@ -22,6 +30,7 @@ export function NoticesPage({ role }: NoticesPageProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [tab, setTab] = useState<NoticeTab>("staff");
 
   const loadNotices = useCallback(async () => {
     setLoading(true);
@@ -55,6 +64,10 @@ export function NoticesPage({ role }: NoticesPageProps) {
     setNotices((current) => current.filter((notice) => notice.id !== noticeId));
     setRecentNotice((current) => (current?.id === noticeId ? null : current));
   };
+
+  const visibleNotices = notices.filter((notice) =>
+    tab === "system" ? notice.authorRole === "system" : notice.authorRole !== "system",
+  );
 
   const handleUndo = () => {
     if (!recentNotice) return;
@@ -94,6 +107,8 @@ export function NoticesPage({ role }: NoticesPageProps) {
             <UndoPublishBanner notice={visibleRecentNotice} onUndo={handleUndo} />
           )}
 
+          <Tabs items={TAB_ITEMS} value={tab} onChange={setTab} />
+
           <section className="space-y-3" aria-label="Lista de avisos">
             {loading && (
               <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 text-sm text-on-surface-variant">
@@ -103,17 +118,21 @@ export function NoticesPage({ role }: NoticesPageProps) {
 
             {!loading && error && <ErrorState message={error} onRetry={loadNotices} />}
 
-            {!loading && !error && notices.length === 0 && (
+            {!loading && !error && visibleNotices.length === 0 && (
               <EmptyState
                 icon={Bell}
                 title="Nenhum aviso criado"
-                description="Crie uma mensagem ou enquete para estudantes."
+                description={
+                  tab === "system"
+                    ? "Nenhum aviso de sistema disparado ainda."
+                    : "Crie uma mensagem ou enquete para estudantes."
+                }
               />
             )}
 
             {!loading &&
               !error &&
-              notices.map((notice) => (
+              visibleNotices.map((notice) => (
                 <NoticeListItem key={notice.id} notice={notice} onDeleted={handleDeleted} />
               ))}
           </section>

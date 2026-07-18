@@ -55,4 +55,25 @@ describe("NoticesPage", () => {
     await waitFor(() => expect(screen.getByText("Aviso importante")).toBeInTheDocument());
     expect(listNoticesMock).toHaveBeenCalledWith();
   });
+
+  it("aba 'Sistema'/'funcionários' filtra a mesma lista client-side por authorRole", async () => {
+    listNoticesMock.mockResolvedValue([
+      makeNotice({ id: "n1", authorRole: "admin", title: "Aviso do admin" }),
+      makeNotice({ id: "n2", authorRole: "employee", title: "Aviso do funcionário" }),
+      makeNotice({ id: "n3", authorRole: "system", title: "Aviso automático" }),
+    ]);
+
+    render(<NoticesPage role="admin" />);
+
+    await waitFor(() => expect(screen.getByText("Aviso do admin")).toBeInTheDocument());
+    expect(screen.getByText("Aviso do funcionário")).toBeInTheDocument();
+    expect(screen.queryByText("Aviso automático")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /sistema/i }));
+
+    expect(screen.getByText("Aviso automático")).toBeInTheDocument();
+    expect(screen.queryByText("Aviso do admin")).not.toBeInTheDocument();
+    expect(screen.queryByText("Aviso do funcionário")).not.toBeInTheDocument();
+    expect(listNoticesMock).toHaveBeenCalledTimes(1);
+  });
 });

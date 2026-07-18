@@ -58,7 +58,7 @@ export function NoticeListItem({ notice, onDeleted }: Props) {
             Ver resultados
           </Button>
         )}
-        {notice.status !== "cancelled" && (
+        {notice.authorRole !== "system" && notice.status !== "cancelled" && (
           <DeleteNoticeButton noticeId={notice.id} onDeleted={onDeleted} />
         )}
       </div>

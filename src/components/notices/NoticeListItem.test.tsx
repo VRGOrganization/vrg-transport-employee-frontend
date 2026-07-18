@@ -67,6 +67,16 @@ describe("NoticeListItem", () => {
     expect(screen.queryByRole("button", { name: /apagar aviso/i })).not.toBeInTheDocument();
   });
 
+  it("esconde botão de apagar para aviso de sistema, mesmo com status !== cancelled", () => {
+    render(
+      <NoticeListItem
+        notice={makeNotice({ authorRole: "system", status: "published" })}
+        onDeleted={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: /apagar aviso/i })).not.toBeInTheDocument();
+  });
+
   it("mostra botão de apagar quando status !== cancelled e ele chama onDeleted ao confirmar", async () => {
     deleteMock.mockResolvedValueOnce(undefined);
     const onDeleted = vi.fn();
