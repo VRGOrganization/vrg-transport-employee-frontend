@@ -25,6 +25,7 @@ const makeNotice = (): Notice => ({
   status: "scheduled",
   publishAt: new Date().toISOString(),
   expiresAt: new Date().toISOString(),
+  pinned: false,
 });
 
 describe("CreateNoticeModal", () => {
@@ -100,6 +101,36 @@ describe("CreateNoticeModal", () => {
         expect.objectContaining({ allowMultiple: true }),
       ),
     );
+  });
+
+  it("checkbox 'Fixar no painel do aluno' está presente para mensagem e enquete, e vai no payload", async () => {
+    const notice = makeNotice();
+    createNoticeMock.mockResolvedValueOnce(notice);
+    render(<CreateNoticeModal open onClose={vi.fn()} onCreated={vi.fn()} />);
+
+    const pinnedToggle = screen.getByRole("switch", { name: /fixar no painel do aluno/i });
+    expect(pinnedToggle).toHaveAttribute("aria-checked", "false");
+
+    await userEvent.click(pinnedToggle);
+    expect(pinnedToggle).toHaveAttribute("aria-checked", "true");
+
+    await userEvent.type(screen.getByLabelText("Título"), "Aviso importante");
+    await userEvent.click(screen.getByRole("button", { name: /enviar/i }));
+    await userEvent.click(screen.getByRole("button", { name: /sim, publicar/i }));
+
+    await waitFor(() =>
+      expect(createNoticeMock).toHaveBeenCalledWith(
+        expect.objectContaining({ pinned: true }),
+      ),
+    );
+  });
+
+  it("checkbox 'Fixar' também aparece no formulário de enquete", async () => {
+    render(<CreateNoticeModal open onClose={vi.fn()} onCreated={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole("radio", { name: "Enquete" }));
+
+    expect(screen.getByRole("switch", { name: /fixar no painel do aluno/i })).toBeInTheDocument();
   });
 
   it("clicar Enviar abre modal de confirmação antes de chamar createNotice", async () => {

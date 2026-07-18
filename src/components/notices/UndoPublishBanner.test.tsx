@@ -27,6 +27,7 @@ const makeNotice = (publishAt: string): Notice => ({
   status: "scheduled",
   publishAt,
   expiresAt: new Date(Date.now() + 86400000).toISOString(),
+  pinned: false,
 });
 
 describe("UndoPublishBanner", () => {

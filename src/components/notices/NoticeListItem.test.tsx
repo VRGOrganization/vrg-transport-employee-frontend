@@ -28,6 +28,7 @@ const makeNotice = (overrides: Partial<Notice> = {}): Notice => ({
   status: "published",
   publishAt: new Date().toISOString(),
   expiresAt: new Date().toISOString(),
+  pinned: false,
   ...overrides,
 });
 

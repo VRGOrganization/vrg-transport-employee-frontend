@@ -13,7 +13,7 @@ export interface NoticePollOption {
 export interface Notice {
   id: string;
   authorName: string;
-  authorRole: "admin" | "employee";
+  authorRole: "admin" | "employee" | "system";
   type: NoticeType;
   title: string;
   body: string | null;
@@ -22,6 +22,7 @@ export interface Notice {
   status: NoticeStatus;
   publishAt: string;
   expiresAt: string;
+  pinned: boolean;
 }
 
 export interface CreateNoticeInput {
@@ -31,6 +32,7 @@ export interface CreateNoticeInput {
   pollOptions?: string[];
   allowMultiple?: boolean;
   expiresInDays: number;
+  pinned?: boolean;
 }
 
 export interface PollResultAggregate {

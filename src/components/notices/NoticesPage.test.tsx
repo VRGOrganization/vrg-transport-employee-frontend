@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NoticesPage } from "./NoticesPage";
 import { noticeService } from "@/services/noticeService";
@@ -29,6 +30,7 @@ const makeNotice = (overrides: Partial<Notice> = {}): Notice => ({
   status: "published",
   publishAt: "2026-01-01T00:00:25.000Z",
   expiresAt: "2026-01-06T00:00:25.000Z",
+  pinned: false,
   ...overrides,
 });
 

@@ -28,6 +28,7 @@ export function CreateNoticeModal({ open, onClose, onCreated }: Props) {
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [allowMultiple, setAllowMultiple] = useState(false);
   const [expiresInDays, setExpiresInDays] = useState("7");
+  const [pinned, setPinned] = useState(false);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -39,6 +40,7 @@ export function CreateNoticeModal({ open, onClose, onCreated }: Props) {
     setPollOptions(["", ""]);
     setAllowMultiple(false);
     setExpiresInDays("7");
+    setPinned(false);
     setError("");
     setConfirming(false);
     setLoading(false);
@@ -74,7 +76,7 @@ export function CreateNoticeModal({ open, onClose, onCreated }: Props) {
   };
 
   const buildInput = (): CreateNoticeInput => {
-    const base = { type, title, expiresInDays: Number(expiresInDays) };
+    const base = { type, title, expiresInDays: Number(expiresInDays), pinned };
     if (type === "poll") {
       return {
         ...base,
@@ -264,6 +266,31 @@ export function CreateNoticeModal({ open, onClose, onCreated }: Props) {
             ))}
           </div>
         </FieldShell>
+
+        <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border border-on-surface-variant">
+          <span id="pinned-label" className="text-sm text-on-surface">
+            Fixar no painel do aluno
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={pinned}
+            aria-labelledby="pinned-label"
+            onClick={() => setPinned((v) => !v)}
+            className={cn(
+              "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors cursor-pointer",
+              pinned ? "bg-primary" : "bg-surface-container-high border border-on-surface-variant",
+            )}
+          >
+            <span
+              aria-hidden="true"
+              className={cn(
+                "inline-block size-4 transform rounded-full bg-white transition-transform",
+                pinned ? "translate-x-6" : "translate-x-1",
+              )}
+            />
+          </button>
+        </div>
 
         {error && <p className="text-sm text-error">{error}</p>}
 
