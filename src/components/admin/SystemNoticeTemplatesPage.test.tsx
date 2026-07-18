@@ -40,10 +40,31 @@ describe("SystemNoticeTemplatesPage", () => {
     render(<SystemNoticeTemplatesPage />);
 
     await waitFor(() => expect(screen.getByLabelText("Título de WINDOW_OPEN")).toBeInTheDocument());
-    expect(screen.getByText("Abertura de raia")).toBeInTheDocument();
-    expect(screen.getByText("Fechamento de raia")).toBeInTheDocument();
-    expect(screen.getByText("Reset da piscina")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Abertura de raia" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Fechamento de raia" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Reset da piscina" })).toBeInTheDocument();
     expect(screen.getByLabelText("Título de CYCLE_RESET_1")).toBeInTheDocument();
+  });
+
+  it("cada item mostra rótulo próprio distinguindo os templates do mesmo grupo", async () => {
+    render(<SystemNoticeTemplatesPage />);
+
+    await waitFor(() => expect(screen.getByLabelText("Título de WINDOW_OPEN")).toBeInTheDocument());
+    expect(screen.getByText("Fechamento de raia — 7 dias antes")).toBeInTheDocument();
+    expect(screen.getByText("Fechamento de raia — 3 dias antes")).toBeInTheDocument();
+    expect(screen.getByText("Fechamento de raia — 1 dia antes")).toBeInTheDocument();
+    expect(screen.getByText("Reset da piscina — 7 dias antes")).toBeInTheDocument();
+  });
+
+  it("mostra estado vazio explícito quando a API não retorna templates", async () => {
+    listMock.mockReset();
+    listMock.mockResolvedValue([]);
+    render(<SystemNoticeTemplatesPage />);
+
+    await waitFor(() =>
+      expect(screen.getByText("Nenhum template de sistema encontrado")).toBeInTheDocument(),
+    );
+    expect(screen.queryByLabelText("Título de WINDOW_OPEN")).not.toBeInTheDocument();
   });
 
   it("botão salvar fica desabilitado até o item ser alterado, e chama a API correta", async () => {

@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Save } from "lucide-react";
+import { MessageSquareWarning, Save } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { FieldShell } from "@/components/ui/FieldShell";
-import { ErrorState } from "@/components/ui/states";
+import { EmptyState, ErrorState } from "@/components/ui/states";
 import { toast } from "@/lib/toast";
 import { systemNoticeTemplateService } from "@/services/systemNoticeTemplateService";
 import type {
@@ -23,6 +23,20 @@ const GROUPS: TemplateGroup[] = [
   { label: "Fechamento de raia", keys: ["WINDOW_CLOSE_7", "WINDOW_CLOSE_3", "WINDOW_CLOSE_1"] },
   { label: "Reset da piscina", keys: ["CYCLE_RESET_7", "CYCLE_RESET_3", "CYCLE_RESET_1"] },
 ];
+
+const ITEM_SUFFIXES: Partial<Record<SystemNoticeTemplateKey, string>> = {
+  WINDOW_CLOSE_7: "7 dias antes",
+  WINDOW_CLOSE_3: "3 dias antes",
+  WINDOW_CLOSE_1: "1 dia antes",
+  CYCLE_RESET_7: "7 dias antes",
+  CYCLE_RESET_3: "3 dias antes",
+  CYCLE_RESET_1: "1 dia antes",
+};
+
+function itemLabel(groupLabel: string, key: SystemNoticeTemplateKey): string {
+  const suffix = ITEM_SUFFIXES[key];
+  return suffix ? `${groupLabel} — ${suffix}` : groupLabel;
+}
 
 type Draft = Record<SystemNoticeTemplateKey, { title: string; body: string }>;
 
@@ -103,7 +117,9 @@ export function SystemNoticeTemplatesPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-on-surface">Mensagens de sistema</h1>
         <p className="text-sm text-on-surface-muted mt-1">
-          Edite o título e o corpo dos avisos automáticos enviados aos alunos.
+          Edite o título e o corpo dos avisos automáticos enviados aos alunos. O
+          texto salvo aqui é o que será usado no próximo disparo automático de
+          cada evento.
         </p>
       </div>
 
@@ -117,7 +133,15 @@ export function SystemNoticeTemplatesPage() {
 
       {!loading && error && <ErrorState message={error} onRetry={() => void load()} />}
 
-      {!loading && !error && (
+      {!loading && !error && templates.length === 0 && (
+        <EmptyState
+          icon={MessageSquareWarning}
+          title="Nenhum template de sistema encontrado"
+          description="A API não retornou nenhum dos 7 templates esperados. Verifique se o seed de templates de sistema foi executado no ambiente."
+        />
+      )}
+
+      {!loading && !error && templates.length > 0 && (
         <div className="flex flex-col gap-8">
           {GROUPS.map((group) => (
             <section key={group.label}>
@@ -136,6 +160,9 @@ export function SystemNoticeTemplatesPage() {
                       key={key}
                       className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-5 space-y-3"
                     >
+                      <p className="text-sm font-semibold text-on-surface">
+                        {itemLabel(group.label, key)}
+                      </p>
                       <FieldShell label="Título" required>
                         <Input
                           aria-label={`Título de ${key}`}
