@@ -36,28 +36,7 @@ const LEVEL_LABELS: Record<number, string> = {
 };
 
 function criterionLabel(c: PriorityRule["criteria"][number]): string {
-  switch (c.type) {
-    case "has_disability":
-      return "PCD";
-    case "shift":
-      return `Turno: ${c.value}`;
-    case "transport_mode":
-      return `Transporte: ${c.value}`;
-    case "university_id":
-      return "Faculdade específica";
-    case "course_semester":
-      return (c.operator === "less_or_equal" || c.operator === "less_than")
-        ? `Até ${c.value}º semestre`
-        : `A partir do ${c.value}º semestre`;
-    case "distance_km":
-      return (c.operator === "greater_than" || c.operator === "greater_or_equal")
-        ? `Mais de ${c.value} km`
-        : `Menos de ${c.value} km`;
-    default: {
-      const val = Array.isArray(c.value) ? c.value.join(", ") : String(c.value ?? "");
-      return val ? `${c.type}: ${val}` : c.type;
-    }
-  }
+  return c.type === "has_disability" ? "PCD" : "Já usa o sistema de transporte";
 }
 
 export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {

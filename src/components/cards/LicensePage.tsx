@@ -86,6 +86,9 @@ export function LicensePage({ role }: LicensePageProps) {
     governmentImage,
     proofOfResidenceImage,
     transportCardProofImage,
+    alreadyUsesTransport,
+    disabilityProofImage,
+    hasDisability,
     selectedLicensePreview,
     selectStudent,
     clearSelection,
@@ -253,6 +256,9 @@ export function LicensePage({ role }: LicensePageProps) {
                 governmentImage={governmentImage}
                 proofOfResidenceImage={proofOfResidenceImage}
                 transportCardProofImage={transportCardProofImage}
+                alreadyUsesTransport={alreadyUsesTransport}
+                disabilityProofImage={disabilityProofImage}
+                hasDisability={hasDisability}
                 selectedLicensePreview={selectedLicensePreview}
                 onReload={reload}
                 onOpenRejectModal={() => setRejectModalOpen(true)}
@@ -288,6 +294,8 @@ export function LicensePage({ role }: LicensePageProps) {
       {revisionModalOpen && currentLicenseRequest && (
         <RequestRevisionModal
           currentLicenseRequest={currentLicenseRequest}
+          alreadyUsesTransport={alreadyUsesTransport}
+          hasDisability={hasDisability}
           onClose={() => setRevisionModalOpen(false)}
           onSuccess={setApproveMessage}
           onReload={reload}

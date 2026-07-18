@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Plus, AlertTriangle } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { CriterionRow } from "@/components/admin/CriterionRow";
 import { priorityRuleService } from "@/services/priorityRuleService";
-import { universityApi } from "@/lib/universityApi";
-import type { PriorityRule, Criterion, CriteriaLogic } from "@/types/priorityRule";
-import type { University } from "@/types/university.types";
+import type { PriorityRule, CriteriaLogic } from "@/types/priorityRule";
+import { CRITERION_TYPE_LABELS } from "@/types/priorityRule";
 
 interface Props {
   open: boolean;
@@ -24,12 +22,21 @@ interface FormState {
   description: string;
   criteriaLogic: CriteriaLogic;
   active: boolean;
-  criteria: Criterion[];
+  alreadyUsesTransport: boolean;
+  hasDisability: boolean;
 }
 
 function buildFormState(rule: PriorityRule | null): FormState {
   if (!rule) {
-    return { level: "1", name: "", description: "", criteriaLogic: "all", active: true, criteria: [] };
+    return {
+      level: "1",
+      name: "",
+      description: "",
+      criteriaLogic: "all",
+      active: true,
+      alreadyUsesTransport: false,
+      hasDisability: false,
+    };
   }
   return {
     level:         String(rule.level),
@@ -37,12 +44,8 @@ function buildFormState(rule: PriorityRule | null): FormState {
     description:   rule.description ?? "",
     criteriaLogic: rule.criteriaLogic,
     active:        rule.active,
-    criteria:      rule.criteria.map((c) => ({
-      ...c,
-      value: Array.isArray(c.value)
-        ? c.value.join(", ")
-        : c.value !== undefined ? String(c.value) : "",
-    })),
+    alreadyUsesTransport: rule.criteria.some((c) => c.type === "already_uses_transport"),
+    hasDisability:        rule.criteria.some((c) => c.type === "has_disability"),
   };
 }
 
@@ -65,7 +68,6 @@ export function PriorityRuleModal({ open, initial, onClose, onSaved, onDeleted }
   const [errors, setErrors]   = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
-  const [universities, setUniversities] = useState<University[]>([]);
 
   const [lastId, setLastId] = useState(initial?._id ?? null);
   if ((initial?._id ?? null) !== lastId) {
@@ -76,31 +78,12 @@ export function PriorityRuleModal({ open, initial, onClose, onSaved, onDeleted }
     setView("form");
   }
 
-  useEffect(() => {
-    if (!open) return;
-    universityApi.list().then(setUniversities).catch(() => {});
-  }, [open]);
-
   const setField = <K extends keyof FormState>(key: K, val: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: val }));
     setErrors((prev) => { const n = { ...prev }; delete n[key]; return n; });
   };
 
-  const updateCriterion = (idx: number, c: Criterion) =>
-    setForm((prev) => {
-      const criteria = [...prev.criteria];
-      criteria[idx] = c;
-      return { ...prev, criteria };
-    });
-
-  const addCriterion = () =>
-    setForm((prev) => ({
-      ...prev,
-      criteria: [...prev.criteria, { type: "shift", operator: "equals", value: "" }],
-    }));
-
-  const removeCriterion = (idx: number) =>
-    setForm((prev) => ({ ...prev, criteria: prev.criteria.filter((_, i) => i !== idx) }));
+  const bothChecked = form.alreadyUsesTransport && form.hasDisability;
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
@@ -120,18 +103,10 @@ export function PriorityRuleModal({ open, initial, onClose, onSaved, onDeleted }
     criteriaLogic: form.criteriaLogic,
     sortOrder:     initial?.sortOrder ?? 0,
     active:        form.active,
-    criteria: form.criteria.map((c) => ({
-      type:     c.type,
-      operator: c.operator,
-      ...(c.operator === "is_true" || c.operator === "is_false"
-        ? {}
-        : {
-            value:
-              c.operator === "in" || c.operator === "not_in"
-                ? String(c.value ?? "").split(",").map((s) => s.trim()).filter(Boolean)
-                : String(c.value ?? ""),
-          }),
-    })),
+    criteria: [
+      ...(form.alreadyUsesTransport ? [{ type: "already_uses_transport" as const }] : []),
+      ...(form.hasDisability ? [{ type: "has_disability" as const }] : []),
+    ],
   });
 
   const handleSubmit = async () => {
@@ -237,64 +212,61 @@ export function PriorityRuleModal({ open, initial, onClose, onSaved, onDeleted }
           />
         </div>
 
-        {/* Como aplicar as condições */}
-        <div className="flex flex-col gap-1.5">
-          <Label>Como aplicar as condições</Label>
-          <div className="flex gap-2">
-            {(["all", "any"] as CriteriaLogic[]).map((logic) => (
-              <button
-                key={logic}
-                type="button"
-                onClick={() => setField("criteriaLogic", logic)}
-                className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 ${
-                  form.criteriaLogic === logic
-                    ? "bg-primary text-white border-primary"
-                    : "border-outline-variant text-on-surface-variant hover:border-primary/40 hover:text-on-surface"
-                }`}
-              >
-                {logic === "all" ? "O aluno deve atender TODAS as condições" : "Basta atender UMA das condições"}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Condições */}
         <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-on-surface-variant">
-              Condições
-              {form.criteria.length > 0 && (
-                <span className="ml-1.5 px-1.5 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold">
-                  {form.criteria.length}
-                </span>
-              )}
-            </p>
-            <button
-              type="button"
-              onClick={addCriterion}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/40 bg-primary/5 text-primary text-xs font-semibold hover:bg-primary/10 hover:border-primary/70 transition-all cursor-pointer"
-            >
-              <Plus className="size-3.5" />
-              Adicionar condição
-            </button>
-          </div>
+          <Label>Condições</Label>
 
-          {form.criteria.length === 0 && (
+          <label className="flex items-center gap-2.5 px-3 py-2.5 bg-surface-container rounded-xl border border-outline-variant/40 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.alreadyUsesTransport}
+              onChange={(e) => setField("alreadyUsesTransport", e.target.checked)}
+              className="size-4 accent-primary cursor-pointer"
+            />
+            <span className="text-sm text-on-surface">
+              {CRITERION_TYPE_LABELS.already_uses_transport}
+            </span>
+          </label>
+
+          <label className="flex items-center gap-2.5 px-3 py-2.5 bg-surface-container rounded-xl border border-outline-variant/40 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.hasDisability}
+              onChange={(e) => setField("hasDisability", e.target.checked)}
+              className="size-4 accent-primary cursor-pointer"
+            />
+            <span className="text-sm text-on-surface">
+              {CRITERION_TYPE_LABELS.has_disability}
+            </span>
+          </label>
+
+          {!form.alreadyUsesTransport && !form.hasDisability && (
             <p className="text-xs text-on-surface-variant/60 italic px-1">
-              Nenhuma condição adicionada — esta regra será aplicada a todos os alunos em situação de empate.
+              Nenhuma condição marcada — esta regra será aplicada a todos os alunos em situação de empate.
             </p>
           )}
 
-          {form.criteria.map((criterion, idx) => (
-            <CriterionRow
-              key={idx}
-              criterion={criterion}
-              index={idx}
-              universities={universities}
-              onChange={(c) => updateCriterion(idx, c)}
-              onRemove={() => removeCriterion(idx)}
-            />
-          ))}
+          {bothChecked && (
+            <div className="flex flex-col gap-1.5 mt-1">
+              <Label>Como aplicar as duas condições</Label>
+              <div className="flex gap-2">
+                {(["all", "any"] as CriteriaLogic[]).map((logic) => (
+                  <button
+                    key={logic}
+                    type="button"
+                    onClick={() => setField("criteriaLogic", logic)}
+                    className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+                      form.criteriaLogic === logic
+                        ? "bg-primary text-white border-primary"
+                        : "border-outline-variant text-on-surface-variant hover:border-primary/40 hover:text-on-surface"
+                    }`}
+                  >
+                    {logic === "all" ? "O aluno deve atender TODAS as condições" : "Basta atender UMA das condições"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Status */}

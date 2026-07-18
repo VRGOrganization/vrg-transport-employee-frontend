@@ -12,6 +12,8 @@ import {
 
 interface RequestRevisionModalProps {
   currentLicenseRequest: LicenseRequestRecord;
+  alreadyUsesTransport: boolean;
+  hasDisability: boolean;
   onClose: () => void;
   onSuccess: (message: string) => void;
   onReload: () => Promise<void>;
@@ -36,15 +38,20 @@ const REVISION_FIELD_KEYS: RevisionFieldKey[] = [
 
 export function RequestRevisionModal({
   currentLicenseRequest,
+  alreadyUsesTransport,
+  hasDisability,
   onClose,
   onSuccess,
   onReload,
 }: RequestRevisionModalProps) {
-  // O comprovante de uso do transporte só é revisável quando o aluno declarou
-  // que já utiliza o sistema (do contrário ele nunca enviou esse documento).
-  const revisionDocuments: PhotoType[] = currentLicenseRequest.alreadyUsesTransport
-    ? [...REVISION_DOCUMENTS, "TransportCardProof"]
-    : REVISION_DOCUMENTS;
+  // O comprovante de uso do transporte e o laudo médico só são revisáveis
+  // quando o aluno declarou a condição correspondente (do contrário ele
+  // nunca enviou esse documento).
+  const revisionDocuments: PhotoType[] = [
+    ...REVISION_DOCUMENTS,
+    ...(alreadyUsesTransport ? (["TransportCardProof"] as PhotoType[]) : []),
+    ...(hasDisability ? (["DisabilityProof"] as PhotoType[]) : []),
+  ];
 
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set());
