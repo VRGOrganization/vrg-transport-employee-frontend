@@ -37,6 +37,9 @@ interface StudentDetailPanelProps {
   governmentImage: string | null;
   proofOfResidenceImage: string | null;
   transportCardProofImage: string | null;
+  alreadyUsesTransport: boolean;
+  disabilityProofImage: string | null;
+  hasDisability: boolean;
   selectedLicensePreview: string | null;
   fullLicense?: LicenseRecord | null;
   onReload: () => Promise<void>;
@@ -62,6 +65,9 @@ export function StudentDetailPanel({
   governmentImage,
   proofOfResidenceImage,
   transportCardProofImage,
+  alreadyUsesTransport,
+  disabilityProofImage,
+  hasDisability,
   selectedLicensePreview,
   fullLicense,
   onReload,
@@ -90,8 +96,8 @@ export function StudentDetailPanel({
   );
 
   const showTransportCardProof =
-    currentLicenseRequest?.alreadyUsesTransport === true ||
-    transportCardProofImage != null;
+    alreadyUsesTransport || transportCardProofImage != null;
+  const showDisabilityProof = hasDisability || disabilityProofImage != null;
 
   const licensePreviewItems = useMemo<PreviewItem[]>(
     () => [
@@ -99,6 +105,14 @@ export function StudentDetailPanel({
       { title: "Comprovante de Matrícula", dataUrl: enrollmentImage },
       { title: "Imagem da Grade Horária", dataUrl: scheduleImage },
       { title: "Calendário Acadêmico", dataUrl: academicPeriodImage },
+    ],
+    [profileImage, enrollmentImage, scheduleImage, academicPeriodImage],
+  );
+
+  const personalPreviewItems = useMemo<PreviewItem[]>(
+    () => [
+      { title: "Documento de identidade", dataUrl: governmentImage },
+      { title: "Comprovante de residência", dataUrl: proofOfResidenceImage },
       ...(showTransportCardProof
         ? [
             {
@@ -107,23 +121,23 @@ export function StudentDetailPanel({
             },
           ]
         : []),
+      ...(showDisabilityProof
+        ? [
+            {
+              title: "Laudo Médico (PCD)",
+              dataUrl: disabilityProofImage,
+            },
+          ]
+        : []),
     ],
     [
-      profileImage,
-      enrollmentImage,
-      scheduleImage,
-      academicPeriodImage,
+      governmentImage,
+      proofOfResidenceImage,
       showTransportCardProof,
       transportCardProofImage,
+      showDisabilityProof,
+      disabilityProofImage,
     ],
-  );
-
-  const personalPreviewItems = useMemo<PreviewItem[]>(
-    () => [
-      { title: "Documento de identidade", dataUrl: governmentImage },
-      { title: "Comprovante de residência", dataUrl: proofOfResidenceImage },
-    ],
-    [governmentImage, proofOfResidenceImage],
   );
 
   const previewItems = useMemo(
@@ -202,11 +216,22 @@ export function StudentDetailPanel({
           )}
 
           {/* ── Já usa o transporte (declaração do aluno) ────────── */}
-          {currentLicenseRequest?.alreadyUsesTransport === true && (
+          {alreadyUsesTransport && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-on-surface-variant">
                 Já usa o transporte:
               </span>
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                Sim
+              </span>
+            </div>
+          )}
+          {/* ─────────────────────────────────────────────────────── */}
+
+          {/* ── PCD (declaração do aluno) ──────────────────────────── */}
+          {hasDisability && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-on-surface-variant">PCD:</span>
               <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                 Sim
               </span>

@@ -415,6 +415,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
         <StudentDocumentsModal
           studentId={docsStudent._id}
           studentName={docsStudent.name}
+          hasDisability={docsStudent.hasDisability ?? false}
           onClose={() => setDocsStudent(null)}
         />
       )}
