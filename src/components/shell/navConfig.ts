@@ -10,6 +10,7 @@ import {
   Bus,
   User,
   SlidersHorizontal,
+  MessageSquareText,
 } from "lucide-react";
 import type { NavItem, SideNavBrand } from "./SideNav";
 
@@ -23,6 +24,7 @@ export const ADMIN_NAV_ITEMS: readonly NavItem[] = [
   { icon: CalendarDays,      label: "Período de Inscrição",  href: "/admin/enrollment-period"  },
   { icon: IdCard,            label: "Carteirinhas",          href: "/admin/cards"              },
   { icon: Bell,              label: "Avisos",                href: "/admin/notices"            },
+  { icon: MessageSquareText, label: "Mensagens de sistema",  href: "/admin/system-notice-templates" },
   { icon: SlidersHorizontal, label: "Prioridades",           href: "/admin/priority-rules"     },
 ];
 
