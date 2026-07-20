@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { computeLicenseExpiry } from "@/lib/utils/date";
 
 export interface OpenPeriodFormPayload {
   startDate: string;
@@ -77,6 +78,14 @@ export function OpenPeriodModal({
     await onSubmit(payload);
   };
 
+  // Prévia da validade — mesma base do backend: cycleStartDate (aqui, a data
+  // de início informada) + meses, calculado em UTC. Aparece antes de criar.
+  const monthsNumber = Number(licenseValidityMonths);
+  const licenseExpiry =
+    startDate && Number.isInteger(monthsNumber) && monthsNumber >= 1
+      ? computeLicenseExpiry(`${startDate}T00:00:00.000Z`, monthsNumber)
+      : "";
+
   return (
     <Modal
       open={open}
@@ -119,8 +128,17 @@ export function OpenPeriodModal({
             className="h-9 w-full rounded-lg border border-on-surface-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Ex: 6"
           />
-          {errors.licenseValidityMonths && (
+          {errors.licenseValidityMonths ? (
             <p className="mt-1 text-xs text-error">{errors.licenseValidityMonths}</p>
+          ) : licenseExpiry ? (
+            <p className="mt-1 text-xs text-on-surface-variant">
+              Carteirinha válida até{" "}
+              <strong className="text-on-surface">{licenseExpiry}</strong>.
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-on-surface-variant">
+              Informe a data de início para ver a validade.
+            </p>
           )}
         </div>
 
