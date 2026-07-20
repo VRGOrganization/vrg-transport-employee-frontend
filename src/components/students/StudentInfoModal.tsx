@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Student } from "@/types/student";
+import { resolveDisplayName } from "@/lib/utils/string";
 import { InfoModalShell } from "@/components/ui/InfoModalShell";
 import { StudentInfoView } from "./StudentInfoView";
 import { BanForm } from "./BanForm";
@@ -23,7 +24,7 @@ export function StudentInfoModal({ student, onClose, onBanned, canBan = true }: 
 
   return (
     <InfoModalShell
-      name={student.name}
+      name={resolveDisplayName(student)}
       subtitle={`${student.active ? "Estudante Ativo" : "Estudante Inativo"} no Sistema`}
       open
       onClose={handleClose}

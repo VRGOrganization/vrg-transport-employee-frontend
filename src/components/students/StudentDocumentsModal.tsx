@@ -6,10 +6,12 @@ import { http } from "@/services/http";
 import type { ImageRecord, PhotoType } from "@/types/cards.types";
 import { PHOTO_TYPE_LABELS } from "@/types/cards.types";
 import { normalizeMediaSource } from "@/lib/cardUtils";
+import { resolveDisplayName } from "@/lib/utils/string";
 
 interface Props {
   studentId: string;
   studentName: string;
+  studentSocialName?: string | null;
   hasDisability?: boolean;
   onClose: () => void;
 }
@@ -45,6 +47,7 @@ const DOC_ORDER: PhotoType[] = [
 export function StudentDocumentsModal({
   studentId,
   studentName,
+  studentSocialName,
   hasDisability = false,
   onClose,
 }: Props) {
@@ -83,7 +86,12 @@ export function StudentDocumentsModal({
 
   return (
     <Modal open onClose={onClose} title="Documentos do Aluno" size="lg">
-      <p className="text-sm text-on-surface-variant -mt-2 mb-5">{studentName}</p>
+      <p className={`text-sm text-on-surface-variant -mt-2 ${studentSocialName?.trim() ? "mb-1" : "mb-5"}`}>
+        {resolveDisplayName({ name: studentName, socialName: studentSocialName })}
+      </p>
+      {studentSocialName?.trim() && (
+        <p className="text-xs text-on-surface-variant mb-5">Nome de registro: {studentName}</p>
+      )}
 
       {/* Loading */}
       {loading && (

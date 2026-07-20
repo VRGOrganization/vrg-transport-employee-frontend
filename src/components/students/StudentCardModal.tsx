@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { http } from "@/services/http";
 import { Student } from "@/types/student";
-import { toTitleCase } from "@/lib/utils/string";
+import { resolveDisplayName, toTitleCase } from "@/lib/utils/string";
 import { LicenseRecord } from "@/types/cards.types";
 import { extractLicenseImage, buildCardsPdfUrl, downloadMedia, getDownloadName } from "@/lib/cardUtils";
 import { Button } from "@/components/ui/Button";
@@ -53,9 +53,10 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
   const handlePrint = async () => {
     if (!image) return;
     try {
+      const displayName = resolveDisplayName(student);
       const pdfUrl = await buildCardsPdfUrl(
-        [{ studentName: student.name, imageData: image }],
-        `Carteirinha - ${student.name}`
+        [{ studentName: displayName, imageData: image }],
+        `Carteirinha - ${displayName}`
       );
       setPdfPreviewUrl(pdfUrl);
     } catch (err) {
@@ -68,7 +69,7 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
     if (!image) return;
     // image pode ser presigned URL ou base64 legado; downloadMedia trata ambos
     // (URL → fetch dos bytes assinados, pois o atributo download é ignorado cross-origin).
-    void downloadMedia(image, getDownloadName(`carteirinha ${student.name}`, image));
+    void downloadMedia(image, getDownloadName(`carteirinha ${resolveDisplayName(student)}`, image));
   };
 
   return (
@@ -82,7 +83,7 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
                 Carteirinha
               </h2>
               <p className="text-sm text-on-surface-variant mt-0.5">
-                {toTitleCase(student.name)}
+                {toTitleCase(resolveDisplayName(student))}
               </p>
             </div>
             <button
@@ -148,7 +149,7 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
       {pdfPreviewUrl && (
         <PdfPreviewModal
           pdfUrl={pdfPreviewUrl}
-          title={`Carteirinha - ${student.name}`}
+          title={`Carteirinha - ${resolveDisplayName(student)}`}
           onClose={() => setPdfPreviewUrl(null)}
         />
       )}
