@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { AlertCircle, CheckCircle2, Info, TriangleAlert, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toastStore, type ToastItem, type ToastVariant } from "@/lib/toast";
+import { useHasMounted } from "@/hooks/useHasMounted";
 
 const EMPTY_TOASTS: ToastItem[] = [];
 
@@ -89,8 +90,7 @@ function ToastCard({ item }: { item: ToastItem }) {
 }
 
 export function Toaster() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHasMounted();
 
   const toasts = useSyncExternalStore(
     toastStore.subscribe,
