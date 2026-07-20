@@ -82,4 +82,31 @@ describe("DocumentsGrid", () => {
 
     expect(screen.queryByText(/documentos pessoais/i)).not.toBeInTheDocument();
   });
+
+  it("mostra o nome de registro perto dos documentos pessoais quando civilName é informado", () => {
+    render(
+      <DocumentsGrid
+        licenseItems={licenseItems}
+        personalItems={personalItems}
+        loadingImages={false}
+        onOpenLightbox={vi.fn()}
+        civilName="João Silva"
+      />,
+    );
+
+    expect(screen.getByText(/nome de registro:\s*João Silva/i)).toBeInTheDocument();
+  });
+
+  it("não mostra o nome de registro quando civilName não é informado", () => {
+    render(
+      <DocumentsGrid
+        licenseItems={licenseItems}
+        personalItems={personalItems}
+        loadingImages={false}
+        onOpenLightbox={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText(/nome de registro/i)).not.toBeInTheDocument();
+  });
 });
