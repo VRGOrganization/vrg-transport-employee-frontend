@@ -92,11 +92,9 @@ export default function UniversitySelectorPanel({
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  {(university.pendingCount ?? 0) > 0 && (
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                      {university.pendingCount} pendentes
-                    </span>
-                  )}
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    {university.pendingCount ?? 0} pendentes
+                  </span>
                   {(university.waitlistedCount ?? 0) > 0 && (
                     <span className="rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning">
                       {university.waitlistedCount} em fila
