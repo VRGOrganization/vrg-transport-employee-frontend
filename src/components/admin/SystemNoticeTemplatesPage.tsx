@@ -12,6 +12,7 @@ import type {
   SystemNoticeTemplate,
   SystemNoticeTemplateKey,
 } from "@/services/systemNoticeTemplateService";
+import { sectorContactInfoService } from "@/services/sectorContactInfoService";
 
 interface TemplateGroup {
   label: string;
@@ -55,6 +56,10 @@ export function SystemNoticeTemplatesPage() {
   const [error, setError] = useState("");
   const [savingKey, setSavingKey] = useState<SystemNoticeTemplateKey | null>(null);
 
+  const [address, setAddress] = useState("");
+  const [addressDraft, setAddressDraft] = useState("");
+  const [savingAddress, setSavingAddress] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -73,6 +78,35 @@ export function SystemNoticeTemplatesPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const loadAddress = async () => {
+      try {
+        const info = await sectorContactInfoService.get();
+        setAddress(info.address);
+        setAddressDraft(info.address);
+      } catch {
+        setAddress("");
+        setAddressDraft("");
+      }
+    };
+    void loadAddress();
+  }, []);
+
+  const handleSaveAddress = async () => {
+    setSavingAddress(true);
+    try {
+      const updated = await sectorContactInfoService.update(addressDraft);
+      setAddress(updated.address);
+      setAddressDraft(updated.address);
+      toast.success("Endereço salvo com sucesso.");
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      toast.error(e.message ?? "Erro ao salvar endereço.");
+    } finally {
+      setSavingAddress(false);
+    }
+  };
 
   const templateByKey = (key: SystemNoticeTemplateKey) =>
     templates.find((t) => t.key === key);
@@ -198,6 +232,33 @@ export function SystemNoticeTemplatesPage() {
           ))}
         </div>
       )}
+
+      <section className="mt-8">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-3">
+          Endereço do setor
+        </h2>
+        <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-5 space-y-3">
+          <FieldShell label="Endereço do setor">
+            <Input
+              aria-label="Endereço do setor"
+              value={addressDraft}
+              onChange={(e) => setAddressDraft(e.target.value)}
+            />
+          </FieldShell>
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              size="sm"
+              icon={<Save className="size-4" />}
+              disabled={addressDraft === address}
+              loading={savingAddress}
+              onClick={() => void handleSaveAddress()}
+            >
+              Salvar endereço
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
