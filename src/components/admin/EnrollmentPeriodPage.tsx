@@ -28,6 +28,7 @@ import type {
   StudentsResponse,
 } from "@/types/cards.types";
 import type { EnrollmentPeriod, WaitlistEntry } from "@/types/enrollmentPeriod";
+import { resolveDisplayName } from "@/lib/utils/string";
 
 interface EnrollmentPeriodPayload {
   startDate: string;
@@ -601,7 +602,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                             <td className="px-3 py-2 font-medium text-on-surface">
                               #{entry.filaPosition}
                             </td>
-                            <td className="px-3 py-2 text-on-surface">{entry.student.name}</td>
+                            <td className="px-3 py-2 text-on-surface">{resolveDisplayName(entry.student)}</td>
                             <td className="px-3 py-2 text-on-surface-variant">{entry.student.email}</td>
                             <td className="px-3 py-2 text-on-surface-variant">
                               {entry.student.institution ?? "Não informada"}
