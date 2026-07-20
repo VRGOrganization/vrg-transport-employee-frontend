@@ -53,6 +53,9 @@ export function StudentDocumentsModal({
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // Sincronização com API externa (fetch on mount/dependency change) — o
+    // extra render de "loading=true" é o custo aceito desse padrão.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     Promise.all([
       http.get<ImageRecord[]>(`/image/student/${studentId}`),
