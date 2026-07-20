@@ -12,6 +12,7 @@ export type PhotoType =
 export interface StudentRecord {
   _id: string;
   name: string;
+  socialName?: string | null;
   email: string;
   telephone?: string;
   institution?: string;

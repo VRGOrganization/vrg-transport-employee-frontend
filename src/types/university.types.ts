@@ -56,6 +56,7 @@ export interface Bus {
 export interface BusStudent {
   _id: string;
   name: string;
+  socialName?: string | null;
   email: string;
   shift?: string;
   institution?: string;
