@@ -106,6 +106,7 @@ export function getApprovedBusStudents(
       return {
         _id: s._id,
         name: s.name,
+        socialName: s.socialName,
         email: s.email,
         shift: s.shift,
         universityId: universityByStudent.get(s._id) ?? undefined,
