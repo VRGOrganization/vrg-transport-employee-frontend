@@ -11,6 +11,7 @@ import { universityApi, busApi } from "@/lib/universityApi";
 import { buildStudentsCsv, buildEmployeesCsv, buildBusesCsv, buildUniversitiesCsv, downloadCsv } from "@/lib/csvUtils";
 import { resolvePaginated, type Paginated } from "@/types/api";
 import { getGreeting } from "@/lib/utils/date";
+import { resolveDisplayName } from "@/lib/utils/string";
 import { toast } from "@/lib/toast";
 import { EnrollmentPeriodBanner } from "@/components/admin/EnrollmentPeriodBanner";
 import { DashboardStatCards } from "@/components/admin/dashboard/DashboardStatCards";
@@ -23,6 +24,7 @@ import type { Student } from "@/types/student";
 interface StudentRecord {
   _id: string;
   name: string;
+  socialName?: string | null;
   email: string;
   institution?: string;
   shift?: string;
@@ -132,7 +134,8 @@ export function DashboardPage({ role }: DashboardPageProps) {
         for (const stu of resolvedStudents) {
           rows.push({
             id: stu._id,
-            name: stu.name,
+            name: resolveDisplayName(stu),
+            searchAliases: stu.socialName?.trim() ? [stu.name] : undefined,
             identifier: stu.email,
             type: "Aluno",
             status: stu.status === "PENDING" ? "Pendente" : stu.active ? "Ativo" : "Inativo",
@@ -197,7 +200,8 @@ export function DashboardPage({ role }: DashboardPageProps) {
 
       const rows: UserRow[] = students.map((stu) => ({
         id: stu._id,
-        name: stu.name,
+        name: resolveDisplayName(stu),
+        searchAliases: stu.socialName?.trim() ? [stu.name] : undefined,
         identifier: stu.email,
         type: "Aluno",
         status: stu.active ? "Ativo" : "Inativo",
@@ -219,7 +223,11 @@ export function DashboardPage({ role }: DashboardPageProps) {
     .filter((r) => {
       if (!search.trim()) return true;
       const q = search.toLowerCase();
-      return r.name.toLowerCase().includes(q) || r.identifier.toLowerCase().includes(q);
+      return (
+        r.name.toLowerCase().includes(q) ||
+        r.identifier.toLowerCase().includes(q) ||
+        (r.searchAliases ?? []).some((alias) => alias.toLowerCase().includes(q))
+      );
     });
 
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
