@@ -97,8 +97,15 @@ export function EnrollmentPeriodModal({
     typeof window !== "undefined" && window.innerWidth < 640 ? 1 : 2
   );
 
-  useEffect(() => {
-    if (!open) return;
+  // Re-arma o formulário sempre que o modal abre (ou troca de período
+  // enquanto aberto), ajustando o estado durante a renderização em vez de
+  // um efeito — evita o passe de render extra de um setState em useEffect.
+  const [prevReset, setPrevReset] = useState<{ open: boolean; period: EnrollmentPeriod }>({
+    open,
+    period,
+  });
+  if (open && (!prevReset.open || prevReset.period !== period)) {
+    setPrevReset({ open, period });
     const initial = buildInitialForm(period);
     setForm(initial);
     setErrors(EMPTY_ERRORS);
@@ -109,7 +116,9 @@ export function EnrollmentPeriodModal({
       const to = period.endDate ? new Date(period.endDate) : undefined;
       return { from, to } as DateRange;
     });
-  }, [open, period]);
+  } else if (!open && prevReset.open) {
+    setPrevReset({ open, period });
+  }
 
   useEffect(() => {
     if (!open) return;
