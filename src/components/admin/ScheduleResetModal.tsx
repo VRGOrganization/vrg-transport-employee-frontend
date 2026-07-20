@@ -49,7 +49,7 @@ export function ScheduleResetModal({
       open={open}
       onClose={loading ? () => {} : onClose}
       size="sm"
-      title="Encerrar em X dias"
+      title="Antecipar encerramento"
     >
       <form className="space-y-3" onSubmit={handleSubmit} noValidate>
         <div>
