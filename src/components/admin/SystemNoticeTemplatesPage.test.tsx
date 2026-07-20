@@ -53,9 +53,9 @@ describe("SystemNoticeTemplatesPage", () => {
     render(<SystemNoticeTemplatesPage />);
 
     await waitFor(() => expect(screen.getByLabelText("Título de WINDOW_OPEN")).toBeInTheDocument());
-    expect(screen.getByRole("heading", { name: "Abertura de raia" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Fechamento de raia" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Reset da piscina" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Abertura de janela" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Fechamento de janela" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Reset do ciclo" })).toBeInTheDocument();
     expect(screen.getByLabelText("Título de CYCLE_RESET_1")).toBeInTheDocument();
   });
 
@@ -63,10 +63,10 @@ describe("SystemNoticeTemplatesPage", () => {
     render(<SystemNoticeTemplatesPage />);
 
     await waitFor(() => expect(screen.getByLabelText("Título de WINDOW_OPEN")).toBeInTheDocument());
-    expect(screen.getByText("Fechamento de raia — 7 dias antes")).toBeInTheDocument();
-    expect(screen.getByText("Fechamento de raia — 3 dias antes")).toBeInTheDocument();
-    expect(screen.getByText("Fechamento de raia — 1 dia antes")).toBeInTheDocument();
-    expect(screen.getByText("Reset da piscina — 7 dias antes")).toBeInTheDocument();
+    expect(screen.getByText("Fechamento de janela — 7 dias antes")).toBeInTheDocument();
+    expect(screen.getByText("Fechamento de janela — 3 dias antes")).toBeInTheDocument();
+    expect(screen.getByText("Fechamento de janela — 1 dia antes")).toBeInTheDocument();
+    expect(screen.getByText("Reset do ciclo — 7 dias antes")).toBeInTheDocument();
   });
 
   it("mostra estado vazio explícito quando a API não retorna templates", async () => {

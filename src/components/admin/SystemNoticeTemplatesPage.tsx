@@ -20,9 +20,9 @@ interface TemplateGroup {
 }
 
 const GROUPS: TemplateGroup[] = [
-  { label: "Abertura de raia", keys: ["WINDOW_OPEN"] },
-  { label: "Fechamento de raia", keys: ["WINDOW_CLOSE_7", "WINDOW_CLOSE_3", "WINDOW_CLOSE_1"] },
-  { label: "Reset da piscina", keys: ["CYCLE_RESET_7", "CYCLE_RESET_3", "CYCLE_RESET_1"] },
+  { label: "Abertura de janela", keys: ["WINDOW_OPEN"] },
+  { label: "Fechamento de janela", keys: ["WINDOW_CLOSE_7", "WINDOW_CLOSE_3", "WINDOW_CLOSE_1"] },
+  { label: "Reset do ciclo", keys: ["CYCLE_RESET_7", "CYCLE_RESET_3", "CYCLE_RESET_1"] },
 ];
 
 const ITEM_SUFFIXES: Partial<Record<SystemNoticeTemplateKey, string>> = {
