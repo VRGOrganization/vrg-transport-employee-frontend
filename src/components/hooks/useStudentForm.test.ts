@@ -14,7 +14,8 @@ describe("useStudentForm", () => {
     expect(valid).toBe(false);
     expect(result.current.errors.name).toBeTruthy();
     expect(result.current.errors.email).toBeTruthy();
-    expect(result.current.errors.password).toBeTruthy();
+    expect(result.current.errors.telephone).toBeTruthy();
+    expect(result.current.errors.cpf).toBeTruthy();
   });
 
   it("deve validar com sucesso quando payload de cadastro e valido", () => {
@@ -27,8 +28,6 @@ describe("useStudentForm", () => {
       result.current.onChange("institution", "Instituto Federal");
       result.current.onChange("shift", "diurno");
       result.current.onChange("cpf", "12345678901");
-      result.current.onChange("password", "Senha123");
-      result.current.onChange("confirmPassword", "Senha123");
     });
 
     let valid = false;
