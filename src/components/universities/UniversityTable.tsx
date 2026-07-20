@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Landmark, Edit2, Ban, ChevronRight, Building2, RotateCcw } from "lucide-react";
+import { Landmark, Edit2, Ban, ChevronRight, Building2, RotateCcw, BusFront, CircleSlash } from "lucide-react";
 import type { University } from "@/types/university.types";
 
 interface Props {
@@ -163,6 +163,24 @@ export function UniversityTable({
               <p className="text-xs text-on-surface-muted mt-1.5 pl-12 truncate">
                 {university.address}
               </p>
+
+              {university.hasBus !== undefined && (
+                <span
+                  className={cn(
+                    "mt-2 ml-12 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                    university.hasBus
+                      ? "bg-success-container text-success"
+                      : "bg-warning-container text-warning",
+                  )}
+                >
+                  {university.hasBus ? (
+                    <BusFront className="size-3" />
+                  ) : (
+                    <CircleSlash className="size-3" />
+                  )}
+                  {university.hasBus ? "Coberta" : "Sem cobertura"}
+                </span>
+              )}
             </div>
           </li>
         );

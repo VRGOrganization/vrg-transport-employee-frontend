@@ -9,6 +9,9 @@ export interface University {
   pendingCount?: number;
   revisionCount?: number;
   waitlistedCount?: number;
+  // Presente na listagem (GET /university): true se existe ao menos um Bus
+  // cobrindo essa faculdade. Ausente em respostas antigas/mockadas.
+  hasBus?: boolean;
 }
 
 export type CourseModel = "Técnico" | "Tecnólogo" | "Bacharel" | "Licenciatura" | "Mestrado" | "Doutorado";
