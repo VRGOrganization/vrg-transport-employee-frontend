@@ -157,7 +157,7 @@ describe("EnrollmentPeriodPage — ações condicionadas ao estado da janela (N�
     expect(screen.queryByRole("button", { name: /fechar janela/i })).not.toBeInTheDocument();
   });
 
-  it("with no live cycle: shows only 'Abrir novo período', which opens the piscina-only modal", async () => {
+  it("with no live cycle: shows only 'Abrir novo período', which opens the cycle-only modal", async () => {
     vi.mocked(enrollmentPeriodService.getActive).mockRejectedValue({ status: 404 });
     vi.mocked(enrollmentPeriodService.list).mockResolvedValue([] as never);
 
@@ -233,7 +233,7 @@ describe("EnrollmentPeriodPage — funcionalidade de reabrir removida (Núcleo 1
   });
 });
 
-describe("EnrollmentPeriodPage — computeLicenseExpiry usa Date, não corte de string (regressão de fuso)", () => {
+describe("EnrollmentPeriodPage — computeLicenseExpiry em UTC, alinhado ao addMonthsBR do backend", () => {
   const originalTZ = process.env.TZ;
 
   afterEach(() => {
@@ -241,11 +241,12 @@ describe("EnrollmentPeriodPage — computeLicenseExpiry usa Date, não corte de 
     vi.clearAllMocks();
   });
 
-  it("resolve o dia local correto pra um cycleStartDate perto da virada do dia UTC", async () => {
-    // Europe/Paris = UTC+1 no inverno (sem DST) — 23:30 UTC de um dia vira
-    // 00:30 do dia SEGUINTE no horário local. O bug antigo (slice(0,10) na
-    // string ISO) usava o dia UTC (15), não o dia local (16) — motivo desta
-    // regressão.
+  it("usa o dia UTC de cycleStartDate + meses, independente do fuso do runtime", async () => {
+    // Europe/Paris = UTC+1 no inverno. O backend computa a validade com
+    // setUTCMonth sobre cycleStartDate e a UI espelha isso formatando em UTC
+    // (timeZone: "UTC"). 2030-01-15T23:30Z + 6 meses (UTC) = 2030-07-15T23:30Z,
+    // exibido como 15/07/2030 — o MESMO dia que o backend persistiu, não o dia
+    // local (16) do runtime.
     process.env.TZ = "Europe/Paris";
     const period = {
       ...activePeriodStub,
@@ -260,9 +261,9 @@ describe("EnrollmentPeriodPage — computeLicenseExpiry usa Date, não corte de 
     render(<EnrollmentPeriodPage role="admin" />);
 
     await waitFor(() => {
-      expect(screen.getByText("16/07/2030")).toBeInTheDocument();
+      expect(screen.getByText("15/07/2030")).toBeInTheDocument();
     });
-    expect(screen.queryByText("15/07/2030")).not.toBeInTheDocument();
+    expect(screen.queryByText("16/07/2030")).not.toBeInTheDocument();
   });
 });
 
@@ -360,7 +361,7 @@ describe("EnrollmentPeriodPage — confirmação reforçada de 'Encerrar períod
   });
 });
 
-describe("EnrollmentPeriodPage — confirmação reforçada em duas etapas de 'Encerrar em X dias' (Núcleo 11)", () => {
+describe("EnrollmentPeriodPage — confirmação reforçada em duas etapas de 'Antecipar encerramento' (Núcleo 11)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(activePeriodStub as never);
@@ -370,10 +371,10 @@ describe("EnrollmentPeriodPage — confirmação reforçada em duas etapas de 'E
   it("step 1 collects the days, step 2 requires the confirmation word before scheduling", async () => {
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Encerrar em X dias" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Antecipar encerramento" })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Encerrar em X dias" }));
+    fireEvent.click(screen.getByRole("button", { name: "Antecipar encerramento" }));
     fireEvent.change(await screen.findByLabelText(/quantos dias/i), {
       target: { value: "5" },
     });
