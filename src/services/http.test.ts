@@ -154,6 +154,22 @@ describe("http (CSRF — fix #04)", () => {
     expect(ensureCsrf).not.toHaveBeenCalledWith(true);
   });
 
+  // Regressão: NestJS ValidationPipe devolve `message` como array quando várias
+  // regras falham no mesmo DTO — sem normalizar, o array acaba renderizado em
+  // JSX como texto concatenado sem espaço entre as mensagens.
+  it("junta message[] do backend em uma string legível, com espaço entre as mensagens", async () => {
+    mockFetch.mockReturnValue(
+      errorResponse(400, {
+        message: ["name should not be empty", "email should not be empty"],
+      }),
+    );
+
+    await expect(http.post("/student", {})).rejects.toMatchObject({
+      status: 400,
+      message: "name should not be empty email should not be empty",
+    });
+  });
+
   it("resetHttpState limpa ensureCsrf e onUnauthorized", async () => {
     const ensureCsrf = vi.fn().mockResolvedValue({
       headerName: "x-csrf-token",

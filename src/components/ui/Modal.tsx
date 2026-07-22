@@ -8,7 +8,7 @@ interface ModalProps {
   open: boolean;
   onClose: () => void;
   title?: ReactNode;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "wide";
   closeOnBackdrop?: boolean;
   hideClose?: boolean;
   children: ReactNode;
@@ -24,6 +24,8 @@ const SIZE_CLASSES = {
   md: "max-w-md",
   lg: "max-w-2xl",
   xl: "max-w-4xl",
+  // ~60% da largura da tela, com um piso mínimo para não espremer em telas estreitas.
+  wide: "max-w-[min(60vw,72rem)] min-w-[min(60vw,40rem)]",
 } as const;
 
 export function Modal({

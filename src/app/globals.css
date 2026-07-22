@@ -207,6 +207,15 @@ h1, h2, h3, h4, h5, h6 {
     appearance: none;
   }
 
+  /* Checkbox/radio precisam do indicador nativo de "marcado" (colorido via
+     accent-color/accent-primary já aplicado nos componentes) — sem isso, o
+     reset acima os deixa sem nenhum feedback visual de estado. */
+  input[type="checkbox"],
+  input[type="radio"] {
+    -webkit-appearance: auto;
+    appearance: auto;
+  }
+
   input:focus,
   input:focus-visible,
   textarea:focus,
