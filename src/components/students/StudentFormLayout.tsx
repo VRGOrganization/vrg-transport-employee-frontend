@@ -5,6 +5,7 @@ interface StudentFormLayoutProps {
   subtitle: string;
   backHref: string;
   children: React.ReactNode;
+  wide?: boolean;
 }
 
 export function StudentFormLayout({
@@ -12,9 +13,10 @@ export function StudentFormLayout({
   subtitle,
   backHref,
   children,
+  wide = false,
 }: StudentFormLayoutProps) {
   return (
-    <div className="max-w-lg mx-auto">
+    <div className={wide ? "max-w-4xl mx-auto" : "max-w-lg mx-auto"}>
       <PageHeader back={backHref} title={title} subtitle={subtitle} />
 
       {/* Card */}

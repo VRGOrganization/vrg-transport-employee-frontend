@@ -78,7 +78,16 @@ export interface StudentFormData {
   bloodType: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-" | "";
   degree: string;
   cpf: string;
+  alreadyUsesTransport: boolean;
+  hasDisability: boolean;
+  governmentIdFile: File | null;
+  proofOfResidenceFile: File | null;
+  transportCardProofFile: File | null;
+  disabilityProofFile: File | null;
 }
+
+/** Valores aceitos pelo onChange do formulário de aluno (texto, flags e arquivos). */
+export type StudentFormFieldValue = string | boolean | File | null;
 
 export interface StudentFormErrors {
   name: string;
@@ -89,6 +98,7 @@ export interface StudentFormErrors {
   bloodType: string;
   degree: string;
   cpf: string;
+  documents: string;
   general: string;
 }
 
@@ -101,6 +111,7 @@ export const EMPTY_STUDENT_ERRORS: StudentFormErrors = {
   bloodType: "",
   degree: "",
   cpf: "",
+  documents: "",
   general: "",
 };
 

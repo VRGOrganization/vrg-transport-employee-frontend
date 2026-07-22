@@ -73,10 +73,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   if (!res.ok) {
-    const error: ApiError = {
-      message: data?.message ?? "Erro desconhecido",
-      status: res.status,
-    };
+    // O NestJS ValidationPipe retorna `message` como array quando várias
+    // regras falham (ex.: vários decorators no mesmo campo) — sem isso, o
+    // array acaba renderizado em JSX como texto concatenado sem espaço.
+    const rawMessage = data?.message;
+    const message = Array.isArray(rawMessage)
+      ? rawMessage.join(" ")
+      : (rawMessage ?? "Erro desconhecido");
+    const error: ApiError = { message, status: res.status };
     throw error;
   }
 

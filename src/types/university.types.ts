@@ -4,6 +4,8 @@ export interface University {
   acronym: string;
   address: string;
   active: boolean;
+  /** Faculdade temporária criada no fluxo interno (oculta para o aluno). */
+  temporary?: boolean;
   createdAt: string;
   updatedAt: string;
   pendingCount?: number;

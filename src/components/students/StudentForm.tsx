@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/Button";
 import { Save } from "lucide-react";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { SelectField } from "@/components/ui/SelectField";
-import { SHIFTS, BLOOD_TYPES, StudentFormData, StudentFormErrors } from "@/types/student";
+import { DocumentUploadField } from "@/components/students/DocumentUploadField";
+import {
+  SHIFTS,
+  BLOOD_TYPES,
+  StudentFormData,
+  StudentFormErrors,
+  StudentFormFieldValue,
+} from "@/types/student";
+import { formatPhone } from "@/lib/formatters";
 
 interface University {
   _id: string;
@@ -18,7 +26,7 @@ interface StudentFormProps {
   errors: StudentFormErrors;
   loading: boolean;
   mode: "create" | "edit";
-  onChange: (field: keyof StudentFormData, value: string) => void;
+  onChange: (field: keyof StudentFormData, value: StudentFormFieldValue) => void;
   onSubmit: (e: React.FormEvent) => void;
   universities?: University[];
   loadingUniversities?: boolean;
@@ -70,9 +78,9 @@ export function StudentForm({
         label="Telefone"
         type="tel"
         icon="phone"
-        placeholder="(22) 99999-9999"
-        value={data.telephone}
-        onChange={(e) => onChange("telephone", e.target.value)}
+        placeholder="(22)999999999"
+        value={formatPhone(data.telephone)}
+        onChange={(e) => onChange("telephone", e.target.value.replace(/\D/g, "").slice(0, 11))}
         error={errors.telephone}
       />
 
@@ -141,13 +149,81 @@ export function StudentForm({
       />
 
       {!isEdit && (
-        <div className="bg-surface-container-high rounded-xl p-4 border border-outline-variant">
-          <p className="text-xs text-on-surface-variant italic">
-            * Por motivos de segurança, a senha não é definida pelo administrador.
-            O estudante receberá um e-mail com link para definir a própria senha
-            assim que o cadastro for concluído.
-          </p>
-        </div>
+        <>
+          <div className="space-y-3 pt-2">
+            <label className="flex items-center gap-2.5 px-3 py-2.5 bg-surface-container rounded-xl border border-outline-variant/40 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={data.alreadyUsesTransport}
+                onChange={(e) => onChange("alreadyUsesTransport", e.target.checked)}
+                className="size-4 accent-primary cursor-pointer"
+              />
+              <span className="text-sm text-on-surface">
+                Aluno já faz uso do sistema de transporte
+              </span>
+            </label>
+
+            <label className="flex items-center gap-2.5 px-3 py-2.5 bg-surface-container rounded-xl border border-outline-variant/40 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={data.hasDisability}
+                onChange={(e) => onChange("hasDisability", e.target.checked)}
+                className="size-4 accent-primary cursor-pointer"
+              />
+              <span className="text-sm text-on-surface">
+                Aluno é pessoa com deficiência (PCD)
+              </span>
+            </label>
+          </div>
+
+          <div className="space-y-4 rounded-xl border border-outline-variant p-4">
+            <div>
+              <h3 className="text-sm font-bold text-on-surface">
+                Documentos pessoais (opcional)
+              </h3>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                Anexe agora ou deixe que o próprio aluno envie depois pelo app.
+              </p>
+            </div>
+
+            {errors.documents && (
+              <StatusBanner variant="error">{errors.documents}</StatusBanner>
+            )}
+
+            <DocumentUploadField
+              label="Documento de identidade"
+              value={data.governmentIdFile}
+              onChange={(file) => onChange("governmentIdFile", file)}
+            />
+            <DocumentUploadField
+              label="Comprovante de residência"
+              value={data.proofOfResidenceFile}
+              onChange={(file) => onChange("proofOfResidenceFile", file)}
+            />
+            {data.alreadyUsesTransport && (
+              <DocumentUploadField
+                label="Carteirinha de transporte atual"
+                value={data.transportCardProofFile}
+                onChange={(file) => onChange("transportCardProofFile", file)}
+              />
+            )}
+            {data.hasDisability && (
+              <DocumentUploadField
+                label="Laudo médico (PCD)"
+                value={data.disabilityProofFile}
+                onChange={(file) => onChange("disabilityProofFile", file)}
+              />
+            )}
+          </div>
+
+          <div className="bg-surface-container-high rounded-xl p-4 border border-outline-variant">
+            <p className="text-xs text-on-surface-variant italic">
+              * Por motivos de segurança, a senha não é definida pelo administrador.
+              O estudante receberá um e-mail com link para definir a própria senha
+              assim que o cadastro for concluído.
+            </p>
+          </div>
+        </>
       )}
 
       <Button
