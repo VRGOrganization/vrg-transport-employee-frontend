@@ -5,7 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { http } from "@/services/http";
 import type { ImageRecord, PhotoType } from "@/types/cards.types";
 import { PHOTO_TYPE_LABELS } from "@/types/cards.types";
-import { normalizeMediaSource } from "@/lib/cardUtils";
+import { isPdfDataUrl, normalizeMediaSource } from "@/lib/cardUtils";
 import { resolveDisplayName } from "@/lib/utils/string";
 
 interface Props {
@@ -133,6 +133,7 @@ export function StudentDocumentsModal({
             const imgUrl = getImageUrl(doc);
             const label = PHOTO_TYPE_LABELS[doc.photoType] ?? doc.photoType;
             const icon = DOC_ICON[doc.photoType] ?? "description";
+            const isPdf = isPdfDataUrl(imgUrl);
 
             return (
               <div
@@ -152,11 +153,19 @@ export function StudentDocumentsModal({
                 {/* Image area */}
                 {imgUrl ? (
                   <div className="flex-1 bg-surface-container p-3">
-                    <img
-                      src={imgUrl}
-                      alt={label}
-                      className="w-full object-contain rounded-xl max-h-52 shadow-sm"
-                    />
+                    {isPdf ? (
+                      <iframe
+                        src={imgUrl}
+                        title={label}
+                        className="w-full h-52 rounded-xl shadow-sm bg-white"
+                      />
+                    ) : (
+                      <img
+                        src={imgUrl}
+                        alt={label}
+                        className="w-full object-contain rounded-xl max-h-52 shadow-sm"
+                      />
+                    )}
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center py-10 gap-2 bg-surface-container-low/50">

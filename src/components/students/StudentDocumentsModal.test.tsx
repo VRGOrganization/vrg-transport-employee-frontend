@@ -74,6 +74,38 @@ describe("StudentDocumentsModal — declaração de uso do sistema antigo", () =
   });
 });
 
+describe("StudentDocumentsModal — documentos em PDF", () => {
+  it("renderiza documento PDF num iframe, não numa tag <img>", async () => {
+    const pdfUrl =
+      "https://bucket.r2.cloudflarestorage.com/abc123.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256";
+
+    getMock.mockImplementation((path: string) => {
+      if (path === "/transport-usage/student/student-1") {
+        return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
+      }
+      if (path === "/image/student/student-1") {
+        return Promise.resolve([
+          makeImage({ _id: "img-1", photoType: "GovernmentId", documentImage: pdfUrl }),
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+
+    const { container } = render(
+      <StudentDocumentsModal studentId="student-1" studentName="Aluno 1" onClose={vi.fn()} />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("Documento de identidade")).toBeInTheDocument(),
+    );
+
+    expect(container.querySelector("img")).not.toBeInTheDocument();
+    const iframe = container.querySelector("iframe");
+    expect(iframe).toBeInTheDocument();
+    expect(iframe).toHaveAttribute("src", pdfUrl);
+  });
+});
+
 describe("StudentDocumentsModal — declaração de PCD", () => {
   it("exibe o laudo médico quando hasDisability=true", async () => {
     getMock.mockImplementation((path: string) => {
