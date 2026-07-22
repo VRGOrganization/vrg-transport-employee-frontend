@@ -37,6 +37,28 @@ export const csrfBootstrapSchema = z.object({
   csrfHeaderName: z.string().min(1),
 });
 
+const csrfPayloadSchema = z.object({
+  csrf: z
+    .object({
+      headerName: z.string().min(1),
+      token: z.string().min(1),
+    })
+    .optional(),
+});
+
+// Fix #04: usado por ensureCsrf (useEmployeeAuth) pra extrair o par
+// header/token do payload de /api/auth/session — mesmo padrão do
+// student-frontend (lib/validation/auth.ts:parseCsrfMeta).
+export function parseCsrfMeta(
+  payload: unknown,
+): { headerName: string; token: string } | null {
+  const result = csrfPayloadSchema.safeParse(payload);
+  if (!result.success || !result.data.csrf) {
+    return null;
+  }
+  return result.data.csrf;
+}
+
 export const backendSessionPayloadSchema = z.object({
   sessionId: z.string().min(1),
   user: z

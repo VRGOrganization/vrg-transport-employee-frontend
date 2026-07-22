@@ -9,6 +9,11 @@ vi.mock("@/lib/server/bff-auth", () => ({
   getSidMaxAgeSeconds: () => 60 * 60 * 8,
 }));
 
+vi.mock("@/lib/server/csrf", () => ({
+  getCsrfHeaderName: () => "x-csrf-token",
+  setCsrfCookie: vi.fn().mockResolvedValue("csrf-token-test"),
+}));
+
 import { GET } from "./route";
 
 function makeRequest(cookie?: string): NextRequest {
@@ -32,8 +37,13 @@ describe("GET /api/auth/session", () => {
 
   it("deve retornar 401 quando nao existe cookie de sessao", async () => {
     const response = await GET(makeRequest());
+    const body = (await response.json()) as {
+      message: string;
+      csrf: { headerName: string; token: string };
+    };
 
     expect(response.status).toBe(401);
+    expect(body.csrf.headerName).toBe("x-csrf-token");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -102,6 +112,7 @@ describe("GET /api/auth/session", () => {
     const body = (await response.json()) as {
       ok: boolean;
       user: { id: string; role: string; name: string };
+      csrf: { headerName: string; token: string };
     };
 
     expect(response.status).toBe(200);
@@ -109,6 +120,8 @@ describe("GET /api/auth/session", () => {
     expect(body.user.id).toBe("507f1f77bcf86cd799439011");
     expect(body.user.role).toBe("employee");
     expect(body.user.name).toBe("Funcionário");
+    expect(body.csrf.headerName).toBe("x-csrf-token");
+    expect(body.csrf.token).toBe("csrf-token-test");
     expect(response.cookies.get("_atk")?.value).toBe("session-abc");
     expect(response.cookies.get("_atk")?.maxAge).toBe(60 * 60 * 8);
     expect(response.cookies.get("_atk")?.sameSite).toBe("lax");

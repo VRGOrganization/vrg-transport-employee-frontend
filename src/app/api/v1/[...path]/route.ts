@@ -5,6 +5,8 @@ import {
   getServiceSecret,
   SID_COOKIE_NAME,
 } from "@/lib/server/bff-auth";
+import { validateCsrfToken } from "@/lib/server/csrf";
+import { PROXY_CSRF_ERROR_HEADER } from "@/lib/csrfProxyMarker";
 
 function buildTargetUrl(path: string[], search: string): string {
   const base = getBackendApiBaseUrl();
@@ -17,6 +19,30 @@ async function proxy(request: NextRequest, path: string[]) {
     return NextResponse.json(
       { message: "Use /api/auth/* para operações de autenticação." },
       { status: 404 },
+    );
+  }
+
+  const method = request.method.toUpperCase();
+  const isMutating =
+    method !== "GET" && method !== "HEAD" && method !== "OPTIONS";
+
+  // Fix #04 (achado #7): defesa em profundidade (CSRF double-submit) nas
+  // mutações que passam pelo proxy de negócio — mesmo padrão já existente
+  // no student-frontend. SameSite=lax do cookie de sessão não cobre XSS
+  // same-site nem navegação top-level.
+  //
+  // Header PROXY_CSRF_ERROR_HEADER (não a mensagem) é o marcador que
+  // services/http.ts usa pra decidir se um 403 é retry-safe (rejeitado
+  // aqui, antes de qualquer chamada ao backend — nenhuma escrita ainda
+  // aconteceu) ou se veio do backend por outro motivo (ex.: guard de role,
+  // ownership check em cancel-scheduled-notice/delete-notice), caso em que
+  // não é seguro presumir reenvio idêntico. Não usar a string de mensagem
+  // como marcador — mensagem é pra humano, pode colidir por acaso com uma
+  // resposta legítima do backend.
+  if (isMutating && !(await validateCsrfToken(request))) {
+    return NextResponse.json(
+      { message: "Invalid CSRF token" },
+      { status: 403, headers: { [PROXY_CSRF_ERROR_HEADER]: "1" } },
     );
   }
 
@@ -35,7 +61,6 @@ async function proxy(request: NextRequest, path: string[]) {
     headers.set("x-session-id", sid);
   }
 
-  const method = request.method.toUpperCase();
   const canHaveBody = method !== "GET" && method !== "HEAD";
   const payload = canHaveBody ? await request.arrayBuffer() : undefined;
 

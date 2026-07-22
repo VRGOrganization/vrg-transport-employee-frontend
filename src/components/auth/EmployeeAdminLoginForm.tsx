@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { ArrowRight, Lock, Hash } from "lucide-react";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
@@ -15,11 +15,6 @@ export function EmployeeAdminLoginForm() {
   const { login } = useEmployeeAuth();
   const [rateLimited, setRateLimited] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const loginInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    loginInputRef.current?.focus();
-  }, []);
 
   const { values, errors, generalError, loading, setValue, handleSubmit } = useZodForm({
     schema: employeeLoginRequestSchema,
@@ -89,7 +84,6 @@ export function EmployeeAdminLoginForm() {
             Matrícula ou E-mail
           </label>
           <Input
-            ref={loginInputRef}
             id="login-field"
             type="text"
             autoComplete="username"

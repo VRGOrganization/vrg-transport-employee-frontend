@@ -5,11 +5,14 @@ export type PhotoType =
   | "AcademicPeriodProof"
   | "LicenseImage"
   | "GovernmentId"
-  | "ProofOfResidence";
+  | "ProofOfResidence"
+  | "TransportCardProof"
+  | "DisabilityProof";
 
 export interface StudentRecord {
   _id: string;
   name: string;
+  socialName?: string | null;
   email: string;
   telephone?: string;
   institution?: string;
@@ -18,6 +21,7 @@ export interface StudentRecord {
   bloodType?: string;
   schedule?: Array<{ day: string; period: string }>;
   active: boolean;
+  hasDisability?: boolean;
 }
 
 export type StudentsResponse =
@@ -167,4 +171,6 @@ export const PHOTO_TYPE_LABELS: Record<PhotoType, string> = {
   LicenseImage: "Carteirinha",
   GovernmentId: "Documento de identidade",
   ProofOfResidence: "Comprovante de residência",
+  TransportCardProof: "Carteirinha de Transporte Atual",
+  DisabilityProof: "Laudo Médico (PCD)",
 };

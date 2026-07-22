@@ -21,6 +21,9 @@ export default function LinkUniversityModal({ open, currentSlots = [], onClose, 
 
   useEffect(() => {
     if (!open) return;
+    // Sincronização com API externa (fetch on mount/dependency change) — o
+    // extra render de "loading=true" é o custo aceito desse padrão.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError("");
     universityApi

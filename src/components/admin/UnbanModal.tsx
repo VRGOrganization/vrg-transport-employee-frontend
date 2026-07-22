@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { X, ShieldCheck, Loader2, AlertCircle, Calendar } from "lucide-react";
 import { banlistService } from "@/services/banlistService";
-import { toTitleCase } from "@/lib/utils/string";
+import { resolveDisplayName, toTitleCase } from "@/lib/utils/string";
 import type { BanlistEntry } from "@/types/banlist";
 
 interface UnbanModalProps {
@@ -73,10 +73,13 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
         <div className="px-6 py-4 bg-surface-container-low/50 border-b border-outline-variant/20">
           <div className="flex items-center gap-3 mb-3">
             <div className="size-10 rounded-full bg-error/10 flex items-center justify-center text-error font-bold text-sm">
-              {entry.name.charAt(0).toUpperCase()}
+              {resolveDisplayName(entry).charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="font-semibold text-on-surface text-sm">{toTitleCase(entry.name)}</p>
+              <p className="font-semibold text-on-surface text-sm">{toTitleCase(resolveDisplayName(entry))}</p>
+              {entry.socialName?.trim() && (
+                <p className="text-xs text-on-surface-variant">Nome de registro: {toTitleCase(entry.name)}</p>
+              )}
               <p className="text-xs text-on-surface-variant">{entry.email}</p>
             </div>
           </div>

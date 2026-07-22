@@ -27,6 +27,10 @@ interface UseStudentSelectionReturn {
   academicPeriodImage: string | null;
   governmentImage: string | null;
   proofOfResidenceImage: string | null;
+  transportCardProofImage: string | null;
+  alreadyUsesTransport: boolean;
+  disabilityProofImage: string | null;
+  hasDisability: boolean;
   selectedLicensePreview: string | null;
   selectStudent: (student: StudentRecord) => Promise<void>;
   clearSelection: () => void;
@@ -44,6 +48,7 @@ licenseRequests: LicenseRequestRecord[],
   const [selectedRequestDetails, setSelectedRequestDetails] =
     useState<LicenseRequestRecord | null>(null);
   const [fullLicense, setFullLicense] = useState<LicenseRecord | null>(null);
+  const [alreadyUsesTransport, setAlreadyUsesTransport] = useState(false);
 
   const currentLicense = useMemo(() => {
     if (!selected) return null;
@@ -82,6 +87,8 @@ licenseRequests: LicenseRequestRecord[],
       if (normalized === "licenseimage") return "LicenseImage";
       if (normalized === "governmentid") return "GovernmentId";
       if (normalized === "proofofresidence") return "ProofOfResidence";
+      if (normalized === "transportcardproof") return "TransportCardProof";
+      if (normalized === "disabilityproof") return "DisabilityProof";
       return null;
     };
 
@@ -133,6 +140,20 @@ licenseRequests: LicenseRequestRecord[],
       null,
   );
 
+  const transportCardProofImage = normalizeMediaSource(
+    pendingImagesByType.TransportCardProof ??
+      selectedImages.find((img) => img.photoType === "TransportCardProof")?.documentImage ??
+      null,
+  );
+
+  const disabilityProofImage = normalizeMediaSource(
+    pendingImagesByType.DisabilityProof ??
+      selectedImages.find((img) => img.photoType === "DisabilityProof")?.documentImage ??
+      null,
+  );
+
+  const hasDisability = selected?.hasDisability ?? false;
+
   const licenseImageFromImages = normalizeMediaSource(
     selectedImages.find((img) => img.photoType === "LicenseImage")?.studentCard ?? null,
   );
@@ -156,13 +177,19 @@ licenseRequests: LicenseRequestRecord[],
     setApprovedLicensePreview(null);
     setSelectedRequestDetails(null);
     setFullLicense(null);
+    setAlreadyUsesTransport(false);
     setLoadingSelected(true);
     try {
-      const [images, requestsByStudent] = await Promise.all([
+      const [images, requestsByStudent, transportUsage] = await Promise.all([
         http.get<ImageRecord[]>(`/image/student/${student._id}`),
         http
           .get<LicenseRequestRecord[]>(`/license-request/student/${student._id}`)
           .catch(() => []),
+        http
+          .get<{ studentId: string; alreadyUsesTransport: boolean }>(
+            `/transport-usage/student/${student._id}`,
+          )
+          .catch(() => null),
       ]);
 
       // Buscar licença completa (inclui expirationDate, qrCodeUrl, verificationCode)
@@ -182,11 +209,13 @@ licenseRequests: LicenseRequestRecord[],
       setApprovedLicensePreview(extractLicenseImage(selectedLicense));
       setSelectedRequestDetails(latestDetailedRequest);
       setFullLicense(licenseDetail);
+      setAlreadyUsesTransport(transportUsage?.alreadyUsesTransport ?? false);
     } catch {
       setSelectedImages([]);
       setApprovedLicensePreview(null);
       setSelectedRequestDetails(null);
       setFullLicense(null);
+      setAlreadyUsesTransport(false);
     } finally {
       setLoadingSelected(false);
     }
@@ -198,6 +227,7 @@ licenseRequests: LicenseRequestRecord[],
     setApprovedLicensePreview(null);
     setSelectedRequestDetails(null);
     setFullLicense(null);
+    setAlreadyUsesTransport(false);
   }, []);
 
   return {
@@ -215,6 +245,10 @@ licenseRequests: LicenseRequestRecord[],
     academicPeriodImage,
     governmentImage,
     proofOfResidenceImage,
+    transportCardProofImage,
+    alreadyUsesTransport,
+    disabilityProofImage,
+    hasDisability,
     selectedLicensePreview,
     selectStudent,
     clearSelection,

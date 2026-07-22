@@ -12,6 +12,8 @@ import {
 
 interface RequestRevisionModalProps {
   currentLicenseRequest: LicenseRequestRecord;
+  alreadyUsesTransport: boolean;
+  hasDisability: boolean;
   onClose: () => void;
   onSuccess: (message: string) => void;
   onReload: () => Promise<void>;
@@ -36,10 +38,21 @@ const REVISION_FIELD_KEYS: RevisionFieldKey[] = [
 
 export function RequestRevisionModal({
   currentLicenseRequest,
+  alreadyUsesTransport,
+  hasDisability,
   onClose,
   onSuccess,
   onReload,
 }: RequestRevisionModalProps) {
+  // O comprovante de uso do transporte e o laudo médico só são revisáveis
+  // quando o aluno declarou a condição correspondente (do contrário ele
+  // nunca enviou esse documento).
+  const revisionDocuments: PhotoType[] = [
+    ...REVISION_DOCUMENTS,
+    ...(alreadyUsesTransport ? (["TransportCardProof"] as PhotoType[]) : []),
+    ...(hasDisability ? (["DisabilityProof"] as PhotoType[]) : []),
+  ];
+
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState("");
@@ -123,7 +136,7 @@ export function RequestRevisionModal({
           <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">
             Documentos a reenviar
           </p>
-          {REVISION_DOCUMENTS.map((doc) => (
+          {revisionDocuments.map((doc) => (
             <label key={doc} className={itemClass(selectedDocs.has(doc))}>
               <input
                 type="checkbox"

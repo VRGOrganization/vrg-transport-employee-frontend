@@ -7,6 +7,7 @@ import {
   ROLE_COOKIE_NAME,
   SID_COOKIE_NAME,
 } from "@/lib/server/bff-auth";
+import { getCsrfHeaderName, setCsrfCookie } from "@/lib/server/csrf";
 import { backendMeSchema } from "@/lib/validation/auth";
 
 function clearAuthCookies(response: NextResponse): void {
@@ -49,10 +50,20 @@ function refreshAuthCookies(
 }
 
 export async function GET(request: NextRequest) {
+  // Fix #04: toda resposta desta rota carrega um par csrf {headerName,
+  // token} fresco — é o bootstrap que useEmployeeAuth.ensureCsrf() usa pra
+  // alimentar o header CSRF das chamadas de negócio via services/http.ts.
+  // Mesmo padrão do student-frontend (app/api/auth/session/route.ts).
+  const csrfToken = await setCsrfCookie();
+  const csrf = { headerName: getCsrfHeaderName(), token: csrfToken };
+
   const sid = request.cookies.get(SID_COOKIE_NAME)?.value;
 
   if (!sid) {
-    return NextResponse.json({ message: "Sessão não encontrada." }, { status: 401 });
+    return NextResponse.json(
+      { message: "Sessão não encontrada.", csrf },
+      { status: 401 },
+    );
   }
 
   try {
@@ -66,26 +77,38 @@ export async function GET(request: NextRequest) {
     });
 
     if (upstream.status === 401) {
-      const response = NextResponse.json({ message: "Sessão inválida." }, { status: 401 });
+      const response = NextResponse.json(
+        { message: "Sessão inválida.", csrf },
+        { status: 401 },
+      );
       clearAuthCookies(response);
       return response;
     }
 
     if (!upstream.ok) {
-      return NextResponse.json({ message: "Falha ao validar sessão." }, { status: 502 });
+      return NextResponse.json(
+        { message: "Falha ao validar sessão.", csrf },
+        { status: 502 },
+      );
     }
 
     const mePayload = await upstream.json().catch(() => ({}));
     const meResult = backendMeSchema.safeParse(mePayload);
 
     if (!meResult.success) {
-      return NextResponse.json({ message: "Resposta invalida ao carregar sessao." }, { status: 502 });
+      return NextResponse.json(
+        { message: "Resposta invalida ao carregar sessao.", csrf },
+        { status: 502 },
+      );
     }
 
     const meData = meResult.data;
 
     if (meData.userType !== "admin" && meData.userType !== "employee") {
-      return NextResponse.json({ message: "Tipo de usuário não suportado neste frontend." }, { status: 403 });
+      return NextResponse.json(
+        { message: "Tipo de usuário não suportado neste frontend.", csrf },
+        { status: 403 },
+      );
     }
 
     const userId = meData.userId;
@@ -94,6 +117,7 @@ export async function GET(request: NextRequest) {
 
     const response = NextResponse.json({
       ok: true,
+      csrf,
       user: {
         id: userId,
         role: meData.userType,
@@ -109,7 +133,7 @@ export async function GET(request: NextRequest) {
     return response;
   } catch {
     return NextResponse.json(
-      { message: "Backend indisponível. Mantendo sessão local.", offline: true },
+      { message: "Backend indisponível. Mantendo sessão local.", offline: true, csrf },
       { status: 503 },
     );
   }

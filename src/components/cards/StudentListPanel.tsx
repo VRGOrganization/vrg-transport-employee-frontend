@@ -146,9 +146,24 @@ export function StudentListPanel({
     );
   }, [licenseRequests]);
 
+  // Mapa studentId -> pedido pendente (para ordenar a fila por prioridade → FIFO).
+  // priorityLevel vem recalculado do backend com as regras ATUAIS; ausente = 3
+  // (mesmo default do backend). Menor priorityLevel = maior prioridade.
+  const pendingRequestByStudent = useMemo(() => {
+    const map = new Map<string, { priorityLevel: number; createdAt: string }>();
+    for (const r of licenseRequests) {
+      if (r.status !== "pending") continue;
+      map.set(r.studentId, {
+        priorityLevel: typeof r.priorityLevel === "number" ? r.priorityLevel : 3,
+        createdAt: r.createdAt,
+      });
+    }
+    return map;
+  }, [licenseRequests]);
+
   const filteredStudents = useMemo(() => {
     const normalized = filter === "with-card" ? search.trim().toLowerCase() : "";
-    return students
+    const list = students
       .filter((s) => s.active)
       .filter((s) => {
         if (filter === "pending") {
@@ -167,10 +182,28 @@ export function StudentListPanel({
         if (!normalized) return true;
         return (
           s.name.toLowerCase().includes(normalized) ||
+          (s.socialName ?? "").toLowerCase().includes(normalized) ||
           s.email.toLowerCase().includes(normalized) ||
           (s.institution ?? "").toLowerCase().includes(normalized)
         );
       });
+
+    // A fila de pendentes é exibida na ordem de aprovação: prioridade
+    // (priorityLevel asc) e, dentro do mesmo nível, FIFO por createdAt asc.
+    if (filter === "pending") {
+      list.sort((a, b) => {
+        const ra = pendingRequestByStudent.get(a._id);
+        const rb = pendingRequestByStudent.get(b._id);
+        const pa = ra?.priorityLevel ?? 3;
+        const pb = rb?.priorityLevel ?? 3;
+        if (pa !== pb) return pa - pb;
+        const ta = ra ? new Date(ra.createdAt).getTime() : 0;
+        const tb = rb ? new Date(rb.createdAt).getTime() : 0;
+        return ta - tb;
+      });
+    }
+
+    return list;
   }, [
     students,
     filter,
@@ -180,6 +213,7 @@ export function StudentListPanel({
     waitlistedStudentIds,
     reviewStudentIds,
     priorityFilteredStudentIds,
+    pendingRequestByStudent,
   ]);
 
 
@@ -191,7 +225,14 @@ export function StudentListPanel({
           ? initialPendings.filter((p) => priorityFilteredStudentIds.has(p.studentId))
           : initialPendings;
         if (pendings.length === 0) return new Set<string>();
-        pendings.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        // Próximo a aprovar = maior prioridade (priorityLevel asc, recalculado
+        // pelo backend) e, empatando, o mais antigo (FIFO por createdAt asc).
+        pendings.sort((a, b) => {
+          const pa = typeof a.priorityLevel === "number" ? a.priorityLevel : 3;
+          const pb = typeof b.priorityLevel === "number" ? b.priorityLevel : 3;
+          if (pa !== pb) return pa - pb;
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
         return new Set([pendings[0].studentId]);
       }
 

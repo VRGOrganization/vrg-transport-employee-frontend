@@ -65,7 +65,9 @@ export function useCardsData(university?: University | null): UseCardsDataReturn
       const [studentsResponse, licensesResponse, requestsResponse] = await Promise.all([
         http.get<StudentsResponse>("/student"),
         http.get<LicenseRecord[]>("/license/all"),
-        http.get<LicenseRequestRecord[]>("/license-request"),
+        // limit alto: a fila é ordenada por prioridade → FIFO no cliente, então
+        // precisamos do conjunto completo (um teto baixo truncaria a fila).
+        http.get<LicenseRequestRecord[]>("/license-request?limit=1000"),
       ]);
 
       const resolvedStudents = normalizeArrayResponse<StudentRecord>(studentsResponse);

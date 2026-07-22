@@ -52,6 +52,44 @@ function renderPanel(props: Partial<StudentListPanelProps> = {}) {
   return render(<StudentListPanel {...defaultProps} {...props} />);
 }
 
+describe('StudentListPanel — busca por nome social e nome civil', () => {
+  it('encontra aluno digitando o nome social, mesmo aluno some ao filtrar por nome civil de outro aluno', () => {
+    const s1: StudentRecord = { ...makeStudent('s1', 'João Silva'), socialName: 'Joana Silva' };
+    const s2 = makeStudent('s2', 'Bob');
+
+    renderPanel({
+      students: [s1, s2],
+      licensedStudentIds: new Set(['s1', 's2']),
+      filter: 'with-card',
+    });
+
+    fireEvent.change(screen.getByPlaceholderText('Buscar por nome, e-mail ou instituição'), {
+      target: { value: 'Joana' },
+    });
+
+    expect(screen.queryByText('Joana Silva')).toBeTruthy();
+    expect(screen.queryByText('Bob')).toBeNull();
+  });
+
+  it('também encontra o mesmo aluno buscando pelo nome civil', () => {
+    const s1: StudentRecord = { ...makeStudent('s1', 'João Silva'), socialName: 'Joana Silva' };
+    const s2 = makeStudent('s2', 'Bob');
+
+    renderPanel({
+      students: [s1, s2],
+      licensedStudentIds: new Set(['s1', 's2']),
+      filter: 'with-card',
+    });
+
+    fireEvent.change(screen.getByPlaceholderText('Buscar por nome, e-mail ou instituição'), {
+      target: { value: 'João Silva' },
+    });
+
+    expect(screen.queryByText('Joana Silva')).toBeTruthy();
+    expect(screen.queryByText('Bob')).toBeNull();
+  });
+});
+
 describe('StudentListPanel — prioridade dinâmica', () => {
   it('mostra só P1 quando P1 tem pendentes (filtro=pending)', () => {
     const s1 = makeStudent('s1', 'Alice');

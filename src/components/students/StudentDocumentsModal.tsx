@@ -6,10 +6,13 @@ import { http } from "@/services/http";
 import type { ImageRecord, PhotoType } from "@/types/cards.types";
 import { PHOTO_TYPE_LABELS } from "@/types/cards.types";
 import { normalizeMediaSource } from "@/lib/cardUtils";
+import { resolveDisplayName } from "@/lib/utils/string";
 
 interface Props {
   studentId: string;
   studentName: string;
+  studentSocialName?: string | null;
+  hasDisability?: boolean;
   onClose: () => void;
 }
 
@@ -27,6 +30,8 @@ const DOC_ICON: Record<PhotoType, string> = {
   LicenseImage:        "badge",
   GovernmentId:        "credit_card",
   ProofOfResidence:    "home",
+  TransportCardProof:  "directions_bus",
+  DisabilityProof:     "medical_information",
 };
 
 const DOC_ORDER: PhotoType[] = [
@@ -39,28 +44,54 @@ const DOC_ORDER: PhotoType[] = [
   "LicenseImage",
 ];
 
-export function StudentDocumentsModal({ studentId, studentName, onClose }: Props) {
+export function StudentDocumentsModal({
+  studentId,
+  studentName,
+  studentSocialName,
+  hasDisability = false,
+  onClose,
+}: Props) {
   const [docs, setDocs] = useState<ImageRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // Sincronização com API externa (fetch on mount/dependency change) — o
+    // extra render de "loading=true" é o custo aceito desse padrão.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
-    http
-      .get<ImageRecord[]>(`/image/student/${studentId}`)
-      .then((data) => {
-        const sorted = [...data].sort(
+    Promise.all([
+      http.get<ImageRecord[]>(`/image/student/${studentId}`),
+      http
+        .get<{ studentId: string; alreadyUsesTransport: boolean }>(
+          `/transport-usage/student/${studentId}`,
+        )
+        .catch(() => null),
+    ])
+      .then(([data, transportUsage]) => {
+        const alreadyUsesTransport = transportUsage?.alreadyUsesTransport ?? false;
+        const visible = data.filter((doc) => {
+          if (doc.photoType === "TransportCardProof") return alreadyUsesTransport;
+          if (doc.photoType === "DisabilityProof") return hasDisability;
+          return true;
+        });
+        const sorted = [...visible].sort(
           (a, b) => DOC_ORDER.indexOf(a.photoType) - DOC_ORDER.indexOf(b.photoType),
         );
         setDocs(sorted);
       })
       .catch(() => setError("Não foi possível carregar os documentos."))
       .finally(() => setLoading(false));
-  }, [studentId]);
+  }, [studentId, hasDisability]);
 
   return (
     <Modal open onClose={onClose} title="Documentos do Aluno" size="lg">
-      <p className="text-sm text-on-surface-variant -mt-2 mb-5">{studentName}</p>
+      <p className={`text-sm text-on-surface-variant -mt-2 ${studentSocialName?.trim() ? "mb-1" : "mb-5"}`}>
+        {resolveDisplayName({ name: studentName, socialName: studentSocialName })}
+      </p>
+      {studentSocialName?.trim() && (
+        <p className="text-xs text-on-surface-variant mb-5">Nome de registro: {studentName}</p>
+      )}
 
       {/* Loading */}
       {loading && (
@@ -109,7 +140,7 @@ export function StudentDocumentsModal({ studentId, studentName, onClose }: Props
                 className="rounded-2xl border border-outline-variant/30 overflow-hidden bg-surface-container-lowest flex flex-col shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
               >
                 {/* Card header */}
-                <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-primary/8 to-transparent border-b border-outline-variant/20">
+                <div className="flex items-center gap-3 px-4 py-3 bg-linear-to-r from-primary/8 to-transparent border-b border-outline-variant/20">
                   <div className="size-8 rounded-full bg-primary/12 flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined text-primary" style={{ fontSize: "17px" }}>
                       {icon}

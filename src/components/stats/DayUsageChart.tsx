@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import {
   Chart,
   BarElement,
@@ -31,23 +31,31 @@ const DAY_LABELS: Record<keyof DayUsageStats, string> = {
   SEX: "Sexta",
 };
 
+function subscribeToDarkMode(callback: () => void) {
+  const observer = new MutationObserver(callback);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+  return () => observer.disconnect();
+}
+
+function getIsDarkSnapshot() {
+  return document.documentElement.classList.contains("dark");
+}
+
+function getIsDarkServerSnapshot() {
+  return false;
+}
+
 export function DayUsageChart({ byDay }: DayUsageChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart | null>(null);
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    setIsDark(document.documentElement.classList.contains("dark"));
-
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    return () => observer.disconnect();
-  }, []);
+  const isDark = useSyncExternalStore(
+    subscribeToDarkMode,
+    getIsDarkSnapshot,
+    getIsDarkServerSnapshot,
+  );
 
   useEffect(() => {
     if (!canvasRef.current) return;

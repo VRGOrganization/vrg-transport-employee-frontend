@@ -4,11 +4,16 @@ export interface University {
   acronym: string;
   address: string;
   active: boolean;
+  /** Faculdade temporária criada no fluxo interno (oculta para o aluno). */
+  temporary?: boolean;
   createdAt: string;
   updatedAt: string;
   pendingCount?: number;
   revisionCount?: number;
   waitlistedCount?: number;
+  // Presente na listagem (GET /university): true se existe ao menos um Bus
+  // cobrindo essa faculdade. Ausente em respostas antigas/mockadas.
+  hasBus?: boolean;
 }
 
 export type CourseModel = "Técnico" | "Tecnólogo" | "Bacharel" | "Licenciatura" | "Mestrado" | "Doutorado";
@@ -56,6 +61,7 @@ export interface Bus {
 export interface BusStudent {
   _id: string;
   name: string;
+  socialName?: string | null;
   email: string;
   shift?: string;
   institution?: string;

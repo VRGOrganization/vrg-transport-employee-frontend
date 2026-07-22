@@ -29,6 +29,7 @@ function studentStatus(status: string | undefined, active: boolean): string {
 
 export interface CsvStudent {
   name: string;
+  socialName?: string | null;
   email: string;
   telephone?: string;
   institution?: string;
@@ -62,10 +63,11 @@ export interface CsvUniversity {
 }
 
 export function buildStudentsCsv(rows: CsvStudent[]): string {
-  const header = csvRow(["Nome", "Email", "Telefone", "Instituição", "Turno", "Ativo", "Status", "Data de Cadastro"]);
+  const header = csvRow(["Nome", "Nome social", "Email", "Telefone", "Instituição", "Turno", "Ativo", "Status", "Data de Cadastro"]);
   const body = rows.map((s) =>
     csvRow([
       s.name,
+      s.socialName ?? "",
       s.email,
       s.telephone ?? "",
       s.institution ?? "",
