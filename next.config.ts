@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const isProd = process.env.NODE_ENV === "production";
+// Origem pública do object storage (MinIO em dev, R2 em prod) — precisa
+// estar liberada no img-src, senão o browser bloqueia via CSP mesmo com
+// presigned URL válida.
+const storagePublicOrigin = process.env.STORAGE_PUBLIC_ENDPOINT?.trim();
 
 const nextConfig: NextConfig = {
   async headers() {
@@ -22,14 +26,18 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: blob:",
-              `connect-src 'self'${isProd ? "" : " ws: wss:"}`,
+              `img-src 'self' data: blob:${storagePublicOrigin ? ` ${storagePublicOrigin}` : ""}`,
+              // Download de documento faz fetch() direto na presigned URL do
+              // storage (cardUtils.ts:downloadMedia) — isso é connect-src, não
+              // img-src/frame-src. Sem essa origem aqui, o fetch é bloqueado
+              // pelo CSP mesmo com URL assinada válida.
+              `connect-src 'self'${isProd ? "" : " ws: wss:"}${storagePublicOrigin ? ` ${storagePublicOrigin}` : ""}`,
               "font-src 'self' data: https://fonts.gstatic.com",
               "worker-src 'self'",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
-              "frame-src 'self' data: blob:",
+              `frame-src 'self' data: blob:${storagePublicOrigin ? ` ${storagePublicOrigin}` : ""}`,
               "frame-ancestors 'none'",
               "upgrade-insecure-requests",
             ].join("; "),

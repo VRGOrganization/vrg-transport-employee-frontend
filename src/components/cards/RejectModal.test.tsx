@@ -8,8 +8,8 @@ const mocks = vi.hoisted(() => ({
   patchMock: vi.fn(),
 }));
 
-vi.mock("@/lib/employeeApi", () => ({
-  employeeApi: {
+vi.mock("@/services/http", () => ({
+  http: {
     get: (...args: unknown[]) => mocks.getMock(...args),
     patch: (...args: unknown[]) => mocks.patchMock(...args),
   },
@@ -27,10 +27,12 @@ const makeRequest = (): LicenseRequestRecord => ({
   createdAt: new Date().toISOString(),
 });
 
+// Formato real de RejectionReasonConfig: { label, isPersonalDocumentReason }.
+// Os motivos são identificados pelo próprio label (não há id).
 const REASONS_FROM_API = [
-  { id: "photo_inadequate", label: "Foto inadequada ou ilegível" },
-  { id: "invalid_enrollment_proof", label: "Comprovante de matrícula inválido" },
-  { id: "missing_personal_documents", label: "Documentos pessoais faltando" },
+  { label: "Foto inadequada ou ilegível", isPersonalDocumentReason: false },
+  { label: "Comprovante de matrícula inválido", isPersonalDocumentReason: false },
+  { label: "Documentos pessoais faltando", isPersonalDocumentReason: true },
 ];
 
 describe("RejectModal", () => {
@@ -158,7 +160,7 @@ describe("RejectModal", () => {
     ).toBeInTheDocument();
   });
 
-  it("envia reasons[] e customRejectionMessage ao confirmar", async () => {
+  it("envia reasons[] e customMessage ao confirmar", async () => {
     render(
       <RejectModal
         currentLicenseRequest={makeRequest()}
@@ -182,10 +184,13 @@ describe("RejectModal", () => {
 
     await waitFor(() =>
       expect(mocks.patchMock).toHaveBeenCalledWith(
-        "/license-request/reject/req-1",
+        "/license-request/req-1/reject",
         expect.objectContaining({
-          reasons: expect.arrayContaining(["photo_inadequate", "missing_personal_documents"]),
-          customRejectionMessage: "Foto borrada",
+          reasons: expect.arrayContaining([
+            "Foto inadequada ou ilegível",
+            "Documentos pessoais faltando",
+          ]),
+          customMessage: "Foto borrada",
         }),
       ),
     );

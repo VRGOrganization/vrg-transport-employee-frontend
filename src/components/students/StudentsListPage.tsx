@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { GraduationCap, ShieldBan, ShieldCheck, ArrowUpAZ, ArrowDownAZ } from "lucide-react";
 import { studentService } from "@/services/studentService";
 import { banlistService } from "@/services/banlistService";
@@ -132,6 +133,7 @@ const BAN_COLUMNS: Column<BanlistEntry>[] = [
 
 export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   const isAdmin = role === "admin";
+  const router = useRouter();
   const [topTab, setTopTab]                   = useState<Tab>("active");
   const [createOpen, setCreateOpen]           = useState(false);
   const [viewingStudent, setViewingStudent]   = useState<Student | null>(null);
@@ -247,6 +249,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
                 { icon: "visibility",  label: "Ver",         action: () => { setViewingStudent(student); setOpenDropdownId(null); } },
                 { icon: "folder_open", label: "Documentos",  action: () => { setDocsStudent(student);    setOpenDropdownId(null); } },
                 { icon: "badge",       label: "Carteirinha", action: () => { setViewingCard(student);    setOpenDropdownId(null); } },
+                { icon: "add_card",    label: "Novo pedido", action: () => { router.push(`/${role}/students/license/new?id=${student._id}`); setOpenDropdownId(null); } },
               ].map(({ icon, label, action }) => (
                 <button
                   key={label}
@@ -415,6 +418,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
         <StudentDocumentsModal
           studentId={docsStudent._id}
           studentName={docsStudent.name}
+          hasDisability={docsStudent.hasDisability ?? false}
           onClose={() => setDocsStudent(null)}
         />
       )}

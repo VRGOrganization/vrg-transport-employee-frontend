@@ -36,6 +36,10 @@ interface StudentDetailPanelProps {
   academicPeriodImage: string | null;
   governmentImage: string | null;
   proofOfResidenceImage: string | null;
+  transportCardProofImage: string | null;
+  alreadyUsesTransport: boolean;
+  disabilityProofImage: string | null;
+  hasDisability: boolean;
   selectedLicensePreview: string | null;
   fullLicense?: LicenseRecord | null;
   onReload: () => Promise<void>;
@@ -60,6 +64,10 @@ export function StudentDetailPanel({
   academicPeriodImage,
   governmentImage,
   proofOfResidenceImage,
+  transportCardProofImage,
+  alreadyUsesTransport,
+  disabilityProofImage,
+  hasDisability,
   selectedLicensePreview,
   fullLicense,
   onReload,
@@ -87,6 +95,10 @@ export function StudentDetailPanel({
     [selectedLicensePreview],
   );
 
+  const showTransportCardProof =
+    alreadyUsesTransport || transportCardProofImage != null;
+  const showDisabilityProof = hasDisability || disabilityProofImage != null;
+
   const licensePreviewItems = useMemo<PreviewItem[]>(
     () => [
       { title: "Foto 3x4", dataUrl: profileImage },
@@ -101,8 +113,31 @@ export function StudentDetailPanel({
     () => [
       { title: "Documento de identidade", dataUrl: governmentImage },
       { title: "Comprovante de residência", dataUrl: proofOfResidenceImage },
+      ...(showTransportCardProof
+        ? [
+            {
+              title: "Carteirinha de Transporte Atual",
+              dataUrl: transportCardProofImage,
+            },
+          ]
+        : []),
+      ...(showDisabilityProof
+        ? [
+            {
+              title: "Laudo Médico (PCD)",
+              dataUrl: disabilityProofImage,
+            },
+          ]
+        : []),
     ],
-    [governmentImage, proofOfResidenceImage],
+    [
+      governmentImage,
+      proofOfResidenceImage,
+      showTransportCardProof,
+      transportCardProofImage,
+      showDisabilityProof,
+      disabilityProofImage,
+    ],
   );
 
   const previewItems = useMemo(
@@ -179,6 +214,30 @@ export function StudentDetailPanel({
           {(fullLicense ?? currentLicense) && (
             <LicenseDetailsCard license={(fullLicense ?? currentLicense)!} />
           )}
+
+          {/* ── Já usa o transporte (declaração do aluno) ────────── */}
+          {alreadyUsesTransport && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-on-surface-variant">
+                Já usa o transporte:
+              </span>
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                Sim
+              </span>
+            </div>
+          )}
+          {/* ─────────────────────────────────────────────────────── */}
+
+          {/* ── PCD (declaração do aluno) ──────────────────────────── */}
+          {hasDisability && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-on-surface-variant">PCD:</span>
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                Sim
+              </span>
+            </div>
+          )}
+          {/* ─────────────────────────────────────────────────────── */}
 
           {/* ── Bloco de prioridade e alocação ─────────────────── */}
           {currentLicenseRequest &&

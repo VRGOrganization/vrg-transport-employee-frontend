@@ -14,6 +14,7 @@ function makePeriod(overrides: Partial<EnrollmentPeriod> = {}): EnrollmentPeriod
     _id: 'p1',
     startDate: '2030-12-01T00:00:00.000Z',
     endDate: '2030-12-31T23:59:59.999Z',
+    cycleStartDate: '2030-12-01T00:00:00.000Z',
     totalSlots: 350,
     filledSlots: 10,
     licenseValidityMonths: 6,
@@ -29,85 +30,51 @@ function makePeriod(overrides: Partial<EnrollmentPeriod> = {}): EnrollmentPeriod
 
 const baseProps = {
   open: true,
-  period: null as EnrollmentPeriod | null,
+  period: makePeriod(),
   loading: false,
   serverError: '',
   onClose: vi.fn(),
   onSubmit: vi.fn(() => Promise.resolve()),
 };
 
-describe('EnrollmentPeriodModal', () => {
+describe('EnrollmentPeriodModal (edição da janela aberta)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('create submit sends payload without totalSlots', async () => {
+  it('shows the edit title and "Salvar alterações" as the submit label', () => {
+    render(<EnrollmentPeriodModal {...baseProps} />);
+    expect(screen.getByText('Editar período de inscrição')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /salvar alterações/i })).toBeInTheDocument();
+  });
+
+  it('pre-fills the form with the window dates and validity', async () => {
     const onSubmit = vi.fn(() => Promise.resolve());
-    render(
-      <EnrollmentPeriodModal
-        {...baseProps}
-        onSubmit={onSubmit}
-        period={null}
-      />
-    );
+    render(<EnrollmentPeriodModal {...baseProps} onSubmit={onSubmit} />);
 
-    const dateInputs = screen.getAllByPlaceholderText('dd/mm/aaaa');
-    fireEvent.change(dateInputs[0], { target: { value: '01/12/2030' } });
-    await waitFor(() => expect(dateInputs[1]).not.toBeDisabled());
-    fireEvent.change(dateInputs[1], { target: { value: '31/12/2030' } });
-
-    fireEvent.click(screen.getByRole('button', { name: /abrir período/i }));
+    fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
-
     const payload = onSubmit.mock.calls[0][0];
-    expect('totalSlots' in payload).toBe(false);
     expect(payload.startDate).toContain('2030-12-01');
     expect(payload.endDate).toContain('2030-12-31');
-    expect(typeof payload.licenseValidityMonths).toBe('number');
+    expect(payload.licenseValidityMonths).toBe(6);
   });
 
   it('no slots input field — only one number input (licenseValidityMonths)', () => {
-    render(<EnrollmentPeriodModal {...baseProps} period={null} />);
-
+    render(<EnrollmentPeriodModal {...baseProps} />);
     const numberInputs = screen.queryAllByRole('spinbutton');
     expect(numberInputs).toHaveLength(1);
   });
 
-  it('no slot-related validation message on submit without vagas', async () => {
-    const onSubmit = vi.fn(() => Promise.resolve());
-    render(<EnrollmentPeriodModal {...baseProps} onSubmit={onSubmit} period={null} />);
-
-    const dateInputs = screen.getAllByPlaceholderText('dd/mm/aaaa');
-    fireEvent.change(dateInputs[0], { target: { value: '01/12/2030' } });
-    await waitFor(() => expect(dateInputs[1]).not.toBeDisabled());
-    fireEvent.change(dateInputs[1], { target: { value: '31/12/2030' } });
-
-    fireEvent.click(screen.getByRole('button', { name: /abrir período/i }));
-
-    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
-    expect(screen.queryByText(/quantidade de vagas/i)).not.toBeInTheDocument();
-  });
-
-  it('shows "sem ônibus" backend error as general error in modal', () => {
-    const errorMsg = 'Não há ônibus com vagas para abrir um período de inscrição.';
-    render(
-      <EnrollmentPeriodModal
-        {...baseProps}
-        serverError={errorMsg}
-      />
-    );
-    expect(screen.getByText(errorMsg)).toBeInTheDocument();
-  });
-
-  it('shows derived read-only capacity when period has totalSlots', () => {
-    const period = makePeriod({ totalSlots: 350 });
-    render(<EnrollmentPeriodModal {...baseProps} period={period} />);
+  it('shows derived read-only capacity for the period', () => {
+    render(<EnrollmentPeriodModal {...baseProps} period={makePeriod({ totalSlots: 350 })} />);
     expect(screen.getByText(/350 vagas-dia/)).toBeInTheDocument();
   });
 
-  it('create mode shows "calculado automaticamente" placeholder for capacity', () => {
-    render(<EnrollmentPeriodModal {...baseProps} period={null} />);
-    expect(screen.getByText(/calculado automaticamente/i)).toBeInTheDocument();
+  it('shows server error (e.g. no active window to update)', () => {
+    const errorMsg = 'Não há janela de inscrição ativa para este ciclo.';
+    render(<EnrollmentPeriodModal {...baseProps} serverError={errorMsg} />);
+    expect(screen.getByText(errorMsg)).toBeInTheDocument();
   });
 });

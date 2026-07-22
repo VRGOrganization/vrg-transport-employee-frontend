@@ -10,6 +10,7 @@ import { normalizeMediaSource } from "@/lib/cardUtils";
 interface Props {
   studentId: string;
   studentName: string;
+  hasDisability?: boolean;
   onClose: () => void;
 }
 
@@ -27,6 +28,8 @@ const DOC_ICON: Record<PhotoType, string> = {
   LicenseImage:        "badge",
   GovernmentId:        "credit_card",
   ProofOfResidence:    "home",
+  TransportCardProof:  "directions_bus",
+  DisabilityProof:     "medical_information",
 };
 
 const DOC_ORDER: PhotoType[] = [
@@ -39,24 +42,41 @@ const DOC_ORDER: PhotoType[] = [
   "LicenseImage",
 ];
 
-export function StudentDocumentsModal({ studentId, studentName, onClose }: Props) {
+export function StudentDocumentsModal({
+  studentId,
+  studentName,
+  hasDisability = false,
+  onClose,
+}: Props) {
   const [docs, setDocs] = useState<ImageRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     setLoading(true);
-    http
-      .get<ImageRecord[]>(`/image/student/${studentId}`)
-      .then((data) => {
-        const sorted = [...data].sort(
+    Promise.all([
+      http.get<ImageRecord[]>(`/image/student/${studentId}`),
+      http
+        .get<{ studentId: string; alreadyUsesTransport: boolean }>(
+          `/transport-usage/student/${studentId}`,
+        )
+        .catch(() => null),
+    ])
+      .then(([data, transportUsage]) => {
+        const alreadyUsesTransport = transportUsage?.alreadyUsesTransport ?? false;
+        const visible = data.filter((doc) => {
+          if (doc.photoType === "TransportCardProof") return alreadyUsesTransport;
+          if (doc.photoType === "DisabilityProof") return hasDisability;
+          return true;
+        });
+        const sorted = [...visible].sort(
           (a, b) => DOC_ORDER.indexOf(a.photoType) - DOC_ORDER.indexOf(b.photoType),
         );
         setDocs(sorted);
       })
       .catch(() => setError("Não foi possível carregar os documentos."))
       .finally(() => setLoading(false));
-  }, [studentId]);
+  }, [studentId, hasDisability]);
 
   return (
     <Modal open onClose={onClose} title="Documentos do Aluno" size="lg">
@@ -109,7 +129,7 @@ export function StudentDocumentsModal({ studentId, studentName, onClose }: Props
                 className="rounded-2xl border border-outline-variant/30 overflow-hidden bg-surface-container-lowest flex flex-col shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
               >
                 {/* Card header */}
-                <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-primary/8 to-transparent border-b border-outline-variant/20">
+                <div className="flex items-center gap-3 px-4 py-3 bg-linear-to-r from-primary/8 to-transparent border-b border-outline-variant/20">
                   <div className="size-8 rounded-full bg-primary/12 flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined text-primary" style={{ fontSize: "17px" }}>
                       {icon}

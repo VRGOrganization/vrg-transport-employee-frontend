@@ -33,7 +33,7 @@ describe("useCardsData", () => {
         ]);
       }
 
-      if (path === "/license-request") {
+      if (path === "/license-request?limit=1000") {
         return Promise.resolve([
           {
             _id: "request-1",
@@ -93,7 +93,7 @@ describe("useCardsData", () => {
 
     expect(getMock).toHaveBeenCalledWith("/student");
     expect(getMock).toHaveBeenCalledWith("/license/all");
-    expect(getMock).toHaveBeenCalledWith("/license-request");
+    expect(getMock).toHaveBeenCalledWith("/license-request?limit=1000");
     expect(result.current.students).toHaveLength(1);
     expect(result.current.students[0]._id).toBe("student-1");
     expect(result.current.pendingStudentIds.has("student-1")).toBe(true);
@@ -114,7 +114,7 @@ describe("useCardsData", () => {
         return Promise.resolve([]);
       }
 
-      if (path === "/license-request") {
+      if (path === "/license-request?limit=1000") {
         return Promise.resolve([
           {
             _id: "request-approved",

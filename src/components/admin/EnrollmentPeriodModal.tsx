@@ -16,7 +16,7 @@ interface EnrollmentPeriodFormPayload {
 
 interface EnrollmentPeriodModalProps {
   open: boolean;
-  period: EnrollmentPeriod | null;
+  period: EnrollmentPeriod;
   loading: boolean;
   serverError: string;
   onClose: () => void;
@@ -67,15 +67,7 @@ function parseBRDate(display: string): string {
   return iso;
 }
 
-function buildInitialForm(period: EnrollmentPeriod | null): FormState {
-  if (!period) {
-    return {
-      startDate: "",
-      endDate: "",
-      licenseValidityMonths: "6",
-    };
-  }
-
+function buildInitialForm(period: EnrollmentPeriod): FormState {
   return {
     startDate: toInputDate(period.startDate),
     endDate: toInputDate(period.endDate),
@@ -96,7 +88,6 @@ export function EnrollmentPeriodModal({
   const [startDateText, setStartDateText] = useState<string>(() => isoToBR(buildInitialForm(period).startDate));
   const [endDateText, setEndDateText] = useState<string>(() => isoToBR(buildInitialForm(period).endDate));
   const [range, setRange] = useState<DateRange | undefined>(() => {
-    if (!period) return undefined;
     const from = period.startDate ? new Date(period.startDate) : undefined;
     const to = period.endDate ? new Date(period.endDate) : undefined;
     return { from, to } as DateRange;
@@ -114,7 +105,6 @@ export function EnrollmentPeriodModal({
     setStartDateText(isoToBR(initial.startDate));
     setEndDateText(isoToBR(initial.endDate));
     setRange(() => {
-      if (!period) return undefined;
       const from = period.startDate ? new Date(period.startDate) : undefined;
       const to = period.endDate ? new Date(period.endDate) : undefined;
       return { from, to } as DateRange;
@@ -129,18 +119,21 @@ export function EnrollmentPeriodModal({
     return () => window.removeEventListener("resize", update);
   }, [open]);
 
+  // Validade ancorada em startDate (data de início do ciclo), não endDate —
+  // mesma regra usada pelo backend desde o Núcleo 02. Na criação, o ciclo
+  // ainda não existe, então startDate do form É o futuro cycleStartDate.
   const licenseExpiryDate = useMemo(() => {
-    if (!form.endDate) return null;
+    if (!form.startDate) return null;
     const m = Number(form.licenseValidityMonths);
     if (!Number.isInteger(m) || m < 1) return null;
     try {
-      const base = new Date(`${form.endDate}T00:00:00`);
+      const base = new Date(`${form.startDate}T00:00:00`);
       if (Number.isNaN(base.getTime())) return null;
       return format(addMonths(base, m), "dd/MM/yyyy");
     } catch {
       return null;
     }
-  }, [form.endDate, form.licenseValidityMonths]);
+  }, [form.startDate, form.licenseValidityMonths]);
 
   const setField = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -238,7 +231,7 @@ export function EnrollmentPeriodModal({
       open={open}
       onClose={loading ? () => {} : onClose}
       size="xl"
-      title={period ? "Editar período de inscrição" : "Abrir novo período de inscrição"}
+      title="Editar período de inscrição"
     >
       <form className="space-y-3" onSubmit={handleSubmit}>
         <div>
@@ -311,9 +304,7 @@ export function EnrollmentPeriodModal({
               Capacidade (vagas-dia)
             </label>
             <div className="h-9 flex items-center rounded-lg border border-outline-variant/50 bg-surface-container-low px-3 text-sm text-on-surface-variant">
-              {period?.totalSlots != null
-                ? `${period.totalSlots} vagas-dia (derivado dos ônibus)`
-                : "Calculado automaticamente pelo backend"}
+              {period.totalSlots} vagas-dia (derivado dos ônibus)
             </div>
             <p className="mt-0.5 text-xs text-on-surface-variant">
               Capacidade = soma dos ônibus ativos × dias úteis. Não editável.
@@ -358,7 +349,7 @@ export function EnrollmentPeriodModal({
             Cancelar
           </Button>
           <Button type="submit" variant="primary" size="sm" loading={loading}>
-            {period ? "Salvar alterações" : "Abrir período"}
+            Salvar alterações
           </Button>
         </div>
       </form>

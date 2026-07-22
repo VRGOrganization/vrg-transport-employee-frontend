@@ -26,6 +26,7 @@ export const universityService = {
   listInactive: ()                                                    => http.get<Paginated<University>>("/university/inactive").then(resolvePaginated),
   getById:      (id: string)                                          => http.get<University>(`/university/${id}`),
   create:       (data: { name: string; acronym: string; address: string }) => http.post<University>("/university", data),
+  createTemporary: (name: string) => http.post<University>("/university/temporary", { name }),
   update:       (id: string, data: Partial<{ name: string; acronym: string; address: string }>) =>
                   http.patch<University>(`/university/${id}`, data),
   deactivate:   (id: string) => http.delete<{ message: string }>(`/university/${id}`),
