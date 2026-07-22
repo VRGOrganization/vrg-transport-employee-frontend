@@ -14,6 +14,7 @@ import {
   type RevisionFieldKey,
   type StudentRecord,
 } from "@/types/cards.types";
+import { resolveDisplayName } from "@/lib/utils/string";
 import { AllocationSummaryCard } from "./AllocationSummaryCard";
 import { ApprovalFooter } from "./ApprovalFooter";
 import { DocumentsGrid } from "./DocumentsGrid";
@@ -357,6 +358,7 @@ export function StudentDetailPanel({
             personalItems={personalPreviewItems}
             loadingImages={loadingSelected}
             onOpenLightbox={setLightboxIndex}
+            civilName={selected.socialName?.trim() ? selected.name : undefined}
           />
         </div>
 
@@ -387,7 +389,7 @@ export function StudentDetailPanel({
       {historyOpen && (
         <ImageHistoryDrawer
           studentId={selected._id}
-          studentName={selected.name}
+          studentName={resolveDisplayName(selected)}
           onClose={() => setHistoryOpen(false)}
         />
       )}

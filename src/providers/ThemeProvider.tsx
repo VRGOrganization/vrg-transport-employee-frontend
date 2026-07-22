@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark";
 
@@ -14,30 +14,42 @@ const ThemeContext = createContext<ThemeContextValue>({
   toggle: () => {},
 });
 
+const themeListeners = new Set<() => void>();
+
+function readTheme(): Theme {
+  const saved = localStorage.getItem("theme");
+  if (saved === "light" || saved === "dark") return saved;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function subscribeToTheme(callback: () => void) {
+  themeListeners.add(callback);
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  mq.addEventListener("change", callback);
+  return () => {
+    themeListeners.delete(callback);
+    mq.removeEventListener("change", callback);
+  };
+}
+
+function getThemeServerSnapshot(): Theme {
+  return "light";
+}
+
+function setTheme(next: Theme) {
+  localStorage.setItem("theme", next);
+  themeListeners.forEach((listener) => listener());
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
-
-  useEffect(() => {
-    // Resolve preferred theme only on client to keep SSR/CSR initial render consistent.
-    const saved = localStorage.getItem("theme");
-    if (saved === "light" || saved === "dark") {
-      setTheme(saved);
-      return;
-    }
-
-    setTheme(window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-  }, []);
+  const theme = useSyncExternalStore(subscribeToTheme, readTheme, getThemeServerSnapshot);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
 
   const toggle = () => {
-    setTheme((prev) => {
-      const next = prev === "light" ? "dark" : "light";
-      localStorage.setItem("theme", next);
-      return next;
-    });
+    setTheme(theme === "light" ? "dark" : "light");
   };
 
   return (

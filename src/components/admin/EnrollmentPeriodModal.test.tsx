@@ -2,10 +2,6 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('react-day-picker', () => ({
-  DayPicker: () => null,
-}));
-
 import { EnrollmentPeriodModal } from './EnrollmentPeriodModal';
 import type { EnrollmentPeriod } from '@/types/enrollmentPeriod';
 
@@ -48,17 +44,76 @@ describe('EnrollmentPeriodModal (edição da janela aberta)', () => {
     expect(screen.getByRole('button', { name: /salvar alterações/i })).toBeInTheDocument();
   });
 
-  it('pre-fills the form with the window dates and validity', async () => {
+  it('pre-fills the form with the window dates and validity', () => {
+    render(<EnrollmentPeriodModal {...baseProps} />);
+    expect(screen.getByDisplayValue('2030-12-01')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('2030-12-31')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('6')).toBeInTheDocument();
+  });
+
+  it('submits only the changed fields (validity only when dates untouched)', async () => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    render(<EnrollmentPeriodModal {...baseProps} onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByLabelText(/validade da carteirinha/i), {
+      target: { value: '8' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+    const payload = onSubmit.mock.calls[0][0];
+    expect(payload).toEqual({ licenseValidityMonths: 8 });
+    expect('startDate' in payload).toBe(false);
+    expect('endDate' in payload).toBe(false);
+  });
+
+  it('submits the changed window dates as ISO', async () => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    render(<EnrollmentPeriodModal {...baseProps} onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByLabelText(/data de fim/i), {
+      target: { value: '2030-12-20' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+    const payload = onSubmit.mock.calls[0][0];
+    expect(payload.endDate).toContain('2030-12-20');
+    expect('startDate' in payload).toBe(false);
+    expect('licenseValidityMonths' in payload).toBe(false);
+  });
+
+  it('blocks submit with a message when nothing changed', async () => {
     const onSubmit = vi.fn(() => Promise.resolve());
     render(<EnrollmentPeriodModal {...baseProps} onSubmit={onSubmit} />);
 
     fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
 
+    expect(await screen.findByText(/nenhuma alteração para salvar/i)).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('with no open window: hides window date fields, still edits validity', async () => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    render(
+      <EnrollmentPeriodModal
+        {...baseProps}
+        period={makePeriod({ startDate: null, endDate: null })}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    expect(screen.queryByLabelText(/data de início/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/data de fim/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/nenhuma janela aberta/i)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/validade da carteirinha/i), {
+      target: { value: '9' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
+
     await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
-    const payload = onSubmit.mock.calls[0][0];
-    expect(payload.startDate).toContain('2030-12-01');
-    expect(payload.endDate).toContain('2030-12-31');
-    expect(payload.licenseValidityMonths).toBe(6);
+    expect(onSubmit.mock.calls[0][0]).toEqual({ licenseValidityMonths: 9 });
   });
 
   it('no slots input field — only one number input (licenseValidityMonths)', () => {

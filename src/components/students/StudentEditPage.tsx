@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { studentService } from "@/services/studentService";
 import { universityService } from "@/services/universityService";
 import { Student } from "@/types/student";
+import { resolveDisplayName } from "@/lib/utils/string";
 import type { University } from "@/types/university.types";
 import { StudentForm } from "@/components/students/StudentForm";
 import { StudentFormLayout } from "@/components/students/StudentFormLayout";
@@ -128,7 +129,7 @@ function StudentEditPageInner({ role }: StudentEditPageProps) {
     <main className="bg-surface p-8 min-h-[calc(100vh-4rem)] flex flex-col">
         <StudentFormLayout
           title="Editar Estudante"
-          subtitle={`Atualize os dados de ${student?.name ?? "estudante"}`}
+          subtitle={`Atualize os dados de ${student ? resolveDisplayName(student) : "estudante"}`}
           backHref={backHref}
         >
           {success ? (

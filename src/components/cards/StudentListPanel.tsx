@@ -182,6 +182,7 @@ export function StudentListPanel({
         if (!normalized) return true;
         return (
           s.name.toLowerCase().includes(normalized) ||
+          (s.socialName ?? "").toLowerCase().includes(normalized) ||
           s.email.toLowerCase().includes(normalized) ||
           (s.institution ?? "").toLowerCase().includes(normalized)
         );

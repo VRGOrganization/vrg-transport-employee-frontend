@@ -41,6 +41,9 @@ export function ImageHistoryDrawer({
 
   useEffect(() => {
     if (!studentId) {
+      // Sincronização com API externa (fetch on mount/dependency change) — o
+      // extra render é o custo aceito desse padrão.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRecords([]);
       setError("");
       return;

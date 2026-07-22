@@ -10,7 +10,7 @@ import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
 import { UnbanModal } from "@/components/admin/UnbanModal";
 import type { PageSize } from "@/lib/constants";
-import { toTitleCase } from "@/lib/utils/string";
+import { resolveDisplayName, toTitleCase } from "@/lib/utils/string";
 
 type Tab = "active" | "inactive";
 
@@ -26,10 +26,13 @@ const COLUMNS: Column<BanlistEntry>[] = [
     render: (entry) => (
       <div className="flex items-center gap-3">
         <div className="size-9 rounded-full bg-error/10 flex items-center justify-center text-error font-bold text-xs flex-shrink-0">
-          {entry.name.charAt(0).toUpperCase()}
+          {resolveDisplayName(entry).charAt(0).toUpperCase()}
         </div>
         <div>
-          <p className="text-sm font-medium text-on-surface">{toTitleCase(entry.name)}</p>
+          <p className="text-sm font-medium text-on-surface">{toTitleCase(resolveDisplayName(entry))}</p>
+          {entry.socialName?.trim() && (
+            <p className="text-xs text-on-surface-variant">Nome de registro: {toTitleCase(entry.name)}</p>
+          )}
           <p className="text-xs text-on-surface-variant">{entry.email}</p>
         </div>
       </div>
@@ -113,7 +116,7 @@ export function BanlistPage({ role }: { role: "admin" | "employee" }) {
       tabs: ["active", "inactive"],
       initialTab: "active",
       fetcher,
-      searchFields: (e) => [e.name, e.email],
+      searchFields: (e) => [e.name, e.socialName ?? "", e.email],
       errorMessage: "Não foi possível carregar a lista de banimentos.",
     });
 

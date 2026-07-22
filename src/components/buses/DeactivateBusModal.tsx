@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, ShieldAlert, Ban } from "lucide-react";
 import type { Bus } from "@/types/university.types";
+import { useHasMounted } from "@/hooks/useHasMounted";
 
 interface DeactivateBusModalProps {
   bus: Bus | null;
@@ -19,22 +20,20 @@ export function DeactivateBusModal({
   loading,
   error,
 }: DeactivateBusModalProps) {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHasMounted();
   const [inputValue, setInputValue] = useState("");
+  const [prevBus, setPrevBus] = useState(bus);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  if (bus !== prevBus) {
+    setPrevBus(bus);
+    setInputValue("");
+  }
 
   useEffect(() => {
     if (!bus) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = previous; };
-  }, [bus]);
-
-  useEffect(() => {
-    setInputValue("");
   }, [bus]);
 
   useEffect(() => {

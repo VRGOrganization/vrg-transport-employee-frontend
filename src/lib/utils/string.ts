@@ -14,6 +14,13 @@ export function toTitleCase(str: string): string {
     .join(" ");
 }
 
+export function resolveDisplayName(student: {
+  name: string;
+  socialName?: string | null;
+}): string {
+  return student.socialName?.trim() || student.name;
+}
+
 export function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
   if (!parts[0]) return "?";

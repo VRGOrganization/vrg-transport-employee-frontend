@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, ShieldAlert, Ban } from "lucide-react";
 import type { University } from "@/types/university.types";
+import { useHasMounted } from "@/hooks/useHasMounted";
 
 interface DeactivateUniversityModalProps {
   university: University | null;
@@ -19,22 +20,20 @@ export function DeactivateUniversityModal({
   loading,
   error,
 }: DeactivateUniversityModalProps) {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHasMounted();
   const [inputValue, setInputValue] = useState("");
+  const [prevUniversity, setPrevUniversity] = useState(university);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  if (university !== prevUniversity) {
+    setPrevUniversity(university);
+    setInputValue("");
+  }
 
   useEffect(() => {
     if (!university) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = previous; };
-  }, [university]);
-
-  useEffect(() => {
-    setInputValue("");
   }, [university]);
 
   useEffect(() => {

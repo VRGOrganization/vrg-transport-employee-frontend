@@ -4,10 +4,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SystemNoticeTemplatesPage } from "./SystemNoticeTemplatesPage";
 import { systemNoticeTemplateService } from "@/services/systemNoticeTemplateService";
 import type { SystemNoticeTemplate } from "@/services/systemNoticeTemplateService";
+import { sectorContactInfoService } from "@/services/sectorContactInfoService";
 
 vi.mock("@/services/systemNoticeTemplateService", () => ({
   systemNoticeTemplateService: {
     list: vi.fn(),
+    update: vi.fn(),
+  },
+}));
+
+vi.mock("@/services/sectorContactInfoService", () => ({
+  sectorContactInfoService: {
+    get: vi.fn(),
     update: vi.fn(),
   },
 }));
@@ -18,6 +26,8 @@ vi.mock("@/lib/toast", () => ({
 
 const listMock = vi.mocked(systemNoticeTemplateService.list);
 const updateMock = vi.mocked(systemNoticeTemplateService.update);
+const getAddressMock = vi.mocked(sectorContactInfoService.get);
+const updateAddressMock = vi.mocked(sectorContactInfoService.update);
 
 const makeTemplates = (): SystemNoticeTemplate[] => [
   { key: "WINDOW_OPEN", title: "Inscrição aberta", body: "Corpo abertura", updatedAt: "2026-01-01T00:00:00.000Z", updatedByAdminId: null },
@@ -33,16 +43,19 @@ describe("SystemNoticeTemplatesPage", () => {
   beforeEach(() => {
     listMock.mockReset();
     updateMock.mockReset();
+    getAddressMock.mockReset();
+    updateAddressMock.mockReset();
     listMock.mockResolvedValue(makeTemplates());
+    getAddressMock.mockResolvedValue({ address: "" });
   });
 
   it("lista os 7 templates agrupados por evento", async () => {
     render(<SystemNoticeTemplatesPage />);
 
     await waitFor(() => expect(screen.getByLabelText("Título de WINDOW_OPEN")).toBeInTheDocument());
-    expect(screen.getByRole("heading", { name: "Abertura de raia" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Fechamento de raia" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Reset da piscina" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Abertura de janela" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Fechamento de janela" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Reset do ciclo" })).toBeInTheDocument();
     expect(screen.getByLabelText("Título de CYCLE_RESET_1")).toBeInTheDocument();
   });
 
@@ -50,10 +63,10 @@ describe("SystemNoticeTemplatesPage", () => {
     render(<SystemNoticeTemplatesPage />);
 
     await waitFor(() => expect(screen.getByLabelText("Título de WINDOW_OPEN")).toBeInTheDocument());
-    expect(screen.getByText("Fechamento de raia — 7 dias antes")).toBeInTheDocument();
-    expect(screen.getByText("Fechamento de raia — 3 dias antes")).toBeInTheDocument();
-    expect(screen.getByText("Fechamento de raia — 1 dia antes")).toBeInTheDocument();
-    expect(screen.getByText("Reset da piscina — 7 dias antes")).toBeInTheDocument();
+    expect(screen.getByText("Fechamento de janela — 7 dias antes")).toBeInTheDocument();
+    expect(screen.getByText("Fechamento de janela — 3 dias antes")).toBeInTheDocument();
+    expect(screen.getByText("Fechamento de janela — 1 dia antes")).toBeInTheDocument();
+    expect(screen.getByText("Reset do ciclo — 7 dias antes")).toBeInTheDocument();
   });
 
   it("mostra estado vazio explícito quando a API não retorna templates", async () => {
@@ -90,5 +103,40 @@ describe("SystemNoticeTemplatesPage", () => {
         body: "Corpo abertura",
       }),
     );
+  });
+
+  describe("Endereço do setor", () => {
+    it("exibe o endereço já configurado", async () => {
+      getAddressMock.mockResolvedValue({ address: "Rua das Flores, 123" });
+      render(<SystemNoticeTemplatesPage />);
+
+      await waitFor(() =>
+        expect(screen.getByLabelText("Endereço do setor")).toHaveValue(
+          "Rua das Flores, 123",
+        ),
+      );
+    });
+
+    it("botão salvar do endereço fica desabilitado até o campo ser alterado, e chama a API correta", async () => {
+      getAddressMock.mockResolvedValue({ address: "Rua Antiga, 1" });
+      updateAddressMock.mockResolvedValueOnce({ address: "Rua Nova, 2" });
+      render(<SystemNoticeTemplatesPage />);
+
+      const addressInput = await screen.findByLabelText("Endereço do setor");
+      const saveButton = screen.getByRole("button", {
+        name: /salvar endereço/i,
+      });
+      expect(saveButton).toBeDisabled();
+
+      await userEvent.clear(addressInput);
+      await userEvent.type(addressInput, "Rua Nova, 2");
+      expect(saveButton).not.toBeDisabled();
+
+      await userEvent.click(saveButton);
+
+      await waitFor(() =>
+        expect(updateAddressMock).toHaveBeenCalledWith("Rua Nova, 2"),
+      );
+    });
   });
 });

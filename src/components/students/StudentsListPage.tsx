@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
 import { getShiftLabel } from "@/lib/constants";
-import { toTitleCase } from "@/lib/utils/string";
+import { resolveDisplayName, toTitleCase } from "@/lib/utils/string";
 import { buildStudentsCsv, downloadCsv } from "@/lib/csvUtils";
 import { StudentCreateModal } from "@/components/students/StudentCreateModal";
 import { StudentDocumentsModal } from "@/components/students/StudentDocumentsModal";
@@ -40,8 +40,8 @@ const STUDENT_COLUMNS: Column<Student>[] = [
     label: "Estudante",
     render: (s) => (
       <div className="flex items-center gap-3">
-        <Avatar name={s.name} size="sm" />
-        <span className="text-sm font-medium text-on-surface">{toTitleCase(s.name)}</span>
+        <Avatar name={resolveDisplayName(s)} size="sm" />
+        <span className="text-sm font-medium text-on-surface">{toTitleCase(resolveDisplayName(s))}</span>
       </div>
     ),
     skeleton: () => (
@@ -85,10 +85,13 @@ const BAN_COLUMNS: Column<BanlistEntry>[] = [
     render: (e) => (
       <div className="flex items-center gap-3">
         <div className="size-9 rounded-full bg-error/10 flex items-center justify-center text-error font-bold text-xs shrink-0">
-          {e.name.charAt(0).toUpperCase()}
+          {resolveDisplayName(e).charAt(0).toUpperCase()}
         </div>
         <div>
-          <p className="text-sm font-medium text-on-surface">{toTitleCase(e.name)}</p>
+          <p className="text-sm font-medium text-on-surface">{toTitleCase(resolveDisplayName(e))}</p>
+          {e.socialName?.trim() && (
+            <p className="text-xs text-on-surface-variant">Nome de registro: {toTitleCase(e.name)}</p>
+          )}
           <p className="text-xs text-on-surface-variant">{e.email}</p>
         </div>
       </div>
@@ -165,8 +168,8 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   const sortFn = useCallback(
     (a: Student, b: Student) =>
       sortAsc
-        ? a.name.localeCompare(b.name, "pt-BR")
-        : b.name.localeCompare(a.name, "pt-BR"),
+        ? resolveDisplayName(a).localeCompare(resolveDisplayName(b), "pt-BR")
+        : resolveDisplayName(b).localeCompare(resolveDisplayName(a), "pt-BR"),
     [sortAsc],
   );
 
@@ -181,7 +184,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
     tabs: ["active"],
     initialTab: "active",
     fetcher: studentFetcher,
-    searchFields: (s) => [s.name, s.email, s.institution ?? ""],
+    searchFields: (s) => [s.name, s.socialName ?? "", s.email, s.institution ?? ""],
     sortFn,
   });
 
@@ -201,7 +204,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
     tabs: ["banned"],
     initialTab: "banned",
     fetcher: banFetcher,
-    searchFields: (e) => [e.name, e.email],
+    searchFields: (e) => [e.name, e.socialName ?? "", e.email],
     errorMessage: "Não foi possível carregar os banimentos.",
   });
 
@@ -221,7 +224,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   };
 
   const handleBanned = () => {
-    const name = viewingStudent?.name;
+    const name = viewingStudent && resolveDisplayName(viewingStudent);
     setViewingStudent(null);
     banReload();
     studentReloadAll();
@@ -418,6 +421,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
         <StudentDocumentsModal
           studentId={docsStudent._id}
           studentName={docsStudent.name}
+          studentSocialName={docsStudent.socialName}
           hasDisability={docsStudent.hasDisability ?? false}
           onClose={() => setDocsStudent(null)}
         />
@@ -431,7 +435,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
           entry={unbanTarget}
           onClose={() => setUnbanTarget(null)}
           onSuccess={() => {
-            const name = unbanTarget?.name;
+            const name = unbanTarget && resolveDisplayName(unbanTarget);
             setUnbanTarget(null);
             banReload();
             studentReloadAll();

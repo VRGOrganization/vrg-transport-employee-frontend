@@ -10,6 +10,8 @@ import type { PageSize } from "@/lib/constants";
 export type UserRow = {
   id: string;
   name: string;
+  /** Termos extras pra busca (ex. nome civil, quando `name` já é o nome social). */
+  searchAliases?: string[];
   identifier: string;
   type: "Aluno" | "Funcionário";
   status: "Ativo" | "Pendente" | "Inativo";

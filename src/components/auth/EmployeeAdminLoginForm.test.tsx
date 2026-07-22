@@ -48,7 +48,7 @@ describe("EmployeeAdminLoginForm", () => {
     await userEvent.type(screen.getByPlaceholderText("••••••••"), "123");
     await userEvent.click(screen.getByRole("button", { name: "Acessar sistema" }));
 
-    expect(await screen.findByText("Senha deve ter no minimo 6 caracteres")).toBeInTheDocument();
+    expect(await screen.findByText("Senha deve ter no mínimo 8 caracteres")).toBeInTheDocument();
     expect(loginMock).not.toHaveBeenCalled();
   });
 

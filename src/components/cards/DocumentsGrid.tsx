@@ -8,6 +8,9 @@ interface DocumentsGridProps {
   personalItems: PreviewItem[];
   loadingImages: boolean;
   onOpenLightbox: (index: number) => void;
+  /** Nome civil, mostrado junto aos documentos pessoais pra conferência
+   *  contra o documento de identidade — mesmo quando há nome social. */
+  civilName?: string;
 }
 
 function CollapsibleSection({
@@ -42,6 +45,7 @@ export function DocumentsGrid({
   personalItems,
   loadingImages,
   onOpenLightbox,
+  civilName,
 }: DocumentsGridProps) {
   const allItems = [...personalItems, ...licenseItems];
 
@@ -49,6 +53,11 @@ export function DocumentsGrid({
     <div className="rounded-xl border border-outline-variant/40 divide-y divide-outline-variant/40 overflow-hidden">
       {personalItems.length > 0 && (
         <CollapsibleSection title="Documentos Pessoais">
+          {civilName && (
+            <p className="text-xs font-medium text-on-surface-variant -mt-1">
+              Nome de registro: {civilName}
+            </p>
+          )}
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {personalItems.map((item) => {
               const index = allItems.indexOf(item);

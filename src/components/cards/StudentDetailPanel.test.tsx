@@ -12,9 +12,11 @@ vi.mock("@/components/cards/DocumentsGrid", () => ({
   DocumentsGrid: ({
     licenseItems,
     personalItems,
+    civilName,
   }: {
     licenseItems: PreviewItem[];
     personalItems: PreviewItem[];
+    civilName?: string;
   }) => (
     <div>
       <div data-testid="license-items">
@@ -23,6 +25,7 @@ vi.mock("@/components/cards/DocumentsGrid", () => ({
       <div data-testid="personal-items">
         {personalItems.map((i) => i.title).join(", ")}
       </div>
+      <div data-testid="civil-name">{civilName ?? ""}</div>
     </div>
   ),
 }));
@@ -176,5 +179,24 @@ describe("StudentDetailPanel — declaração de PCD", () => {
     expect(screen.getByTestId("personal-items")).toHaveTextContent(
       "Laudo Médico (PCD)",
     );
+  });
+});
+
+describe("StudentDetailPanel — nome civil perto dos documentos pessoais", () => {
+  it("passa o nome civil pro DocumentsGrid quando há nome social preenchido", () => {
+    render(
+      <StudentDetailPanel
+        {...baseProps()}
+        selected={{ ...student, socialName: "Aluna Social" }}
+      />,
+    );
+
+    expect(screen.getByTestId("civil-name")).toHaveTextContent("Aluno 1");
+  });
+
+  it("não duplica o nome civil quando não há nome social preenchido", () => {
+    render(<StudentDetailPanel {...baseProps()} selected={student} />);
+
+    expect(screen.getByTestId("civil-name")).toHaveTextContent("");
   });
 });

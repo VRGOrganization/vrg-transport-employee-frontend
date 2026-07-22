@@ -71,6 +71,20 @@ describe("OpenPeriodModal", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it("previews 'válida até' from start date + months (UTC, aligned to backend)", async () => {
+    render(<OpenPeriodModal {...baseProps} />);
+
+    fireEvent.change(screen.getByLabelText(/data de início/i), {
+      target: { value: "2030-02-01" },
+    });
+    fireEvent.change(screen.getByLabelText(/validade da carteirinha/i), {
+      target: { value: "6" },
+    });
+
+    // 2030-02-01 + 6 meses (UTC) = 01/08/2030
+    expect(await screen.findByText("01/08/2030")).toBeInTheDocument();
+  });
+
   it("shows backend error as general error in modal", () => {
     const errorMsg = "Não há ônibus com vagas para abrir um ciclo de inscrição.";
     render(<OpenPeriodModal {...baseProps} serverError={errorMsg} />);

@@ -12,7 +12,7 @@ import type {
   StudentRecord,
 } from "@/types/cards.types";
 import { Modal } from "@/components/ui/Modal";
-import { toTitleCase } from "@/lib/utils/string";
+import { resolveDisplayName, toTitleCase } from "@/lib/utils/string";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { AlertCircle, Bus as BusIcon, Check, Users, UserX, X } from "lucide-react";
 
@@ -86,7 +86,7 @@ function UniversitySection({
                 >
                   <td className="px-4 py-3">
                     <p className="text-sm font-medium text-on-surface truncate max-w-xs">
-                      {toTitleCase(student.name)}
+                      {toTitleCase(resolveDisplayName(student))}
                     </p>
                     <p className="text-xs text-on-surface-muted truncate">
                       {student.email}

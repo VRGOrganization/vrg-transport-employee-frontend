@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { DateRange } from "react-day-picker";
-import { addMonths, format, startOfDay } from "date-fns";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Calendar } from "@/components/ui/Calendar";
 import { Modal } from "@/components/ui/Modal";
+import { computeLicenseExpiry } from "@/lib/utils/date";
 import type { EnrollmentPeriod } from "@/types/enrollmentPeriod";
 
-interface EnrollmentPeriodFormPayload {
+// Só os campos alterados são enviados — startDate/endDate editam a JANELA ativa,
+// licenseValidityMonths edita o ciclo. O início do ciclo (cycleStartDate) não
+// é editável por aqui.
+export type EnrollmentPeriodFormPayload = Partial<{
   startDate: string;
   endDate: string;
   licenseValidityMonths: number;
-}
+}>;
 
 interface EnrollmentPeriodModalProps {
   open: boolean;
@@ -50,23 +51,6 @@ function toInputDate(value: string | null | undefined): string {
   return date.toISOString().slice(0, 10);
 }
 
-function isoToBR(iso: string): string {
-  if (!iso) return "";
-  const [y, m, d] = iso.split("-");
-  if (!y || !m || !d) return "";
-  return `${d}/${m}/${y}`;
-}
-
-function parseBRDate(display: string): string {
-  const match = display.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (!match) return "";
-  const [, dd, mm, yyyy] = match;
-  const iso = `${yyyy}-${mm}-${dd}`;
-  const d = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return "";
-  return iso;
-}
-
 function buildInitialForm(period: EnrollmentPeriod): FormState {
   return {
     startDate: toInputDate(period.startDate),
@@ -83,140 +67,83 @@ export function EnrollmentPeriodModal({
   onClose,
   onSubmit,
 }: EnrollmentPeriodModalProps) {
+  // As datas só são editáveis enquanto houver janela aberta; sem janela, apenas
+  // a validade do ciclo pode ser ajustada.
+  const hasOpenWindow = Boolean(period.startDate && period.endDate);
+
   const [form, setForm] = useState<FormState>(() => buildInitialForm(period));
   const [errors, setErrors] = useState<FormErrors>(EMPTY_ERRORS);
-  const [startDateText, setStartDateText] = useState<string>(() => isoToBR(buildInitialForm(period).startDate));
-  const [endDateText, setEndDateText] = useState<string>(() => isoToBR(buildInitialForm(period).endDate));
-  const [range, setRange] = useState<DateRange | undefined>(() => {
-    const from = period.startDate ? new Date(period.startDate) : undefined;
-    const to = period.endDate ? new Date(period.endDate) : undefined;
-    return { from, to } as DateRange;
-  });
-  // FIX: Always show 1 month on mobile, 2 on desktop
-  const [months, setMonths] = useState<number>(
-    typeof window !== "undefined" && window.innerWidth < 640 ? 1 : 2
-  );
 
-  useEffect(() => {
-    if (!open) return;
-    const initial = buildInitialForm(period);
-    setForm(initial);
-    setErrors(EMPTY_ERRORS);
-    setStartDateText(isoToBR(initial.startDate));
-    setEndDateText(isoToBR(initial.endDate));
-    setRange(() => {
-      const from = period.startDate ? new Date(period.startDate) : undefined;
-      const to = period.endDate ? new Date(period.endDate) : undefined;
-      return { from, to } as DateRange;
-    });
-  }, [open, period]);
-
-  useEffect(() => {
-    if (!open) return;
-    const update = () => setMonths(window.innerWidth < 640 ? 1 : 2);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, [open]);
-
-  // Validade ancorada em startDate (data de início do ciclo), não endDate —
-  // mesma regra usada pelo backend desde o Núcleo 02. Na criação, o ciclo
-  // ainda não existe, então startDate do form É o futuro cycleStartDate.
-  const licenseExpiryDate = useMemo(() => {
-    if (!form.startDate) return null;
-    const m = Number(form.licenseValidityMonths);
-    if (!Number.isInteger(m) || m < 1) return null;
-    try {
-      const base = new Date(`${form.startDate}T00:00:00`);
-      if (Number.isNaN(base.getTime())) return null;
-      return format(addMonths(base, m), "dd/MM/yyyy");
-    } catch {
-      return null;
+  // Reseta o form a cada abertura sem efeito — mesmo padrão dos outros modais
+  // deste diretório (comparação com prevOpen).
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setForm(buildInitialForm(period));
+      setErrors(EMPTY_ERRORS);
     }
-  }, [form.startDate, form.licenseValidityMonths]);
+  }
 
   const setField = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "", general: "" }));
   };
 
-  const handleRangeSelect = (nextRange: DateRange | undefined) => {
-    setRange(nextRange);
-    const from = nextRange?.from ? toInputDate(nextRange.from.toISOString()) : "";
-    const to = nextRange?.to ? toInputDate(nextRange.to.toISOString()) : "";
-    setForm((prev) => ({ ...prev, startDate: from, endDate: to }));
-    setErrors((prev) => ({ ...prev, startDate: "", endDate: "", general: "" }));
-    setStartDateText(isoToBR(from));
-    setEndDateText(isoToBR(to));
-  };
-
-  const handleStartDateInput = (iso: string) => {
-    setErrors((prev) => ({ ...prev, startDate: "", endDate: "", general: "" }));
-    const from = iso ? new Date(`${iso}T00:00:00`) : undefined;
-    const currentTo = form.endDate ? new Date(`${form.endDate}T00:00:00`) : undefined;
-    const validTo = from && currentTo && from >= currentTo ? undefined : currentTo;
-    const newEndDate = validTo ? form.endDate : "";
-    if (!validTo) setEndDateText("");
-    setForm((prev) => ({ ...prev, startDate: iso, endDate: newEndDate }));
-    setRange(from || validTo ? { from, to: validTo } : undefined);
-  };
-
-  const handleEndDateInput = (iso: string) => {
-    setErrors((prev) => ({ ...prev, endDate: "", general: "" }));
-    const from = form.startDate ? new Date(`${form.startDate}T00:00:00`) : undefined;
-    const to = iso ? new Date(`${iso}T00:00:00`) : undefined;
-    setForm((prev) => ({ ...prev, endDate: iso }));
-    setRange(from || to ? { from, to } : undefined);
-  };
-
-  const handleStartDateText = (raw: string) => {
-    const clean = raw.replace(/[^\d/]/g, "").slice(0, 10);
-    setStartDateText(clean);
-    const iso = parseBRDate(clean);
-    if (iso) handleStartDateInput(iso);
-    else if (!clean) handleStartDateInput("");
-  };
-
-  const handleEndDateText = (raw: string) => {
-    const clean = raw.replace(/[^\d/]/g, "").slice(0, 10);
-    setEndDateText(clean);
-    const iso = parseBRDate(clean);
-    if (iso) handleEndDateInput(iso);
-    else if (!clean) handleEndDateInput("");
-  };
+  // Validade sempre ancorada em cycleStartDate (início real do ciclo), nunca
+  // na janela — calculada em UTC, igual ao backend.
+  const licenseExpiryDate = (() => {
+    const months = Number(form.licenseValidityMonths);
+    if (!Number.isInteger(months) || months < 1) return "";
+    return computeLicenseExpiry(period.cycleStartDate, months);
+  })();
 
   const validate = (): EnrollmentPeriodFormPayload | null => {
     const nextErrors: FormErrors = { ...EMPTY_ERRORS };
-
-    if (!form.startDate) nextErrors.startDate = "Data de início é obrigatória.";
-    if (!form.endDate) nextErrors.endDate = "Data de fim é obrigatória.";
+    const initial = buildInitialForm(period);
 
     const licenseValidityMonths = Number(form.licenseValidityMonths);
-
     if (!Number.isInteger(licenseValidityMonths) || licenseValidityMonths < 1) {
       nextErrors.licenseValidityMonths = "Validade deve ser maior ou igual a 1 mês.";
     }
 
-    if (form.startDate && form.endDate) {
-      const start = new Date(`${form.startDate}T00:00:00.000Z`);
-      const end = new Date(`${form.endDate}T23:59:59.999Z`);
-      if (end <= start) {
-        nextErrors.endDate = "Data de fim deve ser maior que a data de início.";
+    if (hasOpenWindow) {
+      if (!form.startDate) nextErrors.startDate = "Data de início é obrigatória.";
+      if (!form.endDate) nextErrors.endDate = "Data de fim é obrigatória.";
+      if (form.startDate && form.endDate) {
+        const start = new Date(`${form.startDate}T00:00:00.000Z`);
+        const end = new Date(`${form.endDate}T23:59:59.999Z`);
+        if (end <= start) {
+          nextErrors.endDate = "Data de fim deve ser maior que a data de início.";
+        }
       }
     }
 
-    const hasErrors = Object.values(nextErrors).some(
-      (value) => value.length > 0
-    );
-    setErrors(nextErrors);
+    const hasErrors = Object.values(nextErrors).some((value) => value.length > 0);
+    if (hasErrors) {
+      setErrors(nextErrors);
+      return null;
+    }
 
-    if (hasErrors) return null;
+    // Envia apenas os campos que mudaram.
+    const payload: EnrollmentPeriodFormPayload = {};
+    if (hasOpenWindow && form.startDate !== initial.startDate) {
+      payload.startDate = `${form.startDate}T00:00:00.000Z`;
+    }
+    if (hasOpenWindow && form.endDate !== initial.endDate) {
+      payload.endDate = `${form.endDate}T23:59:59.999Z`;
+    }
+    if (form.licenseValidityMonths !== initial.licenseValidityMonths) {
+      payload.licenseValidityMonths = licenseValidityMonths;
+    }
 
-    return {
-      startDate: `${form.startDate}T00:00:00.000Z`,
-      endDate: `${form.endDate}T23:59:59.999Z`,
-      licenseValidityMonths,
-    };
+    if (Object.keys(payload).length === 0) {
+      setErrors({ ...EMPTY_ERRORS, general: "Nenhuma alteração para salvar." });
+      return null;
+    }
+
+    setErrors(EMPTY_ERRORS);
+    return payload;
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -230,72 +157,59 @@ export function EnrollmentPeriodModal({
     <Modal
       open={open}
       onClose={loading ? () => {} : onClose}
-      size="xl"
+      size="lg"
       title="Editar período de inscrição"
     >
-      <form className="space-y-3" onSubmit={handleSubmit}>
+      <form className="space-y-3" onSubmit={handleSubmit} noValidate>
         <div>
-          <label className="mb-1 block text-sm font-medium text-on-surface">Período</label>
-          <div className="rounded-xl border border-outline-variant bg-surface-container-low p-2">
-            <Calendar
-              mode="range"
-              selected={range}
-              onSelect={handleRangeSelect}
-              numberOfMonths={months}
-              disabled={{ before: startOfDay(new Date()) }}
-            />
-            <div className="mt-2 grid grid-cols-2 gap-2">
+          <label className="mb-1 block text-sm font-medium text-on-surface">
+            Janela de inscrição ativa
+          </label>
+          {hasOpenWindow ? (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div>
-                <label className="mb-0.5 block text-xs font-medium text-on-surface-variant">
+                <label
+                  htmlFor="edit-window-start"
+                  className="mb-0.5 block text-xs font-medium text-on-surface-variant"
+                >
                   Data de início
                 </label>
                 <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="dd/mm/aaaa"
-                  value={startDateText}
-                  onChange={(e) => handleStartDateText(e.target.value)}
-                  onBlur={() => {
-                    const iso = parseBRDate(startDateText);
-                    if (iso) setStartDateText(isoToBR(iso));
-                  }}
-                  className="h-8 w-full rounded-lg border border-on-surface-variant bg-surface-container-low px-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:ring-2 focus:ring-primary"
+                  id="edit-window-start"
+                  type="date"
+                  value={form.startDate}
+                  onChange={(event) => setField("startDate", event.target.value)}
+                  className="h-9 w-full rounded-lg border border-on-surface-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                 />
+                {errors.startDate && (
+                  <p className="mt-1 text-xs text-error">{errors.startDate}</p>
+                )}
               </div>
               <div>
-                <label className="mb-0.5 block text-xs font-medium text-on-surface-variant">
+                <label
+                  htmlFor="edit-window-end"
+                  className="mb-0.5 block text-xs font-medium text-on-surface-variant"
+                >
                   Data de fim
                 </label>
                 <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="dd/mm/aaaa"
-                  value={endDateText}
-                  disabled={!form.startDate}
-                  onChange={(e) => handleEndDateText(e.target.value)}
-                  onBlur={() => {
-                    const iso = parseBRDate(endDateText);
-                    if (iso) setEndDateText(isoToBR(iso));
-                  }}
-                  className="h-8 w-full rounded-lg border border-on-surface-variant bg-surface-container-low px-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-40 disabled:cursor-not-allowed"
+                  id="edit-window-end"
+                  type="date"
+                  value={form.endDate}
+                  onChange={(event) => setField("endDate", event.target.value)}
+                  className="h-9 w-full rounded-lg border border-on-surface-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                 />
+                {errors.endDate && (
+                  <p className="mt-1 text-xs text-error">{errors.endDate}</p>
+                )}
               </div>
             </div>
-            {(form.startDate || form.endDate) && (
-              <div className="mt-1.5 flex justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleRangeSelect(undefined)}
-                >
-                  Limpar datas
-                </Button>
-              </div>
-            )}
-          </div>
-          {errors.startDate && <p className="mt-1 text-xs text-error">{errors.startDate}</p>}
-          {errors.endDate && <p className="mt-1 text-xs text-error">{errors.endDate}</p>}
+          ) : (
+            <p className="rounded-lg border border-outline-variant/50 bg-surface-container-low px-3 py-2 text-sm text-on-surface-variant">
+              Nenhuma janela aberta — só a validade da carteirinha pode ser editada.
+              Abra uma janela de inscrição para ajustar as datas.
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -312,10 +226,14 @@ export function EnrollmentPeriodModal({
           </div>
 
           <div>
-            <label className="mb-0.5 block text-sm font-medium text-on-surface">
+            <label
+              htmlFor="edit-validity-months"
+              className="mb-0.5 block text-sm font-medium text-on-surface"
+            >
               Validade da carteirinha (meses)
             </label>
             <input
+              id="edit-validity-months"
               type="number"
               min={1}
               step={1}
@@ -328,13 +246,11 @@ export function EnrollmentPeriodModal({
               <p className="mt-0.5 text-xs text-error">{errors.licenseValidityMonths}</p>
             ) : licenseExpiryDate ? (
               <p className="mt-0.5 text-xs text-on-surface-variant">
-                Carteirinhas vencerão em <strong className="text-on-surface">{licenseExpiryDate}</strong>.
+                Carteirinhas válidas até{" "}
+                <strong className="text-on-surface">{licenseExpiryDate}</strong>{" "}
+                (a partir do início do ciclo).
               </p>
-            ) : (
-              <p className="mt-0.5 text-xs text-on-surface-variant">
-                Defina o período acima para ver a data de vencimento.
-              </p>
-            )}
+            ) : null}
           </div>
         </div>
 

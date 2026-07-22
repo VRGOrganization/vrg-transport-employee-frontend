@@ -66,4 +66,37 @@ describe("StudentListItem", () => {
 
     expect(screen.getByText("Parcial")).toBeTruthy();
   });
+
+  it("mostra o nome social quando presente, no lugar do nome civil", () => {
+    render(
+      <StudentListItem
+        student={{ ...student, socialName: "Aluna Social" }}
+        isSelected={false}
+        hasCard={false}
+        latestRequest={null}
+        isInBatch={false}
+        onSelect={vi.fn()}
+        onToggleBatch={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Aluna Social")).toBeTruthy();
+    expect(screen.queryByText("Aluno Parcial")).toBeNull();
+  });
+
+  it("mostra o nome civil quando não há nome social", () => {
+    render(
+      <StudentListItem
+        student={student}
+        isSelected={false}
+        hasCard={false}
+        latestRequest={null}
+        isInBatch={false}
+        onSelect={vi.fn()}
+        onToggleBatch={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Aluno Parcial")).toBeTruthy();
+  });
 });
