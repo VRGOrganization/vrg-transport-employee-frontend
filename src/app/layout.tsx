@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/Toaster";
+import { DevEnvironmentBanner } from "@/components/layout/DevEnvironmentBanner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -47,6 +48,7 @@ export default function RootLayout({
             {children}
           </div>
           <Toaster />
+          <DevEnvironmentBanner />
         </ThemeProvider>
       </body>
     </html>
