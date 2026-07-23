@@ -12,9 +12,6 @@ export function Footer() {
             <p className="font-headline font-bold text-primary text-sm">
               São Fidélis Transporte
             </p>
-            <p className="font-label text-[10px] text-on-surface-variant">
-              Secretaria Municipal de Transportes
-            </p>
           </div>
         </div>
         <p className="font-label text-[10px] text-outline">

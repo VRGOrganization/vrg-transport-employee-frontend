@@ -54,6 +54,7 @@ export function StudentDocumentsModal({
   const [docs, setDocs] = useState<ImageRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedDoc, setSelectedDoc] = useState<ImageRecord | null>(null);
 
   useEffect(() => {
     // Sincronização com API externa (fetch on mount/dependency change) — o
@@ -85,6 +86,7 @@ export function StudentDocumentsModal({
   }, [studentId, hasDisability]);
 
   return (
+    <>
     <Modal open onClose={onClose} title="Documentos do Aluno" size="lg">
       <p className={`text-sm text-on-surface-variant -mt-2 ${studentSocialName?.trim() ? "mb-1" : "mb-5"}`}>
         {resolveDisplayName({ name: studentName, socialName: studentSocialName })}
@@ -126,60 +128,77 @@ export function StudentDocumentsModal({
         </div>
       )}
 
-      {/* Documents grid */}
+      {/* Documents list */}
       {!loading && !error && docs.length > 0 && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-wrap gap-2.5">
           {docs.map((doc) => {
             const imgUrl = getImageUrl(doc);
+            if (!imgUrl) return null;
+
             const label = PHOTO_TYPE_LABELS[doc.photoType] ?? doc.photoType;
             const icon = DOC_ICON[doc.photoType] ?? "description";
-            const isPdf = isPdfDataUrl(imgUrl);
 
             return (
-              <div
+              <button
                 key={doc._id}
-                className="rounded-2xl border border-outline-variant/30 overflow-hidden bg-surface-container-lowest flex flex-col shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
+                type="button"
+                onClick={() => setSelectedDoc(doc)}
+                className="flex items-center gap-2 pl-2.5 pr-3.5 py-2 rounded-full border border-outline-variant/30 bg-surface-container-lowest shadow-sm hover:shadow-md hover:border-primary/30 hover:bg-primary/5 transition-all cursor-pointer"
               >
-                {/* Card header */}
-                <div className="flex items-center gap-3 px-4 py-3 bg-linear-to-r from-primary/8 to-transparent border-b border-outline-variant/20">
-                  <div className="size-8 rounded-full bg-primary/12 flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-primary" style={{ fontSize: "17px" }}>
-                      {icon}
-                    </span>
-                  </div>
-                  <p className="text-sm font-semibold text-on-surface truncate">{label}</p>
-                </div>
-
-                {/* Image area */}
-                {imgUrl ? (
-                  <div className="flex-1 bg-surface-container p-3">
-                    {isPdf ? (
-                      <iframe
-                        src={imgUrl}
-                        title={label}
-                        className="w-full h-52 rounded-xl shadow-sm bg-white"
-                      />
-                    ) : (
-                      <img
-                        src={imgUrl}
-                        alt={label}
-                        className="w-full object-contain rounded-xl max-h-52 shadow-sm"
-                      />
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center py-10 gap-2 bg-surface-container-low/50">
-                    <span className="material-symbols-outlined text-3xl text-on-surface-variant/25">
-                      hide_image
-                    </span>
-                    <p className="text-xs text-on-surface-variant/50 font-medium">Sem imagem</p>
-                  </div>
-                )}
-              </div>
+                <span className="size-6 rounded-full bg-primary/12 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-primary" style={{ fontSize: "14px" }}>
+                    {icon}
+                  </span>
+                </span>
+                <span className="text-sm font-medium text-on-surface">{label}</span>
+              </button>
             );
           })}
         </div>
       )}
     </Modal>
+
+    {selectedDoc && (
+      <Modal
+        open
+        onClose={() => setSelectedDoc(null)}
+        title={PHOTO_TYPE_LABELS[selectedDoc.photoType] ?? selectedDoc.photoType}
+        size="xl"
+        closeOnBackdrop={false}
+        footer={
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setSelectedDoc(null)}
+              className="px-4 py-2 text-sm font-semibold rounded-full border border-outline-variant/40 text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
+            >
+              Voltar
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-semibold rounded-full bg-primary text-on-primary hover:bg-primary/90 transition-colors cursor-pointer"
+            >
+              Fechar
+            </button>
+          </div>
+        }
+      >
+        {isPdfDataUrl(getImageUrl(selectedDoc)) ? (
+          <iframe
+            src={getImageUrl(selectedDoc) ?? ""}
+            title={PHOTO_TYPE_LABELS[selectedDoc.photoType] ?? selectedDoc.photoType}
+            className="w-full h-[70vh] rounded-xl shadow-sm bg-white"
+          />
+        ) : (
+          <img
+            src={getImageUrl(selectedDoc) ?? ""}
+            alt={PHOTO_TYPE_LABELS[selectedDoc.photoType] ?? selectedDoc.photoType}
+            className="w-full object-contain rounded-xl max-h-[70vh]"
+          />
+        )}
+      </Modal>
+    )}
+    </>
   );
 }

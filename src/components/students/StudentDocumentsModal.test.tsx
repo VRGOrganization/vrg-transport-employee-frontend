@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { StudentDocumentsModal } from "./StudentDocumentsModal";
 import type { ImageRecord } from "@/types/cards.types";
@@ -99,9 +99,16 @@ describe("StudentDocumentsModal — documentos em PDF", () => {
       expect(screen.getByText("Documento de identidade")).toBeInTheDocument(),
     );
 
+    expect(container.querySelector("iframe")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Documento de identidade/ }));
+
+    const iframe = await waitFor(() => {
+      const el = container.querySelector("iframe");
+      expect(el).toBeInTheDocument();
+      return el;
+    });
     expect(container.querySelector("img")).not.toBeInTheDocument();
-    const iframe = container.querySelector("iframe");
-    expect(iframe).toBeInTheDocument();
     expect(iframe).toHaveAttribute("src", pdfUrl);
   });
 });
@@ -162,5 +169,169 @@ describe("StudentDocumentsModal — declaração de PCD", () => {
       expect(screen.getByText("Documento de identidade")).toBeInTheDocument(),
     );
     expect(screen.queryByText("Laudo Médico (PCD)")).not.toBeInTheDocument();
+  });
+});
+
+describe("StudentDocumentsModal — documento sem imagem atribuída", () => {
+  it("não exibe botão para documento sem imagem", async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path === "/transport-usage/student/student-1") {
+        return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
+      }
+      if (path === "/image/student/student-1") {
+        return Promise.resolve([
+          makeImage({ _id: "img-1", photoType: "GovernmentId", documentImage: null }),
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+
+    render(
+      <StudentDocumentsModal studentId="student-1" studentName="Aluno 1" onClose={vi.fn()} />,
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByText("Carregando documentos…")).not.toBeInTheDocument(),
+    );
+
+    expect(screen.queryByText("Documento de identidade")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Documento de identidade/ }),
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe("StudentDocumentsModal — viewer de imagem em modal separado", () => {
+  it("não renderiza a imagem grande até o usuário clicar no documento", async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path === "/transport-usage/student/student-1") {
+        return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
+      }
+      if (path === "/image/student/student-1") {
+        return Promise.resolve([makeImage({ _id: "img-1", photoType: "GovernmentId" })]);
+      }
+      return Promise.resolve([]);
+    });
+
+    render(
+      <StudentDocumentsModal studentId="student-1" studentName="Aluno 1" onClose={vi.fn()} />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("Documento de identidade")).toBeInTheDocument(),
+    );
+
+    expect(screen.queryByRole("button", { name: "Voltar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Fechar" })).not.toBeInTheDocument();
+  });
+
+  it("abre o viewer em modal próprio ao clicar no documento, com botões Voltar e Fechar", async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path === "/transport-usage/student/student-1") {
+        return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
+      }
+      if (path === "/image/student/student-1") {
+        return Promise.resolve([makeImage({ _id: "img-1", photoType: "GovernmentId" })]);
+      }
+      return Promise.resolve([]);
+    });
+
+    render(
+      <StudentDocumentsModal studentId="student-1" studentName="Aluno 1" onClose={vi.fn()} />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("Documento de identidade")).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Documento de identidade/ }));
+
+    expect(await screen.findByRole("button", { name: "Voltar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Fechar" })).toBeInTheDocument();
+  });
+
+  it("botão Voltar fecha o viewer e retorna ao modal de documentos, sem chamar onClose", async () => {
+    const onClose = vi.fn();
+    getMock.mockImplementation((path: string) => {
+      if (path === "/transport-usage/student/student-1") {
+        return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
+      }
+      if (path === "/image/student/student-1") {
+        return Promise.resolve([makeImage({ _id: "img-1", photoType: "GovernmentId" })]);
+      }
+      return Promise.resolve([]);
+    });
+
+    render(
+      <StudentDocumentsModal studentId="student-1" studentName="Aluno 1" onClose={onClose} />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("Documento de identidade")).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Documento de identidade/ }));
+    const voltarBtn = await screen.findByRole("button", { name: "Voltar" });
+    fireEvent.click(voltarBtn);
+
+    expect(screen.queryByRole("button", { name: "Voltar" })).not.toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByText("Documento de identidade")).toBeInTheDocument();
+  });
+
+  it("botão Fechar do viewer chama onClose", async () => {
+    const onClose = vi.fn();
+    getMock.mockImplementation((path: string) => {
+      if (path === "/transport-usage/student/student-1") {
+        return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
+      }
+      if (path === "/image/student/student-1") {
+        return Promise.resolve([makeImage({ _id: "img-1", photoType: "GovernmentId" })]);
+      }
+      return Promise.resolve([]);
+    });
+
+    render(
+      <StudentDocumentsModal studentId="student-1" studentName="Aluno 1" onClose={onClose} />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("Documento de identidade")).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Documento de identidade/ }));
+    const fecharBtn = await screen.findByRole("button", { name: "Fechar" });
+    fireEvent.click(fecharBtn);
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("clicar no backdrop do viewer não fecha o modal", async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path === "/transport-usage/student/student-1") {
+        return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
+      }
+      if (path === "/image/student/student-1") {
+        return Promise.resolve([makeImage({ _id: "img-1", photoType: "GovernmentId" })]);
+      }
+      return Promise.resolve([]);
+    });
+
+    const { container } = render(
+      <StudentDocumentsModal studentId="student-1" studentName="Aluno 1" onClose={vi.fn()} />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("Documento de identidade")).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Documento de identidade/ }));
+    await screen.findByRole("button", { name: "Voltar" });
+
+    const backdrops = container.querySelectorAll(".fixed.inset-0");
+    const viewerBackdrop = backdrops[backdrops.length - 1];
+    fireEvent.click(viewerBackdrop);
+
+    expect(screen.getByRole("button", { name: "Voltar" })).toBeInTheDocument();
   });
 });

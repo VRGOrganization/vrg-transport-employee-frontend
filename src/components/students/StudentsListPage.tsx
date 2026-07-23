@@ -3,10 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GraduationCap, ShieldBan, ShieldCheck, ArrowUpAZ, ArrowDownAZ } from "lucide-react";
+import { http } from "@/services/http";
 import { studentService } from "@/services/studentService";
 import { banlistService } from "@/services/banlistService";
+import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
 import type { Student } from "@/types/student";
 import type { BanlistEntry } from "@/types/banlist";
+import type { LicenseRecord } from "@/types/cards.types";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Tabs } from "@/components/ui/Tabs";
 import { Avatar } from "@/components/ui/Avatar";
@@ -151,6 +154,31 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   const [unbanTarget, setUnbanTarget]         = useState<BanlistEntry | null>(null);
   const [openDropdownId, setOpenDropdownId]   = useState<string | null>(null);
 
+  // ── Elegibilidade para "Novo pedido" (carteirinha manual) ─────────
+  // Só pode criar pedido manual se houver janela de inscrição aberta e o
+  // aluno ainda não possuir carteirinha. A checagem por aluno é feita sob
+  // demanda (ao abrir o dropdown), não há endpoint em lote no backend.
+  const [hasOpenEnrollmentWindow, setHasOpenEnrollmentWindow] = useState<boolean | null>(null);
+  const [licenseByStudentId, setLicenseByStudentId] = useState<Record<string, boolean>>({});
+  const [checkingLicenseId, setCheckingLicenseId] = useState<string | null>(null);
+
+  useEffect(() => {
+    enrollmentPeriodService
+      .getActive()
+      .then((period) => setHasOpenEnrollmentWindow(Boolean(period?.startDate && period?.endDate)))
+      .catch(() => setHasOpenEnrollmentWindow(false));
+  }, []);
+
+  const checkStudentLicense = useCallback((studentId: string) => {
+    if (studentId in licenseByStudentId || checkingLicenseId === studentId) return;
+    setCheckingLicenseId(studentId);
+    http
+      .get<LicenseRecord>(`/license/searchByStudent/${studentId}`)
+      .then(() => setLicenseByStudentId((prev) => ({ ...prev, [studentId]: true })))
+      .catch(() => setLicenseByStudentId((prev) => ({ ...prev, [studentId]: false })))
+      .finally(() => setCheckingLicenseId((current) => (current === studentId ? null : current)));
+  }, [licenseByStudentId, checkingLicenseId]);
+
   // ── Lista de estudantes ativos ───────────────────────────────────
   const studentFetcher = useCallback(async () => {
     // Funcionário não acessa a banlist (endpoint admin-only).
@@ -236,10 +264,29 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
     key: "actions",
     label: "Ação",
     align: "right",
-    render: (student) => (
+    render: (student) => {
+      const alreadyHasLicense = licenseByStudentId[student._id] === true;
+      const checkingLicense = checkingLicenseId === student._id;
+      const windowClosed = hasOpenEnrollmentWindow === false;
+      const missingPersonalDocuments = !student.hasPersonalDocuments;
+
+      let newRequestDisabledReason = "";
+      if (checkingLicense) newRequestDisabledReason = "Verificando carteirinha…";
+      else if (alreadyHasLicense) newRequestDisabledReason = "Este aluno já possui uma carteirinha cadastrada.";
+      else if (windowClosed) newRequestDisabledReason = "O ciclo de inscrição está fechado no momento.";
+      else if (missingPersonalDocuments) newRequestDisabledReason = "Aluno sem Documento de Identidade e/ou Comprovante de Residência.";
+
+      const newRequestDisabled = Boolean(newRequestDisabledReason);
+
+      return (
       <div className="relative inline-block text-left">
         <button
-          onClick={(e) => { e.stopPropagation(); setOpenDropdownId(openDropdownId === student._id ? null : student._id); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            const next = openDropdownId === student._id ? null : student._id;
+            setOpenDropdownId(next);
+            if (next) checkStudentLicense(student._id);
+          }}
           className="size-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto cursor-pointer"
         >
           <span className="material-symbols-outlined text-lg">more_vert</span>
@@ -249,15 +296,23 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
             <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenDropdownId(null); }} />
             <div className="absolute right-0 mt-2 w-36 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
               {[
-                { icon: "visibility",  label: "Ver",         action: () => { setViewingStudent(student); setOpenDropdownId(null); } },
-                { icon: "folder_open", label: "Documentos",  action: () => { setDocsStudent(student);    setOpenDropdownId(null); } },
-                { icon: "badge",       label: "Carteirinha", action: () => { setViewingCard(student);    setOpenDropdownId(null); } },
-                { icon: "add_card",    label: "Novo pedido", action: () => { router.push(`/${role}/students/license/new?id=${student._id}`); setOpenDropdownId(null); } },
-              ].map(({ icon, label, action }) => (
+                { icon: "visibility",  label: "Ver",         action: () => { setViewingStudent(student); setOpenDropdownId(null); }, disabled: false, title: undefined },
+                { icon: "folder_open", label: "Documentos",  action: () => { setDocsStudent(student);    setOpenDropdownId(null); }, disabled: false, title: undefined },
+                { icon: "badge",       label: "Carteirinha", action: () => { setViewingCard(student);    setOpenDropdownId(null); }, disabled: false, title: undefined },
+                {
+                  icon: "add_card",
+                  label: "Novo pedido",
+                  action: () => { router.push(`/${role}/students/license/new?id=${student._id}`); setOpenDropdownId(null); },
+                  disabled: newRequestDisabled,
+                  title: newRequestDisabledReason || undefined,
+                },
+              ].map(({ icon, label, action, disabled, title }) => (
                 <button
                   key={label}
-                  onClick={(e) => { e.stopPropagation(); action(); }}
-                  className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3 cursor-pointer"
+                  disabled={disabled}
+                  title={title}
+                  onClick={(e) => { e.stopPropagation(); if (!disabled) action(); }}
+                  className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-on-surface"
                 >
                   <span className="material-symbols-outlined text-lg">{icon}</span>
                   {label}
@@ -267,7 +322,8 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
           </>
         )}
       </div>
-    ),
+      );
+    },
   };
 
   // ── Ban action column ─────────────────────────────────────────────
