@@ -51,7 +51,7 @@ function isUpstreamConnectivityError(error: unknown): boolean {
 
 export const POST = withAuthRouteGuards({
   rateLimitKey: "login",
-  rateLimitMax: 3,
+  rateLimitMax: 10,
   rateLimitWindowMs: 300_000,
   schema: employeeLoginRequestSchema,
   handler: async ({ login, password, role }): Promise<NextResponse> => {
