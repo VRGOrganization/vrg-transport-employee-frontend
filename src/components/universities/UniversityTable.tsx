@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Landmark, Edit2, Ban, ChevronRight, Building2, RotateCcw, BusFront, CircleSlash } from "lucide-react";
+import { Landmark, Edit2, Ban, ChevronRight, Building2, RotateCcw, BusFront, CircleSlash, Clock } from "lucide-react";
 import type { University } from "@/types/university.types";
 
 interface Props {
@@ -164,22 +164,32 @@ export function UniversityTable({
                 {university.address}
               </p>
 
-              {university.hasBus !== undefined && (
-                <span
-                  className={cn(
-                    "mt-2 ml-12 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
-                    university.hasBus
-                      ? "bg-success-container text-success"
-                      : "bg-warning-container text-warning",
+              {(university.hasBus !== undefined || university.temporary) && (
+                <div className="mt-2 ml-12 flex items-center gap-1.5 flex-wrap">
+                  {university.hasBus !== undefined && (
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                        university.hasBus
+                          ? "bg-success-container text-success"
+                          : "bg-warning-container text-warning",
+                      )}
+                    >
+                      {university.hasBus ? (
+                        <BusFront className="size-3" />
+                      ) : (
+                        <CircleSlash className="size-3" />
+                      )}
+                      {university.hasBus ? "Coberta" : "Sem cobertura"}
+                    </span>
                   )}
-                >
-                  {university.hasBus ? (
-                    <BusFront className="size-3" />
-                  ) : (
-                    <CircleSlash className="size-3" />
+                  {university.temporary && (
+                    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium bg-info-container text-info">
+                      <Clock className="size-3" />
+                      Temporária
+                    </span>
                   )}
-                  {university.hasBus ? "Coberta" : "Sem cobertura"}
-                </span>
+                </div>
               )}
             </div>
           </li>
