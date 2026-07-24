@@ -10,11 +10,13 @@ import { UniversityFormModal } from "@/components/universities/UniversityFormMod
 import { DeactivateUniversityModal } from "@/components/universities/DeactivateUniversityModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Tabs } from "@/components/ui/Tabs";
+import { SearchInput } from "@/components/ui/SearchInput";
 import { Plus, MapPin, BookOpen, Bus as BusIcon, Building2, AlertCircle, X, CheckCircle2, Ban, RotateCcw, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 type DetailTab = "courses" | "buses";
 type StatusTab = "active" | "inactive";
-type SortOrder = "az" | "za";
+type SortOrder = "az" | "za" | "temp-first" | "fixed-first";
+type CoverageFilter = "all" | "covered" | "uncovered";
 
 const PAGE_SIZE = 5;
 
@@ -27,6 +29,8 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
   void role;
   const [statusTab, setStatusTab] = useState<StatusTab>("active");
   const [sortOrder, setSortOrder] = useState<SortOrder>("az");
+  const [coverageFilter, setCoverageFilter] = useState<CoverageFilter>("all");
+  const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [universities, setUniversities] = useState<University[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -91,20 +95,46 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusTab, sortOrder]);
+  }, [statusTab, sortOrder, coverageFilter, search]);
+
+  useEffect(() => {
+    if (statusTab !== "active") setCoverageFilter("all");
+  }, [statusTab]);
 
   const sortedUniversities = useMemo(() => {
     const list = [...universities];
+    const acronymCmp = (a: University, b: University) =>
+      a.acronym.localeCompare(b.acronym, "pt-BR", { sensitivity: "base" });
     list.sort((a, b) => {
-      const cmp = a.acronym.localeCompare(b.acronym, "pt-BR", { sensitivity: "base" });
-      return sortOrder === "az" ? cmp : -cmp;
+      switch (sortOrder) {
+        case "az":
+          return acronymCmp(a, b);
+        case "za":
+          return -acronymCmp(a, b);
+        case "temp-first":
+          return Number(Boolean(b.temporary)) - Number(Boolean(a.temporary)) || acronymCmp(a, b);
+        case "fixed-first":
+          return Number(Boolean(a.temporary)) - Number(Boolean(b.temporary)) || acronymCmp(a, b);
+      }
     });
     return list;
   }, [universities, sortOrder]);
 
-  const totalPages = Math.max(1, Math.ceil(sortedUniversities.length / PAGE_SIZE));
+  const filteredUniversities = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return sortedUniversities.filter((u) => {
+      if (statusTab === "active" && coverageFilter !== "all") {
+        if (coverageFilter === "covered" && !u.hasBus) return false;
+        if (coverageFilter === "uncovered" && u.hasBus) return false;
+      }
+      if (!query) return true;
+      return u.name.toLowerCase().includes(query) || u.acronym.toLowerCase().includes(query);
+    });
+  }, [sortedUniversities, search, statusTab, coverageFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUniversities.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
-  const pageItems = sortedUniversities.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const pageItems = filteredUniversities.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const handleSelect = (university: University | null) => {
     if (!university) {
@@ -232,7 +262,14 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 mb-4">
+              <SearchInput
+                value={search}
+                onChange={setSearch}
+                placeholder="Buscar por nome ou sigla..."
+                className="w-full mb-3"
+              />
+
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <ArrowUpDown className="size-3.5 text-on-surface-variant shrink-0" />
                 <label htmlFor="university-sort" className="text-xs text-on-surface-variant">Ordenar:</label>
                 <select
@@ -241,10 +278,28 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                   onChange={(e) => setSortOrder(e.target.value as SortOrder)}
                   className="text-xs bg-surface-container border border-outline-variant rounded-lg px-2 py-1 text-on-surface outline-none focus:ring-2 focus:ring-primary/30"
                 >
-                  <option value="az">A → Z</option>
-                  <option value="za">Z → A</option>
+                  <option value="az">Nome (A → Z)</option>
+                  <option value="za">Nome (Z → A)</option>
+                  <option value="temp-first">Temporárias primeiro</option>
+                  <option value="fixed-first">Fixas primeiro</option>
                 </select>
               </div>
+
+              {statusTab === "active" && (
+                <div className="flex items-center gap-2 mb-4 flex-wrap">
+                  <label htmlFor="university-coverage" className="text-xs text-on-surface-variant">Cobertura:</label>
+                  <select
+                    id="university-coverage"
+                    value={coverageFilter}
+                    onChange={(e) => setCoverageFilter(e.target.value as CoverageFilter)}
+                    className="text-xs bg-surface-container border border-outline-variant rounded-lg px-2 py-1 text-on-surface outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    <option value="all">Todas</option>
+                    <option value="covered">Cobertas</option>
+                    <option value="uncovered">Não cobertas</option>
+                  </select>
+                </div>
+              )}
 
               {statusTab === "active" ? (
                 <UniversityTable
@@ -255,6 +310,10 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                   onDeactivate={handleDeactivate}
                   deactivatingId={deactivatingId}
                   loading={loadingUniversities}
+                  {...(search.trim() && {
+                    emptyTitle: "Nenhuma faculdade encontrada",
+                    emptyDescription: "Tente buscar por outro nome ou sigla.",
+                  })}
                 />
               ) : (
                 <UniversityTable
@@ -262,15 +321,15 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                   loading={loadingUniversities}
                   onReactivate={handleReactivate}
                   reactivatingId={reactivatingId}
-                  emptyTitle="Nenhuma faculdade desativada"
-                  emptyDescription="Faculdades desativadas aparecerão aqui."
+                  emptyTitle={search.trim() ? "Nenhuma faculdade encontrada" : "Nenhuma faculdade desativada"}
+                  emptyDescription={search.trim() ? "Tente buscar por outro nome ou sigla." : "Faculdades desativadas aparecerão aqui."}
                 />
               )}
 
-              {!loadingUniversities && sortedUniversities.length > 0 && (
+              {!loadingUniversities && filteredUniversities.length > 0 && (
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-outline-variant">
                   <span className="text-xs text-on-surface-variant">
-                    Página {safePage} de {totalPages} · {sortedUniversities.length} {sortedUniversities.length === 1 ? "faculdade" : "faculdades"}
+                    Página {safePage} de {totalPages} · {filteredUniversities.length} {filteredUniversities.length === 1 ? "faculdade" : "faculdades"}
                   </span>
                   <div className="flex items-center gap-1">
                     <button
