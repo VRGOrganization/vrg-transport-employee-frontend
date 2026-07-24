@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MessageSquare, BarChart3, Pin } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { formatDate } from "@/lib/license-formatters";
@@ -16,6 +17,11 @@ interface Props {
 const TYPE_LABELS: Record<NoticeType, string> = {
   message: "Mensagem",
   poll: "Enquete",
+};
+
+const TYPE_ICONS: Record<NoticeType, typeof MessageSquare> = {
+  message: MessageSquare,
+  poll: BarChart3,
 };
 
 const STATUS_LABELS: Record<NoticeStatus, string> = {
@@ -34,25 +40,37 @@ const STATUS_CLASSES: Record<NoticeStatus, string> = {
 
 export function NoticeListItem({ notice, onDeleted }: Props) {
   const [resultsOpen, setResultsOpen] = useState(false);
+  const TypeIcon = TYPE_ICONS[notice.type];
 
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-outline-variant bg-surface-container-lowest p-4">
-      <div className="min-w-0 space-y-1">
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-surface-container-high px-2.5 py-0.5 text-xs font-semibold text-on-surface-variant">
-            {TYPE_LABELS[notice.type]}
-          </span>
-          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_CLASSES[notice.status]}`}>
-            {STATUS_LABELS[notice.status]}
-          </span>
+    <div className="group flex h-full flex-col gap-3 rounded-xl border border-outline-variant/60 bg-surface-container-lowest p-4 transition-colors hover:border-outline-variant hover:bg-surface-container-low/40">
+      <div className="flex items-start gap-3">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-container-high text-on-surface-variant">
+          <TypeIcon className="size-5" />
         </div>
-        <p className="font-medium text-on-surface truncate">{notice.title}</p>
-        <p className="text-xs text-on-surface-variant">
-          {notice.authorName} · expira em {formatDate(notice.expiresAt)}
-        </p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <p className="truncate font-medium text-on-surface">{notice.title}</p>
+            {notice.pinned && (
+              <Pin className="size-3.5 shrink-0 fill-primary text-primary" aria-label="Fixado" />
+            )}
+          </div>
+          <p className="truncate text-xs text-on-surface-variant">
+            {notice.authorName} · expira em {formatDate(notice.expiresAt)}
+          </p>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded-full bg-surface-container-high px-2.5 py-0.5 text-xs font-medium text-on-surface-variant">
+          {TYPE_LABELS[notice.type]}
+        </span>
+        <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASSES[notice.status]}`}>
+          {STATUS_LABELS[notice.status]}
+        </span>
+      </div>
+
+      <div className="mt-auto flex items-center gap-2 pt-1">
         {notice.type === "poll" && (
           <Button variant="outline" size="sm" onClick={() => setResultsOpen(true)}>
             Ver resultados

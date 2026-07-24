@@ -10,7 +10,7 @@ interface SearchInputProps {
 export function SearchInput({ value, onChange, placeholder, className = "w-80" }: SearchInputProps) {
   return (
     <div className="relative">
-      <span className="material-symbols-outlined text-base absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">
+      <span className="material-symbols-outlined text-base absolute left-3 top-1/2 -translate-y-1/2 leading-none inline-flex items-center justify-center text-on-surface-variant pointer-events-none">
         search
       </span>
       <input
