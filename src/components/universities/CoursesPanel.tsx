@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, GraduationCap, BookOpen, Pencil, Ban, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, GraduationCap, BookOpen, Pencil, Ban, ChevronLeft, ChevronRight, SearchX } from "lucide-react";
 import type { Course, CourseModel, University } from "@/types/university.types";
 import { courseApi } from "@/lib/universityApi";
 import { CourseFormModal } from "./CourseFormModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { SearchInput } from "@/components/ui/SearchInput";
 
 const PAGE_SIZE = 10;
 
@@ -64,12 +65,17 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
   const [deactivating, setDeactivating] = useState(false);
   const [deactivateError, setDeactivateError] = useState("");
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
 
-  useEffect(() => { setPage(1); }, [courses]);
+  useEffect(() => { setPage(1); }, [courses, search]);
 
-  const totalPages = Math.max(1, Math.ceil(courses.length / PAGE_SIZE));
+  const filteredCourses = courses.filter((course) =>
+    course.name.toLowerCase().includes(search.trim().toLowerCase())
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredCourses.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
-  const pageItems = courses.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const pageItems = filteredCourses.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const handleCreate = async (data: { name: string; model: CourseModel | null }) => {
     await courseApi.create({ name: data.name, universityId: university._id, ...(data.model ? { model: data.model } : {}) });
@@ -112,16 +118,31 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
         </button>
       </div>
 
+      {courses.length > 0 && (
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar curso por nome..."
+          className="w-full mb-4"
+        />
+      )}
+
       {courses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 text-on-surface-muted">
           <GraduationCap className="size-10 mb-2" />
           <p className="text-sm">Nenhum curso cadastrado</p>
           <p className="text-xs mt-1">Clique em &quot;Novo curso&quot; para começar</p>
         </div>
+      ) : filteredCourses.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-10 text-on-surface-muted">
+          <SearchX className="size-10 mb-2" />
+          <p className="text-sm">Nenhum curso encontrado</p>
+          <p className="text-xs mt-1">Tente buscar por outro nome</p>
+        </div>
       ) : (
         <>
           {totalPages > 1 && (
-            <Pagination safePage={safePage} totalPages={totalPages} total={courses.length} onPage={setPage} className="mb-3 pb-3 border-b border-outline-variant" />
+            <Pagination safePage={safePage} totalPages={totalPages} total={filteredCourses.length} onPage={setPage} className="mb-3 pb-3 border-b border-outline-variant" />
           )}
 
           <ul className="space-y-2">
@@ -162,7 +183,7 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
           </ul>
 
           {totalPages > 1 && (
-            <Pagination safePage={safePage} totalPages={totalPages} total={courses.length} onPage={setPage} className="mt-3 pt-3 border-t border-outline-variant" />
+            <Pagination safePage={safePage} totalPages={totalPages} total={filteredCourses.length} onPage={setPage} className="mt-3 pt-3 border-t border-outline-variant" />
           )}
         </>
       )}

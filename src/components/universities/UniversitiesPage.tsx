@@ -10,6 +10,7 @@ import { UniversityFormModal } from "@/components/universities/UniversityFormMod
 import { DeactivateUniversityModal } from "@/components/universities/DeactivateUniversityModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Tabs } from "@/components/ui/Tabs";
+import { SearchInput } from "@/components/ui/SearchInput";
 import { Plus, MapPin, BookOpen, Bus as BusIcon, Building2, AlertCircle, X, CheckCircle2, Ban, RotateCcw, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 type DetailTab = "courses" | "buses";
@@ -27,6 +28,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
   void role;
   const [statusTab, setStatusTab] = useState<StatusTab>("active");
   const [sortOrder, setSortOrder] = useState<SortOrder>("az");
+  const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [universities, setUniversities] = useState<University[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -91,7 +93,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusTab, sortOrder]);
+  }, [statusTab, sortOrder, search]);
 
   const sortedUniversities = useMemo(() => {
     const list = [...universities];
@@ -102,9 +104,17 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
     return list;
   }, [universities, sortOrder]);
 
-  const totalPages = Math.max(1, Math.ceil(sortedUniversities.length / PAGE_SIZE));
+  const filteredUniversities = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return sortedUniversities;
+    return sortedUniversities.filter(
+      (u) => u.name.toLowerCase().includes(query) || u.acronym.toLowerCase().includes(query)
+    );
+  }, [sortedUniversities, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUniversities.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
-  const pageItems = sortedUniversities.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const pageItems = filteredUniversities.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const handleSelect = (university: University | null) => {
     if (!university) {
@@ -232,6 +242,13 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                 </span>
               </div>
 
+              <SearchInput
+                value={search}
+                onChange={setSearch}
+                placeholder="Buscar por nome ou sigla..."
+                className="w-full mb-3"
+              />
+
               <div className="flex items-center gap-2 mb-4">
                 <ArrowUpDown className="size-3.5 text-on-surface-variant shrink-0" />
                 <label htmlFor="university-sort" className="text-xs text-on-surface-variant">Ordenar:</label>
@@ -255,6 +272,10 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                   onDeactivate={handleDeactivate}
                   deactivatingId={deactivatingId}
                   loading={loadingUniversities}
+                  {...(search.trim() && {
+                    emptyTitle: "Nenhuma faculdade encontrada",
+                    emptyDescription: "Tente buscar por outro nome ou sigla.",
+                  })}
                 />
               ) : (
                 <UniversityTable
@@ -262,15 +283,15 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                   loading={loadingUniversities}
                   onReactivate={handleReactivate}
                   reactivatingId={reactivatingId}
-                  emptyTitle="Nenhuma faculdade desativada"
-                  emptyDescription="Faculdades desativadas aparecerão aqui."
+                  emptyTitle={search.trim() ? "Nenhuma faculdade encontrada" : "Nenhuma faculdade desativada"}
+                  emptyDescription={search.trim() ? "Tente buscar por outro nome ou sigla." : "Faculdades desativadas aparecerão aqui."}
                 />
               )}
 
-              {!loadingUniversities && sortedUniversities.length > 0 && (
+              {!loadingUniversities && filteredUniversities.length > 0 && (
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-outline-variant">
                   <span className="text-xs text-on-surface-variant">
-                    Página {safePage} de {totalPages} · {sortedUniversities.length} {sortedUniversities.length === 1 ? "faculdade" : "faculdades"}
+                    Página {safePage} de {totalPages} · {filteredUniversities.length} {filteredUniversities.length === 1 ? "faculdade" : "faculdades"}
                   </span>
                   <div className="flex items-center gap-1">
                     <button

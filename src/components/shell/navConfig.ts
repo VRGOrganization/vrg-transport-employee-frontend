@@ -29,10 +29,11 @@ export const ADMIN_NAV_ITEMS: readonly NavItem[] = [
 ];
 
 export const EMPLOYEE_NAV_ITEMS: readonly NavItem[] = [
-  { icon: LayoutDashboard, label: "Painel do Funcionário",  href: "/employee/dashboard" },
-  { icon: GraduationCap,   label: "Gerenciar Estudantes",   href: "/employee/students"  },
-  { icon: IdCard,          label: "Gerenciar Carteirinhas", href: "/employee/cards"     },
-  { icon: Bell,            label: "Avisos",                 href: "/employee/notices"   },
+  { icon: LayoutDashboard, label: "Painel do Funcionário",  href: "/employee/dashboard"    },
+  { icon: GraduationCap,   label: "Gerenciar Estudantes",   href: "/employee/students"     },
+  { icon: Building2,       label: "Instituições",           href: "/employee/universities" },
+  { icon: IdCard,          label: "Gerenciar Carteirinhas", href: "/employee/cards"        },
+  { icon: Bell,            label: "Avisos",                 href: "/employee/notices"      },
 ];
 
 export const ADMIN_BRAND: SideNavBrand = {
