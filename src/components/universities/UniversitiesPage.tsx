@@ -15,7 +15,8 @@ import { Plus, MapPin, BookOpen, Bus as BusIcon, Building2, AlertCircle, X, Chec
 
 type DetailTab = "courses" | "buses";
 type StatusTab = "active" | "inactive";
-type SortOrder = "az" | "za";
+type SortOrder = "az" | "za" | "temp-first" | "fixed-first";
+type CoverageFilter = "all" | "covered" | "uncovered";
 
 const PAGE_SIZE = 5;
 
@@ -28,6 +29,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
   void role;
   const [statusTab, setStatusTab] = useState<StatusTab>("active");
   const [sortOrder, setSortOrder] = useState<SortOrder>("az");
+  const [coverageFilter, setCoverageFilter] = useState<CoverageFilter>("all");
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [universities, setUniversities] = useState<University[]>([]);
@@ -93,24 +95,42 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusTab, sortOrder, search]);
+  }, [statusTab, sortOrder, coverageFilter, search]);
+
+  useEffect(() => {
+    if (statusTab !== "active") setCoverageFilter("all");
+  }, [statusTab]);
 
   const sortedUniversities = useMemo(() => {
     const list = [...universities];
+    const acronymCmp = (a: University, b: University) =>
+      a.acronym.localeCompare(b.acronym, "pt-BR", { sensitivity: "base" });
     list.sort((a, b) => {
-      const cmp = a.acronym.localeCompare(b.acronym, "pt-BR", { sensitivity: "base" });
-      return sortOrder === "az" ? cmp : -cmp;
+      switch (sortOrder) {
+        case "az":
+          return acronymCmp(a, b);
+        case "za":
+          return -acronymCmp(a, b);
+        case "temp-first":
+          return Number(Boolean(b.temporary)) - Number(Boolean(a.temporary)) || acronymCmp(a, b);
+        case "fixed-first":
+          return Number(Boolean(a.temporary)) - Number(Boolean(b.temporary)) || acronymCmp(a, b);
+      }
     });
     return list;
   }, [universities, sortOrder]);
 
   const filteredUniversities = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return sortedUniversities;
-    return sortedUniversities.filter(
-      (u) => u.name.toLowerCase().includes(query) || u.acronym.toLowerCase().includes(query)
-    );
-  }, [sortedUniversities, search]);
+    return sortedUniversities.filter((u) => {
+      if (statusTab === "active" && coverageFilter !== "all") {
+        if (coverageFilter === "covered" && !u.hasBus) return false;
+        if (coverageFilter === "uncovered" && u.hasBus) return false;
+      }
+      if (!query) return true;
+      return u.name.toLowerCase().includes(query) || u.acronym.toLowerCase().includes(query);
+    });
+  }, [sortedUniversities, search, statusTab, coverageFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredUniversities.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
@@ -249,7 +269,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                 className="w-full mb-3"
               />
 
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <ArrowUpDown className="size-3.5 text-on-surface-variant shrink-0" />
                 <label htmlFor="university-sort" className="text-xs text-on-surface-variant">Ordenar:</label>
                 <select
@@ -258,10 +278,28 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                   onChange={(e) => setSortOrder(e.target.value as SortOrder)}
                   className="text-xs bg-surface-container border border-outline-variant rounded-lg px-2 py-1 text-on-surface outline-none focus:ring-2 focus:ring-primary/30"
                 >
-                  <option value="az">A → Z</option>
-                  <option value="za">Z → A</option>
+                  <option value="az">Nome (A → Z)</option>
+                  <option value="za">Nome (Z → A)</option>
+                  <option value="temp-first">Temporárias primeiro</option>
+                  <option value="fixed-first">Fixas primeiro</option>
                 </select>
               </div>
+
+              {statusTab === "active" && (
+                <div className="flex items-center gap-2 mb-4 flex-wrap">
+                  <label htmlFor="university-coverage" className="text-xs text-on-surface-variant">Cobertura:</label>
+                  <select
+                    id="university-coverage"
+                    value={coverageFilter}
+                    onChange={(e) => setCoverageFilter(e.target.value as CoverageFilter)}
+                    className="text-xs bg-surface-container border border-outline-variant rounded-lg px-2 py-1 text-on-surface outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    <option value="all">Todas</option>
+                    <option value="covered">Cobertas</option>
+                    <option value="uncovered">Não cobertas</option>
+                  </select>
+                </div>
+              )}
 
               {statusTab === "active" ? (
                 <UniversityTable

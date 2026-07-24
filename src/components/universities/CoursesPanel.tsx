@@ -1,14 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, GraduationCap, BookOpen, Pencil, Ban, ChevronLeft, ChevronRight, SearchX } from "lucide-react";
+import { Plus, GraduationCap, BookOpen, Pencil, Ban, ChevronLeft, ChevronRight, SearchX, ArrowUpDown } from "lucide-react";
 import type { Course, CourseModel, University } from "@/types/university.types";
+import { COURSE_MODEL_OPTIONS } from "@/types/university.types";
 import { courseApi } from "@/lib/universityApi";
 import { CourseFormModal } from "./CourseFormModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SearchInput } from "@/components/ui/SearchInput";
 
 const PAGE_SIZE = 10;
+
+type CourseSortOrder = "az" | "za" | "model";
 
 function Pagination({
   safePage,
@@ -66,10 +69,22 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
   const [deactivateError, setDeactivateError] = useState("");
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [sortOrder, setSortOrder] = useState<CourseSortOrder>("az");
 
-  useEffect(() => { setPage(1); }, [courses, search]);
+  useEffect(() => { setPage(1); }, [courses, search, sortOrder]);
 
-  const filteredCourses = courses.filter((course) =>
+  const sortedCourses = [...courses].sort((a, b) => {
+    const nameCmp = a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" });
+    if (sortOrder === "za") return -nameCmp;
+    if (sortOrder === "model") {
+      const modelIndex = (course: Course) =>
+        course.model ? COURSE_MODEL_OPTIONS.indexOf(course.model) : COURSE_MODEL_OPTIONS.length;
+      return modelIndex(a) - modelIndex(b) || nameCmp;
+    }
+    return nameCmp;
+  });
+
+  const filteredCourses = sortedCourses.filter((course) =>
     course.name.toLowerCase().includes(search.trim().toLowerCase())
   );
 
@@ -119,12 +134,28 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
       </div>
 
       {courses.length > 0 && (
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Buscar curso por nome..."
-          className="w-full mb-4"
-        />
+        <>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Buscar curso por nome..."
+            className="w-full mb-3"
+          />
+          <div className="flex items-center gap-2 mb-4">
+            <ArrowUpDown className="size-3.5 text-on-surface-variant shrink-0" />
+            <label htmlFor="course-sort" className="text-xs text-on-surface-variant">Ordenar:</label>
+            <select
+              id="course-sort"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as CourseSortOrder)}
+              className="text-xs bg-surface-container border border-outline-variant rounded-lg px-2 py-1 text-on-surface outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="az">Nome (A → Z)</option>
+              <option value="za">Nome (Z → A)</option>
+              <option value="model">Tipo de curso</option>
+            </select>
+          </div>
+        </>
       )}
 
       {courses.length === 0 ? (
