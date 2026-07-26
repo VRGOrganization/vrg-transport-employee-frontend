@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Check } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { SelectField } from "@/components/ui/SelectField";
@@ -17,6 +18,13 @@ import type { University, Bus } from "@/types/university.types";
 
 const DAYS = ["SEG", "TER", "QUA", "QUI", "SEX"] as const;
 const PERIODS = ["Manhã", "Tarde", "Noite"] as const;
+
+const DOCUMENT_FIELDS = [
+  ["ProfilePhoto", "Foto 3x4", "Foto recente, rosto visível, fundo neutro."],
+  ["EnrollmentProof", "Comprovante de matrícula", "Documento da faculdade confirmando matrícula ativa."],
+  ["CourseSchedule", "Grade horária", "Grade de horários das aulas no período atual."],
+  ["AcademicPeriodProof", "Comprovante de período letivo", "Confirma o período/semestre letivo em curso."],
+] as const;
 
 interface AdminLicenseRequestFormProps {
   studentId: string;
@@ -54,6 +62,7 @@ export function AdminLicenseRequestForm({
   const [busIdError, setBusIdError] = useState("");
   const [scheduleError, setScheduleError] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
+  const [view, setView] = useState<"form" | "review">("form");
 
   useEffect(() => {
     universityService.list().then(setUniversities).catch(() => {});
@@ -116,7 +125,7 @@ export function AdminLicenseRequestForm({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleReview = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setBusIdError("");
@@ -133,6 +142,10 @@ export function AdminLicenseRequestForm({
     }
     if (hasFieldError) return;
 
+    setView("review");
+  };
+
+  const handleConfirmCreate = async () => {
     const payload: AdminCreateLicenseRequestInput = {
       studentId,
       universityId: universityId || undefined,
@@ -147,16 +160,24 @@ export function AdminLicenseRequestForm({
     };
 
     setLoading(true);
+    setError("");
     try {
       const result = await licenseRequestService.adminCreate(payload);
       setSuccess(result.requestId);
       onSuccess?.(result.requestId);
     } catch (err) {
       setError((err as { message?: string }).message ?? "Erro ao criar o pedido.");
+      setView("form");
     } finally {
       setLoading(false);
     }
   };
+
+  const busLabel = busOptions.find((b) => b.value === busId)?.label ?? busId;
+  const scheduleSummary = DAYS.flatMap((day) =>
+    PERIODS.filter((period) => isSelected(day, period)).map((period) => `${day} ${period}`),
+  );
+  const attachedDocs = DOCUMENT_FIELDS.filter(([key]) => documents[key]);
 
   if (success) {
     return (
@@ -166,8 +187,72 @@ export function AdminLicenseRequestForm({
     );
   }
 
+  if (view === "review") {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setView("form")}
+            className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+          >
+            <ArrowLeft className="size-5" />
+          </button>
+          <h3 className="font-headline font-semibold text-lg text-on-surface flex-1">
+            Revisar pedido
+          </h3>
+        </div>
+
+        {error && <StatusBanner variant="error">{error}</StatusBanner>}
+
+        <p className="text-sm text-on-surface-variant">
+          Confira os dados antes de criar o pedido{studentName ? ` de ${studentName}` : ""}.
+        </p>
+
+        <dl className="rounded-xl border border-outline-variant divide-y divide-outline-variant overflow-hidden">
+          {[
+            ["Faculdade", institution.trim() || "—"],
+            ["Curso", degree.trim() || "—"],
+            ["Turno", shift || "—"],
+            ["Tipo sanguíneo", bloodType || "—"],
+            ["Ônibus", busLabel || "—"],
+            ["Modo de transporte", transportMode === "weekly" ? "Semanal" : "Regular"],
+            ["Horários", scheduleSummary.length > 0 ? scheduleSummary.join(", ") : "—"],
+            [
+              "Documentos anexados",
+              attachedDocs.length > 0
+                ? attachedDocs.map(([key, label]) => `${label} (${documents[key]!.name})`).join(", ")
+                : "Nenhum documento anexado",
+            ],
+          ].map(([label, value]) => (
+            <div key={label} className="px-4 py-3 grid grid-cols-1 sm:grid-cols-[10rem_1fr] gap-1 sm:gap-4">
+              <dt className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">{label}</dt>
+              <dd className="text-sm text-on-surface">{value}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <div className="flex gap-3">
+          <Button variant="outline" size="lg" fullWidth onClick={() => setView("form")} disabled={loading}>
+            Voltar e editar
+          </Button>
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            loading={loading}
+            icon={<Check className="size-4" />}
+            onClick={() => void handleConfirmCreate()}
+          >
+            Confirmar e criar pedido
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleReview} className="space-y-6">
       {error && <StatusBanner variant="error">{error}</StatusBanner>}
 
       {studentName && (
@@ -312,14 +397,7 @@ export function AdminLicenseRequestForm({
       <section className="space-y-4 rounded-xl border border-outline-variant p-4">
         <h3 className="text-sm font-bold text-on-surface">Documentos (opcional)</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {(
-            [
-              ["ProfilePhoto", "Foto 3x4", "Foto recente, rosto visível, fundo neutro."],
-              ["EnrollmentProof", "Comprovante de matrícula", "Documento da faculdade confirmando matrícula ativa."],
-              ["CourseSchedule", "Grade horária", "Grade de horários das aulas no período atual."],
-              ["AcademicPeriodProof", "Comprovante de período letivo", "Confirma o período/semestre letivo em curso."],
-            ] as const
-          ).map(([key, label, hint]) => (
+          {DOCUMENT_FIELDS.map(([key, label, hint]) => (
             <DocumentUploadField
               key={key}
               label={label}
@@ -331,8 +409,8 @@ export function AdminLicenseRequestForm({
         </div>
       </section>
 
-      <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}>
-        Criar pedido de carteirinha
+      <Button type="submit" variant="primary" size="lg" fullWidth>
+        Revisar pedido
       </Button>
     </form>
   );
