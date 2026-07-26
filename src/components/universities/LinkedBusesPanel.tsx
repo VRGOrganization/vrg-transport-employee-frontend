@@ -151,7 +151,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
               <button
                 onClick={() => setPendingUnlink(bus)}
                 disabled={loadingId === bus._id}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-all cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-error/30"
+                className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-all cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-error/30"
                 title="Desvincular"
               >
                 {loadingId === bus._id

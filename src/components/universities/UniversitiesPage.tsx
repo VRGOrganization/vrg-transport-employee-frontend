@@ -56,7 +56,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
     try {
       if (statusTab === "active") {
         const [unis, busList] = await Promise.all([
-          universityApi.list(),
+          universityApi.listWithQueueCounts(),
           busApi.listActive(),
         ]);
         setUniversities(unis);

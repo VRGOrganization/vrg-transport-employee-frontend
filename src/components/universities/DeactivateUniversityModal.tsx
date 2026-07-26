@@ -89,6 +89,18 @@ export function DeactivateUniversityModal({
                 <p className="text-xs text-on-surface-variant mt-0.5">
                   Esta ação desativará a faculdade. Ela não aparecerá mais para novos cadastros.
                 </p>
+                {((university.pendingCount ?? 0) > 0 ||
+                  (university.waitlistedCount ?? 0) > 0 ||
+                  (university.revisionCount ?? 0) > 0) && (
+                  <p className="text-xs font-semibold text-error mt-2">
+                    {university.pendingCount ? `${university.pendingCount} pedido(s) pendente(s)` : null}
+                    {university.pendingCount && (university.waitlistedCount || university.revisionCount) ? ", " : null}
+                    {university.waitlistedCount ? `${university.waitlistedCount} na fila de espera` : null}
+                    {university.waitlistedCount && university.revisionCount ? ", " : null}
+                    {university.revisionCount ? `${university.revisionCount} em revisão` : null}
+                    {" "}ficarão sem faculdade vinculada.
+                  </p>
+                )}
               </div>
             </div>
 
