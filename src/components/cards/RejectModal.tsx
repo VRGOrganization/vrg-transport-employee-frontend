@@ -22,6 +22,8 @@ export function RejectModal({
   onReload,
 }: RejectModalProps) {
   const [reasons, setReasons] = useState<RejectionReasonConfig[]>([]);
+  const [loadingReasons, setLoadingReasons] = useState(true);
+  const [reasonsError, setReasonsError] = useState("");
   const [selectedLabels, setSelectedLabels] = useState<Set<string>>(new Set());
   const [customMessage, setCustomMessage] = useState("");
   const [rejecting, setRejecting] = useState(false);
@@ -30,12 +32,17 @@ export function RejectModal({
   const panelRef = useRef<HTMLDivElement>(null);
   useModalA11y(panelRef, onClose);
 
-  useEffect(() => {
+  const loadReasons = () => {
+    setLoadingReasons(true);
+    setReasonsError("");
     http
       .get<RejectionReasonConfig[]>("/license-request/rejection-reasons")
       .then(setReasons)
-      .catch(() => setReasons([]));
-  }, []);
+      .catch(() => setReasonsError("Não foi possível carregar os motivos de recusa."))
+      .finally(() => setLoadingReasons(false));
+  };
+
+  useEffect(loadReasons, []);
 
   const toggleReason = (label: string) => {
     setSelectedLabels((prev) => {
@@ -118,6 +125,23 @@ export function RejectModal({
         </div>
 
         <div className="space-y-2">
+          {loadingReasons && (
+            <p className="text-xs text-on-surface-variant">Carregando motivos…</p>
+          )}
+
+          {reasonsError && !loadingReasons && (
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-error/30 bg-error/5 px-3 py-2.5 text-xs text-error">
+              <span>{reasonsError}</span>
+              <button
+                type="button"
+                onClick={loadReasons}
+                className="font-semibold underline shrink-0 cursor-pointer"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          )}
+
           {cardReasons.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">

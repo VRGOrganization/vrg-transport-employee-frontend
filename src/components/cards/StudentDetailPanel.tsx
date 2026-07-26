@@ -1,8 +1,9 @@
-import { ChevronDown, Eye, History } from "lucide-react";
+import { Bus, ChevronDown, Eye, History } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ImageLightbox, DocumentPreview } from "@/components/cards/CardPageComponents";
 import { http } from "@/services/http";
 import { PanelCard } from "@/components/ui/PanelCard";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import {
   PHOTO_TYPE_LABELS,
   REVISION_FIELD_LABELS,
@@ -80,6 +81,8 @@ export function StudentDetailPanel({
 }: StudentDetailPanelProps) {
   const [approving, setApproving] = useState(false);
   const [approveMessage, setApproveMessage] = useState("");
+  const [approveMessageIsError, setApproveMessageIsError] = useState(false);
+  const [confirmingApprove, setConfirmingApprove] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [previaOpen, setPreviaOpen] = useState(true);
@@ -155,7 +158,7 @@ export function StudentDetailPanel({
     [previewItems],
   );
 
-  const handleApprove = async () => {
+  const requestApprove = () => {
     if (!selected || approving || !currentLicenseRequest) return;
     const isApprovable =
       currentLicenseRequest.status === "pending" ||
@@ -163,8 +166,15 @@ export function StudentDetailPanel({
         currentLicenseRequest.revisionStage === "resubmitted");
     if (!isApprovable) {
       setApproveMessage("A solicitação ainda não está apta para aprovação.");
+      setApproveMessageIsError(true);
       return;
     }
+    setApproveMessage("");
+    setConfirmingApprove(true);
+  };
+
+  const handleApprove = async () => {
+    if (!selected || approving || !currentLicenseRequest) return;
     setApproving(true);
     setApproveMessage("");
     try {
@@ -172,10 +182,14 @@ export function StudentDetailPanel({
         ...(profileImage ? { photo: profileImage } : {}),
       });
       setApproveMessage("Carteirinha criada com sucesso.");
+      setApproveMessageIsError(false);
+      setConfirmingApprove(false);
       await onReload();
     } catch (err: unknown) {
       const e = err as { message?: string };
       setApproveMessage(e.message ?? "Falha ao criar a carteirinha.");
+      setApproveMessageIsError(true);
+      setConfirmingApprove(false);
     } finally {
       setApproving(false);
     }
@@ -369,12 +383,31 @@ export function StudentDetailPanel({
           approving={approving}
           printingSingle={printingSingle}
           approveMessage={approveMessage}
-          onApprove={handleApprove}
+          approveMessageIsError={approveMessageIsError}
+          onApprove={requestApprove}
           onRejectOpen={onOpenRejectModal}
           onRevisionOpen={onOpenRevisionModal}
           onPrintSingle={onPrintSingle}
         />
       </div>
+
+      <ConfirmModal
+        open={confirmingApprove}
+        onClose={() => { if (!approving) setConfirmingApprove(false); }}
+        onConfirm={handleApprove}
+        loading={approving}
+        title="Aprovar e criar carteirinha?"
+        icon={Bus}
+        variant="success"
+        description={
+          <>
+            Isso cria a carteirinha oficial de{" "}
+            <strong className="text-on-surface">{selected ? resolveDisplayName(selected) : "aluno"}</strong>{" "}
+            com base nesta solicitação. Não é possível desfazer por aqui.
+          </>
+        }
+        confirmLabel="Sim, aprovar"
+      />
 
       {lightboxIndex !== null && previewItems[lightboxIndex]?.dataUrl && (
         <ImageLightbox
