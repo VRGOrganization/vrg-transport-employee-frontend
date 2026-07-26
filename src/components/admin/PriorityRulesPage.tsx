@@ -294,6 +294,7 @@ export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {
       <PriorityRuleModal
         open={modalOpen}
         initial={editing}
+        nextSortOrder={rules.length > 0 ? Math.max(...rules.map((r) => r.sortOrder)) + 1 : 1}
         onClose={() => { setModalOpen(false); setEditing(null); }}
         onSaved={handleSaved}
         onDeleted={handleDeleted}
