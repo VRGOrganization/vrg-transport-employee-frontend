@@ -5,6 +5,7 @@ import { X, ShieldCheck, Loader2, AlertCircle, Calendar } from "lucide-react";
 import { banlistService } from "@/services/banlistService";
 import { resolveDisplayName, toTitleCase } from "@/lib/utils/string";
 import { useModalA11y } from "@/hooks/ui/useModalA11y";
+import { toast } from "@/lib/toast";
 import type { BanlistEntry } from "@/types/banlist";
 
 interface UnbanModalProps {
@@ -35,6 +36,7 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
     setError("");
     try {
       await banlistService.unban(entry.studentId, [unbanReasons.trim()]);
+      toast.success("Banimento removido com sucesso.");
       onSuccess();
     } catch (err: unknown) {
       const e = err as { message?: string };
