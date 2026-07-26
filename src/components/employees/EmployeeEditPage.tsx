@@ -3,44 +3,20 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { StatusBanner } from "@/components/ui/StatusBanner";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { employeeService } from "@/services/employeeService";
-import { employeeBaseSchema } from "@/lib/validation/employee";
 import {
-  Badge,
   CheckCircle2,
-  Mail,
-  User,
   Trash2,
   AlertTriangle,
   Loader2,
   UserX,
 } from "lucide-react";
+import { EmployeeEditForm, type ChangeEntry } from "@/components/employees/EmployeeEditForm";
+import { EmployeeEditConfirmView } from "@/components/employees/EmployeeEditConfirmView";
 
 import type { Employee } from "@/types/employee";
-
-interface FormData {
-  name: string;
-  email: string;
-  registrationId: string;
-}
-
-interface FormErrors {
-  name: string;
-  email: string;
-  registrationId: string;
-  general: string;
-}
-
-const emptyErrors: FormErrors = {
-  name: "",
-  email: "",
-  registrationId: "",
-  general: "",
-};
 
 function EditEmployeeContent() {
   const router = useRouter();
@@ -48,15 +24,13 @@ function EditEmployeeContent() {
   const id = searchParams.get("id");
 
   const [employee, setEmployee] = useState<Employee | null>(null);
-  const [formData, setFormData] = useState<FormData>({
-    name: "",
-    email: "",
-    registrationId: "",
-  });
-  const [errors, setErrors] = useState<FormErrors>(emptyErrors);
+  const [generalError, setGeneralError] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [formView, setFormView] = useState<"edit" | "confirm">("edit");
+  const [pendingPayload, setPendingPayload] = useState<Record<string, string>>({});
+  const [pendingChanges, setPendingChanges] = useState<ChangeEntry[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showActivateConfirm, setShowActivateConfirm] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
@@ -72,14 +46,9 @@ function EditEmployeeContent() {
       try {
         const data = await employeeService.getById(id!);
         setEmployee(data);
-        setFormData({
-          name: data.name,
-          email: data.email,
-          registrationId: data.registrationId,
-        });
       } catch (err: unknown) {
         if (process.env.NODE_ENV !== "production") console.error("Erro ao buscar funcionário:", err);
-        setErrors((prev) => ({ ...prev, general: "Não foi possível carregar os dados do funcionário" }));
+        setGeneralError("Não foi possível carregar os dados do funcionário");
       } finally {
         setLoading(false);
       }
@@ -88,45 +57,25 @@ function EditEmployeeContent() {
     fetchEmployee();
   }, [id, router]);
 
-  const set = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
-    if (errors[field as keyof FormErrors]) setErrors((prev) => ({ ...prev, [field]: "" }));
+  const handlePrepareConfirm = (payload: Record<string, string>, changes: ChangeEntry[]) => {
+    setPendingPayload(payload);
+    setPendingChanges(changes);
+    setFormView("confirm");
   };
 
-  const validate = (): boolean => {
-    const result = employeeBaseSchema.safeParse(formData);
-    if (!result.success) {
-      const fe = result.error.flatten().fieldErrors;
-      setErrors((prev) => ({
-        ...prev,
-        name: fe.name?.[0] ?? "",
-        email: fe.email?.[0] ?? "",
-        registrationId: fe.registrationId?.[0] ?? "",
-      }));
-      return false;
-    }
-    return true;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-
+  const handleConfirmUpdate = async () => {
     setSaving(true);
+    setGeneralError("");
     try {
-      await employeeService.update(id!, {
-        name: formData.name.trim(),
-        email: formData.email.trim().toLowerCase(),
-        registrationId: formData.registrationId.trim(),
-      });
+      const updated = await employeeService.update(id!, pendingPayload);
+      setEmployee(updated);
       setSuccess(true);
+      setFormView("edit");
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: unknown) {
-      const error = err as { message?: string; status?: number };
-      setErrors((prev) => ({
-        ...prev,
-        general: error.message ?? "Erro ao atualizar funcionário",
-      }));
+      const error = err as { message?: string };
+      setGeneralError(error.message ?? "Erro ao atualizar funcionário");
+      setFormView("edit");
     } finally {
       setSaving(false);
     }
@@ -139,10 +88,7 @@ function EditEmployeeContent() {
       router.push("/admin/employees");
     } catch (err: unknown) {
       const error = err as { message?: string };
-      setErrors((prev) => ({
-        ...prev,
-        general: error.message ?? "Erro ao desativar funcionário",
-      }));
+      setGeneralError(error.message ?? "Erro ao desativar funcionário");
       setShowDeleteConfirm(false);
     } finally {
       setDeactivating(false);
@@ -156,10 +102,7 @@ function EditEmployeeContent() {
       router.push("/admin/employees");
     } catch (err: unknown) {
       const error = err as { message?: string };
-      setErrors((prev) => ({
-        ...prev,
-        general: error.message ?? "Erro ao reativar funcionário",
-      }));
+      setGeneralError(error.message ?? "Erro ao reativar funcionário");
       setShowActivateConfirm(false);
     } finally {
       setActivating(false);
@@ -192,73 +135,30 @@ function EditEmployeeContent() {
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_20rem] gap-6 mt-8">
               {/* Form Section */}
               <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-sm">
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  {errors.general && (
-                    <StatusBanner variant="error">{errors.general}</StatusBanner>
-                  )}
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-                      Nome completo
-                    </label>
-                    <Input
-                      type="text"
-                      icon={<User className="size-5" />}
-                      placeholder="Nome do funcionário"
-                      value={formData.name}
-                      onChange={set("name")}
-                      error={errors.name}
-                    />
+                {success && (
+                  <div className="flex items-center gap-1.5 text-success text-sm font-medium mb-4 animate-in fade-in slide-in-from-top-2">
+                    <CheckCircle2 className="size-4" />
+                    Alterações salvas!
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-                      Email
-                    </label>
-                    <Input
-                      type="email"
-                      icon={<Mail className="size-5" />}
-                      placeholder="email@exemplo.com"
-                      value={formData.email}
-                      onChange={set("email")}
-                      error={errors.email}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-                      Matrícula
-                    </label>
-                    <Input
-                      type="text"
-                      icon={<Badge className="size-5" />}
-                      placeholder="MAT123456"
-                      value={formData.registrationId}
-                      onChange={set("registrationId")}
-                      error={errors.registrationId}
-                    />
-                  </div>
-
-                  <div className="pt-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
-                      {success && (
-                        <div className="flex items-center gap-1.5 text-success text-sm font-medium animate-in fade-in slide-in-from-left-2">
-                          <CheckCircle2 className="size-4" />
-                          Alterações salvas!
-                        </div>
-                      )}
-                    </div>
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      size="md"
-                      loading={saving}
-                      icon={<CheckCircle2 className="size-4" />}
-                    >
-                      Salvar Alterações
-                    </Button>
-                  </div>
-                </form>
+                )}
+                {employee && formView === "edit" && (
+                  <EmployeeEditForm
+                    employee={employee}
+                    generalError={generalError}
+                    hideHeader
+                    onCancel={() => router.push("/admin/employees")}
+                    onPrepareConfirm={handlePrepareConfirm}
+                  />
+                )}
+                {employee && formView === "confirm" && (
+                  <EmployeeEditConfirmView
+                    changes={pendingChanges}
+                    loading={saving}
+                    hideHeader
+                    onBack={() => setFormView("edit")}
+                    onConfirm={() => void handleConfirmUpdate()}
+                  />
+                )}
               </div>
 
               {/* Status Section */}
