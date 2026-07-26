@@ -7,7 +7,11 @@ export type PhotoType =
   | "GovernmentId"
   | "ProofOfResidence"
   | "TransportCardProof"
-  | "DisabilityProof";
+  | "DisabilityProof"
+  // 2ª faculdade (aluno em duas instituições): comprovantes próprios.
+  | "SecondaryEnrollmentProof"
+  | "SecondaryCourseSchedule"
+  | "SecondaryAcademicPeriodProof";
 
 export interface StudentRecord {
   _id: string;
@@ -173,4 +177,7 @@ export const PHOTO_TYPE_LABELS: Record<PhotoType, string> = {
   ProofOfResidence: "Comprovante de residência",
   TransportCardProof: "Carteirinha de Transporte Atual",
   DisabilityProof: "Laudo Médico (PCD)",
+  SecondaryEnrollmentProof: "Comprovante de Matrícula (2ª faculdade)",
+  SecondaryCourseSchedule: "Grade Horária (2ª faculdade)",
+  SecondaryAcademicPeriodProof: "Calendário Acadêmico (2ª faculdade)",
 };

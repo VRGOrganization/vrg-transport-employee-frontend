@@ -152,6 +152,16 @@ export function AdminLicenseRequestForm({
     }
   };
 
+  /** Renderiza um campo de upload ligado ao estado `documents` pela chave (PhotoType). */
+  const docField = (key: string, label: string) => (
+    <DocumentUploadField
+      key={key}
+      label={label}
+      value={documents[key] ?? null}
+      onChange={(file) => setDocuments((prev) => ({ ...prev, [key]: file }))}
+    />
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -162,6 +172,18 @@ export function AdminLicenseRequestForm({
     }
     if (schedule.length === 0) {
       setError("Selecione ao menos um horário.");
+      return;
+    }
+    // Documentos são obrigatórios: foto 3x4 + os 3 comprovantes da 1ª faculdade.
+    if (
+      !documents.ProfilePhoto ||
+      !documents.EnrollmentProof ||
+      !documents.CourseSchedule ||
+      !documents.AcademicPeriodProof
+    ) {
+      setError(
+        "Anexe a foto 3x4 e os comprovantes da 1ª faculdade (matrícula, grade horária e período letivo).",
+      );
       return;
     }
 
@@ -188,6 +210,16 @@ export function AdminLicenseRequestForm({
       if (clash) {
         setError(
           `Colisão de horário entre a grade primária e a secundária em ${clash.day} ${clash.period}. Ajuste as grades para não coincidirem.`,
+        );
+        return;
+      }
+      if (
+        !documents.SecondaryEnrollmentProof ||
+        !documents.SecondaryCourseSchedule ||
+        !documents.SecondaryAcademicPeriodProof
+      ) {
+        setError(
+          "Anexe os comprovantes da 2ª faculdade (matrícula, grade horária e período letivo).",
         );
         return;
       }
@@ -287,6 +319,13 @@ export function AdminLicenseRequestForm({
             onChange={(e) => setTransportMode(e.target.value as "regular" | "weekly")}
           />
         }
+        documentFields={
+          <>
+            {docField("EnrollmentProof", "Comprovante de matrícula")}
+            {docField("CourseSchedule", "Grade horária")}
+            {docField("AcademicPeriodProof", "Comprovante de período letivo")}
+          </>
+        }
       />
 
       {/* ── Toggle da segunda instituição ────────────────────────────── */}
@@ -334,28 +373,24 @@ export function AdminLicenseRequestForm({
             )
           }
           creatingTemp={creatingTempSecondary}
+          documentFields={
+            <>
+              {docField("SecondaryEnrollmentProof", "Comprovante de matrícula")}
+              {docField("SecondaryCourseSchedule", "Grade horária")}
+              {docField(
+                "SecondaryAcademicPeriodProof",
+                "Comprovante de período letivo",
+              )}
+            </>
+          }
         />
       )}
 
-      {/* ── Documentos ──────────────────────────────────────────────── */}
+      {/* ── Documento compartilhado do aluno (única foto para as duas faculdades) ── */}
       <section className="space-y-4 rounded-xl border border-outline-variant p-4">
-        <h3 className="text-sm font-bold text-on-surface">Documentos (opcional)</h3>
+        <h3 className="text-sm font-bold text-on-surface">Documento do aluno</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {(
-            [
-              ["ProfilePhoto", "Foto 3x4"],
-              ["EnrollmentProof", "Comprovante de matrícula"],
-              ["CourseSchedule", "Grade horária"],
-              ["AcademicPeriodProof", "Comprovante de período letivo"],
-            ] as const
-          ).map(([key, label]) => (
-            <DocumentUploadField
-              key={key}
-              label={label}
-              value={documents[key] ?? null}
-              onChange={(file) => setDocuments((prev) => ({ ...prev, [key]: file }))}
-            />
-          ))}
+          {docField("ProfilePhoto", "Foto 3x4")}
         </div>
       </section>
 

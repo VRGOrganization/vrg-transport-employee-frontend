@@ -53,6 +53,9 @@ interface InstitutionCourseSectionProps {
   extraInstitutionFields?: ReactNode;
   /** Campos extras dentro da seção "Ônibus e transporte" (ex.: modo de transporte). */
   extraTransportFields?: ReactNode;
+  /** Campos de documento (comprovantes) desta faculdade — renderizados numa
+   *  subseção "Documentos" própria do bloco. */
+  documentFields?: ReactNode;
 }
 
 /**
@@ -85,6 +88,7 @@ export function InstitutionCourseSection({
   creatingTemp,
   extraInstitutionFields,
   extraTransportFields,
+  documentFields,
 }: InstitutionCourseSectionProps) {
   const datalistId = `${idPrefix}-universities-datalist`;
   const isSelected = (day: string, period: string) =>
@@ -209,6 +213,16 @@ export function InstitutionCourseSection({
           {extraTransportFields}
         </div>
       </section>
+
+      {/* ── Documentos desta faculdade ──────────────────────────────────── */}
+      {documentFields && (
+        <section className="space-y-4 rounded-xl border border-outline-variant p-4">
+          <h3 className="text-sm font-bold text-on-surface">Documentos</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {documentFields}
+          </div>
+        </section>
+      )}
     </>
   );
 }

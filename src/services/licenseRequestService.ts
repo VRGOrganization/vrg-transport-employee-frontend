@@ -96,6 +96,10 @@ const REQUEST_DOCUMENT_FIELDS = [
   "AcademicPeriodProof",
   "GovernmentId",
   "ProofOfResidence",
+  // 2ª faculdade (aluno em duas instituições): comprovantes próprios.
+  "SecondaryEnrollmentProof",
+  "SecondaryCourseSchedule",
+  "SecondaryAcademicPeriodProof",
 ] as const;
 
 export const licenseRequestService = {

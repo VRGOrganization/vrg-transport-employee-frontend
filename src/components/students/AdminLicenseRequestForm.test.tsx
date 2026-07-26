@@ -58,6 +58,14 @@ function setSelect(label: RegExp, value: string) {
   });
 }
 
+/** Anexa um arquivo a TODOS os campos de documento presentes (obrigatórios). */
+function uploadAllDocs() {
+  document.querySelectorAll('input[type="file"]').forEach((input, i) => {
+    const file = new File(["x"], `doc-${i}.png`, { type: "image/png" });
+    fireEvent.change(input, { target: { files: [file] } });
+  });
+}
+
 describe("AdminLicenseRequestForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -80,6 +88,7 @@ describe("AdminLicenseRequestForm", () => {
     });
     fireEvent.click(screen.getByLabelText("SEG Manhã"));
     setSelect(/Ônibus \(seleção manual\)/i, "bus-1");
+    uploadAllDocs();
 
     fireEvent.click(screen.getByRole("button", { name: /Criar pedido de carteirinha/i }));
 
@@ -116,6 +125,7 @@ describe("AdminLicenseRequestForm", () => {
     });
     fireEvent.click(screen.getByLabelText("TER Noite (2ª)"));
     setSelect(/Ônibus \(2ª\)/i, "bus-2");
+    uploadAllDocs();
 
     fireEvent.click(screen.getByRole("button", { name: /Criar pedido de carteirinha/i }));
 
@@ -148,10 +158,27 @@ describe("AdminLicenseRequestForm", () => {
     // mesmo slot da primária -> colisão
     fireEvent.click(screen.getByLabelText("SEG Manhã (2ª)"));
     setSelect(/Ônibus \(2ª\)/i, "bus-2");
+    uploadAllDocs();
 
     fireEvent.click(screen.getByRole("button", { name: /Criar pedido de carteirinha/i }));
 
     await screen.findByText(/colis/i);
+    expect(adminCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("blocks submit and shows an error when required documents are missing", async () => {
+    await renderReady();
+
+    fireEvent.change(screen.getByPlaceholderText(/Digite ou selecione a faculdade/i), {
+      target: { value: "Faculdade Um" },
+    });
+    fireEvent.click(screen.getByLabelText("SEG Manhã"));
+    setSelect(/Ônibus \(seleção manual\)/i, "bus-1");
+    // sem anexar documentos
+
+    fireEvent.click(screen.getByRole("button", { name: /Criar pedido de carteirinha/i }));
+
+    await screen.findByText(/Anexe a foto 3x4/i);
     expect(adminCreateMock).not.toHaveBeenCalled();
   });
 });
