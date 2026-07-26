@@ -19,6 +19,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [pendingUnlink, setPendingUnlink] = useState<BusType | null>(null);
   const [unlinkError, setUnlinkError] = useState("");
+  const [linkError, setLinkError] = useState("");
 
   const linkedBuses = allBuses.filter((bus) => {
     const inSlots = (bus.universitySlots ?? []).some((s) =>
@@ -43,11 +44,15 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
   const handleLink = async () => {
     if (!selectedBusId) return;
     setLoadingId(selectedBusId);
+    setLinkError("");
     try {
       await busApi.linkUniversity(selectedBusId, university._id);
       onBusesChanged();
       setLinking(false);
       setSelectedBusId("");
+    } catch (err) {
+      const message = (err as { message?: string })?.message;
+      setLinkError(message ?? "Não foi possível vincular o ônibus. Tente novamente.");
     } finally {
       setLoadingId(null);
     }
@@ -112,6 +117,9 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
             Vincular
           </button>
         </div>
+      )}
+      {linkError && (
+        <p className="text-xs text-error mb-4 -mt-2">{linkError}</p>
       )}
 
       {linkedBuses.length === 0 ? (

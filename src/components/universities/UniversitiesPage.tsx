@@ -212,8 +212,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
   };
 
   const handleBusesChanged = async () => {
-    const busList = await busApi.listActive();
-    setBuses(busList);
+    await loadUniversities();
   };
 
   return (
