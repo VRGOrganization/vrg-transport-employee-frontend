@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { MessageSquareWarning, Save } from "lucide-react";
+import { Eye, EyeOff, MessageSquareWarning, Save } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { FieldShell } from "@/components/ui/FieldShell";
@@ -49,12 +49,24 @@ function buildDraft(templates: SystemNoticeTemplate[]): Draft {
   return draft;
 }
 
+function formatUpdatedAt(iso: string): string {
+  return new Date(iso).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function SystemNoticeTemplatesPage() {
   const [templates, setTemplates] = useState<SystemNoticeTemplate[]>([]);
   const [draft, setDraft] = useState<Draft>({} as Draft);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [savingKey, setSavingKey] = useState<SystemNoticeTemplateKey | null>(null);
+  const [savingKeys, setSavingKeys] = useState<Set<SystemNoticeTemplateKey>>(new Set());
+  const [saveErrors, setSaveErrors] = useState<Partial<Record<SystemNoticeTemplateKey, string>>>({});
+  const [previewKey, setPreviewKey] = useState<SystemNoticeTemplateKey | null>(null);
 
   const [address, setAddress] = useState("");
   const [addressDraft, setAddressDraft] = useState("");
@@ -124,25 +136,42 @@ export function SystemNoticeTemplatesPage() {
     value: string,
   ) => {
     setDraft((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
+    if (saveErrors[key]) setSaveErrors((prev) => ({ ...prev, [key]: undefined }));
+  };
+
+  const isFilled = (key: SystemNoticeTemplateKey) => {
+    const current = draft[key];
+    return !!current && current.title.trim().length > 0 && current.body.trim().length > 0;
   };
 
   const handleSave = async (key: SystemNoticeTemplateKey) => {
     const current = draft[key];
     if (!current) return;
-    setSavingKey(key);
+    if (!isFilled(key)) {
+      setSaveErrors((prev) => ({ ...prev, [key]: "Título e corpo não podem ficar em branco." }));
+      return;
+    }
+    setSavingKeys((prev) => new Set(prev).add(key));
+    setSaveErrors((prev) => ({ ...prev, [key]: undefined }));
     try {
       const updated = await systemNoticeTemplateService.update(key, {
-        title: current.title,
-        body: current.body,
+        title: current.title.trim(),
+        body: current.body.trim(),
       });
       setTemplates((prev) => prev.map((t) => (t.key === key ? updated : t)));
       setDraft((prev) => ({ ...prev, [key]: { title: updated.title, body: updated.body } }));
       toast.success("Template salvo com sucesso.");
     } catch (err: unknown) {
       const e = err as { message?: string };
-      toast.error(e.message ?? "Erro ao salvar template.");
+      const message = e.message ?? "Erro ao salvar template.";
+      setSaveErrors((prev) => ({ ...prev, [key]: message }));
+      toast.error(message);
     } finally {
-      setSavingKey(null);
+      setSavingKeys((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
     }
   };
 
@@ -171,7 +200,7 @@ export function SystemNoticeTemplatesPage() {
         <EmptyState
           icon={MessageSquareWarning}
           title="Nenhum template de sistema encontrado"
-          description="A API não retornou nenhum dos 7 templates esperados. Verifique se o seed de templates de sistema foi executado no ambiente."
+          description="Nenhum template de aviso foi encontrado. Contate o suporte técnico se isso persistir."
         />
       )}
 
@@ -187,24 +216,35 @@ export function SystemNoticeTemplatesPage() {
                   const current = draft[key];
                   if (!current) return null;
                   const dirty = isDirty(key);
-                  const saving = savingKey === key;
+                  const saving = savingKeys.has(key);
+                  const original = templateByKey(key);
+                  const showingPreview = previewKey === key;
+                  const titleError = current.title.trim() ? undefined : "Campo obrigatório";
+                  const bodyError = current.body.trim() ? undefined : "Campo obrigatório";
 
                   return (
                     <div
                       key={key}
                       className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-5 space-y-3"
                     >
-                      <p className="text-sm font-semibold text-on-surface">
-                        {itemLabel(group.label, key)}
-                      </p>
-                      <FieldShell label="Título" required>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-on-surface">
+                          {itemLabel(group.label, key)}
+                        </p>
+                        {original && (
+                          <p className="text-xs text-on-surface-variant shrink-0">
+                            Atualizado em {formatUpdatedAt(original.updatedAt)}
+                          </p>
+                        )}
+                      </div>
+                      <FieldShell label="Título" required error={titleError}>
                         <Input
                           aria-label={`Título de ${key}`}
                           value={current.title}
                           onChange={(e) => handleFieldChange(key, "title", e.target.value)}
                         />
                       </FieldShell>
-                      <FieldShell label="Corpo" required>
+                      <FieldShell label="Corpo" required error={bodyError}>
                         <textarea
                           aria-label={`Corpo de ${key}`}
                           value={current.body}
@@ -212,7 +252,36 @@ export function SystemNoticeTemplatesPage() {
                           className="w-full min-h-24 bg-surface-container-lowest border border-on-surface-variant rounded-xl p-3 text-on-surface outline-none focus:ring-2 focus:ring-primary"
                         />
                       </FieldShell>
-                      <div className="flex justify-end">
+
+                      {showingPreview && (
+                        <div className="rounded-xl border border-outline-variant/40 bg-surface p-4">
+                          <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+                            Como o aluno vai ver
+                          </p>
+                          <p className="text-sm font-semibold text-on-surface">
+                            {current.title.trim() || "(sem título)"}
+                          </p>
+                          <p className="text-sm text-on-surface-variant mt-1 whitespace-pre-wrap">
+                            {current.body.trim() || "(sem corpo)"}
+                          </p>
+                        </div>
+                      )}
+
+                      {saveErrors[key] && (
+                        <p className="text-xs text-error">{saveErrors[key]}</p>
+                      )}
+
+                      <div className="flex justify-between items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewKey(showingPreview ? null : key)}
+                          className="flex items-center gap-1.5 text-xs font-medium text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
+                        >
+                          {showingPreview
+                            ? <EyeOff className="size-3.5" />
+                            : <Eye className="size-3.5" />}
+                          {showingPreview ? "Ocultar prévia" : "Pré-visualizar"}
+                        </button>
                         <Button
                           type="button"
                           size="sm"
