@@ -22,7 +22,7 @@ interface NoticesPageProps {
 type NoticeTab = "staff" | "system";
 
 const TAB_ITEMS = [
-  { key: "staff" as NoticeTab, label: "Enviadas por funcionários", icon: "person" },
+  { key: "staff" as NoticeTab, label: "Enviadas pela equipe", icon: "person" },
   { key: "system" as NoticeTab, label: "Sistema", icon: "smart_toy" },
 ];
 
@@ -194,7 +194,11 @@ export function NoticesPage({ role }: NoticesPageProps) {
           </header>
 
           {visibleRecentNotice && (
-            <UndoPublishBanner notice={visibleRecentNotice} onUndo={handleUndo} />
+            <UndoPublishBanner
+              notice={visibleRecentNotice}
+              onUndo={handleUndo}
+              onExpire={() => { setRecentNotice(null); void loadNotices(); }}
+            />
           )}
 
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
