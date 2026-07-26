@@ -213,6 +213,11 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
   const [periodSaving, setPeriodSaving] = useState(false);
   const [periodModalError, setPeriodModalError] = useState("");
 
+  const [pendingPeriodPayload, setPendingPeriodPayload] = useState<EnrollmentPeriodPayload | null>(null);
+  const [showValidityConfirm, setShowValidityConfirm] = useState(false);
+  const [validityConfirmSaving, setValidityConfirmSaving] = useState(false);
+  const [validityConfirmError, setValidityConfirmError] = useState("");
+
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [closingPeriod, setClosingPeriod] = useState(false);
 
@@ -341,6 +346,22 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
       setShowEditModal(false);
       return;
     }
+
+    // Mudar a validade da carteirinha desloca retroativamente a data de
+    // expiração de todo aluno já alocado no ciclo — pede confirmação extra
+    // quando há alunos afetados. Mudar só as datas da janela não afeta
+    // carteirinha nenhuma e segue direto.
+    const changesValidity =
+      payload.licenseValidityMonths !== undefined &&
+      payload.licenseValidityMonths !== activePeriod.licenseValidityMonths;
+    if (changesValidity && activePeriod.filledSlots > 0) {
+      setPendingPeriodPayload(payload);
+      setShowEditModal(false);
+      setValidityConfirmError("");
+      setShowValidityConfirm(true);
+      return;
+    }
+
     setPeriodSaving(true);
     setPeriodModalError("");
     try {
@@ -353,6 +374,24 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
       setPeriodModalError(apiError.message ?? "Não foi possível salvar o período.");
     } finally {
       setPeriodSaving(false);
+    }
+  };
+
+  const handleValidityConfirmed = async () => {
+    if (!activePeriod || !pendingPeriodPayload) return;
+    setValidityConfirmSaving(true);
+    setValidityConfirmError("");
+    try {
+      await enrollmentPeriodService.update(activePeriod._id, pendingPeriodPayload);
+      toast.success("Período atualizado com sucesso.");
+      setShowValidityConfirm(false);
+      setPendingPeriodPayload(null);
+      await loadData();
+    } catch (err: unknown) {
+      const apiError = err as { message?: string };
+      setValidityConfirmError(apiError.message ?? "Não foi possível salvar o período.");
+    } finally {
+      setValidityConfirmSaving(false);
     }
   };
 
@@ -853,7 +892,10 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
       <ReinforcedConfirmModal
         open={showCloseConfirm}
-        onClose={() => setShowCloseConfirm(false)}
+        onClose={() => {
+          if (closingPeriod) return;
+          setShowCloseConfirm(false);
+        }}
         onConfirm={handleCloseConfirmed}
         loading={closingPeriod}
         title="Encerrar período"
@@ -888,6 +930,34 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
         />
       )}
 
+      {activePeriod && pendingPeriodPayload?.licenseValidityMonths !== undefined && (
+        <ConfirmModal
+          open={showValidityConfirm}
+          onClose={() => {
+            if (validityConfirmSaving) return;
+            setShowValidityConfirm(false);
+            setPendingPeriodPayload(null);
+          }}
+          onConfirm={handleValidityConfirmed}
+          loading={validityConfirmSaving}
+          error={validityConfirmError}
+          title="Alterar validade da carteirinha?"
+          icon={AlertTriangle}
+          variant="warning"
+          description={
+            <>
+              A validade muda de <strong>{activePeriod.licenseValidityMonths} meses</strong> (válida até{" "}
+              <strong>{computeLicenseExpiry(activePeriod.cycleStartDate, activePeriod.licenseValidityMonths)}</strong>) para{" "}
+              <strong>{pendingPeriodPayload.licenseValidityMonths} meses</strong> (válida até{" "}
+              <strong>{computeLicenseExpiry(activePeriod.cycleStartDate, pendingPeriodPayload.licenseValidityMonths)}</strong>).
+              Isso afeta a expiração da carteirinha de todos os {activePeriod.filledSlots} aluno(s) já alocados neste ciclo.
+            </>
+          }
+          confirmLabel="Confirmar alteração"
+          cancelLabel="Cancelar"
+        />
+      )}
+
       <ScheduleResetModal
         open={showScheduleResetModal}
         loading={false}
@@ -908,7 +978,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
         title="Confirmar antecipação do encerramento"
         description={
           pendingResetDays != null
-            ? `Isso agendará o encerramento em ${pendingResetDays} dia(s). Quando o prazo chegar, a mesma cascata do encerramento imediato roda automaticamente: ${cascadeImpactDescription}`
+            ? `Isso agendará o encerramento em ${pendingResetDays} dia(s). Quando o prazo chegar, a mesma cascata do encerramento imediato roda automaticamente. Números atuais, podem mudar até lá: ${cascadeImpactDescription}`
             : cascadeImpactDescription
         }
         confirmWord="ENCERRAR"
