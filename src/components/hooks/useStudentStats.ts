@@ -176,7 +176,9 @@ export function useStudentStats(filters?: StudentStatsFilters): UseStudentStatsR
           }
         });
 
-        // Mesclamos os dados recalculados
+        // Mesclamos os dados recalculados. generatedAt vem do próprio
+        // dashboardData (timestamp real do servidor) — não sobrescrever com
+        // a hora local do client, que mentiria sobre o frescor do dado.
         const finalStats: StudentDashboardStats = {
           ...dashboardData,
           totalStudents: totalActive,
@@ -188,7 +190,6 @@ export function useStudentStats(filters?: StudentStatsFilters): UseStudentStatsR
             byShift,
             byDay,
           },
-          generatedAt: new Date().toISOString(),
         };
 
         setStats(finalStats);
