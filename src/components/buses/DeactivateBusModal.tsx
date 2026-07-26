@@ -90,6 +90,13 @@ export function DeactivateBusModal({
                 <p className="text-xs text-on-surface-variant mt-0.5">
                   Esta ação desativará o ônibus. Ele não aparecerá mais para novas alocações.
                 </p>
+                {!!bus.filledSlotsTotal && bus.filledSlotsTotal > 0 && (
+                  <p className="text-xs font-semibold text-error mt-2">
+                    {bus.filledSlotsTotal} aluno{bus.filledSlotsTotal > 1 ? "s estão" : " está"} atualmente
+                    alocado{bus.filledSlotsTotal > 1 ? "s" : ""} neste ônibus (pico da semana) e perderá
+                    {bus.filledSlotsTotal > 1 ? "ão" : ""} a vaga.
+                  </p>
+                )}
               </div>
             </div>
 

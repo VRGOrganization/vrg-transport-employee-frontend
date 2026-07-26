@@ -121,7 +121,17 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
     const trimmed = capacity.trim();
     const parsedCap = trimmed.length > 0 ? parseInt(trimmed, 10) : undefined;
     if (parsedCap !== undefined && (Number.isNaN(parsedCap) || parsedCap < 1)) {
-      setError("Capacidade deve ser um número maior que zero ou vazia para sem limite."); 
+      setError("Capacidade deve ser um número maior que zero ou vazia para sem limite.");
+      return;
+    }
+    if (
+      parsedCap !== undefined &&
+      initial?.filledSlotsTotal &&
+      parsedCap < initial.filledSlotsTotal
+    ) {
+      setError(
+        `Capacidade não pode ficar abaixo da ocupação atual (${initial.filledSlotsTotal} alunos no pico da semana).`,
+      );
       return;
     }
     const cap = parsedCap;
@@ -174,6 +184,11 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
           <div>
             <label className="block text-sm font-medium text-on-surface-variant mb-1">
               Capacidade de passageiros
+              {!!initial?.filledSlotsTotal && initial.filledSlotsTotal > 0 && (
+                <span className="font-normal text-on-surface-muted">
+                  {" "}· ocupação atual (pico da semana): {initial.filledSlotsTotal}
+                </span>
+              )}
             </label>
             <input
               type="number"
