@@ -51,6 +51,8 @@ export function AdminLicenseRequestForm({
   const [creatingTemp, setCreatingTemp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [busIdError, setBusIdError] = useState("");
+  const [scheduleError, setScheduleError] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
@@ -91,6 +93,7 @@ export function AdminLicenseRequestForm({
         ? prev.filter((s) => !(s.day === day && s.period === period))
         : [...prev, { day, period }],
     );
+    if (scheduleError) setScheduleError("");
   };
 
   const handleCreateTemporary = async () => {
@@ -116,15 +119,19 @@ export function AdminLicenseRequestForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setBusIdError("");
+    setScheduleError("");
 
+    let hasFieldError = false;
     if (!busId) {
-      setError("Selecione um ônibus para o pedido.");
-      return;
+      setBusIdError("Selecione um ônibus para o pedido.");
+      hasFieldError = true;
     }
     if (schedule.length === 0) {
-      setError("Selecione ao menos um horário.");
-      return;
+      setScheduleError("Selecione ao menos um horário na grade abaixo.");
+      hasFieldError = true;
     }
+    if (hasFieldError) return;
 
     const payload: AdminCreateLicenseRequestInput = {
       studentId,
@@ -241,6 +248,7 @@ export function AdminLicenseRequestForm({
       {/* ── Horário ─────────────────────────────────────────────────── */}
       <section className="space-y-3 rounded-xl border border-outline-variant p-4">
         <h3 className="text-sm font-bold text-on-surface">Grade de horários</h3>
+        {scheduleError && <p className="text-xs text-error -mt-1">{scheduleError}</p>}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -285,7 +293,8 @@ export function AdminLicenseRequestForm({
             options={busOptions}
             placeholder="Selecione o ônibus"
             value={busId}
-            onChange={(e) => setBusId(e.target.value)}
+            onChange={(e) => { setBusId(e.target.value); if (busIdError) setBusIdError(""); }}
+            error={busIdError}
           />
           <SelectField
             label="Modo de transporte"
@@ -305,15 +314,16 @@ export function AdminLicenseRequestForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {(
             [
-              ["ProfilePhoto", "Foto 3x4"],
-              ["EnrollmentProof", "Comprovante de matrícula"],
-              ["CourseSchedule", "Grade horária"],
-              ["AcademicPeriodProof", "Comprovante de período letivo"],
+              ["ProfilePhoto", "Foto 3x4", "Foto recente, rosto visível, fundo neutro."],
+              ["EnrollmentProof", "Comprovante de matrícula", "Documento da faculdade confirmando matrícula ativa."],
+              ["CourseSchedule", "Grade horária", "Grade de horários das aulas no período atual."],
+              ["AcademicPeriodProof", "Comprovante de período letivo", "Confirma o período/semestre letivo em curso."],
             ] as const
-          ).map(([key, label]) => (
+          ).map(([key, label, hint]) => (
             <DocumentUploadField
               key={key}
               label={label}
+              hint={hint}
               value={documents[key] ?? null}
               onChange={(file) => setDocuments((prev) => ({ ...prev, [key]: file }))}
             />
