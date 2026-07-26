@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId, useRef } from "react";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { universityApi } from "@/lib/universityApi";
 import { cn } from "@/lib/utils";
 import type { Bus } from "@/types/university.types";
+import { useModalA11y } from "@/hooks/ui/useModalA11y";
 import LinkUniversityModal from "./LinkUniversityModal";
 
 type SlotDisplay = { universityId: string; name?: string; acronym?: string; priorityOrder: number; filledSlots?: number };
@@ -24,6 +25,9 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
   const [linkOpen, setLinkOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalA11y(panelRef, onClose, open);
 
   useEffect(() => {
     if (open) {
@@ -143,8 +147,15 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
-        <h2 className="text-lg font-bold text-on-surface mb-5">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 outline-none"
+      >
+        <h2 id={titleId} className="text-lg font-bold text-on-surface mb-5">
           {initial ? "Editar Ônibus" : "Novo Ônibus"}
         </h2>
 

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { AlertCircle, Loader2, ShieldAlert, Ban } from "lucide-react";
 import type { Bus } from "@/types/university.types";
 import { useHasMounted } from "@/hooks/useHasMounted";
+import { useModalA11y } from "@/hooks/ui/useModalA11y";
 
 interface DeactivateBusModalProps {
   bus: Bus | null;
@@ -23,27 +24,14 @@ export function DeactivateBusModal({
   const mounted = useHasMounted();
   const [inputValue, setInputValue] = useState("");
   const [prevBus, setPrevBus] = useState(bus);
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalA11y(panelRef, () => { if (!loading) onClose(); }, !!bus);
 
   if (bus !== prevBus) {
     setPrevBus(bus);
     setInputValue("");
   }
-
-  useEffect(() => {
-    if (!bus) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previous; };
-  }, [bus]);
-
-  useEffect(() => {
-    if (!bus) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !loading) onClose();
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [bus, loading, onClose]);
 
   if (!mounted || !bus) return null;
 
@@ -58,13 +46,21 @@ export function DeactivateBusModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-300">
-      <div className="relative w-full max-w-md mx-4 bg-surface rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="relative w-full max-w-md mx-4 bg-surface rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col outline-none"
+      >
 
         {/* ── HEADER ─────────────────────────────────────────────────── */}
         <div className="bg-linear-to-r from-error to-error/80 px-6 py-8 flex flex-col items-center justify-center relative shrink-0">
           <button
             onClick={onClose}
             disabled={loading}
+            aria-label="Fechar modal"
             className="absolute top-4 right-4 text-white hover:bg-black/20 size-8 rounded-full flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>close</span>
@@ -74,7 +70,7 @@ export function DeactivateBusModal({
             <Ban className="size-9 text-error" />
           </div>
 
-          <h2 className="text-2xl font-extrabold text-white tracking-tight text-center">
+          <h2 id={titleId} className="text-2xl font-extrabold text-white tracking-tight text-center">
             Desativar Ônibus
           </h2>
           <p className="text-white/80 text-sm mt-1">

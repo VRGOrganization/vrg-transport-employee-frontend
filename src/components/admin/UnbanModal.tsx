@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { X, ShieldCheck, Loader2, AlertCircle, Calendar } from "lucide-react";
 import { banlistService } from "@/services/banlistService";
 import { resolveDisplayName, toTitleCase } from "@/lib/utils/string";
+import { useModalA11y } from "@/hooks/ui/useModalA11y";
 import type { BanlistEntry } from "@/types/banlist";
 
 interface UnbanModalProps {
@@ -17,6 +18,9 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
   const [unbanReasons, setUnbanReasons] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalA11y(panelRef, onClose);
 
   if (!open) return null;
 
@@ -48,7 +52,14 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg bg-surface rounded-2xl shadow-2xl border border-outline-variant/30 overflow-hidden">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="w-full max-w-lg bg-surface rounded-2xl shadow-2xl border border-outline-variant/30 overflow-hidden outline-none"
+      >
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-outline-variant/20">
@@ -57,12 +68,13 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
               <ShieldCheck className="size-5 text-success" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-on-surface">Remover Banimento</h2>
+              <h2 id={titleId} className="text-base font-bold text-on-surface">Remover Banimento</h2>
               <p className="text-xs text-on-surface-variant mt-0.5">Esta ação reintegrará o estudante ao sistema</p>
             </div>
           </div>
           <button
             onClick={onClose}
+            aria-label="Fechar modal"
             className="size-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
           >
             <X className="size-4" />

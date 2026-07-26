@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { X, Mail, MailCheck } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { forgotPasswordSchema } from "@/lib/validation/auth";
+import { useModalA11y } from "@/hooks/ui/useModalA11y";
 
 interface ForgotPasswordModalProps {
   open: boolean;
@@ -17,12 +18,9 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
   const [loading, setLoading]       = useState(false);
   const [fieldError, setFieldError] = useState("");
   const [serverError, setServerError] = useState("");
-
-  useEffect(() => {
-    if (!open) return;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
-  }, [open]);
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalA11y(panelRef, () => handleClose());
 
   function handleClose() {
     if (loading) return;
@@ -78,19 +76,27 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md outline-none"
+      >
         <div className="flex items-center justify-between px-6 pt-6 pb-4">
           <div className="flex items-center gap-3">
             <div className="size-9 bg-primary/10 rounded-xl flex items-center justify-center">
               <Mail className="size-5 text-primary" />
             </div>
-            <h2 className="font-semibold text-base text-on-surface">
+            <h2 id={titleId} className="font-semibold text-base text-on-surface">
               Recuperar senha
             </h2>
           </div>
           <button
             onClick={handleClose}
             disabled={loading}
+            aria-label="Fechar modal"
             className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-40"
           >
             <X className="size-5" />

@@ -1,7 +1,8 @@
 import { XCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { http } from "@/services/http";
+import { useModalA11y } from "@/hooks/ui/useModalA11y";
 import type {
   LicenseRequestRecord,
   RejectionReasonConfig,
@@ -25,6 +26,9 @@ export function RejectModal({
   const [customMessage, setCustomMessage] = useState("");
   const [rejecting, setRejecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalA11y(panelRef, onClose);
 
   useEffect(() => {
     http
@@ -95,7 +99,12 @@ export function RejectModal({
       onClick={() => !rejecting && onClose()}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-surface p-6 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto"
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="w-full max-w-md rounded-2xl bg-surface p-6 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3">
@@ -103,7 +112,7 @@ export function RejectModal({
             <XCircle className="size-5 text-error" />
           </div>
           <div>
-            <h2 className="font-bold text-on-surface text-base">Recusar carteirinha</h2>
+            <h2 id={titleId} className="font-bold text-on-surface text-base">Recusar carteirinha</h2>
             <p className="text-xs text-on-surface-variant">Selecione os motivos da recusa</p>
           </div>
         </div>
