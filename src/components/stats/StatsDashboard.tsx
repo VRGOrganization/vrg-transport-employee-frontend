@@ -6,7 +6,7 @@ import { useStudentStats } from "@/components/hooks/useStudentStats";
 import { MetricCard } from "@/components/stats/MetricCard";
 import { CardStatusChart } from "@/components/stats/CardStatusChart";
 import { ShiftDistribution } from "@/components/stats/ShiftDistribution";
-import { TransportRing } from "@/components/stats/TransportRing";
+import { RankedBreakdown } from "@/components/stats/RankedBreakdown";
 import { DayUsageChart } from "@/components/stats/DayUsageChart";
 import { StatsDashboardSkeleton } from "@/components/stats/StatsDashboardSkeleton";
 import { SelectField } from "@/components/ui/SelectField";
@@ -58,6 +58,9 @@ export function StatsDashboard() {
     universityId: universityFilter || undefined,
     shift: shiftFilter || undefined,
   });
+
+  const busLabel = (id: string) => buses.find((b) => b.value === id)?.label ?? id;
+  const universityLabel = (id: string) => universities.find((u) => u.value === id)?.label ?? id;
 
   const total = stats?.totalStudents ?? 0;
   const pctCard =
@@ -200,10 +203,6 @@ export function StatsDashboard() {
                 Uso do transporte
               </p>
               <div className="relative z-10">
-                <TransportRing
-                  totalUsing={stats.transport.totalUsing}
-                  totalStudents={total}
-                />
                 <ShiftDistribution
                   morning={stats.transport.byShift.morning}
                   afternoon={stats.transport.byShift.afternoon}
@@ -213,6 +212,43 @@ export function StatsDashboard() {
               </div>
             </div>
           </div>
+
+          {/* Alunos por ônibus / faculdade — só faz sentido quando o
+              respectivo filtro não está fixado num único valor. */}
+          {(!busFilter || !universityFilter) && (
+            <div
+              className={
+                !busFilter && !universityFilter
+                  ? "grid grid-cols-1 md:grid-cols-2 gap-4"
+                  : "grid grid-cols-1 gap-4"
+              }
+            >
+              {!busFilter && (
+                <div className="group relative bg-surface-container-low/60 backdrop-blur-sm border border-outline-variant/30 rounded-2xl p-5 transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 overflow-hidden">
+                  <RankedBreakdown
+                    title="Alunos por ônibus"
+                    items={stats.transport.byBus.map((b) => ({
+                      id: b.id,
+                      label: busLabel(b.id),
+                      count: b.count,
+                    }))}
+                  />
+                </div>
+              )}
+              {!universityFilter && (
+                <div className="group relative bg-surface-container-low/60 backdrop-blur-sm border border-outline-variant/30 rounded-2xl p-5 transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 overflow-hidden">
+                  <RankedBreakdown
+                    title="Alunos por faculdade"
+                    items={stats.transport.byUniversity.map((u) => ({
+                      id: u.id,
+                      label: universityLabel(u.id),
+                      count: u.count,
+                    }))}
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Uso por dia */}
           <div className="group relative bg-surface-container-low/60 backdrop-blur-sm border border-outline-variant/30 rounded-2xl p-5 transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 overflow-hidden">
