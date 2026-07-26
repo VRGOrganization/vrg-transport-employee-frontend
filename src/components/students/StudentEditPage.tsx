@@ -82,12 +82,12 @@ function StudentEditPageInner({ role }: StudentEditPageProps) {
     clearErrors();
     try {
       await studentService.update(studentId!, {
-        name:      data.name.trim(),
-        telephone: data.telephone.trim(),
-        ...(data.institution ? { institution: data.institution.trim() } : { institution: "" }),
-        ...(data.shift       ? { shift: data.shift }                    : {}),
-        ...(data.bloodType   ? { bloodType: data.bloodType }            : {}),
-        ...(data.degree      ? { degree: data.degree.trim() }           : {}),
+        name:        data.name.trim(),
+        telephone:   data.telephone.trim(),
+        institution: data.institution.trim(),
+        shift:       data.shift,
+        bloodType:   data.bloodType,
+        degree:      data.degree.trim(),
       });
       setSuccess(true);
     } catch (err: unknown) {
