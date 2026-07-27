@@ -1,22 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Input } from "@/components/ui/Input";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { SelectField } from "@/components/ui/SelectField";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { DocumentUploadField } from "@/components/students/DocumentUploadField";
+import {
+  InstitutionCourseSection,
+  type ScheduleSlot,
+} from "@/components/students/InstitutionCourseSection";
 import { universityService } from "@/services/universityService";
 import { busService } from "@/services/busService";
 import {
   licenseRequestService,
   type AdminCreateLicenseRequestInput,
 } from "@/services/licenseRequestService";
-import { SHIFTS, BLOOD_TYPES } from "@/types/student";
+import { BLOOD_TYPES } from "@/types/student";
 import type { University, Bus } from "@/types/university.types";
-
-const DAYS = ["SEG", "TER", "QUA", "QUI", "SEX"] as const;
-const PERIODS = ["Manhã", "Tarde", "Noite"] as const;
 
 interface AdminLicenseRequestFormProps {
   studentId: string;
@@ -24,11 +24,37 @@ interface AdminLicenseRequestFormProps {
   onSuccess?: (requestId: string) => void;
 }
 
+/** Opções de ônibus para uma faculdade: prioriza os vinculados, cai para todos. */
+function buildBusOptions(buses: Bus[], universityId: string) {
+  const linked = (bus: Bus) =>
+    (bus.universitySlots ?? []).some((s) => {
+      const id = typeof s.universityId === "string" ? s.universityId : s.universityId?._id;
+      return id === universityId;
+    });
+  const linkedBuses = buses.filter(linked);
+  const list = linkedBuses.length > 0 ? linkedBuses : buses;
+  return list.map((bus) => ({
+    value: bus._id,
+    label: `${bus.identifier}${linked(bus) ? " • vinculado" : ""}`,
+  }));
+}
+
+/** Resolve o universityId a partir do nome digitado (casa com a lista). */
+function resolveUniversityId(universities: University[], name: string) {
+  const match = universities.find(
+    (u) => u.name.toLowerCase() === name.trim().toLowerCase(),
+  );
+  return match?._id ?? "";
+}
+
 /**
  * Formulário interno de criação de pedido de carteirinha (admin/funcionário).
  * Espelha o fluxo do aluno, mas: faculdade/curso são texto (autocomplete), com
  * opção de criar faculdade temporária; o ônibus é escolhido manualmente. O
  * pedido gerado segue as regras normais (fila/prioridade).
+ *
+ * Suporta alunos com uma SEGUNDA matrícula (2ª instituição/curso) com grade e
+ * ônibus próprios, ativada por um toggle opcional.
  */
 export function AdminLicenseRequestForm({
   studentId,
@@ -38,6 +64,7 @@ export function AdminLicenseRequestForm({
   const [universities, setUniversities] = useState<University[]>([]);
   const [buses, setBuses] = useState<Bus[]>([]);
 
+  // ── Matrícula primária ──────────────────────────────────────────────
   const [institution, setInstitution] = useState("");
   const [universityId, setUniversityId] = useState<string>("");
   const [degree, setDegree] = useState("");
@@ -45,10 +72,21 @@ export function AdminLicenseRequestForm({
   const [bloodType, setBloodType] = useState("");
   const [busId, setBusId] = useState("");
   const [transportMode, setTransportMode] = useState<"regular" | "weekly">("regular");
-  const [schedule, setSchedule] = useState<Array<{ day: string; period: string }>>([]);
+  const [schedule, setSchedule] = useState<ScheduleSlot[]>([]);
+
+  // ── Matrícula secundária (opcional) ─────────────────────────────────
+  const [secondaryEnabled, setSecondaryEnabled] = useState(false);
+  const [secondaryInstitution, setSecondaryInstitution] = useState("");
+  const [secondaryUniversityId, setSecondaryUniversityId] = useState<string>("");
+  const [secondaryDegree, setSecondaryDegree] = useState("");
+  const [secondaryShift, setSecondaryShift] = useState("");
+  const [secondaryBusId, setSecondaryBusId] = useState("");
+  const [secondarySchedule, setSecondarySchedule] = useState<ScheduleSlot[]>([]);
+
   const [documents, setDocuments] = useState<Record<string, File | null>>({});
 
   const [creatingTemp, setCreatingTemp] = useState(false);
+  const [creatingTempSecondary, setCreatingTempSecondary] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
@@ -60,58 +98,69 @@ export function AdminLicenseRequestForm({
 
   // Ao digitar/selecionar a faculdade, resolve o universityId se casar com a lista.
   useEffect(() => {
-    const match = universities.find(
-      (u) => u.name.toLowerCase() === institution.trim().toLowerCase(),
-    );
-    setUniversityId(match?._id ?? "");
+    setUniversityId(resolveUniversityId(universities, institution));
   }, [institution, universities]);
 
-  // Faculdade já com ônibus vinculado: mostra só os vinculados. Faculdade
-  // nova/sem vínculo ainda: cai de volta para a lista completa de ativos.
-  const busOptions = useMemo(() => {
-    const linked = (bus: Bus) =>
-      (bus.universitySlots ?? []).some((s) => {
-        const id = typeof s.universityId === "string" ? s.universityId : s.universityId?._id;
-        return id === universityId;
-      });
-    const linkedBuses = buses.filter(linked);
-    const list = linkedBuses.length > 0 ? linkedBuses : buses;
-    return list.map((bus) => ({
-      value: bus._id,
-      label: `${bus.identifier}${linked(bus) ? " • vinculado" : ""}`,
-    }));
-  }, [buses, universityId]);
+  useEffect(() => {
+    setSecondaryUniversityId(resolveUniversityId(universities, secondaryInstitution));
+  }, [secondaryInstitution, universities]);
 
-  const isSelected = (day: string, period: string) =>
-    schedule.some((s) => s.day === day && s.period === period);
+  const busOptions = useMemo(
+    () => buildBusOptions(buses, universityId),
+    [buses, universityId],
+  );
+  const secondaryBusOptions = useMemo(
+    () => buildBusOptions(buses, secondaryUniversityId),
+    [buses, secondaryUniversityId],
+  );
 
-  const toggleSlot = (day: string, period: string) => {
-    setSchedule((prev) =>
-      isSelected(day, period)
-        ? prev.filter((s) => !(s.day === day && s.period === period))
-        : [...prev, { day, period }],
-    );
-  };
+  const makeToggleSlot =
+    (setState: React.Dispatch<React.SetStateAction<ScheduleSlot[]>>) =>
+    (day: string, period: string) => {
+      setState((prev) =>
+        prev.some((s) => s.day === day && s.period === period)
+          ? prev.filter((s) => !(s.day === day && s.period === period))
+          : [...prev, { day, period }],
+      );
+    };
 
-  const handleCreateTemporary = async () => {
-    const name = institution.trim();
-    if (!name) {
+  const toggleSlot = useCallback(makeToggleSlot(setSchedule), []);
+  const toggleSecondarySlot = useCallback(makeToggleSlot(setSecondarySchedule), []);
+
+  const createTemporary = async (
+    name: string,
+    setInst: (v: string) => void,
+    setUniId: (v: string) => void,
+    setBusy: (v: boolean) => void,
+  ) => {
+    const trimmed = name.trim();
+    if (!trimmed) {
       setError("Digite o nome da faculdade antes de criar a temporária.");
       return;
     }
-    setCreatingTemp(true);
+    setBusy(true);
     setError("");
     try {
-      const created = await universityService.createTemporary(name);
+      const created = await universityService.createTemporary(trimmed);
       setUniversities((prev) => [...prev, created]);
-      setInstitution(created.name);
-      setUniversityId(created._id);
+      setInst(created.name);
+      setUniId(created._id);
     } catch (err) {
       setError((err as { message?: string }).message ?? "Erro ao criar faculdade temporária.");
     } finally {
-      setCreatingTemp(false);
+      setBusy(false);
     }
   };
+
+  /** Renderiza um campo de upload ligado ao estado `documents` pela chave (PhotoType). */
+  const docField = (key: string, label: string) => (
+    <DocumentUploadField
+      key={key}
+      label={label}
+      value={documents[key] ?? null}
+      onChange={(file) => setDocuments((prev) => ({ ...prev, [key]: file }))}
+    />
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,6 +173,56 @@ export function AdminLicenseRequestForm({
     if (schedule.length === 0) {
       setError("Selecione ao menos um horário.");
       return;
+    }
+    // Documentos são obrigatórios: foto 3x4 + os 3 comprovantes da 1ª faculdade.
+    if (
+      !documents.ProfilePhoto ||
+      !documents.EnrollmentProof ||
+      !documents.CourseSchedule ||
+      !documents.AcademicPeriodProof
+    ) {
+      setError(
+        "Anexe a foto 3x4 e os comprovantes da 1ª faculdade (matrícula, grade horária e período letivo).",
+      );
+      return;
+    }
+
+    if (secondaryEnabled) {
+      if (!secondaryInstitution.trim()) {
+        setError("Informe a segunda faculdade ou desative a segunda instituição.");
+        return;
+      }
+      if (!secondaryDegree.trim()) {
+        setError("Informe o curso da segunda instituição.");
+        return;
+      }
+      if (secondarySchedule.length === 0) {
+        setError("Selecione ao menos um horário para a segunda instituição.");
+        return;
+      }
+      if (!secondaryBusId) {
+        setError("Selecione um ônibus para a segunda instituição.");
+        return;
+      }
+      const clash = secondarySchedule.find((s) =>
+        schedule.some((p) => p.day === s.day && p.period === s.period),
+      );
+      if (clash) {
+        setError(
+          `Colisão de horário entre a grade primária e a secundária em ${clash.day} ${clash.period}. Ajuste as grades para não coincidirem.`,
+        );
+        return;
+      }
+      if (
+        !documents.SecondaryEnrollmentProof ||
+        !documents.SecondaryCourseSchedule ||
+        !documents.SecondaryAcademicPeriodProof
+      ) {
+        setError(
+          "Anexe os comprovantes da 2ª faculdade (matrícula, grade horária e período letivo).",
+        );
+        return;
+      }
     }
 
     const payload: AdminCreateLicenseRequestInput = {
@@ -138,6 +237,15 @@ export function AdminLicenseRequestForm({
       transportMode,
       documents,
     };
+
+    if (secondaryEnabled) {
+      payload.secondaryUniversityId = secondaryUniversityId || undefined;
+      payload.secondaryInstitution = secondaryInstitution.trim() || undefined;
+      payload.secondaryDegree = secondaryDegree.trim() || undefined;
+      payload.secondaryShift = secondaryShift || undefined;
+      payload.secondaryBusId = secondaryBusId;
+      payload.secondarySchedule = secondarySchedule;
+    }
 
     setLoading(true);
     try {
@@ -169,65 +277,29 @@ export function AdminLicenseRequestForm({
         </p>
       )}
 
-      {/* ── Instituição ─────────────────────────────────────────────── */}
-      <section className="space-y-4 rounded-xl border border-outline-variant p-4">
-        <h3 className="text-sm font-bold text-on-surface">Instituição e curso</h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-              Faculdade
-            </label>
-            <input
-              list="admin-universities-datalist"
-              value={institution}
-              onChange={(e) => setInstitution(e.target.value)}
-              placeholder="Digite ou selecione a faculdade"
-              className="w-full h-14 bg-surface-container-lowest border border-on-surface-variant focus:ring-2 focus:ring-primary rounded-xl text-on-surface px-4 text-base outline-none"
-            />
-            <datalist id="admin-universities-datalist">
-              {universities.map((u) => (
-                <option key={u._id} value={u.name} />
-              ))}
-            </datalist>
-            <div className="flex items-center gap-2 text-xs">
-              {universityId ? (
-                <span className="text-primary">Faculdade cadastrada vinculada.</span>
-              ) : (
-                <>
-                  <span className="text-outline">Não cadastrada.</span>
-                  <button
-                    type="button"
-                    onClick={handleCreateTemporary}
-                    disabled={creatingTemp}
-                    className="text-primary hover:underline disabled:opacity-50"
-                  >
-                    {creatingTemp ? "Criando…" : "Criar faculdade temporária"}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          <Input
-            label="Curso / Graduação"
-            type="text"
-            icon="school"
-            placeholder="Ex: Engenharia de Software"
-            value={degree}
-            onChange={(e) => setDegree(e.target.value)}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <SelectField
-            label="Turno"
-            icon="schedule"
-            options={SHIFTS}
-            placeholder="Selecione o turno"
-            value={shift}
-            onChange={(e) => setShift(e.target.value)}
-          />
+      {/* ── Matrícula primária ───────────────────────────────────────── */}
+      <InstitutionCourseSection
+        title="Instituição e curso"
+        idPrefix="admin"
+        universities={universities}
+        institution={institution}
+        onInstitutionChange={setInstitution}
+        universityId={universityId}
+        degree={degree}
+        onDegreeChange={setDegree}
+        shift={shift}
+        onShiftChange={setShift}
+        schedule={schedule}
+        onToggleSlot={toggleSlot}
+        busOptions={busOptions}
+        busId={busId}
+        onBusChange={setBusId}
+        busAriaLabel="Ônibus (seleção manual)"
+        onCreateTemporary={() =>
+          createTemporary(institution, setInstitution, setUniversityId, setCreatingTemp)
+        }
+        creatingTemp={creatingTemp}
+        extraInstitutionFields={
           <SelectField
             label="Tipo Sanguíneo"
             options={BLOOD_TYPES.map((bt) => ({ value: bt, label: bt }))}
@@ -235,58 +307,8 @@ export function AdminLicenseRequestForm({
             value={bloodType}
             onChange={(e) => setBloodType(e.target.value)}
           />
-        </div>
-      </section>
-
-      {/* ── Horário ─────────────────────────────────────────────────── */}
-      <section className="space-y-3 rounded-xl border border-outline-variant p-4">
-        <h3 className="text-sm font-bold text-on-surface">Grade de horários</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                <th className="p-2 text-left text-on-surface-variant"></th>
-                {PERIODS.map((p) => (
-                  <th key={p} className="p-2 text-center text-on-surface-variant font-medium">
-                    {p}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {DAYS.map((day) => (
-                <tr key={day}>
-                  <td className="p-2 font-bold text-on-surface">{day}</td>
-                  {PERIODS.map((period) => (
-                    <td key={period} className="p-2 text-center">
-                      <input
-                        type="checkbox"
-                        checked={isSelected(day, period)}
-                        onChange={() => toggleSlot(day, period)}
-                        className="size-4 accent-primary cursor-pointer"
-                        aria-label={`${day} ${period}`}
-                      />
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* ── Ônibus e transporte ─────────────────────────────────────── */}
-      <section className="space-y-4 rounded-xl border border-outline-variant p-4">
-        <h3 className="text-sm font-bold text-on-surface">Ônibus e transporte</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <SelectField
-            label="Ônibus (seleção manual)"
-            icon="directions_bus"
-            options={busOptions}
-            placeholder="Selecione o ônibus"
-            value={busId}
-            onChange={(e) => setBusId(e.target.value)}
-          />
+        }
+        extraTransportFields={
           <SelectField
             label="Modo de transporte"
             options={[
@@ -296,28 +318,79 @@ export function AdminLicenseRequestForm({
             value={transportMode}
             onChange={(e) => setTransportMode(e.target.value as "regular" | "weekly")}
           />
-        </div>
-      </section>
+        }
+        documentFields={
+          <>
+            {docField("EnrollmentProof", "Comprovante de matrícula")}
+            {docField("CourseSchedule", "Grade horária")}
+            {docField("AcademicPeriodProof", "Comprovante de período letivo")}
+          </>
+        }
+      />
 
-      {/* ── Documentos ──────────────────────────────────────────────── */}
+      {/* ── Toggle da segunda instituição ────────────────────────────── */}
+      <label className="flex items-center gap-3 rounded-xl border border-outline-variant p-4 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={secondaryEnabled}
+          onChange={(e) => setSecondaryEnabled(e.target.checked)}
+          className="size-4 accent-primary cursor-pointer"
+          aria-label="Aluno cursa em segunda instituição"
+        />
+        <span className="text-sm font-bold text-on-surface">
+          Aluno cursa em segunda instituição
+        </span>
+      </label>
+
+      {/* ── Matrícula secundária (opcional) ──────────────────────────── */}
+      {secondaryEnabled && (
+        <InstitutionCourseSection
+          title="Segunda instituição e curso"
+          idPrefix="admin-secondary"
+          universities={universities}
+          institution={secondaryInstitution}
+          onInstitutionChange={setSecondaryInstitution}
+          universityId={secondaryUniversityId}
+          institutionPlaceholder="Digite ou selecione a segunda faculdade"
+          degree={secondaryDegree}
+          onDegreeChange={setSecondaryDegree}
+          degreeAriaLabel="Curso / Graduação (2ª)"
+          shift={secondaryShift}
+          onShiftChange={setSecondaryShift}
+          schedule={secondarySchedule}
+          onToggleSlot={toggleSecondarySlot}
+          scheduleAriaSuffix=" (2ª)"
+          busOptions={secondaryBusOptions}
+          busId={secondaryBusId}
+          onBusChange={setSecondaryBusId}
+          busAriaLabel="Ônibus (2ª)"
+          onCreateTemporary={() =>
+            createTemporary(
+              secondaryInstitution,
+              setSecondaryInstitution,
+              setSecondaryUniversityId,
+              setCreatingTempSecondary,
+            )
+          }
+          creatingTemp={creatingTempSecondary}
+          documentFields={
+            <>
+              {docField("SecondaryEnrollmentProof", "Comprovante de matrícula")}
+              {docField("SecondaryCourseSchedule", "Grade horária")}
+              {docField(
+                "SecondaryAcademicPeriodProof",
+                "Comprovante de período letivo",
+              )}
+            </>
+          }
+        />
+      )}
+
+      {/* ── Documento compartilhado do aluno (única foto para as duas faculdades) ── */}
       <section className="space-y-4 rounded-xl border border-outline-variant p-4">
-        <h3 className="text-sm font-bold text-on-surface">Documentos (opcional)</h3>
+        <h3 className="text-sm font-bold text-on-surface">Documento do aluno</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {(
-            [
-              ["ProfilePhoto", "Foto 3x4"],
-              ["EnrollmentProof", "Comprovante de matrícula"],
-              ["CourseSchedule", "Grade horária"],
-              ["AcademicPeriodProof", "Comprovante de período letivo"],
-            ] as const
-          ).map(([key, label]) => (
-            <DocumentUploadField
-              key={key}
-              label={label}
-              value={documents[key] ?? null}
-              onChange={(file) => setDocuments((prev) => ({ ...prev, [key]: file }))}
-            />
-          ))}
+          {docField("ProfilePhoto", "Foto 3x4")}
         </div>
       </section>
 
