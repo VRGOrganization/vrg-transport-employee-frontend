@@ -35,6 +35,9 @@ interface StudentDetailPanelProps {
   enrollmentImage: string | null;
   scheduleImage: string | null;
   academicPeriodImage: string | null;
+  secondaryEnrollmentImage: string | null;
+  secondaryScheduleImage: string | null;
+  secondaryAcademicPeriodImage: string | null;
   governmentImage: string | null;
   proofOfResidenceImage: string | null;
   transportCardProofImage: string | null;
@@ -63,6 +66,9 @@ export function StudentDetailPanel({
   enrollmentImage,
   scheduleImage,
   academicPeriodImage,
+  secondaryEnrollmentImage,
+  secondaryScheduleImage,
+  secondaryAcademicPeriodImage,
   governmentImage,
   proofOfResidenceImage,
   transportCardProofImage,
@@ -100,14 +106,44 @@ export function StudentDetailPanel({
     alreadyUsesTransport || transportCardProofImage != null;
   const showDisabilityProof = hasDisability || disabilityProofImage != null;
 
+  // 2ª faculdade: só lista os comprovantes da 2ª quando o aluno tem 2ª matrícula.
+  const hasSecondary = Boolean(
+    selected?.secondaryInstitution || selected?.secondaryUniversityId,
+  );
+
   const licensePreviewItems = useMemo<PreviewItem[]>(
     () => [
       { title: "Foto 3x4", dataUrl: profileImage },
       { title: "Comprovante de Matrícula", dataUrl: enrollmentImage },
       { title: "Imagem da Grade Horária", dataUrl: scheduleImage },
       { title: "Calendário Acadêmico", dataUrl: academicPeriodImage },
+      ...(hasSecondary
+        ? [
+            {
+              title: "Comprovante de Matrícula (2ª faculdade)",
+              dataUrl: secondaryEnrollmentImage,
+            },
+            {
+              title: "Imagem da Grade Horária (2ª faculdade)",
+              dataUrl: secondaryScheduleImage,
+            },
+            {
+              title: "Calendário Acadêmico (2ª faculdade)",
+              dataUrl: secondaryAcademicPeriodImage,
+            },
+          ]
+        : []),
     ],
-    [profileImage, enrollmentImage, scheduleImage, academicPeriodImage],
+    [
+      profileImage,
+      enrollmentImage,
+      scheduleImage,
+      academicPeriodImage,
+      hasSecondary,
+      secondaryEnrollmentImage,
+      secondaryScheduleImage,
+      secondaryAcademicPeriodImage,
+    ],
   );
 
   const personalPreviewItems = useMemo<PreviewItem[]>(
