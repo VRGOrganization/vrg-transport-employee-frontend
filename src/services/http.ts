@@ -80,7 +80,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const message = Array.isArray(rawMessage)
       ? rawMessage.join(" ")
       : (rawMessage ?? "Erro desconhecido");
-    const error: ApiError = { message, status: res.status };
+    const error: ApiError = {
+      message,
+      status: res.status,
+      retryAfterMs: data?.retryAfterMs ?? null,
+    };
     throw error;
   }
 
