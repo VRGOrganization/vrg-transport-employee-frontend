@@ -7,7 +7,11 @@ export type PhotoType =
   | "GovernmentId"
   | "ProofOfResidence"
   | "TransportCardProof"
-  | "DisabilityProof";
+  | "DisabilityProof"
+  // 2ª faculdade (aluno em duas instituições): comprovantes próprios.
+  | "SecondaryEnrollmentProof"
+  | "SecondaryCourseSchedule"
+  | "SecondaryAcademicPeriodProof";
 
 export interface StudentRecord {
   _id: string;
@@ -22,6 +26,14 @@ export interface StudentRecord {
   schedule?: Array<{ day: string; period: string }>;
   active: boolean;
   hasDisability?: boolean;
+  // 2ª faculdade (carteirinha interna com duas instituições). Presentes só quando
+  // o aluno tem uma 2ª matrícula.
+  secondaryUniversityId?: string | null;
+  secondaryInstitution?: string;
+  secondaryDegree?: string;
+  secondaryShift?: string;
+  secondaryBusId?: string | null;
+  secondarySchedule?: Array<{ day: string; period: string }>;
 }
 
 export type StudentsResponse =
@@ -84,6 +96,8 @@ export interface LicenseRequestRecord {
   filaPosition?: number | null;
   busId?: string | { _id: string } | null;
   universityId?: string | { _id: string } | null;
+  // Snapshot da 2ª faculdade (aluno em duas instituições).
+  secondaryUniversityId?: string | { _id: string } | null;
   accessBusIdentifiers?: string[];
   // Campos de prioridade e alocação
   allocationSummary?: AllocationEntry[] | null;
@@ -154,13 +168,25 @@ export const DAY_LABELS: Record<string, string> = {
   SEX: "Sexta",
 };
 
-export type RevisionFieldKey = "institution" | "degree" | "shift" | "schedule";
+export type RevisionFieldKey =
+  | "institution"
+  | "degree"
+  | "shift"
+  | "schedule"
+  | "secondaryInstitution"
+  | "secondaryDegree"
+  | "secondaryShift"
+  | "secondarySchedule";
 
 export const REVISION_FIELD_LABELS: Record<RevisionFieldKey, string> = {
   institution: "Instituição",
   degree: "Curso",
   shift: "Turno",
   schedule: "Grade horária",
+  secondaryInstitution: "Instituição (2ª faculdade)",
+  secondaryDegree: "Curso (2ª faculdade)",
+  secondaryShift: "Turno (2ª faculdade)",
+  secondarySchedule: "Grade horária (2ª faculdade)",
 };
 
 export const PHOTO_TYPE_LABELS: Record<PhotoType, string> = {
@@ -173,4 +199,7 @@ export const PHOTO_TYPE_LABELS: Record<PhotoType, string> = {
   ProofOfResidence: "Comprovante de residência",
   TransportCardProof: "Carteirinha de Transporte Atual",
   DisabilityProof: "Laudo Médico (PCD)",
+  SecondaryEnrollmentProof: "Comprovante de Matrícula (2ª faculdade)",
+  SecondaryCourseSchedule: "Grade Horária (2ª faculdade)",
+  SecondaryAcademicPeriodProof: "Calendário Acadêmico (2ª faculdade)",
 };

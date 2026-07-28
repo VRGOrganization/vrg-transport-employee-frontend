@@ -2,6 +2,7 @@
 
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { ErrorState } from "@/components/ui/states";
 import { getInitials, AVATAR_COLORS } from "@/lib/utils/string";
 import type { PageSize } from "@/lib/constants";
 
@@ -101,6 +102,8 @@ interface DashboardUsersTableProps {
   /** Count before any filter (shown in the subtitle) */
   totalAll: number;
   loading: boolean;
+  /** Mensagem de erro de carregamento; quando presente, substitui a lista. */
+  error?: string;
   filter: UserFilter;
   onFilterChange: (f: UserFilter) => void;
   search: string;
@@ -112,6 +115,7 @@ interface DashboardUsersTableProps {
   onRowClick?: (row: UserRow) => void;
   /** Funcionário vê apenas alunos: sem filtro por tipo. Default: "admin". */
   role?: "admin" | "employee";
+  onRetry?: () => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -121,6 +125,7 @@ export function DashboardUsersTable({
   totalFiltered,
   totalAll,
   loading,
+  error,
   filter,
   onFilterChange,
   search,
@@ -131,6 +136,7 @@ export function DashboardUsersTable({
   onPageSizeChange,
   onRowClick,
   role = "admin",
+  onRetry,
 }: DashboardUsersTableProps) {
   const isAdmin = role === "admin";
   const sectionHeader = (
@@ -182,6 +188,7 @@ export function DashboardUsersTable({
       rowKey={(r) => r.id}
       onRowClick={onRowClick}
       loading={loading}
+      error={error ? <ErrorState message={error} onRetry={onRetry} /> : undefined}
       empty={
         <p className="text-center text-on-surface-variant text-sm">
           Nenhum usuário encontrado.

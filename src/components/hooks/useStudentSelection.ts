@@ -25,6 +25,9 @@ interface UseStudentSelectionReturn {
   enrollmentImage: string | null;
   scheduleImage: string | null;
   academicPeriodImage: string | null;
+  secondaryEnrollmentImage: string | null;
+  secondaryScheduleImage: string | null;
+  secondaryAcademicPeriodImage: string | null;
   governmentImage: string | null;
   proofOfResidenceImage: string | null;
   transportCardProofImage: string | null;
@@ -89,6 +92,12 @@ licenseRequests: LicenseRequestRecord[],
       if (normalized === "proofofresidence") return "ProofOfResidence";
       if (normalized === "transportcardproof") return "TransportCardProof";
       if (normalized === "disabilityproof") return "DisabilityProof";
+      if (normalized === "secondaryenrollmentproof")
+        return "SecondaryEnrollmentProof";
+      if (normalized === "secondarycourseschedule")
+        return "SecondaryCourseSchedule";
+      if (normalized === "secondaryacademicperiodproof")
+        return "SecondaryAcademicPeriodProof";
       return null;
     };
 
@@ -125,6 +134,29 @@ licenseRequests: LicenseRequestRecord[],
   const academicPeriodImage = normalizeMediaSource(
     pendingImagesByType.AcademicPeriodProof ??
       selectedImages.find((img) => img.photoType === "AcademicPeriodProof")?.documentImage ??
+      null,
+  );
+
+  // 2ª faculdade (carteirinha interna com duas instituições).
+  const secondaryEnrollmentImage = normalizeMediaSource(
+    pendingImagesByType.SecondaryEnrollmentProof ??
+      selectedImages.find((img) => img.photoType === "SecondaryEnrollmentProof")
+        ?.documentImage ??
+      null,
+  );
+
+  const secondaryScheduleImage = normalizeMediaSource(
+    pendingImagesByType.SecondaryCourseSchedule ??
+      selectedImages.find((img) => img.photoType === "SecondaryCourseSchedule")
+        ?.documentImage ??
+      null,
+  );
+
+  const secondaryAcademicPeriodImage = normalizeMediaSource(
+    pendingImagesByType.SecondaryAcademicPeriodProof ??
+      selectedImages.find(
+        (img) => img.photoType === "SecondaryAcademicPeriodProof",
+      )?.documentImage ??
       null,
   );
 
@@ -243,6 +275,9 @@ licenseRequests: LicenseRequestRecord[],
     enrollmentImage,
     scheduleImage,
     academicPeriodImage,
+    secondaryEnrollmentImage,
+    secondaryScheduleImage,
+    secondaryAcademicPeriodImage,
     governmentImage,
     proofOfResidenceImage,
     transportCardProofImage,

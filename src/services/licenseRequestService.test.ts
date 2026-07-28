@@ -73,6 +73,53 @@ describe("licenseRequestService", () => {
     expect(fd.get("EnrollmentProof")).toBeNull();
   });
 
+  it("adminCreate posts secondary institution fields and secondarySchedule JSON when provided", async () => {
+    postFormMock.mockResolvedValueOnce({ message: "ok", requestId: "req-3" });
+
+    await licenseRequestService.adminCreate({
+      studentId: "student-3",
+      universityId: "uni-1",
+      busId: "bus-1",
+      schedule: [{ day: "SEG", period: "Manhã" }],
+      secondaryUniversityId: "uni-2",
+      secondaryInstitution: "Faculdade Dois",
+      secondaryDegree: "Direito",
+      secondaryShift: "Noite",
+      secondarySchedule: [{ day: "TER", period: "Noite" }],
+      secondaryBusId: "bus-2",
+    });
+
+    const [, form] = postFormMock.mock.calls[0];
+    const fd = form as FormData;
+    expect(fd.get("secondaryUniversityId")).toBe("uni-2");
+    expect(fd.get("secondaryInstitution")).toBe("Faculdade Dois");
+    expect(fd.get("secondaryDegree")).toBe("Direito");
+    expect(fd.get("secondaryShift")).toBe("Noite");
+    expect(fd.get("secondaryBusId")).toBe("bus-2");
+    expect(fd.get("secondarySchedule")).toBe(
+      JSON.stringify([{ day: "TER", period: "Noite" }]),
+    );
+  });
+
+  it("adminCreate does not append secondary fields when they are absent", async () => {
+    postFormMock.mockResolvedValueOnce({ message: "ok", requestId: "req-4" });
+
+    await licenseRequestService.adminCreate({
+      studentId: "student-4",
+      busId: "bus-1",
+      schedule: [{ day: "SEG", period: "Manhã" }],
+    });
+
+    const [, form] = postFormMock.mock.calls[0];
+    const fd = form as FormData;
+    expect(fd.get("secondaryUniversityId")).toBeNull();
+    expect(fd.get("secondaryInstitution")).toBeNull();
+    expect(fd.get("secondaryDegree")).toBeNull();
+    expect(fd.get("secondaryShift")).toBeNull();
+    expect(fd.get("secondaryBusId")).toBeNull();
+    expect(fd.get("secondarySchedule")).toBeNull();
+  });
+
   it("adminCreate omits empty optional fields", async () => {
     postFormMock.mockResolvedValueOnce({ message: "ok", requestId: "req-2" });
 

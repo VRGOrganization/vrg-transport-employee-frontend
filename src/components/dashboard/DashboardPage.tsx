@@ -6,7 +6,7 @@ import { useEmployeeAuth } from "@/components/hooks/useEmployeeAuth";
 import { employeeService } from "@/services/employeeService";
 import { studentService } from "@/services/studentService";
 import { http } from "@/services/http";
-import { Calendar, Download, Loader2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { universityApi, busApi } from "@/lib/universityApi";
 import { buildStudentsCsv, buildEmployeesCsv, buildBusesCsv, buildUniversitiesCsv, downloadCsv } from "@/lib/csvUtils";
 import { resolvePaginated, type Paginated } from "@/types/api";
@@ -88,6 +88,8 @@ export function DashboardPage({ role }: DashboardPageProps) {
 
   const [userRows, setUserRows] = useState<UserRow[]>([]);
   const [loadingTable, setLoadingTable] = useState(true);
+  const [tableError, setTableError] = useState("");
+  const [reloadTick, setReloadTick] = useState(0);
   const [filter, setFilter] = useState<UserFilter>("Todos");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -95,6 +97,9 @@ export function DashboardPage({ role }: DashboardPageProps) {
   const [exportLoading, setExportLoading] = useState(false);
 
   useEffect(() => {
+    setLoadingTable(true);
+    setTableError("");
+
     const fetchAdmin = async () => {
       const [employeesResult, studentsResult, activePeriodResult, requestsResult] =
         await Promise.allSettled([
@@ -173,6 +178,10 @@ export function DashboardPage({ role }: DashboardPageProps) {
         }
       }
 
+      if (employeesResult.status === "rejected" || studentsResult.status === "rejected") {
+        setTableError("Não foi possível carregar a lista completa de usuários. Tente novamente.");
+      }
+
       rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setUserRows(rows);
       setLoadingTable(false);
@@ -208,13 +217,17 @@ export function DashboardPage({ role }: DashboardPageProps) {
         createdAt: stu.createdAt,
       }));
 
+      if (studentsResult.status === "rejected") {
+        setTableError("Não foi possível carregar a lista de alunos. Tente novamente.");
+      }
+
       rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setUserRows(rows);
       setLoadingTable(false);
     };
 
     void (isAdmin ? fetchAdmin() : fetchEmployee());
-  }, [isAdmin]);
+  }, [isAdmin, reloadTick]);
 
   // ── Derived state ──────────────────────────────────────────────────────────
 
@@ -266,11 +279,6 @@ export function DashboardPage({ role }: DashboardPageProps) {
     }
   };
 
-  // ── Month label ────────────────────────────────────────────────────────────
-
-  const currentMonth = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
-  const monthLabel = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
-
   const handleRowClick = (row: UserRow) => {
     if (row.type === "Aluno") router.push(`${base}/students?view=${row.id}`);
     else router.push(`/admin/employees?view=${row.id}`);
@@ -291,19 +299,13 @@ export function DashboardPage({ role }: DashboardPageProps) {
       )}
 
       {/* ── Page header ──────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-extrabold text-on-surface tracking-tight">
-            {user?.name ? getGreeting(user.name.split(" ")[0]) : "Bom dia"}
-          </h1>
-          <p className="text-xs text-on-surface-variant mt-0.5">
-            {getTodayLabel()} · {pendingLabel}
-          </p>
-        </div>
-        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors">
-          <Calendar className="size-4" />
-          {monthLabel}
-        </button>
+      <div>
+        <h1 className="text-xl font-extrabold text-on-surface tracking-tight">
+          {user?.name ? getGreeting(user.name.split(" ")[0]) : "Bom dia"}
+        </h1>
+        <p className="text-xs text-on-surface-variant mt-0.5">
+          {getTodayLabel()} · {pendingLabel}
+        </p>
       </div>
 
       {/* ── Stat cards ───────────────────────────────────── */}
@@ -340,6 +342,8 @@ export function DashboardPage({ role }: DashboardPageProps) {
           totalFiltered={filtered.length}
           totalAll={userRows.length}
           loading={loadingTable}
+          error={tableError}
+          onRetry={() => setReloadTick((t) => t + 1)}
           filter={filter}
           onFilterChange={handleFilterChange}
           search={search}
