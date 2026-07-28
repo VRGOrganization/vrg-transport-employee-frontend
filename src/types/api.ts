@@ -8,4 +8,5 @@ export function resolvePaginated<T>(payload: Paginated<T>): T[] {
 export interface ApiError {
   message: string;
   status?: number;
+  retryAfterMs?: number | null;
 }
