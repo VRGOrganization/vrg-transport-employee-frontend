@@ -11,6 +11,7 @@ import {
   User,
   SlidersHorizontal,
   MessageSquareText,
+  ScrollText,
 } from "lucide-react";
 import type { NavItem, SideNavBrand } from "./SideNav";
 
@@ -26,6 +27,7 @@ export const ADMIN_NAV_ITEMS: readonly NavItem[] = [
   { icon: Bell,              label: "Avisos",                href: "/admin/notices"            },
   { icon: MessageSquareText, label: "Mensagens de sistema",  href: "/admin/system-notice-templates" },
   { icon: SlidersHorizontal, label: "Prioridades",           href: "/admin/priority-rules"     },
+  { icon: ScrollText,        label: "Auditoria",             href: "/admin/audit"              },
 ];
 
 export const EMPLOYEE_NAV_ITEMS: readonly NavItem[] = [
