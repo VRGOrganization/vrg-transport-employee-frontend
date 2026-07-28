@@ -11,6 +11,9 @@ import { CRITERION_TYPE_LABELS } from "@/types/priorityRule";
 interface Props {
   open: boolean;
   initial: PriorityRule | null;
+  /** sortOrder a atribuir a uma regra nova, de forma que ela caia no fim da
+   * lista em vez de saltar na frente de regras já organizadas (ver buildPayload). */
+  nextSortOrder: number;
   onClose: () => void;
   onSaved: (rule: PriorityRule) => void;
   onDeleted: (id: string) => void;
@@ -62,7 +65,7 @@ function Label({ children, required }: { children: React.ReactNode; required?: b
   );
 }
 
-export function PriorityRuleModal({ open, initial, onClose, onSaved, onDeleted }: Props) {
+export function PriorityRuleModal({ open, initial, nextSortOrder, onClose, onSaved, onDeleted }: Props) {
   const [view, setView]       = useState<"form" | "confirm">("form");
   const [form, setForm]       = useState<FormState>(() => buildFormState(initial));
   const [errors, setErrors]   = useState<Record<string, string>>({});
@@ -101,7 +104,7 @@ export function PriorityRuleModal({ open, initial, onClose, onSaved, onDeleted }
     name:          form.name.trim(),
     description:   form.description.trim(),
     criteriaLogic: form.criteriaLogic,
-    sortOrder:     initial?.sortOrder ?? 0,
+    sortOrder:     initial?.sortOrder ?? nextSortOrder,
     active:        form.active,
     criteria: [
       ...(form.alreadyUsesTransport ? [{ type: "already_uses_transport" as const }] : []),
@@ -141,21 +144,22 @@ export function PriorityRuleModal({ open, initial, onClose, onSaved, onDeleted }
   // ── Confirm delete ───────────────────────────────────────────────────────────
   if (view === "confirm") {
     return (
-      <Modal open={open} onClose={() => setView("form")} title="Excluir regra?" size="sm" closeOnBackdrop={false}>
+      <Modal open={open} onClose={() => setView("form")} title="Desativar regra?" size="sm" closeOnBackdrop={false}>
         <div className="flex flex-col items-center gap-4 py-2 text-center">
           <div className="p-4 rounded-full bg-error/10">
             <AlertTriangle className="size-9 text-error" />
           </div>
           <p className="text-sm text-on-surface-variant max-w-xs">
             A regra <strong className="text-on-surface">{initial?.name}</strong> será
-            desativada e deixará de ser usada nos desempates.
+            desativada e deixará de ser usada nos desempates. Ela continua listada na
+            aba &quot;Inativas&quot; e pode ser reativada depois.
           </p>
         </div>
         {error && <p className="mt-3 text-sm text-error text-center">{error}</p>}
         <div className="flex gap-3 mt-6">
           <Button variant="outline" size="sm" fullWidth onClick={() => setView("form")} disabled={loading}>Cancelar</Button>
           <Button variant="primary" size="sm" fullWidth loading={loading} onClick={() => void handleDelete()} className="bg-error hover:bg-error/90 text-white border-0">
-            Confirmar exclusão
+            Confirmar desativação
           </Button>
         </div>
       </Modal>
@@ -299,7 +303,7 @@ export function PriorityRuleModal({ open, initial, onClose, onSaved, onDeleted }
               disabled={loading}
               className="text-sm font-medium text-error/80 hover:text-error underline underline-offset-2 transition-colors disabled:opacity-50 mr-auto cursor-pointer"
             >
-              Excluir regra
+              Desativar regra
             </button>
           )}
           <Button variant="outline" size="sm" onClick={onClose} disabled={loading}>Cancelar</Button>

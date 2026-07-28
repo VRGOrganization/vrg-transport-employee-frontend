@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CircleX } from "lucide-react";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "@/lib/toast";
 import { noticeService } from "@/services/noticeService";
 import type { Notice } from "@/services/noticeService";
@@ -10,6 +8,11 @@ import type { Notice } from "@/services/noticeService";
 interface Props {
   notice: Notice;
   onUndo: () => void;
+  /** Chamado uma vez quando a contagem chega a zero, pra quem estiver
+   * ouvindo saber que o aviso passou de "agendado" pra "publicado" de
+   * verdade e precisa re-buscar a lista (o status local fica obsoleto
+   * silenciosamente se ninguém reagir a isso). */
+  onExpire?: () => void;
 }
 
 function computeSecondsLeft(targetDate: string): number {
@@ -29,57 +32,44 @@ function useCountdown(targetDate: string): number {
   return secondsLeft;
 }
 
-export function UndoPublishBanner({ notice, onUndo }: Props) {
+export function UndoPublishBanner({ notice, onUndo, onExpire }: Props) {
   const secondsLeft = useCountdown(notice.publishAt);
-  const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const hasExpiredRef = useRef(false);
+
+  useEffect(() => {
+    if (secondsLeft > 0 || hasExpiredRef.current) return;
+    hasExpiredRef.current = true;
+    onExpire?.();
+  }, [secondsLeft, onExpire]);
 
   if (secondsLeft <= 0) return null;
 
-  const handleConfirmUndo = async () => {
+  const handleUndo = async () => {
     setLoading(true);
-    setError("");
     try {
       await noticeService.cancelScheduledNotice(notice.id);
       toast.success("Aviso cancelado.");
-      setConfirming(false);
       onUndo();
     } catch (err: unknown) {
       const e = err as { message?: string };
-      setError(e.message ?? "Erro ao cancelar aviso");
+      toast.error(e.message ?? "Erro ao cancelar aviso.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <>
-      <div className="flex items-center justify-between gap-3 rounded-xl bg-warning-container border border-warning-border px-4 py-3 text-sm text-on-warning">
-        <span>Publicando em {secondsLeft}s</span>
-        <button
-          type="button"
-          className="font-bold underline cursor-pointer"
-          onClick={() => setConfirming(true)}
-        >
-          Desfazer
-        </button>
-      </div>
-
-      {confirming && (
-        <ConfirmModal
-          open
-          onClose={() => setConfirming(false)}
-          onConfirm={handleConfirmUndo}
-          loading={loading}
-          error={error}
-          title="Cancelar este aviso?"
-          icon={CircleX}
-          variant="danger"
-          description="Ele não será publicado."
-          confirmLabel="Sim, cancelar"
-        />
-      )}
-    </>
+    <div className="flex items-center justify-between gap-3 rounded-xl bg-warning-container border border-warning-border px-4 py-3 text-sm text-on-warning">
+      <span>Publicando em {secondsLeft}s</span>
+      <button
+        type="button"
+        disabled={loading}
+        className="font-bold underline cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+        onClick={() => void handleUndo()}
+      >
+        {loading ? "Cancelando…" : "Desfazer"}
+      </button>
+    </div>
   );
 }

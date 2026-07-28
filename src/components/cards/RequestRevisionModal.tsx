@@ -1,7 +1,8 @@
 import { ClipboardCheck } from "lucide-react";
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { http } from "@/services/http";
+import { useModalA11y } from "@/hooks/ui/useModalA11y";
 import {
   PHOTO_TYPE_LABELS,
   REVISION_FIELD_LABELS,
@@ -36,6 +37,15 @@ const REVISION_FIELD_KEYS: RevisionFieldKey[] = [
   "schedule",
 ];
 
+// Comprovantes da 2ª faculdade — só exibidos quando o pedido tem 2ª matrícula.
+// (A correção de TEXTO da 2ª faculdade não é oferecida na revisão por ora — só
+// o reenvio dos comprovantes, que o app do aluno já suporta.)
+const SECONDARY_REVISION_DOCUMENTS: PhotoType[] = [
+  "SecondaryEnrollmentProof",
+  "SecondaryCourseSchedule",
+  "SecondaryAcademicPeriodProof",
+];
+
 export function RequestRevisionModal({
   currentLicenseRequest,
   alreadyUsesTransport,
@@ -47,8 +57,12 @@ export function RequestRevisionModal({
   // O comprovante de uso do transporte e o laudo médico só são revisáveis
   // quando o aluno declarou a condição correspondente (do contrário ele
   // nunca enviou esse documento).
+  // Só oferece revisão da 2ª faculdade quando o pedido tem 2ª matrícula.
+  const hasSecondary = Boolean(currentLicenseRequest.secondaryUniversityId);
+
   const revisionDocuments: PhotoType[] = [
     ...REVISION_DOCUMENTS,
+    ...(hasSecondary ? SECONDARY_REVISION_DOCUMENTS : []),
     ...(alreadyUsesTransport ? (["TransportCardProof"] as PhotoType[]) : []),
     ...(hasDisability ? (["DisabilityProof"] as PhotoType[]) : []),
   ];
@@ -58,6 +72,9 @@ export function RequestRevisionModal({
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalA11y(panelRef, onClose);
 
   const toggle = (
     setter: React.Dispatch<React.SetStateAction<Set<string>>>,
@@ -115,7 +132,12 @@ export function RequestRevisionModal({
       onClick={() => !submitting && onClose()}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-surface p-6 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto"
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="w-full max-w-md rounded-2xl bg-surface p-6 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3">
@@ -123,7 +145,7 @@ export function RequestRevisionModal({
             <ClipboardCheck className="size-5 text-primary" />
           </div>
           <div>
-            <h2 className="font-bold text-on-surface text-base">
+            <h2 id={titleId} className="font-bold text-on-surface text-base">
               Solicitar revisão
             </h2>
             <p className="text-xs text-on-surface-variant">

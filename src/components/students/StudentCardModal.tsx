@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId, useRef } from "react";
 import { http } from "@/services/http";
 import { Student } from "@/types/student";
 import { resolveDisplayName, toTitleCase } from "@/lib/utils/string";
@@ -7,6 +7,7 @@ import { extractLicenseImage, buildCardsPdfUrl, downloadMedia, getDownloadName }
 import { Button } from "@/components/ui/Button";
 import { Printer, Download, X } from "lucide-react";
 import { PdfPreviewModal } from "@/components/cards/PdfPreviewModal";
+import { useModalA11y } from "@/hooks/ui/useModalA11y";
 
 interface StudentCardModalProps {
   student: Student;
@@ -18,6 +19,9 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
   const [error, setError] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalA11y(panelRef, onClose);
 
   useEffect(() => {
     const mountState = { cancelled: false };
@@ -75,11 +79,18 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in zoom-in-95 duration-200">
-        <div className="bg-surface rounded-2xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+        <div
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          tabIndex={-1}
+          className="bg-surface rounded-2xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh] outline-none"
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-5 border-b border-outline-variant/30">
             <div>
-              <h2 className="text-xl font-bold text-on-surface tracking-tight">
+              <h2 id={titleId} className="text-xl font-bold text-on-surface tracking-tight">
                 Carteirinha
               </h2>
               <p className="text-sm text-on-surface-variant mt-0.5">
@@ -88,6 +99,7 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
             </div>
             <button
               onClick={onClose}
+              aria-label="Fechar modal"
               className="text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center size-8 rounded-full hover:bg-primary/10 cursor-pointer"
             >
               <X className="size-5" />

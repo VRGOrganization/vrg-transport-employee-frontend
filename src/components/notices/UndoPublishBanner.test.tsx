@@ -43,19 +43,27 @@ describe("UndoPublishBanner", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("clicar Desfazer chama cancelScheduledNotice, não deleteNotice", async () => {
+  it("clicar Desfazer chama cancelScheduledNotice direto, não deleteNotice", async () => {
     cancelMock.mockResolvedValueOnce(undefined);
     const notice = makeNotice(new Date(Date.now() + 25000).toISOString());
     const onUndo = vi.fn();
     render(<UndoPublishBanner notice={notice} onUndo={onUndo} />);
 
+    // Ação de baixo risco (cancela um agendamento, não algo irreversível) —
+    // um único clique chama a API direto, sem segundo modal de confirmação
+    // dentro da janela curta de desfazer.
     await userEvent.click(screen.getByRole("button", { name: /desfazer/i }));
-    expect(screen.getByText(/cancelar este aviso/i)).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: /sim, cancelar/i }));
 
     await waitFor(() => expect(cancelMock).toHaveBeenCalledWith("notice-1"));
     expect(deleteMock).not.toHaveBeenCalled();
     expect(onUndo).toHaveBeenCalled();
+  });
+
+  it("chama onExpire quando publishAt já passou, pra quem escuta refazer o fetch", async () => {
+    const onExpire = vi.fn();
+    const notice = makeNotice(new Date(Date.now() - 5000).toISOString());
+    render(<UndoPublishBanner notice={notice} onUndo={vi.fn()} onExpire={onExpire} />);
+
+    await waitFor(() => expect(onExpire).toHaveBeenCalledTimes(1));
   });
 });

@@ -1,6 +1,7 @@
 import { Bus, ClipboardCheck, Printer, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { isPdfDataUrl } from "@/lib/cardUtils";
+import { cn } from "@/lib/utils";
 import type { LicenseRecord, LicenseRequestRecord } from "@/types/cards.types";
 
 interface ApprovalFooterProps {
@@ -10,6 +11,7 @@ interface ApprovalFooterProps {
   approving: boolean;
   printingSingle: boolean;
   approveMessage: string;
+  approveMessageIsError?: boolean;
   onApprove: () => void;
   onRejectOpen: () => void;
   onRevisionOpen: () => void;
@@ -23,6 +25,7 @@ export function ApprovalFooter({
   approving,
   printingSingle,
   approveMessage,
+  approveMessageIsError = false,
   onApprove,
   onRejectOpen,
   onRevisionOpen,
@@ -46,7 +49,14 @@ export function ApprovalFooter({
     return (
       <div className="border-t border-outline-variant bg-surface-container-lowest pt-3 pb-4 px-4 space-y-3">
         {approveMessage && (
-          <div className="rounded-xl border border-outline-variant bg-surface p-3 text-xs text-on-surface">
+          <div
+            className={cn(
+              "rounded-xl border p-3 text-xs",
+              approveMessageIsError
+                ? "border-error/40 bg-error/5 text-error"
+                : "border-success/40 bg-success/5 text-success",
+            )}
+          >
             {approveMessage}
           </div>
         )}
@@ -94,7 +104,14 @@ export function ApprovalFooter({
       )}
 
       {approveMessage && (
-        <div className="rounded-xl border border-outline-variant bg-surface p-3 text-xs text-on-surface">
+        <div
+          className={cn(
+            "rounded-xl border p-3 text-xs",
+            approveMessageIsError
+              ? "border-error/40 bg-error/5 text-error"
+              : "border-success/40 bg-success/5 text-success",
+          )}
+        >
           {approveMessage}
         </div>
       )}

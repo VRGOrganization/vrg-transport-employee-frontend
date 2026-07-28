@@ -150,8 +150,9 @@ export function BusesPage({ role }: { role: "admin" | "employee" }) {
       await busApi.reactivate(pendingReactivate._id);
       await loadBuses();
       setPendingReactivate(null);
-    } catch {
-      setReactivateError("Não foi possível reativar o ônibus. Tente novamente.");
+    } catch (err) {
+      const message = (err as { message?: string })?.message;
+      setReactivateError(message ?? "Não foi possível reativar o ônibus. Tente novamente.");
     } finally {
       setReactivatingId(null);
     }
@@ -165,8 +166,9 @@ export function BusesPage({ role }: { role: "admin" | "employee" }) {
       await busApi.deactivate(pendingDeactivate._id);
       await loadBuses();
       setPendingDeactivate(null);
-    } catch {
-      setDeactivateError("Não foi possível desativar o ônibus. Tente novamente.");
+    } catch (err) {
+      const message = (err as { message?: string })?.message;
+      setDeactivateError(message ?? "Não foi possível desativar o ônibus. Tente novamente.");
     } finally {
       setDeactivatingId(null);
     }

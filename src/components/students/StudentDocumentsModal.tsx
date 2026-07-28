@@ -32,6 +32,9 @@ const DOC_ICON: Record<PhotoType, string> = {
   ProofOfResidence:    "home",
   TransportCardProof:  "directions_bus",
   DisabilityProof:     "medical_information",
+  SecondaryEnrollmentProof:     "school",
+  SecondaryCourseSchedule:      "calendar_today",
+  SecondaryAcademicPeriodProof: "event_note",
 };
 
 const DOC_ORDER: PhotoType[] = [
@@ -41,6 +44,9 @@ const DOC_ORDER: PhotoType[] = [
   "EnrollmentProof",
   "CourseSchedule",
   "AcademicPeriodProof",
+  "SecondaryEnrollmentProof",
+  "SecondaryCourseSchedule",
+  "SecondaryAcademicPeriodProof",
   "LicenseImage",
 ];
 

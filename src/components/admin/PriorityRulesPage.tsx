@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Tabs } from "@/components/ui/Tabs";
 import { ErrorState, EmptyState } from "@/components/ui/states";
+import { toast } from "@/lib/toast";
 
 type Tab = "active" | "inactive";
 
@@ -90,8 +91,9 @@ export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {
           return r;
         }))
       );
-    } catch {
-      // silent — UI unchanged on error
+    } catch (err) {
+      const message = (err as { message?: string })?.message;
+      toast.error(message ?? "Não foi possível reordenar a regra. Tente novamente.");
     } finally {
       setReordering(null);
     }
@@ -292,6 +294,7 @@ export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {
       <PriorityRuleModal
         open={modalOpen}
         initial={editing}
+        nextSortOrder={rules.length > 0 ? Math.max(...rules.map((r) => r.sortOrder)) + 1 : 1}
         onClose={() => { setModalOpen(false); setEditing(null); }}
         onSaved={handleSaved}
         onDeleted={handleDeleted}
