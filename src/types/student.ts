@@ -69,52 +69,6 @@ export interface LicenseRequestRecord {
   createdAt: string;
 }
 
-export interface StudentFormData {
-  name: string;
-  email: string;
-  telephone: string;
-  institution: string;
-  shift: "Manhã" | "Tarde" | "Noite" | "Integral" | "";
-  bloodType: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-" | "";
-  degree: string;
-  cpf: string;
-  alreadyUsesTransport: boolean;
-  hasDisability: boolean;
-  governmentIdFile: File | null;
-  proofOfResidenceFile: File | null;
-  transportCardProofFile: File | null;
-  disabilityProofFile: File | null;
-}
-
-/** Valores aceitos pelo onChange do formulário de aluno (texto, flags e arquivos). */
-export type StudentFormFieldValue = string | boolean | File | null;
-
-export interface StudentFormErrors {
-  name: string;
-  email: string;
-  telephone: string;
-  institution: string;
-  shift: string;
-  bloodType: string;
-  degree: string;
-  cpf: string;
-  documents: string;
-  general: string;
-}
-
-export const EMPTY_STUDENT_ERRORS: StudentFormErrors = {
-  name: "",
-  email: "",
-  telephone: "",
-  institution: "",
-  shift: "",
-  bloodType: "",
-  degree: "",
-  cpf: "",
-  documents: "",
-  general: "",
-};
-
 export type StudentShift = "Manhã" | "Tarde" | "Noite" | "Integral";
 
 export const SHIFTS: { value: StudentShift; label: string; icon: string }[] = [
