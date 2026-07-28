@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ShieldBan, ShieldCheck } from "lucide-react";
 import { banlistService } from "@/services/banlistService";
+import { employeeService } from "@/services/employeeService";
 import type { BanlistEntry } from "@/types/banlist";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Tabs } from "@/components/ui/Tabs";
@@ -104,6 +105,18 @@ const COLUMNS: Column<BanlistEntry>[] = [
 export function BanlistPage({ role }: { role: "admin" | "employee" }) {
   void role;
   const [unbanTarget, setUnbanTarget] = useState<BanlistEntry | null>(null);
+  const [adminNames, setAdminNames] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    employeeService
+      .list()
+      .then((employees) => {
+        const map: Record<string, string> = {};
+        for (const emp of employees) map[emp._id] = emp.name;
+        setAdminNames(map);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetcher = useCallback(
     (t: Tab) => banlistService.list(t === "active" ? true : false),
@@ -111,7 +124,7 @@ export function BanlistPage({ role }: { role: "admin" | "employee" }) {
   );
 
   const { tab, setTab, search, setSearch, page, setPage, pageSize, setPageSize,
-    loading, error, paginated, total, reload } =
+    loading, error, paginated, total, reload, reloadAll } =
     useListPage<BanlistEntry, Tab>({
       tabs: ["active", "inactive"],
       initialTab: "active",
@@ -119,6 +132,26 @@ export function BanlistPage({ role }: { role: "admin" | "employee" }) {
       searchFields: (e) => [e.name, e.socialName ?? "", e.email],
       errorMessage: "Não foi possível carregar a lista de banimentos.",
     });
+
+  const adminColumn: Column<BanlistEntry> = {
+    key: "responsibleAdmin",
+    label: "Responsável",
+    render: (entry) => {
+      const id = entry.active ? entry.bannedByAdminId : (entry.unbannedByAdminId ?? entry.bannedByAdminId);
+      const name = id ? adminNames[id] : undefined;
+      return <span className="text-sm text-on-surface-variant">{name ?? "—"}</span>;
+    },
+  };
+
+  const unbanReasonColumn: Column<BanlistEntry> = {
+    key: "unbanReasons",
+    label: "Motivo do desbanimento",
+    render: (entry) => (
+      <span className="text-sm text-on-surface-variant max-w-xs truncate block" title={entry.unbanReasons?.join("; ")}>
+        {entry.unbanReasons && entry.unbanReasons.length > 0 ? entry.unbanReasons.join("; ") : "—"}
+      </span>
+    ),
+  };
 
   const actionsColumn: Column<BanlistEntry> = {
     key: "actions",
@@ -138,7 +171,10 @@ export function BanlistPage({ role }: { role: "admin" | "employee" }) {
       ),
   };
 
-  const columns = [...COLUMNS, actionsColumn];
+  const columns =
+    tab === "active"
+      ? [...COLUMNS, adminColumn, actionsColumn]
+      : [...COLUMNS, adminColumn, unbanReasonColumn, actionsColumn];
 
   return (
     <main className="flex flex-col flex-1 bg-surface overflow-hidden">
@@ -198,7 +234,7 @@ export function BanlistPage({ role }: { role: "admin" | "employee" }) {
           open
           entry={unbanTarget}
           onClose={() => setUnbanTarget(null)}
-          onSuccess={() => { setUnbanTarget(null); reload(); }}
+          onSuccess={() => { setUnbanTarget(null); reloadAll(); }}
         />
       )}
     </main>

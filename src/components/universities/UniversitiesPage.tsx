@@ -56,7 +56,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
     try {
       if (statusTab === "active") {
         const [unis, busList] = await Promise.all([
-          universityApi.list(),
+          universityApi.listWithQueueCounts(),
           busApi.listActive(),
         ]);
         setUniversities(unis);
@@ -212,8 +212,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
   };
 
   const handleBusesChanged = async () => {
-    const busList = await busApi.listActive();
-    setBuses(busList);
+    await loadUniversities();
   };
 
   return (

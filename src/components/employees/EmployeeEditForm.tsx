@@ -17,11 +17,15 @@ export interface ChangeEntry {
 interface Props {
   employee: Employee;
   generalError?: string;
+  /** Esconde o cabeçalho interno (ícone de voltar + título) para quando o
+   * formulário já vive dentro de uma página com seu próprio cabeçalho. O
+   * botão "Cancelar" do rodapé continua chamando onCancel normalmente. */
+  hideHeader?: boolean;
   onCancel: () => void;
   onPrepareConfirm: (payload: Record<string, string>, changes: ChangeEntry[]) => void;
 }
 
-export function EmployeeEditForm({ employee, generalError, onCancel, onPrepareConfirm }: Props) {
+export function EmployeeEditForm({ employee, generalError, hideHeader, onCancel, onPrepareConfirm }: Props) {
   const [values, setValues] = useState({
     name: employee.name,
     email: employee.email,
@@ -74,16 +78,18 @@ export function EmployeeEditForm({ employee, generalError, onCancel, onPrepareCo
 
   return (
     <>
-      <div className="flex items-center gap-3 mb-4">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <h3 className="font-headline font-semibold text-lg text-on-surface flex-1">Editar Funcionário</h3>
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center gap-3 mb-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+          >
+            <ArrowLeft className="size-5" />
+          </button>
+          <h3 className="font-headline font-semibold text-lg text-on-surface flex-1">Editar Funcionário</h3>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {(generalError || fieldErrors._form) && (

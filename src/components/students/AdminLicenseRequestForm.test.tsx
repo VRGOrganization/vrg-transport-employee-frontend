@@ -90,7 +90,8 @@ describe("AdminLicenseRequestForm", () => {
     setSelect(/Ônibus \(seleção manual\)/i, "bus-1");
     uploadAllDocs();
 
-    fireEvent.click(screen.getByRole("button", { name: /Criar pedido de carteirinha/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Revisar pedido/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /Confirmar e criar pedido/i }));
 
     await waitFor(() => expect(adminCreateMock).toHaveBeenCalledTimes(1));
     const payload = adminCreateMock.mock.calls[0][0];
@@ -127,7 +128,8 @@ describe("AdminLicenseRequestForm", () => {
     setSelect(/Ônibus \(2ª\)/i, "bus-2");
     uploadAllDocs();
 
-    fireEvent.click(screen.getByRole("button", { name: /Criar pedido de carteirinha/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Revisar pedido/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /Confirmar e criar pedido/i }));
 
     await waitFor(() => expect(adminCreateMock).toHaveBeenCalledTimes(1));
     const payload = adminCreateMock.mock.calls[0][0];
@@ -160,7 +162,7 @@ describe("AdminLicenseRequestForm", () => {
     setSelect(/Ônibus \(2ª\)/i, "bus-2");
     uploadAllDocs();
 
-    fireEvent.click(screen.getByRole("button", { name: /Criar pedido de carteirinha/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Revisar pedido/i }));
 
     await screen.findByText(/colis/i);
     expect(adminCreateMock).not.toHaveBeenCalled();
@@ -176,7 +178,7 @@ describe("AdminLicenseRequestForm", () => {
     setSelect(/Ônibus \(seleção manual\)/i, "bus-1");
     // sem anexar documentos
 
-    fireEvent.click(screen.getByRole("button", { name: /Criar pedido de carteirinha/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Revisar pedido/i }));
 
     await screen.findByText(/Anexe a foto 3x4/i);
     expect(adminCreateMock).not.toHaveBeenCalled();

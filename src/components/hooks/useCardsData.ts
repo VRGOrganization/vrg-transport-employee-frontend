@@ -18,7 +18,9 @@ interface UseCardsDataReturn {
   pendingStudentIds: Set<string>;
   waitlistedStudentIds: Set<string>;
   stats: { total: number; withCard: number; pending: number; waitlisted: number; review: number };
-  reload: () => Promise<void>;
+  /** Passe `{ silent: true }` pra refresh de background (ex.: auto-refresh)
+   * que não deve derrubar a lista pra um spinner de tela cheia. */
+  reload: (opts?: { silent?: boolean }) => Promise<void>;
 }
 
 function normalizeArrayResponse<T>(
@@ -58,8 +60,8 @@ export function useCardsData(university?: University | null): UseCardsDataReturn
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const reload = useCallback(async () => {
-    setLoading(true);
+  const reload = useCallback(async (opts?: { silent?: boolean }) => {
+    if (!opts?.silent) setLoading(true);
     setError("");
     try {
       const [studentsResponse, licensesResponse, requestsResponse] = await Promise.all([

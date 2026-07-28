@@ -19,6 +19,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [pendingUnlink, setPendingUnlink] = useState<BusType | null>(null);
   const [unlinkError, setUnlinkError] = useState("");
+  const [linkError, setLinkError] = useState("");
 
   const linkedBuses = allBuses.filter((bus) => {
     const inSlots = (bus.universitySlots ?? []).some((s) =>
@@ -43,11 +44,15 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
   const handleLink = async () => {
     if (!selectedBusId) return;
     setLoadingId(selectedBusId);
+    setLinkError("");
     try {
       await busApi.linkUniversity(selectedBusId, university._id);
       onBusesChanged();
       setLinking(false);
       setSelectedBusId("");
+    } catch (err) {
+      const message = (err as { message?: string })?.message;
+      setLinkError(message ?? "Não foi possível vincular o ônibus. Tente novamente.");
     } finally {
       setLoadingId(null);
     }
@@ -113,6 +118,9 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
           </button>
         </div>
       )}
+      {linkError && (
+        <p className="text-xs text-error mb-4 -mt-2">{linkError}</p>
+      )}
 
       {linkedBuses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-on-surface-muted">
@@ -143,7 +151,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
               <button
                 onClick={() => setPendingUnlink(bus)}
                 disabled={loadingId === bus._id}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-all cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-error/30"
+                className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 p-1.5 rounded-lg text-on-surface-muted hover:text-error hover:bg-error-container transition-all cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-error/30"
                 title="Desvincular"
               >
                 {loadingId === bus._id

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { SelectField } from "@/components/ui/SelectField";
 import { StatusBanner } from "@/components/ui/StatusBanner";
@@ -17,6 +18,22 @@ import {
 } from "@/services/licenseRequestService";
 import { BLOOD_TYPES } from "@/types/student";
 import type { University, Bus } from "@/types/university.types";
+
+const DAYS = ["SEG", "TER", "QUA", "QUI", "SEX"] as const;
+const PERIODS = ["Manhã", "Tarde", "Noite"] as const;
+
+const DOCUMENT_FIELDS = [
+  ["ProfilePhoto", "Foto 3x4", "Foto recente, rosto visível, fundo neutro."],
+  ["EnrollmentProof", "Comprovante de matrícula", "Documento da faculdade confirmando matrícula ativa."],
+  ["CourseSchedule", "Grade horária", "Grade de horários das aulas no período atual."],
+  ["AcademicPeriodProof", "Comprovante de período letivo", "Confirma o período/semestre letivo em curso."],
+] as const;
+
+const SECONDARY_DOCUMENT_FIELDS = [
+  ["SecondaryEnrollmentProof", "Comprovante de matrícula"],
+  ["SecondaryCourseSchedule", "Grade horária"],
+  ["SecondaryAcademicPeriodProof", "Comprovante de período letivo"],
+] as const;
 
 interface AdminLicenseRequestFormProps {
   studentId: string;
@@ -51,7 +68,8 @@ function resolveUniversityId(universities: University[], name: string) {
  * Formulário interno de criação de pedido de carteirinha (admin/funcionário).
  * Espelha o fluxo do aluno, mas: faculdade/curso são texto (autocomplete), com
  * opção de criar faculdade temporária; o ônibus é escolhido manualmente. O
- * pedido gerado segue as regras normais (fila/prioridade).
+ * pedido gerado segue as regras normais (fila/prioridade). Antes de enviar, o
+ * funcionário revisa um resumo do pedido e confirma.
  *
  * Suporta alunos com uma SEGUNDA matrícula (2ª instituição/curso) com grade e
  * ônibus próprios, ativada por um toggle opcional.
@@ -89,7 +107,10 @@ export function AdminLicenseRequestForm({
   const [creatingTempSecondary, setCreatingTempSecondary] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [busIdError, setBusIdError] = useState("");
+  const [scheduleError, setScheduleError] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
+  const [view, setView] = useState<"form" | "review">("form");
 
   useEffect(() => {
     universityService.list().then(setUniversities).catch(() => {});
@@ -114,18 +135,27 @@ export function AdminLicenseRequestForm({
     [buses, secondaryUniversityId],
   );
 
-  const makeToggleSlot =
-    (setState: React.Dispatch<React.SetStateAction<ScheduleSlot[]>>) =>
-    (day: string, period: string) => {
-      setState((prev) =>
-        prev.some((s) => s.day === day && s.period === period)
-          ? prev.filter((s) => !(s.day === day && s.period === period))
-          : [...prev, { day, period }],
-      );
-    };
+  const toggleSlot = useCallback((day: string, period: string) => {
+    setSchedule((prev) =>
+      prev.some((s) => s.day === day && s.period === period)
+        ? prev.filter((s) => !(s.day === day && s.period === period))
+        : [...prev, { day, period }],
+    );
+    setScheduleError((prev) => (prev ? "" : prev));
+  }, []);
 
-  const toggleSlot = useCallback(makeToggleSlot(setSchedule), []);
-  const toggleSecondarySlot = useCallback(makeToggleSlot(setSecondarySchedule), []);
+  const toggleSecondarySlot = useCallback((day: string, period: string) => {
+    setSecondarySchedule((prev) =>
+      prev.some((s) => s.day === day && s.period === period)
+        ? prev.filter((s) => !(s.day === day && s.period === period))
+        : [...prev, { day, period }],
+    );
+  }, []);
+
+  const handleBusChange = (value: string) => {
+    setBusId(value);
+    setBusIdError((prev) => (prev ? "" : prev));
+  };
 
   const createTemporary = async (
     name: string,
@@ -153,27 +183,33 @@ export function AdminLicenseRequestForm({
   };
 
   /** Renderiza um campo de upload ligado ao estado `documents` pela chave (PhotoType). */
-  const docField = (key: string, label: string) => (
+  const docField = (key: string, label: string, hint?: string) => (
     <DocumentUploadField
       key={key}
       label={label}
+      hint={hint}
       value={documents[key] ?? null}
       onChange={(file) => setDocuments((prev) => ({ ...prev, [key]: file }))}
     />
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleReview = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setBusIdError("");
+    setScheduleError("");
 
+    let hasFieldError = false;
     if (!busId) {
-      setError("Selecione um ônibus para o pedido.");
-      return;
+      setBusIdError("Selecione um ônibus para o pedido.");
+      hasFieldError = true;
     }
     if (schedule.length === 0) {
-      setError("Selecione ao menos um horário.");
-      return;
+      setScheduleError("Selecione ao menos um horário na grade abaixo.");
+      hasFieldError = true;
     }
+    if (hasFieldError) return;
+
     // Documentos são obrigatórios: foto 3x4 + os 3 comprovantes da 1ª faculdade.
     if (
       !documents.ProfilePhoto ||
@@ -225,6 +261,10 @@ export function AdminLicenseRequestForm({
       }
     }
 
+    setView("review");
+  };
+
+  const handleConfirmCreate = async () => {
     const payload: AdminCreateLicenseRequestInput = {
       studentId,
       universityId: universityId || undefined,
@@ -248,16 +288,35 @@ export function AdminLicenseRequestForm({
     }
 
     setLoading(true);
+    setError("");
     try {
       const result = await licenseRequestService.adminCreate(payload);
       setSuccess(result.requestId);
       onSuccess?.(result.requestId);
     } catch (err) {
       setError((err as { message?: string }).message ?? "Erro ao criar o pedido.");
+      setView("form");
     } finally {
       setLoading(false);
     }
   };
+
+  const scheduleToSummary = (slots: ScheduleSlot[]) =>
+    DAYS.flatMap((day) =>
+      PERIODS.filter((period) => slots.some((s) => s.day === day && s.period === period)).map(
+        (period) => `${day} ${period}`,
+      ),
+    );
+
+  const busLabel = busOptions.find((b) => b.value === busId)?.label ?? busId;
+  const secondaryBusLabel =
+    secondaryBusOptions.find((b) => b.value === secondaryBusId)?.label ?? secondaryBusId;
+  const scheduleSummary = scheduleToSummary(schedule);
+  const secondaryScheduleSummary = scheduleToSummary(secondarySchedule);
+  const attachedDocs = [
+    ...DOCUMENT_FIELDS,
+    ...(secondaryEnabled ? SECONDARY_DOCUMENT_FIELDS : []),
+  ].filter(([key]) => documents[key]);
 
   if (success) {
     return (
@@ -267,8 +326,86 @@ export function AdminLicenseRequestForm({
     );
   }
 
+  if (view === "review") {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setView("form")}
+            className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+          >
+            <ArrowLeft className="size-5" />
+          </button>
+          <h3 className="font-headline font-semibold text-lg text-on-surface flex-1">
+            Revisar pedido
+          </h3>
+        </div>
+
+        {error && <StatusBanner variant="error">{error}</StatusBanner>}
+
+        <p className="text-sm text-on-surface-variant">
+          Confira os dados antes de criar o pedido{studentName ? ` de ${studentName}` : ""}.
+        </p>
+
+        <dl className="rounded-xl border border-outline-variant divide-y divide-outline-variant overflow-hidden">
+          {[
+            ["Faculdade", institution.trim() || "—"],
+            ["Curso", degree.trim() || "—"],
+            ["Turno", shift || "—"],
+            ["Tipo sanguíneo", bloodType || "—"],
+            ["Ônibus", busLabel || "—"],
+            ["Modo de transporte", transportMode === "weekly" ? "Semanal" : "Regular"],
+            ["Horários", scheduleSummary.length > 0 ? scheduleSummary.join(", ") : "—"],
+            ...(secondaryEnabled
+              ? ([
+                  ["Faculdade (2ª)", secondaryInstitution.trim() || "—"],
+                  ["Curso (2ª)", secondaryDegree.trim() || "—"],
+                  ["Turno (2ª)", secondaryShift || "—"],
+                  ["Ônibus (2ª)", secondaryBusLabel || "—"],
+                  [
+                    "Horários (2ª)",
+                    secondaryScheduleSummary.length > 0
+                      ? secondaryScheduleSummary.join(", ")
+                      : "—",
+                  ],
+                ] as const)
+              : []),
+            [
+              "Documentos anexados",
+              attachedDocs.length > 0
+                ? attachedDocs.map(([key, label]) => `${label} (${documents[key]!.name})`).join(", ")
+                : "Nenhum documento anexado",
+            ],
+          ].map(([label, value]) => (
+            <div key={label} className="px-4 py-3 grid grid-cols-1 sm:grid-cols-[10rem_1fr] gap-1 sm:gap-4">
+              <dt className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">{label}</dt>
+              <dd className="text-sm text-on-surface">{value}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <div className="flex gap-3">
+          <Button variant="outline" size="lg" fullWidth onClick={() => setView("form")} disabled={loading}>
+            Voltar e editar
+          </Button>
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            loading={loading}
+            icon={<Check className="size-4" />}
+            onClick={() => void handleConfirmCreate()}
+          >
+            Confirmar e criar pedido
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleReview} className="space-y-6">
       {error && <StatusBanner variant="error">{error}</StatusBanner>}
 
       {studentName && (
@@ -291,10 +428,12 @@ export function AdminLicenseRequestForm({
         onShiftChange={setShift}
         schedule={schedule}
         onToggleSlot={toggleSlot}
+        scheduleError={scheduleError}
         busOptions={busOptions}
         busId={busId}
-        onBusChange={setBusId}
+        onBusChange={handleBusChange}
         busAriaLabel="Ônibus (seleção manual)"
+        busError={busIdError}
         onCreateTemporary={() =>
           createTemporary(institution, setInstitution, setUniversityId, setCreatingTemp)
         }
@@ -321,9 +460,9 @@ export function AdminLicenseRequestForm({
         }
         documentFields={
           <>
-            {docField("EnrollmentProof", "Comprovante de matrícula")}
-            {docField("CourseSchedule", "Grade horária")}
-            {docField("AcademicPeriodProof", "Comprovante de período letivo")}
+            {DOCUMENT_FIELDS.filter(([key]) => key !== "ProfilePhoto").map(([key, label, hint]) =>
+              docField(key, label, hint),
+            )}
           </>
         }
       />
@@ -375,12 +514,7 @@ export function AdminLicenseRequestForm({
           creatingTemp={creatingTempSecondary}
           documentFields={
             <>
-              {docField("SecondaryEnrollmentProof", "Comprovante de matrícula")}
-              {docField("SecondaryCourseSchedule", "Grade horária")}
-              {docField(
-                "SecondaryAcademicPeriodProof",
-                "Comprovante de período letivo",
-              )}
+              {SECONDARY_DOCUMENT_FIELDS.map(([key, label]) => docField(key, label))}
             </>
           }
         />
@@ -390,12 +524,15 @@ export function AdminLicenseRequestForm({
       <section className="space-y-4 rounded-xl border border-outline-variant p-4">
         <h3 className="text-sm font-bold text-on-surface">Documento do aluno</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {docField("ProfilePhoto", "Foto 3x4")}
+          {(() => {
+            const [key, label, hint] = DOCUMENT_FIELDS.find(([k]) => k === "ProfilePhoto")!;
+            return docField(key, label, hint);
+          })()}
         </div>
       </section>
 
-      <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}>
-        Criar pedido de carteirinha
+      <Button type="submit" variant="primary" size="lg" fullWidth>
+        Revisar pedido
       </Button>
     </form>
   );

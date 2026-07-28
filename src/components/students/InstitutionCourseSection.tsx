@@ -45,6 +45,11 @@ interface InstitutionCourseSectionProps {
   busId: string;
   onBusChange: (value: string) => void;
   busAriaLabel?: string;
+  /** Erro inline abaixo do seletor de ônibus (ex.: campo obrigatório). */
+  busError?: string;
+
+  /** Erro inline abaixo do título da grade de horários (ex.: nenhum horário selecionado). */
+  scheduleError?: string;
 
   onCreateTemporary: () => void;
   creatingTemp: boolean;
@@ -84,6 +89,8 @@ export function InstitutionCourseSection({
   busId,
   onBusChange,
   busAriaLabel,
+  busError,
+  scheduleError,
   onCreateTemporary,
   creatingTemp,
   extraInstitutionFields,
@@ -163,6 +170,7 @@ export function InstitutionCourseSection({
       {/* ── Horário ─────────────────────────────────────────────────── */}
       <section className="space-y-3 rounded-xl border border-outline-variant p-4">
         <h3 className="text-sm font-bold text-on-surface">Grade de horários</h3>
+        {scheduleError && <p className="text-xs text-error -mt-1">{scheduleError}</p>}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -209,6 +217,7 @@ export function InstitutionCourseSection({
             aria-label={busAriaLabel}
             value={busId}
             onChange={(e) => onBusChange(e.target.value)}
+            error={busError}
           />
           {extraTransportFields}
         </div>

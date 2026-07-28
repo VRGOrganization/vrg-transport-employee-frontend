@@ -126,7 +126,9 @@ export function LicensePage({ role }: LicensePageProps) {
   const { isAutoRefreshing } = useAutoRefresh({
     intervalMs: 30_000,
     enabled: autoRefreshActive,
-    onRefresh: reload,
+    // silent: refresh de background não deve derrubar a lista pra um
+    // spinner de tela cheia no meio de uma revisão ativa.
+    onRefresh: () => reload({ silent: true }),
   });
 
   const printableCardsByStudentId = useMemo(
@@ -139,7 +141,7 @@ export function LicensePage({ role }: LicensePageProps) {
       <main className="bg-surface flex flex-col flex-1 px-6 py-8 md:px-10">
         <div className="mx-auto w-full space-y-6">
           {!selectedUniversity ? (
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <CardsPageHeader />
               <AutoRefreshSettings
                 isRefreshing={isAutoRefreshing}

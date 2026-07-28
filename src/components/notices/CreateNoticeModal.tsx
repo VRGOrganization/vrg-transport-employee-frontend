@@ -125,7 +125,7 @@ export function CreateNoticeModal({ open, onClose, onCreated }: Props) {
         title="Publicar este aviso?"
         icon={Send}
         variant="warning"
-        description="O aviso ficará 25s em janela de desfazer antes de publicar de verdade."
+        description="O aviso fica numa janela de desfazer por alguns segundos antes de publicar de verdade."
         confirmLabel="Sim, publicar"
       />
     );

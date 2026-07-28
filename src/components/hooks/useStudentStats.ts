@@ -43,6 +43,34 @@ function resolveId(value: unknown): string | null {
   return null;
 }
 
+function collectBusIds(reqs: LicenseRequestRecord[]): Set<string> {
+  const ids = new Set<string>();
+  for (const r of reqs) {
+    const direct = resolveId(r.busId);
+    if (direct) ids.add(direct);
+    r.allocationSummary?.forEach((a) => {
+      if (a.busId) ids.add(a.busId);
+    });
+    r.accessBusIdentifiers?.forEach((id) => ids.add(id));
+  }
+  return ids;
+}
+
+function collectUniversityIds(reqs: LicenseRequestRecord[]): Set<string> {
+  const ids = new Set<string>();
+  for (const r of reqs) {
+    const id = resolveId(r.universityId);
+    if (id) ids.add(id);
+  }
+  return ids;
+}
+
+function toSortedBreakdown(counts: Map<string, number>): { id: string; count: number }[] {
+  return Array.from(counts.entries())
+    .map(([id, count]) => ({ id, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
 export function useStudentStats(filters?: StudentStatsFilters): UseStudentStatsResult {
   const [stats, setStats] = useState<StudentDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -158,6 +186,9 @@ export function useStudentStats(filters?: StudentStatsFilters): UseStudentStatsR
           SEX: 0,
         };
 
+        const busCounts = new Map<string, number>();
+        const universityCounts = new Map<string, number>();
+
         licensedActiveStudents.forEach((student) => {
           // Turno
           if (student.shift === "Manhã") byShift.morning++;
@@ -174,9 +205,21 @@ export function useStudentStats(filters?: StudentStatsFilters): UseStudentStatsR
               }
             });
           }
+
+          // Quebra por ônibus / faculdade — de quais o aluno participa via
+          // suas solicitações de carteirinha.
+          const studentReqs = allRequests.filter((r) => r.studentId === student._id);
+          collectBusIds(studentReqs).forEach((id) => {
+            busCounts.set(id, (busCounts.get(id) ?? 0) + 1);
+          });
+          collectUniversityIds(studentReqs).forEach((id) => {
+            universityCounts.set(id, (universityCounts.get(id) ?? 0) + 1);
+          });
         });
 
-        // Mesclamos os dados recalculados
+        // Mesclamos os dados recalculados. generatedAt vem do próprio
+        // dashboardData (timestamp real do servidor) — não sobrescrever com
+        // a hora local do client, que mentiria sobre o frescor do dado.
         const finalStats: StudentDashboardStats = {
           ...dashboardData,
           totalStudents: totalActive,
@@ -187,8 +230,9 @@ export function useStudentStats(filters?: StudentStatsFilters): UseStudentStatsR
             totalUsing: totalUsingTransport,
             byShift,
             byDay,
+            byBus: toSortedBreakdown(busCounts),
+            byUniversity: toSortedBreakdown(universityCounts),
           },
-          generatedAt: new Date().toISOString(),
         };
 
         setStats(finalStats);

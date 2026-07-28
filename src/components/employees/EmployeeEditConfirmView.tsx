@@ -7,23 +7,29 @@ import type { ChangeEntry } from "./EmployeeEditForm";
 interface Props {
   changes: ChangeEntry[];
   loading: boolean;
+  /** Esconde o cabeçalho interno para quando a view já vive dentro de uma
+   * página com seu próprio cabeçalho. O botão "Voltar" do rodapé continua
+   * chamando onBack normalmente. */
+  hideHeader?: boolean;
   onBack: () => void;
   onConfirm: () => void;
 }
 
-export function EmployeeEditConfirmView({ changes, loading, onBack, onConfirm }: Props) {
+export function EmployeeEditConfirmView({ changes, loading, hideHeader, onBack, onConfirm }: Props) {
   return (
     <>
-      <div className="flex items-center gap-3 mb-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <h3 className="font-headline font-semibold text-lg text-on-surface flex-1">Confirmar alterações</h3>
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center gap-3 mb-4">
+          <button
+            type="button"
+            onClick={onBack}
+            className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+          >
+            <ArrowLeft className="size-5" />
+          </button>
+          <h3 className="font-headline font-semibold text-lg text-on-surface flex-1">Confirmar alterações</h3>
+        </div>
+      )}
 
       <p className="text-sm text-on-surface-variant mb-4">Revise as alterações antes de confirmar:</p>
 
