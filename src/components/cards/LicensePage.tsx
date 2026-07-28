@@ -83,6 +83,9 @@ export function LicensePage({ role }: LicensePageProps) {
     enrollmentImage,
     scheduleImage,
     academicPeriodImage,
+    secondaryEnrollmentImage,
+    secondaryScheduleImage,
+    secondaryAcademicPeriodImage,
     governmentImage,
     proofOfResidenceImage,
     transportCardProofImage,
@@ -255,6 +258,9 @@ export function LicensePage({ role }: LicensePageProps) {
                 enrollmentImage={enrollmentImage}
                 scheduleImage={scheduleImage}
                 academicPeriodImage={academicPeriodImage}
+                secondaryEnrollmentImage={secondaryEnrollmentImage}
+                secondaryScheduleImage={secondaryScheduleImage}
+                secondaryAcademicPeriodImage={secondaryAcademicPeriodImage}
                 governmentImage={governmentImage}
                 proofOfResidenceImage={proofOfResidenceImage}
                 transportCardProofImage={transportCardProofImage}

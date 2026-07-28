@@ -78,6 +78,14 @@ export interface AdminCreateLicenseRequestInput {
     returnDayOfWeek: string;
     returnPeriod: string;
   } | null;
+  // Segunda matrícula (aluno que cursa em duas instituições). Opcional; quando
+  // ausente, o pedido segue normal com uma única instituição.
+  secondaryUniversityId?: string;
+  secondaryInstitution?: string;
+  secondaryDegree?: string;
+  secondaryShift?: string;
+  secondarySchedule?: Array<{ day: string; period: string }>;
+  secondaryBusId?: string;
   documents?: Partial<Record<string, File | null>>;
 }
 
@@ -88,6 +96,10 @@ const REQUEST_DOCUMENT_FIELDS = [
   "AcademicPeriodProof",
   "GovernmentId",
   "ProofOfResidence",
+  // 2ª faculdade (aluno em duas instituições): comprovantes próprios.
+  "SecondaryEnrollmentProof",
+  "SecondaryCourseSchedule",
+  "SecondaryAcademicPeriodProof",
 ] as const;
 
 export const licenseRequestService = {
@@ -106,7 +118,14 @@ export const licenseRequestService = {
     put("shift", input.shift);
     put("bloodType", input.bloodType);
     put("transportMode", input.transportMode);
+    put("secondaryUniversityId", input.secondaryUniversityId);
+    put("secondaryInstitution", input.secondaryInstitution);
+    put("secondaryDegree", input.secondaryDegree);
+    put("secondaryShift", input.secondaryShift);
+    put("secondaryBusId", input.secondaryBusId);
     if (input.schedule) form.append("schedule", JSON.stringify(input.schedule));
+    if (input.secondarySchedule)
+      form.append("secondarySchedule", JSON.stringify(input.secondarySchedule));
     if (input.weeklyTripConfig)
       form.append("weeklyTripConfig", JSON.stringify(input.weeklyTripConfig));
     const docs = input.documents ?? {};

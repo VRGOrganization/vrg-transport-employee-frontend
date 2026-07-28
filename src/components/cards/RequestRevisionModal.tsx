@@ -37,6 +37,15 @@ const REVISION_FIELD_KEYS: RevisionFieldKey[] = [
   "schedule",
 ];
 
+// Comprovantes da 2ª faculdade — só exibidos quando o pedido tem 2ª matrícula.
+// (A correção de TEXTO da 2ª faculdade não é oferecida na revisão por ora — só
+// o reenvio dos comprovantes, que o app do aluno já suporta.)
+const SECONDARY_REVISION_DOCUMENTS: PhotoType[] = [
+  "SecondaryEnrollmentProof",
+  "SecondaryCourseSchedule",
+  "SecondaryAcademicPeriodProof",
+];
+
 export function RequestRevisionModal({
   currentLicenseRequest,
   alreadyUsesTransport,
@@ -48,8 +57,12 @@ export function RequestRevisionModal({
   // O comprovante de uso do transporte e o laudo médico só são revisáveis
   // quando o aluno declarou a condição correspondente (do contrário ele
   // nunca enviou esse documento).
+  // Só oferece revisão da 2ª faculdade quando o pedido tem 2ª matrícula.
+  const hasSecondary = Boolean(currentLicenseRequest.secondaryUniversityId);
+
   const revisionDocuments: PhotoType[] = [
     ...REVISION_DOCUMENTS,
+    ...(hasSecondary ? SECONDARY_REVISION_DOCUMENTS : []),
     ...(alreadyUsesTransport ? (["TransportCardProof"] as PhotoType[]) : []),
     ...(hasDisability ? (["DisabilityProof"] as PhotoType[]) : []),
   ];
