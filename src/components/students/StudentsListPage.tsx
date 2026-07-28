@@ -20,6 +20,7 @@ import { getShiftLabel } from "@/lib/constants";
 import { resolveDisplayName, toTitleCase } from "@/lib/utils/string";
 import { buildStudentsCsv, downloadCsv } from "@/lib/csvUtils";
 import { StudentCreateModal } from "@/components/students/StudentCreateModal";
+import { StudentEditModal } from "@/components/students/StudentEditModal";
 import { StudentDocumentsModal } from "@/components/students/StudentDocumentsModal";
 import { StudentInfoModal } from "./StudentInfoModal";
 import { StudentCardModal } from "./StudentCardModal";
@@ -143,6 +144,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   const [topTab, setTopTab]                   = useState<Tab>("active");
   const [createOpen, setCreateOpen]           = useState(false);
   const [viewingStudent, setViewingStudent]   = useState<Student | null>(null);
+  const [editingStudent, setEditingStudent]   = useState<Student | null>(null);
   const [docsStudent, setDocsStudent]         = useState<Student | null>(null);
 
   useEffect(() => {
@@ -297,6 +299,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
             <div className="absolute right-0 mt-2 w-36 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
               {[
                 { icon: "visibility",  label: "Ver",         action: () => { setViewingStudent(student); setOpenDropdownId(null); }, disabled: false, title: undefined },
+                { icon: "edit",        label: "Editar",      action: () => { setEditingStudent(student);  setOpenDropdownId(null); }, disabled: false, title: undefined },
                 { icon: "folder_open", label: "Documentos",  action: () => { setDocsStudent(student);    setOpenDropdownId(null); }, disabled: false, title: undefined },
                 { icon: "badge",       label: "Carteirinha", action: () => { setViewingCard(student);    setOpenDropdownId(null); }, disabled: false, title: undefined },
                 {
@@ -471,6 +474,13 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
           onClose={() => setViewingStudent(null)}
           onBanned={isAdmin ? handleBanned : undefined}
           canBan={isAdmin}
+        />
+      )}
+      {editingStudent && (
+        <StudentEditModal
+          student={editingStudent}
+          onClose={() => setEditingStudent(null)}
+          onUpdated={() => { setEditingStudent(null); studentReloadAll(); }}
         />
       )}
       {docsStudent && (

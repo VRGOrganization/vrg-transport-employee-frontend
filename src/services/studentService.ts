@@ -50,6 +50,7 @@ function toStudentFormData(data: StudentCreatePayload): FormData {
 
 export interface StudentUpdatePayload {
   name?: string;
+  socialName?: string;
   telephone?: string;
   institution?: string;
   shift?: string;
