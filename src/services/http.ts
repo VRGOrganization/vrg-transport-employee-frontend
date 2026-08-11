@@ -84,6 +84,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       message,
       status: res.status,
       retryAfterMs: data?.retryAfterMs ?? null,
+      details: data,
     };
     throw error;
   }
