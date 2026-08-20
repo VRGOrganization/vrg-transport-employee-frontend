@@ -1,6 +1,28 @@
 import { http, HttpResponse } from "msw";
 
+// ── Passe de ônibus ─────────────────────────────────────────────────────────
+// O setup usa `onUnhandledRequest: "error"`; os testes que exercitam um
+// cenário específico sobrescrevem estes defaults com `server.use(...)`.
+const busPassHandlers = [
+  http.get("/api/v1/bus-pass", () => HttpResponse.json([])),
+
+  http.get("/api/v1/bus-pass/manifest", () => HttpResponse.json([])),
+
+  http.get("/api/v1/bus-pass/settings", () =>
+    HttpResponse.json({
+      monthlyQuota: 4,
+      minAdvanceHourBR: 18,
+      maxHorizonDays: 14,
+      employeeOperationEnabled: false,
+      updatedByAdminId: null,
+      updatedAt: null,
+    }),
+  ),
+];
+
 export const handlers = [
+  ...busPassHandlers,
+
   http.get("/api/auth/session", () => {
     return HttpResponse.json({ message: "Sessao nao encontrada." }, { status: 401 });
   }),

@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { universityService } from "@/services/universityService";
 import type { University } from "@/types/university.types";
 import type { EnrollmentWindowEligibilityScope } from "@/types/enrollmentPeriod";
+import { brDayEndISO, brDayStartISO, formatDateBR, toCivilBR } from "@/lib/utils/date";
 
 export interface OpenEnrollmentWindowFormPayload {
   startDate: string;
@@ -18,6 +19,11 @@ interface OpenEnrollmentWindowModalProps {
   open: boolean;
   loading: boolean;
   serverError: string;
+  // Limites do ciclo dono da janela: início do ciclo e encerramento previsto
+  // (resetScheduledFor). A janela vive dentro desse intervalo — o backend
+  // recusa fora dele, aqui só evitamos a ida-e-volta.
+  cycleStartDate: string;
+  cycleEndDate: string;
   onClose: () => void;
   onSubmit: (payload: OpenEnrollmentWindowFormPayload) => Promise<void>;
 }
@@ -70,9 +76,13 @@ export function OpenEnrollmentWindowModal({
   open,
   loading,
   serverError,
+  cycleStartDate,
+  cycleEndDate,
   onClose,
   onSubmit,
 }: OpenEnrollmentWindowModalProps) {
+  const minCivil = toCivilBR(cycleStartDate);
+  const maxCivil = toCivilBR(cycleEndDate);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [eligibilityScope, setEligibilityScope] =
@@ -141,11 +151,18 @@ export function OpenEnrollmentWindowModal({
     if (!endDate) nextErrors.endDate = "Data de fim é obrigatória.";
 
     if (startDate && endDate) {
-      const start = new Date(`${startDate}T00:00:00.000Z`);
-      const end = new Date(`${endDate}T23:59:59.999Z`);
+      const start = new Date(brDayStartISO(startDate));
+      const end = new Date(brDayEndISO(endDate));
       if (end <= start) {
         nextErrors.endDate = "Data de fim deve ser maior que a data de início.";
       }
+    }
+
+    if (startDate && minCivil && startDate < minCivil) {
+      nextErrors.startDate = `A janela não pode começar antes do início do ciclo (${formatDateBR(cycleStartDate)}).`;
+    }
+    if (endDate && maxCivil && endDate > maxCivil) {
+      nextErrors.endDate = `A janela não pode terminar depois do encerramento do ciclo (${formatDateBR(cycleEndDate)}).`;
     }
 
     if (
@@ -161,8 +178,8 @@ export function OpenEnrollmentWindowModal({
     if (hasErrors) return null;
 
     return {
-      startDate: `${startDate}T00:00:00.000Z`,
-      endDate: `${endDate}T23:59:59.999Z`,
+      startDate: brDayStartISO(startDate),
+      endDate: brDayEndISO(endDate),
       eligibilityScope,
       ...(eligibilityScope === "specific_universities"
         ? { eligibleUniversityIds: selectedUniversityIds }
@@ -179,7 +196,7 @@ export function OpenEnrollmentWindowModal({
 
   return (
     <Modal open={open} onClose={loading ? () => {} : onClose} size="lg" title="Abrir janela de inscrição">
-      <form className="space-y-3" onSubmit={handleSubmit}>
+      <form className="space-y-3" onSubmit={handleSubmit} noValidate>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
             <label htmlFor="window-start-date" className="mb-0.5 block text-sm font-medium text-on-surface">
@@ -188,6 +205,8 @@ export function OpenEnrollmentWindowModal({
             <input
               id="window-start-date"
               type="date"
+              min={minCivil}
+              max={maxCivil}
               value={startDate}
               onChange={(event) => {
                 setStartDate(event.target.value);
@@ -204,6 +223,8 @@ export function OpenEnrollmentWindowModal({
             <input
               id="window-end-date"
               type="date"
+              min={startDate || minCivil}
+              max={maxCivil}
               value={endDate}
               onChange={(event) => {
                 setEndDate(event.target.value);
