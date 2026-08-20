@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { brDayStartISO, computeLicenseExpiry } from "@/lib/utils/date";
+import { brDayStartISO, computeLicenseExpiry, todayCivilBR } from "@/lib/utils/date";
 
 export interface OpenPeriodFormPayload {
   startDate: string;
@@ -55,6 +55,8 @@ export function OpenPeriodModal({
     const nextErrors: FormErrors = { ...EMPTY_ERRORS };
 
     if (!startDate) nextErrors.startDate = "Data de início é obrigatória.";
+    else if (startDate < todayCivilBR())
+      nextErrors.startDate = "A data de início não pode ser anterior a hoje.";
 
     const months = Number(licenseValidityMonths);
     if (!Number.isInteger(months) || months < 1) {
@@ -101,6 +103,7 @@ export function OpenPeriodModal({
           <input
             id="open-period-start-date"
             type="date"
+            min={todayCivilBR()}
             value={startDate}
             onChange={(event) => {
               setStartDate(event.target.value);
@@ -108,7 +111,14 @@ export function OpenPeriodModal({
             }}
             className="h-9 w-full rounded-lg border border-on-surface-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
           />
-          {errors.startDate && <p className="mt-1 text-xs text-error">{errors.startDate}</p>}
+          {errors.startDate ? (
+            <p className="mt-1 text-xs text-error">{errors.startDate}</p>
+          ) : startDate > todayCivilBR() ? (
+            <p className="mt-1 text-xs text-on-surface-variant">
+              O ciclo ficará <strong className="text-on-surface">agendado</strong> e
+              abre sozinho nessa data.
+            </p>
+          ) : null}
         </div>
 
         <div>

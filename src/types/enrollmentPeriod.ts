@@ -1,5 +1,11 @@
 import type { LicenseRequestRecord, StudentRecord } from "@/types/cards.types";
 
+/**
+ * "scheduled" = ciclo criado com data futura que ainda não começou; o backend
+ * o promove a "active" na data. `active` continua espelhando `status === "active"`.
+ */
+export type EnrollmentCycleStatus = "scheduled" | "active" | "closed";
+
 export interface EnrollmentPeriod {
   _id: string;
   startDate: string | null;
@@ -13,6 +19,7 @@ export interface EnrollmentPeriod {
   filledSlots: number;
   licenseValidityMonths: number;
   active: boolean;
+  status: EnrollmentCycleStatus;
   createdByAdminId: string;
   closedByAdminId: string | null;
   closedAt: string | null;

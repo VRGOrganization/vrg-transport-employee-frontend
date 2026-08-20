@@ -17,6 +17,7 @@ export interface OpenEnrollmentWindowPayload {
 
 export const enrollmentPeriodService = {
   getActive: ()                      => http.get<EnrollmentPeriod>("/enrollment-period/active"),
+  getScheduled: ()                   => http.get<EnrollmentPeriod>("/enrollment-period/scheduled"),
   list:      ()                      => http.get<Paginated<EnrollmentPeriod>>("/enrollment-period").then(resolvePaginated),
   create:    (data: { startDate: string; licenseValidityMonths: number }) =>
                http.post<EnrollmentPeriod>("/enrollment-period", data),

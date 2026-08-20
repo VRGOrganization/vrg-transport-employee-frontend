@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OpenPeriodModal } from "./OpenPeriodModal";
+import { brDayStartISO, todayCivilBR } from "@/lib/utils/date";
 
 const baseProps = {
   open: true,
@@ -90,4 +91,57 @@ describe("OpenPeriodModal", () => {
     render(<OpenPeriodModal {...baseProps} serverError={errorMsg} />);
     expect(screen.getByText(errorMsg)).toBeInTheDocument();
   });
+
+  it("trava o calendário em hoje (data civil de Brasília)", () => {
+    render(<OpenPeriodModal {...baseProps} />);
+    expect(screen.getByLabelText(/data de início/i)).toHaveAttribute(
+      "min",
+      todayCivilBR(),
+    );
+  });
+
+  it("recusa data anterior a hoje", async () => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    render(<OpenPeriodModal {...baseProps} onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByLabelText(/data de início/i), {
+      target: { value: "2020-01-01" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /abrir período/i }));
+
+    expect(
+      await screen.findByText(/não pode ser anterior a hoje/i),
+    ).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("avisa que uma data futura deixa o ciclo agendado", async () => {
+    render(<OpenPeriodModal {...baseProps} />);
+
+    fireEvent.change(screen.getByLabelText(/data de início/i), {
+      target: { value: "2030-01-01" },
+    });
+
+    expect(await screen.findByText(/agendado/i)).toBeInTheDocument();
+  });
+
+  it("envia a meia-noite de Brasília, não a de UTC (a data não volta um dia)", async () => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    render(<OpenPeriodModal {...baseProps} onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByLabelText(/data de início/i), {
+      target: { value: "2030-01-01" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /abrir período/i }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+    const payload = onSubmit.mock.calls[0][0];
+    expect(payload.startDate).toBe(brDayStartISO("2030-01-01"));
+    expect(
+      new Date(payload.startDate).toLocaleDateString("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+      }),
+    ).toBe("01/01/2030");
+  });
+
 });
