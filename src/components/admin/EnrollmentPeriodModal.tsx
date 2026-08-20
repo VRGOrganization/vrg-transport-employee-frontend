@@ -7,6 +7,7 @@ import {
   brDayEndISO,
   brDayStartISO,
   computeLicenseExpiry,
+  formatDateBR,
   toCivilBR,
 } from "@/lib/utils/date";
 import type { EnrollmentPeriod } from "@/types/enrollmentPeriod";
@@ -76,6 +77,13 @@ export function EnrollmentPeriodModal({
   // a validade do ciclo pode ser ajustada.
   const hasOpenWindow = Boolean(period.startDate && period.endDate);
 
+  // A janela vive dentro do ciclo: do início do ciclo até o encerramento
+  // previsto (resetScheduledFor). Mesmos limites que o backend aplica.
+  const minCivil = toCivilBR(period.cycleStartDate);
+  const maxCivil = period.resetScheduledFor
+    ? toCivilBR(period.resetScheduledFor)
+    : "";
+
   const [form, setForm] = useState<FormState>(() => buildInitialForm(period));
   const [errors, setErrors] = useState<FormErrors>(EMPTY_ERRORS);
 
@@ -121,6 +129,12 @@ export function EnrollmentPeriodModal({
         if (end <= start) {
           nextErrors.endDate = "Data de fim deve ser maior que a data de início.";
         }
+      }
+      if (form.startDate && minCivil && form.startDate < minCivil) {
+        nextErrors.startDate = `A janela não pode começar antes do início do ciclo (${formatDateBR(period.cycleStartDate)}).`;
+      }
+      if (form.endDate && maxCivil && form.endDate > maxCivil) {
+        nextErrors.endDate = `A janela não pode terminar depois do encerramento do ciclo (${formatDateBR(period.resetScheduledFor)}).`;
       }
     }
 
@@ -182,6 +196,8 @@ export function EnrollmentPeriodModal({
                 <input
                   id="edit-window-start"
                   type="date"
+                  min={minCivil}
+                  max={maxCivil}
                   value={form.startDate}
                   onChange={(event) => setField("startDate", event.target.value)}
                   className="h-9 w-full rounded-lg border border-on-surface-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
@@ -200,6 +216,8 @@ export function EnrollmentPeriodModal({
                 <input
                   id="edit-window-end"
                   type="date"
+                  min={form.startDate || minCivil}
+                  max={maxCivil}
                   value={form.endDate}
                   onChange={(event) => setField("endDate", event.target.value)}
                   className="h-9 w-full rounded-lg border border-on-surface-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"

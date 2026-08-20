@@ -14,6 +14,7 @@ function makePeriod(overrides: Partial<EnrollmentPeriod> = {}): EnrollmentPeriod
     startDate: '2030-12-01T03:00:00.000Z',
     endDate: '2031-01-01T02:59:59.999Z',
     cycleStartDate: '2030-12-01T03:00:00.000Z',
+    resetScheduledFor: '2031-06-01T03:00:00.000Z',
     totalSlots: 350,
     filledSlots: 10,
     licenseValidityMonths: 6,

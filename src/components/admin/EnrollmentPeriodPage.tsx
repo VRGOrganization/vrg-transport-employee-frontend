@@ -995,6 +995,8 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
         open={showWindowModal}
         loading={windowSaving}
         serverError={windowError}
+        cycleStartDate={activePeriod?.cycleStartDate ?? ""}
+        cycleEndDate={activePeriod?.resetScheduledFor ?? ""}
         onClose={() => {
           if (windowSaving) return;
           setShowWindowModal(false);

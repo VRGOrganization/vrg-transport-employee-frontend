@@ -11,6 +11,7 @@ const { activePeriodStub } = vi.hoisted(() => ({
     // Distinta de startDate/endDate de propósito — simula uma repescagem
     // aberta meses depois do início real do ciclo.
     cycleStartDate: "2030-01-01T03:00:00.000Z",
+    resetScheduledFor: "2030-07-01T03:00:00.000Z",
     totalSlots: 350,
     filledSlots: 70,
     licenseValidityMonths: 6,
