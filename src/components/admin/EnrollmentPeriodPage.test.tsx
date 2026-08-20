@@ -5,11 +5,12 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 const { activePeriodStub } = vi.hoisted(() => ({
   activePeriodStub: {
     _id: "p1",
-    startDate: "2030-06-01T00:00:00.000Z",
-    endDate: "2030-06-15T23:59:59.999Z",
+    // Instantes na convenção do app: meia-noite e fim de dia de Brasília.
+    startDate: "2030-06-01T03:00:00.000Z",
+    endDate: "2030-06-16T02:59:59.999Z",
     // Distinta de startDate/endDate de propósito — simula uma repescagem
     // aberta meses depois do início real do ciclo.
-    cycleStartDate: "2030-01-01T00:00:00.000Z",
+    cycleStartDate: "2030-01-01T03:00:00.000Z",
     totalSlots: 350,
     filledSlots: 70,
     licenseValidityMonths: 6,

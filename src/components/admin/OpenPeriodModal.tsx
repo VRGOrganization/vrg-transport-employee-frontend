@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { computeLicenseExpiry } from "@/lib/utils/date";
+import { brDayStartISO, computeLicenseExpiry } from "@/lib/utils/date";
 
 export interface OpenPeriodFormPayload {
   startDate: string;
@@ -66,7 +66,7 @@ export function OpenPeriodModal({
     if (hasErrors) return null;
 
     return {
-      startDate: `${startDate}T00:00:00.000Z`,
+      startDate: brDayStartISO(startDate),
       licenseValidityMonths: months,
     };
   };
@@ -83,7 +83,7 @@ export function OpenPeriodModal({
   const monthsNumber = Number(licenseValidityMonths);
   const licenseExpiry =
     startDate && Number.isInteger(monthsNumber) && monthsNumber >= 1
-      ? computeLicenseExpiry(`${startDate}T00:00:00.000Z`, monthsNumber)
+      ? computeLicenseExpiry(brDayStartISO(startDate), monthsNumber)
       : "";
 
   return (

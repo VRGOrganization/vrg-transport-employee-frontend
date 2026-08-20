@@ -4,13 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EnrollmentPeriodModal } from './EnrollmentPeriodModal';
 import type { EnrollmentPeriod } from '@/types/enrollmentPeriod';
+import { toCivilBR } from '@/lib/utils/date';
 
 function makePeriod(overrides: Partial<EnrollmentPeriod> = {}): EnrollmentPeriod {
   return {
     _id: 'p1',
-    startDate: '2030-12-01T00:00:00.000Z',
-    endDate: '2030-12-31T23:59:59.999Z',
-    cycleStartDate: '2030-12-01T00:00:00.000Z',
+    // Instantes na convenção do app: início = meia-noite de Brasília,
+    // fim = último milissegundo do dia em Brasília (já no dia seguinte em UTC).
+    startDate: '2030-12-01T03:00:00.000Z',
+    endDate: '2031-01-01T02:59:59.999Z',
+    cycleStartDate: '2030-12-01T03:00:00.000Z',
     totalSlots: 350,
     filledSlots: 10,
     licenseValidityMonths: 6,
@@ -78,7 +81,7 @@ describe('EnrollmentPeriodModal (edição da janela aberta)', () => {
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
     const payload = onSubmit.mock.calls[0][0];
-    expect(payload.endDate).toContain('2030-12-20');
+    expect(toCivilBR(payload.endDate as string)).toBe('2030-12-20');
     expect('startDate' in payload).toBe(false);
     expect('licenseValidityMonths' in payload).toBe(false);
   });

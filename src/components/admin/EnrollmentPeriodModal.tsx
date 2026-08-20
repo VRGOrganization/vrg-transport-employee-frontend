@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { computeLicenseExpiry } from "@/lib/utils/date";
+import {
+  brDayEndISO,
+  brDayStartISO,
+  computeLicenseExpiry,
+  toCivilBR,
+} from "@/lib/utils/date";
 import type { EnrollmentPeriod } from "@/types/enrollmentPeriod";
 
 // Só os campos alterados são enviados — startDate/endDate editam a JANELA ativa,
@@ -44,11 +49,11 @@ const EMPTY_ERRORS: FormErrors = {
   general: "",
 };
 
+// A data do input é a data civil de Brasília, não a de UTC: o fim da janela é
+// gravado às 23:59:59.999 BRT, que em UTC já é o dia seguinte.
 function toInputDate(value: string | null | undefined): string {
   if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toISOString().slice(0, 10);
+  return toCivilBR(value);
 }
 
 function buildInitialForm(period: EnrollmentPeriod): FormState {
@@ -111,8 +116,8 @@ export function EnrollmentPeriodModal({
       if (!form.startDate) nextErrors.startDate = "Data de início é obrigatória.";
       if (!form.endDate) nextErrors.endDate = "Data de fim é obrigatória.";
       if (form.startDate && form.endDate) {
-        const start = new Date(`${form.startDate}T00:00:00.000Z`);
-        const end = new Date(`${form.endDate}T23:59:59.999Z`);
+        const start = new Date(brDayStartISO(form.startDate));
+        const end = new Date(brDayEndISO(form.endDate));
         if (end <= start) {
           nextErrors.endDate = "Data de fim deve ser maior que a data de início.";
         }
@@ -128,10 +133,10 @@ export function EnrollmentPeriodModal({
     // Envia apenas os campos que mudaram.
     const payload: EnrollmentPeriodFormPayload = {};
     if (hasOpenWindow && form.startDate !== initial.startDate) {
-      payload.startDate = `${form.startDate}T00:00:00.000Z`;
+      payload.startDate = brDayStartISO(form.startDate);
     }
     if (hasOpenWindow && form.endDate !== initial.endDate) {
-      payload.endDate = `${form.endDate}T23:59:59.999Z`;
+      payload.endDate = brDayEndISO(form.endDate);
     }
     if (form.licenseValidityMonths !== initial.licenseValidityMonths) {
       payload.licenseValidityMonths = licenseValidityMonths;

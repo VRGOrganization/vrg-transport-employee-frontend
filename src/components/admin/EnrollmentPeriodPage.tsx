@@ -39,7 +39,11 @@ import { PanelCard } from "@/components/ui/PanelCard";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { cn } from "@/lib/utils";
 import { http } from "@/services/http";
-import { computeLicenseExpiry } from "@/lib/utils/date";
+import {
+  computeLicenseExpiry,
+  formatDateBR,
+  formatDateTimeBR,
+} from "@/lib/utils/date";
 import { resolvePaginated, type Paginated } from "@/types/api";
 import type {
   LicenseRequestRecord,
@@ -64,18 +68,19 @@ const VAGA_DIA_TOOLTIP =
 const CHIP_CLASS =
   "inline-flex items-center gap-1.5 rounded-lg border border-outline-variant px-3 py-1.5 text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 
+// Sempre no fuso de Brasília: as datas são gravadas como instantes (a janela
+// termina às 23:59:59.999 BRT, que em UTC já é o dia seguinte), então renderizar
+// no fuso do navegador faria a data mostrada divergir da escolhida.
 function formatDate(dateValue: string | null | undefined): string {
   if (!dateValue) return "-";
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleDateString("pt-BR");
+  const formatted = formatDateBR(dateValue);
+  return formatted === "—" ? "-" : formatted;
 }
 
 function formatDateTime(dateValue: string | null | undefined): string {
   if (!dateValue) return "-";
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleString("pt-BR");
+  const formatted = formatDateTimeBR(dateValue);
+  return formatted === "—" ? "-" : formatted;
 }
 
 function daysUntil(dateValue: string | null | undefined): number | null {
