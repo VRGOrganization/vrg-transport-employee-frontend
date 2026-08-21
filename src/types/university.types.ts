@@ -30,10 +30,23 @@ export interface Course {
   updatedAt: string;
 }
 
+/** Contador de vagas ocupadas de um vínculo faculdade+ônibus em um dia. */
+export interface DaySlotCount {
+  day: string;
+  filledSlots: number;
+}
+
 export interface UniversitySlot {
   universityId: string | { _id: string; name: string; acronym: string };
   priorityOrder: number;
   filledSlots?: number;
+  /**
+   * Vagas ocupadas por dia neste vínculo. `bus.capacity` é o teto de CADA
+   * (ônibus × faculdade × dia) — não do ônibus inteiro —, então a soma de um
+   * ônibus num dia pode ultrapassar `capacity` legitimamente.
+   * Contador vivo do ciclo ATIVO: zerado no reset, não serve para histórico.
+   */
+  daySlots?: DaySlotCount[];
   pendingCount?: number;
   waitlistedCount?: number;
 }
@@ -54,6 +67,8 @@ export interface Bus {
   shift?: string | null;
   // contadores expostos pela API de listagem com filas
   waitlistedCount?: number;
+  /** Alocações ativas no ciclo (GET /bus/queue). */
+  activeCount?: number;
   pendingCount?: number;
   filledSlotsTotal?: number;
 }

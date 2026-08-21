@@ -9,7 +9,10 @@ export const busService = {
   listWithQueueCounts: async () => {
     const [busList, queueResult] = await Promise.all([
       http.get<Paginated<Bus>>("/bus").then(resolvePaginated),
-      http.get<{ enrollmentPeriodId: string | null; buses: Array<{ busId: string; busIdentifier?: string; pendingCount: number; waitlistedCount: number }> }>("/bus/queue"),
+      // O backend (bus-queue-query.service → QueueCountsPerBus) devolve
+      // `activeCount` e `waitlistedCount`. Não existe `pendingCount` aqui —
+      // tipá-lo fazia o campo chegar sempre `undefined` e a UI mostrar 0.
+      http.get<{ enrollmentCycleId: string | null; buses: Array<{ busId: string; busIdentifier?: string; activeCount: number; waitlistedCount: number }> }>("/bus/queue"),
     ]);
     const queueMapById = new Map(
       (queueResult.buses ?? []).map((q) => [q.busId, q]),
@@ -25,7 +28,7 @@ export const busService = {
         queueMapByIdentifier.get(bus.identifier);
       return {
         ...bus,
-        pendingCount: q?.pendingCount ?? (bus as unknown as { pendingCount?: number }).pendingCount,
+        activeCount: q?.activeCount ?? (bus as unknown as { activeCount?: number }).activeCount,
         waitlistedCount: q?.waitlistedCount ?? (bus as unknown as { waitlistedCount?: number }).waitlistedCount,
       };
     });

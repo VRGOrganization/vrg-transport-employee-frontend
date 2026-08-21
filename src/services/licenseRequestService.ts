@@ -20,7 +20,7 @@ export interface ReissueCandidate {
 }
 
 export interface LicenseRequestReviewCounts {
-  enrollmentPeriodId: string | null;
+  enrollmentCycleId: string | null;
   reissueCount: number;
   documentResendCount: number;
 }
@@ -139,13 +139,16 @@ export const licenseRequestService = {
     );
   },
 
-  getReviewCounts: (periodId?: string) => {
-    const query = periodId ? `?enrollmentPeriodId=${encodeURIComponent(periodId)}` : "";
+  // O controller lê @Query('enrollmentCycleId'). Enviar `enrollmentPeriodId`
+  // fazia o parâmetro ser silenciosamente ignorado e a resposta voltar sempre
+  // do ciclo ativo, independentemente do ciclo pedido.
+  getReviewCounts: (cycleId?: string) => {
+    const query = cycleId ? `?enrollmentCycleId=${encodeURIComponent(cycleId)}` : "";
     return http.get<LicenseRequestReviewCounts>(`/license-request/review-counts${query}`);
   },
 
-  listReissueCandidates: (periodId?: string) => {
-    const query = periodId ? `?enrollmentPeriodId=${encodeURIComponent(periodId)}` : "";
+  listReissueCandidates: (cycleId?: string) => {
+    const query = cycleId ? `?enrollmentCycleId=${encodeURIComponent(cycleId)}` : "";
     return http.get<ReissueCandidate[]>(`/license-request/reissue-candidates${query}`);
   },
 

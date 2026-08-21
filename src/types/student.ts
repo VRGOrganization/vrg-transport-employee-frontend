@@ -31,6 +31,14 @@ export interface Student {
   hasPersonalDocuments?: boolean;
   hasCompletedInitialEnrollment?: boolean;
   active: boolean;
+  // ── 2ª matrícula (aluno em duas instituições) ──────────────────────────────
+  // Presentes só quando há segunda matrícula. Um aluno assim conta nas DUAS
+  // faculdades em qualquer agregação por instituição.
+  secondaryUniversityId?: string | { _id: string; name: string; acronym: string } | null;
+  secondaryInstitution?: string | null;
+  secondaryDegree?: string | null;
+  secondaryShift?: 'Manhã' | 'Tarde' | 'Noite' | 'Integral' | null;
+  secondarySchedule?: Array<{ day: string; period: string }>;
   secondaryBusId?: string;
   registrationNumber?: string;
   emailVerified?: boolean;
@@ -64,6 +72,9 @@ export interface LicenseRequestRecord {
   rejectionReason: string | null;
   rejectedAt: string | null;
   licenseId: string | null;
+  /** Nome real do campo no backend. */
+  enrollmentCycleId?: string | null;
+  /** @deprecated Leia enrollmentCycleId. */
   enrollmentPeriodId?: string | null;
   filaPosition?: number | null;
   createdAt: string;

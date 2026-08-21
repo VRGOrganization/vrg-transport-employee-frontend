@@ -7,7 +7,7 @@ export const universityService = {
   listWithQueueCounts: async () => {
     const [universityList, queueResult] = await Promise.all([
       http.get<Paginated<University>>("/university").then(resolvePaginated),
-      http.get<{ enrollmentPeriodId: string | null; universities: Array<{ universityId: string; pendingCount: number; revisionCount: number; waitlistedCount: number }> }>("/university/queue"),
+      http.get<{ enrollmentCycleId: string | null; universities: Array<{ universityId: string; pendingCount: number; revisionCount: number; waitlistedCount: number }> }>("/university/queue"),
     ]);
     const queueMapById = new Map(
       (queueResult.universities ?? []).map((q) => [q.universityId, q]),
