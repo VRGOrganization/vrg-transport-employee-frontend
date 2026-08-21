@@ -124,92 +124,94 @@ export function StudentEditForm({
           <StatusBanner variant="error">{generalError ?? fieldErrors._form}</StatusBanner>
         )}
 
-        <Input
-          label="Nome completo"
-          type="text"
-          icon="person"
-          value={values.name}
-          onChange={set("name")}
-          error={fieldErrors.name}
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="Nome completo"
+            type="text"
+            icon="person"
+            value={values.name}
+            onChange={set("name")}
+            error={fieldErrors.name}
+          />
 
-        <Input
-          label="Nome social (opcional)"
-          type="text"
-          icon="badge"
-          placeholder="Como o(a) aluno(a) prefere ser chamado(a)"
-          value={values.socialName}
-          onChange={set("socialName")}
-          error={fieldErrors.socialName}
-        />
+          <Input
+            label="Nome social (opcional)"
+            type="text"
+            icon="badge"
+            placeholder="Como o(a) aluno(a) prefere ser chamado(a)"
+            value={values.socialName}
+            onChange={set("socialName")}
+            error={fieldErrors.socialName}
+          />
 
-        <Input
-          label="Telefone"
-          type="tel"
-          icon="phone"
-          value={formatPhone(values.telephone)}
-          onChange={(e) =>
-            setValues((prev) => ({
-              ...prev,
-              telephone: e.target.value.replace(/\D/g, "").slice(0, 11),
-            }))
-          }
-          error={fieldErrors.telephone}
-        />
+          <Input
+            label="Telefone"
+            type="tel"
+            icon="phone"
+            value={formatPhone(values.telephone)}
+            onChange={(e) =>
+              setValues((prev) => ({
+                ...prev,
+                telephone: e.target.value.replace(/\D/g, "").slice(0, 11),
+              }))
+            }
+            error={fieldErrors.telephone}
+          />
 
-        <div className="space-y-2">
-          <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-            Instituição de Ensino (opcional)
-          </label>
-          <div className="relative group">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary pointer-events-none text-2xl transition-colors">
-              apartment
-            </span>
-            <input
-              list="student-edit-universities"
-              value={values.institution}
-              onChange={set("institution")}
-              placeholder={loadingUniversities ? "Carregando…" : "Nome da instituição"}
-              className="w-full h-14 bg-surface-container-lowest border border-on-surface-variant ring-0 focus:ring-2 focus:ring-primary rounded-xl text-on-surface pl-12 pr-4 text-base outline-none transition-all placeholder:text-outline/50"
-            />
-            <datalist id="student-edit-universities">
-              {universities.map((u) => (
-                <option key={u._id} value={u.name} />
-              ))}
-            </datalist>
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
+              Instituição de Ensino (opcional)
+            </label>
+            <div className="relative group">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary pointer-events-none text-2xl transition-colors">
+                apartment
+              </span>
+              <input
+                list="student-edit-universities"
+                value={values.institution}
+                onChange={set("institution")}
+                placeholder={loadingUniversities ? "Carregando…" : "Nome da instituição"}
+                className="w-full h-14 bg-surface-container-lowest border border-on-surface-variant ring-0 focus:ring-2 focus:ring-primary rounded-xl text-on-surface pl-12 pr-4 text-base outline-none transition-all placeholder:text-outline/50"
+              />
+              <datalist id="student-edit-universities">
+                {universities.map((u) => (
+                  <option key={u._id} value={u.name} />
+                ))}
+              </datalist>
+            </div>
+            {fieldErrors.institution && (
+              <p className="text-xs text-error mt-1 ml-1">{fieldErrors.institution}</p>
+            )}
           </div>
-          {fieldErrors.institution && (
-            <p className="text-xs text-error mt-1 ml-1">{fieldErrors.institution}</p>
-          )}
+
+          <Input
+            label="Curso / Graduação (opcional)"
+            type="text"
+            icon="school"
+            value={values.degree}
+            onChange={set("degree")}
+            error={fieldErrors.degree}
+          />
+
+          <SelectField
+            label="Turno (opcional)"
+            icon="schedule"
+            options={SHIFTS}
+            placeholder="Selecione o turno"
+            value={values.shift}
+            onChange={set("shift")}
+            error={fieldErrors.shift}
+          />
+
+          <SelectField
+            label="Tipo Sanguíneo (opcional)"
+            options={BLOOD_TYPES.map((bt) => ({ value: bt, label: bt }))}
+            placeholder="Não informado"
+            value={values.bloodType}
+            onChange={set("bloodType")}
+            error={fieldErrors.bloodType}
+          />
         </div>
-
-        <Input
-          label="Curso / Graduação (opcional)"
-          type="text"
-          icon="school"
-          value={values.degree}
-          onChange={set("degree")}
-          error={fieldErrors.degree}
-        />
-
-        <SelectField
-          label="Turno (opcional)"
-          icon="schedule"
-          options={SHIFTS}
-          placeholder="Selecione o turno"
-          value={values.shift}
-          onChange={set("shift")}
-          error={fieldErrors.shift}
-        />
-
-        <SelectField
-          label="Tipo Sanguíneo (opcional)"
-          options={BLOOD_TYPES.map((bt) => ({ value: bt, label: bt }))}
-          placeholder="Não informado"
-          value={values.bloodType}
-          onChange={set("bloodType")}
-          error={fieldErrors.bloodType}
-        />
 
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="outline" size="sm" fullWidth onClick={onCancel}>
