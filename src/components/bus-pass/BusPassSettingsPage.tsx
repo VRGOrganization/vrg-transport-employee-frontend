@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { toast } from "@/lib/toast";
 import { busPassService } from "@/services/busPassService";
-import type { BusPassSettings } from "@/types/busPass";
+import type { BusPassSettings, UpdateBusPassSettingsPayload } from "@/types/busPass";
 
 interface NumberFieldProps {
   label: string;
@@ -48,6 +48,7 @@ function NumberField({
  */
 export function BusPassSettingsPage() {
   const [settings, setSettings] = useState<BusPassSettings | null>(null);
+  const [initialSettings, setInitialSettings] = useState<BusPassSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +58,9 @@ export function BusPassSettingsPage() {
     setError(null);
 
     try {
-      setSettings(await busPassService.getSettings());
+      const loaded = await busPassService.getSettings();
+      setSettings(loaded);
+      setInitialSettings(loaded);
     } catch (err: unknown) {
       setError(
         (err as { message?: string })?.message ??
@@ -79,16 +82,39 @@ export function BusPassSettingsPage() {
   const handleSave = async () => {
     if (!settings) return;
 
+    // Só os campos que o admin de fato mudou — um PATCH parcial não deve
+    // reafirmar o resto por cima de uma mudança concorrente de outro admin.
+    const changes: UpdateBusPassSettingsPayload = {};
+    if (!initialSettings || settings.monthlyQuota !== initialSettings.monthlyQuota) {
+      changes.monthlyQuota = settings.monthlyQuota;
+    }
+    if (
+      !initialSettings ||
+      settings.minAdvanceHourBR !== initialSettings.minAdvanceHourBR
+    ) {
+      changes.minAdvanceHourBR = settings.minAdvanceHourBR;
+    }
+    if (!initialSettings || settings.maxHorizonDays !== initialSettings.maxHorizonDays) {
+      changes.maxHorizonDays = settings.maxHorizonDays;
+    }
+    if (
+      !initialSettings ||
+      settings.employeeOperationEnabled !== initialSettings.employeeOperationEnabled
+    ) {
+      changes.employeeOperationEnabled = settings.employeeOperationEnabled;
+    }
+
+    if (Object.keys(changes).length === 0) {
+      toast.success("Nada para salvar.");
+      return;
+    }
+
     setSaving(true);
     try {
       // Patch otimista da tela com o retorno do servidor, padrão do repo.
-      const updated = await busPassService.updateSettings({
-        monthlyQuota: settings.monthlyQuota,
-        minAdvanceHourBR: settings.minAdvanceHourBR,
-        maxHorizonDays: settings.maxHorizonDays,
-        employeeOperationEnabled: settings.employeeOperationEnabled,
-      });
+      const updated = await busPassService.updateSettings(changes);
       setSettings(updated);
+      setInitialSettings(updated);
       toast.success("Configurações salvas.");
     } catch (err: unknown) {
       toast.error(
