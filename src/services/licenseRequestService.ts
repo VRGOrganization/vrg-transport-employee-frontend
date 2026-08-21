@@ -102,7 +102,22 @@ const REQUEST_DOCUMENT_FIELDS = [
   "SecondaryAcademicPeriodProof",
 ] as const;
 
+export interface StudentLicenseRequestSummary {
+  status:
+    | "pending"
+    | "approved"
+    | "rejected"
+    | "revision"
+    | "waitlisted"
+    | "partially_waitlisted"
+    | "cancelled";
+}
+
 export const licenseRequestService = {
+  /** Lista as solicitações de um estudante (mais recentes primeiro, no backend). */
+  findByStudent: (studentId: string) =>
+    http.get<StudentLicenseRequestSummary[]>(`/license-request/student/${studentId}`),
+
   /** Cria um pedido de carteirinha internamente (admin/funcionário). */
   adminCreate: (input: AdminCreateLicenseRequestInput) => {
     const form = new FormData();

@@ -7,6 +7,7 @@ import { http } from "@/services/http";
 import { studentService } from "@/services/studentService";
 import { banlistService } from "@/services/banlistService";
 import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
+import { licenseRequestService } from "@/services/licenseRequestService";
 import type { Student } from "@/types/student";
 import type { BanlistEntry } from "@/types/banlist";
 import type { LicenseRecord } from "@/types/cards.types";
@@ -162,6 +163,8 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   // demanda (ao abrir o dropdown), não há endpoint em lote no backend.
   const [hasOpenEnrollmentWindow, setHasOpenEnrollmentWindow] = useState<boolean | null>(null);
   const [licenseByStudentId, setLicenseByStudentId] = useState<Record<string, boolean>>({});
+  const [approvedLicenseByStudentId, setApprovedLicenseByStudentId] = useState<Record<string, boolean>>({});
+  const [pendingRequestByStudentId, setPendingRequestByStudentId] = useState<Record<string, boolean>>({});
   const [checkingLicenseId, setCheckingLicenseId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -174,11 +177,19 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   const checkStudentLicense = useCallback((studentId: string) => {
     if (studentId in licenseByStudentId || checkingLicenseId === studentId) return;
     setCheckingLicenseId(studentId);
-    http
-      .get<LicenseRecord>(`/license/searchByStudent/${studentId}`)
-      .then(() => setLicenseByStudentId((prev) => ({ ...prev, [studentId]: true })))
-      .catch(() => setLicenseByStudentId((prev) => ({ ...prev, [studentId]: false })))
-      .finally(() => setCheckingLicenseId((current) => (current === studentId ? null : current)));
+    Promise.allSettled([
+      http.get<LicenseRecord>(`/license/searchByStudent/${studentId}`),
+      licenseRequestService.findByStudent(studentId),
+    ]).then(([licenseResult, requestsResult]) => {
+      setLicenseByStudentId((prev) => ({ ...prev, [studentId]: licenseResult.status === "fulfilled" }));
+      const approvedLicense =
+        licenseResult.status === "fulfilled" && licenseResult.value?.status === "active";
+      setApprovedLicenseByStudentId((prev) => ({ ...prev, [studentId]: approvedLicense }));
+      const hasPendingRequest =
+        requestsResult.status === "fulfilled" &&
+        requestsResult.value.some((r) => r.status === "pending" || r.status === "waitlisted" || r.status === "partially_waitlisted");
+      setPendingRequestByStudentId((prev) => ({ ...prev, [studentId]: hasPendingRequest }));
+    }).finally(() => setCheckingLicenseId((current) => (current === studentId ? null : current)));
   }, [licenseByStudentId, checkingLicenseId]);
 
   // ── Lista de estudantes ativos ───────────────────────────────────
@@ -268,6 +279,8 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
     align: "right",
     render: (student) => {
       const alreadyHasLicense = licenseByStudentId[student._id] === true;
+      const hasApprovedLicense = approvedLicenseByStudentId[student._id] === true;
+      const hasPendingRequest = pendingRequestByStudentId[student._id] === true;
       const checkingLicense = checkingLicenseId === student._id;
       const windowClosed = hasOpenEnrollmentWindow === false;
       const missingPersonalDocuments = !student.hasPersonalDocuments;
@@ -275,10 +288,17 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
       let newRequestDisabledReason = "";
       if (checkingLicense) newRequestDisabledReason = "Verificando carteirinha…";
       else if (alreadyHasLicense) newRequestDisabledReason = "Este aluno já possui uma carteirinha cadastrada.";
+      else if (hasPendingRequest) newRequestDisabledReason = "Este aluno já possui uma solicitação em andamento.";
       else if (windowClosed) newRequestDisabledReason = "O ciclo de inscrição está fechado no momento.";
       else if (missingPersonalDocuments) newRequestDisabledReason = "Aluno sem Documento de Identidade e/ou Comprovante de Residência.";
 
       const newRequestDisabled = Boolean(newRequestDisabledReason);
+
+      let cardDisabledReason = "";
+      if (checkingLicense) cardDisabledReason = "Verificando carteirinha…";
+      else if (!hasApprovedLicense) cardDisabledReason = "A carteirinha deste aluno ainda não foi criada e aprovada.";
+
+      const cardDisabled = Boolean(cardDisabledReason);
 
       return (
       <div className="relative inline-block text-left">
@@ -301,7 +321,13 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
                 { icon: "visibility",  label: "Ver",         action: () => { setViewingStudent(student); setOpenDropdownId(null); }, disabled: false, title: undefined },
                 { icon: "edit",        label: "Editar",      action: () => { setEditingStudent(student);  setOpenDropdownId(null); }, disabled: false, title: undefined },
                 { icon: "folder_open", label: "Documentos",  action: () => { setDocsStudent(student);    setOpenDropdownId(null); }, disabled: false, title: undefined },
-                { icon: "badge",       label: "Carteirinha", action: () => { setViewingCard(student);    setOpenDropdownId(null); }, disabled: false, title: undefined },
+                {
+                  icon: "badge",
+                  label: "Carteirinha",
+                  action: () => { setViewingCard(student); setOpenDropdownId(null); },
+                  disabled: cardDisabled,
+                  title: cardDisabledReason || undefined,
+                },
                 {
                   icon: "add_card",
                   label: "Novo pedido",
