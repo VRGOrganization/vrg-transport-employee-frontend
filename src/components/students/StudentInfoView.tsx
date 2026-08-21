@@ -9,7 +9,7 @@ import { banlistService } from "@/services/banlistService";
 import { transportUsageService } from "@/services/transportUsageService";
 import { imageService } from "@/services/imageService";
 import { normalizeMediaSource } from "@/lib/cardUtils";
-import { getInitials, resolveDisplayName } from "@/lib/utils/string";
+import { getInitials, resolveDisplayName, toTitleCase } from "@/lib/utils/string";
 
 const DAY_ORDER = ["SEG", "TER", "QUA", "QUI", "SEX"] as const;
 
@@ -92,7 +92,7 @@ export function StudentInfoView({ student, onClose, onBan }: StudentInfoViewProp
       });
   }, [student._id]);
 
-  const displayName = resolveDisplayName(student);
+  const displayName = toTitleCase(resolveDisplayName(student));
   const photoSrc = normalizeMediaSource(profilePhoto);
   const registrationDate = new Date(student.createdAt).toLocaleDateString("pt-BR", {
     day: "2-digit", month: "short", year: "numeric",
