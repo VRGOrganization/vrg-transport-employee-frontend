@@ -28,6 +28,8 @@ export function StudentInfoModal({ student, onClose, onBanned, canBan = true }: 
       subtitle={`${student.active ? "Estudante Ativo" : "Estudante Inativo"} no Sistema`}
       open
       onClose={handleClose}
+      size="wide"
+      header={view === "info" ? "slim" : "banner"}
     >
       {view === "info" && (
         <StudentInfoView
