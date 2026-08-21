@@ -44,11 +44,28 @@ function toQuery(filters: ListBusPassesFilters): string {
   return query ? `?${query}` : "";
 }
 
+export interface PaginatedBusPasses {
+  data: BusPass[];
+  total: number;
+}
+
 export const busPassService = {
   list: (filters: ListBusPassesFilters = {}) =>
     http
       .get<Paginated<BusPass>>(`/bus-pass${toQuery(filters)}`)
       .then(resolvePaginated),
+
+  /**
+   * Envelope cru, com `total` do backend — usado pela fila, que pagina de
+   * verdade no servidor. `list()` continua devolvendo só o array pra quem já
+   * dependia disso (ex.: `manifest`-like consumidores que buscam tudo de uma vez).
+   */
+  listPaginated: (filters: ListBusPassesFilters = {}): Promise<PaginatedBusPasses> =>
+    http.get<Paginated<BusPass>>(`/bus-pass${toQuery(filters)}`).then((payload) => {
+      const data = resolvePaginated(payload);
+      const total = Array.isArray(payload) ? data.length : (payload.total ?? data.length);
+      return { data, total };
+    }),
 
   detail: (id: string) => http.get<BusPass>(`/bus-pass/${id}`),
 

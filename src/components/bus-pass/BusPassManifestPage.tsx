@@ -16,6 +16,7 @@ interface ManifestRow {
   period: string;
   studentName: string;
   studentRegistration: string | null;
+  verificationCode: string | null;
 }
 
 /**
@@ -42,6 +43,7 @@ function toRows(passes: BusPass[]): ManifestRow[] {
         period: data.period ?? "—",
         studentName: pass.studentName,
         studentRegistration: pass.studentRegistration,
+        verificationCode: pass.verificationCode,
       });
     }
   }
@@ -119,6 +121,15 @@ export function BusPassManifestPage({ role }: { role: "admin" | "employee" }) {
               </p>
             ) : null}
           </div>
+        ),
+      },
+      {
+        key: "code",
+        label: "Código",
+        render: (row) => (
+          <span className="font-mono text-xs text-on-surface-variant">
+            {row.verificationCode ?? "—"}
+          </span>
         ),
       },
     ],

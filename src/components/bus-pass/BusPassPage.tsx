@@ -24,6 +24,7 @@ import {
 } from "@/types/busPass";
 
 import { BusPassCapacityConflictModal } from "./BusPassCapacityConflictModal";
+import { BusPassDetailModal } from "./BusPassDetailModal";
 import { BusPassReasonModal } from "./BusPassReasonModal";
 
 type TabKey = "pending" | "revision" | "approved" | "history";
@@ -88,6 +89,7 @@ export function BusPassPage({ role }: { role: "admin" | "employee" }) {
 
   const [tab, setTab] = useState<TabKey>("pending");
   const [rows, setRows] = useState<BusPass[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -97,6 +99,7 @@ export function BusPassPage({ role }: { role: "admin" | "employee" }) {
   /** 403 do BusPassOperatorGuard: o admin não habilitou funcionários. */
   const [forbidden, setForbidden] = useState(false);
 
+  const [detailPass, setDetailPass] = useState<BusPass | null>(null);
   const [selected, setSelected] = useState<BusPass | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [revokeTarget, setRevokeTarget] = useState<BusPass | null>(null);
@@ -109,21 +112,29 @@ export function BusPassPage({ role }: { role: "admin" | "employee" }) {
     setError(null);
 
     try {
-      const data = await busPassService.list({
+      const { data, total: dataTotal } = await busPassService.listPaginated({
         status: TAB_STATUSES[tab],
         travelDate: dateFilter || undefined,
-        limit: 100,
+        page,
+        limit: pageSize,
       });
       setRows(data);
+      setTotal(dataTotal);
 
-      // A contagem do badge é sempre da fila de pendentes, independente da aba.
-      const pending =
-        tab === "pending"
-          ? data
-          : await busPassService.list({ status: ["pending"], limit: 100 });
-      setPendingCount(pending.length);
+      // A contagem do badge é sempre da fila de pendentes, independente da
+      // aba — `limit: 1` porque só o `total` do envelope importa aqui.
+      if (tab === "pending") {
+        setPendingCount(dataTotal);
+      } else {
+        const pending = await busPassService.listPaginated({
+          status: ["pending"],
+          limit: 1,
+        });
+        setPendingCount(pending.total);
+      }
     } catch (err: unknown) {
       setRows([]);
+      setTotal(0);
 
       if ((err as { status?: number })?.status === 403) {
         setForbidden(true);
@@ -136,7 +147,7 @@ export function BusPassPage({ role }: { role: "admin" | "employee" }) {
     } finally {
       setLoading(false);
     }
-  }, [tab, dateFilter]);
+  }, [tab, dateFilter, page, pageSize]);
 
   useEffect(() => {
     void load();
@@ -266,7 +277,10 @@ export function BusPassPage({ role }: { role: "admin" | "employee" }) {
           const canDecide = row.status === "pending" || row.status === "revision";
 
           return (
-            <div className="flex justify-end gap-1">
+            <div
+              className="flex justify-end gap-1"
+              onClick={(event) => event.stopPropagation()}
+            >
               {canDecide ? (
                 <>
                   <Button
@@ -334,7 +348,10 @@ export function BusPassPage({ role }: { role: "admin" | "employee" }) {
     { key: "history", label: "Histórico" },
   ];
 
-  const paginated = rows.slice((page - 1) * pageSize, page * pageSize);
+  // O passado só faz sentido nas abas que já são história — nas abas "vivas"
+  // (pendentes/devolvidos) filtrar por uma data que já passou não tem uso.
+  const dateFilterMin =
+    tab === "history" || tab === "approved" ? undefined : todayInBR();
 
   if (forbidden) {
     return (
@@ -368,7 +385,7 @@ export function BusPassPage({ role }: { role: "admin" | "employee" }) {
           <input
             type="date"
             value={dateFilter}
-            min={todayInBR()}
+            min={dateFilterMin}
             onChange={(event) => setDateFilter(event.target.value)}
             className="rounded-lg border border-outline bg-surface px-3 py-1.5 text-sm text-on-surface"
           />
@@ -384,16 +401,23 @@ export function BusPassPage({ role }: { role: "admin" | "employee" }) {
 
       <DataTable
         columns={columns}
-        rows={paginated}
+        rows={rows}
         rowKey={(row) => row.id}
+        onRowClick={(row) => setDetailPass(row)}
         loading={loading}
         error={error ?? undefined}
         empty="Nenhum passe nesta aba."
         page={page}
         pageSize={pageSize}
-        total={rows.length}
+        total={total}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
+      />
+
+      <BusPassDetailModal
+        open={detailPass !== null}
+        pass={detailPass}
+        onClose={() => setDetailPass(null)}
       />
 
       <BusPassReasonModal
