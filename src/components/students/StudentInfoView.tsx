@@ -131,7 +131,7 @@ export function StudentInfoView({ student, onClose, onBan }: StudentInfoViewProp
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <StatTile icon="bloodtype" label="Tipo Sanguíneo" value={student.bloodType || "Não informado"} emphasize />
               <StatTile icon="phone" label="Telefone" value={student.telephone || "Não informado"} emphasize />
-              <StatTile icon="account_balance" label="Instituição" value={student.institution || "Não informada"} emphasize />
+              <StatTile icon="account_balance" label="Instituição" value={student.institution ? toTitleCase(student.institution) : "Não informada"} emphasize />
             </div>
 
             {/* E-mail — own row, room to show the full address without truncating */}

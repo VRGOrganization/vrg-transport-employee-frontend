@@ -123,7 +123,7 @@ export function StudentInfoCard({ student, currentLicense }: StudentInfoCardProp
           </p>
           <p className="md:col-span-2">
             <strong className="text-on-surface">Instituição:</strong>{" "}
-            {student.institution ?? "—"}
+            {student.institution ? toTitleCase(student.institution) : "—"}
           </p>
         </div>
       </div>
@@ -148,7 +148,7 @@ export function StudentInfoCard({ student, currentLicense }: StudentInfoCardProp
               </p>
               <p className="md:col-span-2">
                 <strong className="text-on-surface">Instituição:</strong>{" "}
-                {student.secondaryInstitution ?? "—"}
+                {student.secondaryInstitution ? toTitleCase(student.secondaryInstitution) : "—"}
               </p>
             </div>
           </div>
