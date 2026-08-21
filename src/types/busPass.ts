@@ -34,6 +34,7 @@ export interface BusPass {
   outbound: BusPassLeg | null;
   inbound: BusPassLeg | null;
   reason: string | null;
+  evidenceImageUrl: string | null;
   revisionReason: string | null;
   rejectionReason: string | null;
   cancellationReason: string | null;

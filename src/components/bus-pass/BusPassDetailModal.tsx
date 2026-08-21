@@ -84,6 +84,24 @@ export function BusPassDetailModal({ open, pass, onClose }: BusPassDetailModalPr
             <dd className="text-on-surface">{pass.reason || "Não informado."}</dd>
           </div>
 
+          {pass.evidenceImageUrl ? (
+            <div>
+              <dt className="text-xs font-medium text-on-surface-variant">
+                Comprovante anexado
+              </dt>
+              <dd>
+                <a href={pass.evidenceImageUrl} target="_blank" rel="noreferrer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={pass.evidenceImageUrl}
+                    alt="Comprovante enviado pelo aluno"
+                    className="mt-1 max-h-48 rounded-lg border border-outline-variant object-contain"
+                  />
+                </a>
+              </dd>
+            </div>
+          ) : null}
+
           {pass.revisionReason ? (
             <div>
               <dt className="text-xs font-medium text-on-surface-variant">
