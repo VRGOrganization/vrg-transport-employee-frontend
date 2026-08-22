@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Ban, ChevronDown, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Ban, ShieldAlert } from "lucide-react";
 import type { Student } from "@/types/student";
-import type { BanlistEntry } from "@/types/banlist";
+import type { BanHistoryEntry } from "@/types/banlist";
 import { DAY_LABELS } from "@/types/cards.types";
 import { banlistService } from "@/services/banlistService";
+import { BanHistoryModal } from "./BanHistoryModal";
 import { transportUsageService } from "@/services/transportUsageService";
 import { imageService } from "@/services/imageService";
 import { normalizeMediaSource } from "@/lib/cardUtils";
@@ -56,23 +57,25 @@ interface StudentInfoViewProps {
 }
 
 export function StudentInfoView({ student, onClose, onBan }: StudentInfoViewProps) {
-  const [banHistory, setBanHistory] = useState<BanlistEntry[]>([]);
+  const [banHistory, setBanHistory] = useState<BanHistoryEntry[]>([]);
   const [banHistoryOpen, setBanHistoryOpen] = useState(false);
+  const [banHistoryLoading, setBanHistoryLoading] = useState(true);
+  const [banHistoryError, setBanHistoryError] = useState("");
   const [alreadyUsesTransport, setAlreadyUsesTransport] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
   useEffect(() => {
+    // O backend já devolve em ordem cronológica (mais antigo primeiro) com os
+    // nomes dos admins resolvidos; o modal cuida da apresentação. O estado já
+    // nasce em "carregando", então só escrevemos no retorno da chamada.
     banlistService
-      .getByStudent(student._id)
+      .getHistory(student._id)
       .then((entries) => {
-        const sorted = [...entries].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        );
-        setBanHistory(sorted);
+        setBanHistory(entries);
+        setBanHistoryError("");
       })
-      .catch(() => {
-        // endpoint unavailable — silently ignore
-      });
+      .catch(() => setBanHistoryError("Não foi possível carregar o histórico de banimentos."))
+      .finally(() => setBanHistoryLoading(false));
 
     transportUsageService
       .getByStudent(student._id)
@@ -123,6 +126,21 @@ export function StudentInfoView({ student, onClose, onBan }: StudentInfoViewProp
             >
               {student.active ? "Ativo" : "Inativo"}
             </span>
+
+            {/* Só aparece para quem já foi banido alguma vez. */}
+            {banHistory.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setBanHistoryOpen(true)}
+                className="mt-4 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-error/30 text-error text-xs font-semibold hover:bg-error/8 hover:border-error/60 transition-colors cursor-pointer"
+              >
+                <ShieldAlert className="size-4 shrink-0" />
+                <span>Histórico de banimentos</span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-error/10 border border-error/20">
+                  {banHistory.length}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* ── Details column ─────────────────────────────────────── */}
@@ -214,107 +232,6 @@ export function StudentInfoView({ student, onClose, onBan }: StudentInfoViewProp
                 </p>
               )}
             </div>
-
-            {/* ── Ban history (collapsible) ────────────────────────── */}
-            {banHistory.length > 0 && (
-              <div className="rounded-xl border border-error/25 overflow-hidden shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => setBanHistoryOpen((prev) => !prev)}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 bg-error/5 hover:bg-error/10 transition-colors cursor-pointer"
-                >
-                  <ShieldAlert className="size-4 text-error shrink-0" />
-                  <p className="text-xs font-bold text-error uppercase tracking-wider flex-1 text-left">
-                    Histórico de Banimentos
-                  </p>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-error/10 text-error border border-error/20">
-                    {banHistory.length} {banHistory.length === 1 ? "registro" : "registros"}
-                  </span>
-                  <ChevronDown className={`size-4 text-error shrink-0 transition-transform duration-200 ${banHistoryOpen ? "rotate-180" : ""}`} />
-                </button>
-
-                {banHistoryOpen && (
-                  <div className="divide-y divide-error/10 bg-surface-container-lowest border-t border-error/15">
-                    {banHistory.map((entry) => (
-                      <div key={entry._id} className="px-4 py-3.5">
-                        {/* Entry header */}
-                        <div className="flex items-center gap-2.5 mb-2.5">
-                          <div className={`size-6 rounded-full flex items-center justify-center shrink-0 ${
-                            entry.active ? "bg-error text-white" : "bg-surface-container-high text-on-surface-variant"
-                          }`}>
-                            {entry.active
-                              ? <ShieldAlert className="size-3.5" />
-                              : <ShieldCheck className="size-3.5" />
-                            }
-                          </div>
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
-                            entry.active
-                              ? "bg-error/10 text-error border-error/25"
-                              : "bg-surface-container-high text-on-surface-variant border-outline-variant/30"
-                          }`}>
-                            {entry.active ? "Banimento ativo" : "Banimento removido"}
-                          </span>
-                          <span className="ml-auto text-[11px] text-on-surface-variant">
-                            {new Date(entry.createdAt).toLocaleDateString("pt-BR", {
-                              day: "2-digit", month: "short", year: "numeric",
-                            })}
-                          </span>
-                        </div>
-
-                        {/* Ban reasons */}
-                        <div className="ml-8 space-y-1.5">
-                          <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
-                            Motivo{entry.reasons.length > 1 ? "s" : ""} do banimento
-                          </p>
-                          {entry.reasons.map((reason, i) => (
-                            <div
-                              key={i}
-                              className="flex items-start gap-2 text-sm text-on-surface bg-error/5 border border-error/15 rounded-lg px-3 py-2"
-                            >
-                              <span className="text-error mt-0.5 shrink-0 text-xs font-bold">#{i + 1}</span>
-                              <span className="text-on-surface-variant">{reason}</span>
-                            </div>
-                          ))}
-
-                          {/* Unban info */}
-                          {!entry.active && (
-                            <div className="mt-3 pt-3 border-t border-outline-variant/20 space-y-2">
-                              {entry.unbannedAt && (
-                                <p className="text-[11px] text-on-surface-variant flex items-center gap-1.5">
-                                  <ShieldCheck className="size-3.5 text-success shrink-0" />
-                                  Removido em{" "}
-                                  <span className="font-semibold text-on-surface">
-                                    {new Date(entry.unbannedAt).toLocaleDateString("pt-BR", {
-                                      day: "2-digit", month: "short", year: "numeric",
-                                    })}
-                                  </span>
-                                </p>
-                              )}
-                              {entry.unbanReasons && entry.unbanReasons.length > 0 && (
-                                <>
-                                  <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
-                                    Motivo{entry.unbanReasons.length > 1 ? "s" : ""} do desbanimento
-                                  </p>
-                                  {entry.unbanReasons.map((reason, i) => (
-                                    <div
-                                      key={i}
-                                      className="flex items-start gap-2 text-sm bg-success/5 border border-success/15 rounded-lg px-3 py-2"
-                                    >
-                                      <span className="text-success mt-0.5 shrink-0 text-xs font-bold">#{i + 1}</span>
-                                      <span className="text-on-surface-variant">{reason}</span>
-                                    </div>
-                                  ))}
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -340,6 +257,16 @@ export function StudentInfoView({ student, onClose, onBan }: StudentInfoViewProp
           </button>
         </div>
       </div>
+
+      {/* Segundo modal: linha do tempo dos banimentos deste aluno. */}
+      <BanHistoryModal
+        open={banHistoryOpen}
+        studentName={displayName}
+        history={banHistory}
+        loading={banHistoryLoading}
+        error={banHistoryError}
+        onClose={() => setBanHistoryOpen(false)}
+      />
     </>
   );
 }
