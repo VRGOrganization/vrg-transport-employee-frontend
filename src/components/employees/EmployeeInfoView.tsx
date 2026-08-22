@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, Badge, Calendar, RefreshCw, Info, UserX, Pencil, CheckCircle2 } from "lucide-react";
+import { Mail, Badge, Calendar, RefreshCw, Info, UserX, Pencil, CheckCircle2, Trash2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
@@ -24,9 +24,17 @@ interface Props {
   onEdit: () => void;
   onRequestDelete: () => void;
   onRequestActivate: () => void;
+  /** Exclusão permanente — só oferecida a funcionário já desativado. */
+  onRequestPermanentDelete?: () => void;
 }
 
-export function EmployeeInfoView({ employee, onEdit, onRequestDelete, onRequestActivate }: Props) {
+export function EmployeeInfoView({
+  employee,
+  onEdit,
+  onRequestDelete,
+  onRequestActivate,
+  onRequestPermanentDelete,
+}: Props) {
   return (
     <>
       <div className="flex items-center gap-4 mb-5">
@@ -79,6 +87,15 @@ export function EmployeeInfoView({ employee, onEdit, onRequestDelete, onRequestA
           >
             Reativar Funcionário
           </Button>
+          {onRequestPermanentDelete && (
+            <button
+              onClick={onRequestPermanentDelete}
+              className="w-full flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full border-2 border-error text-error hover:bg-error/10 transition-colors cursor-pointer"
+            >
+              <Trash2 className="size-4" />
+              Remover Funcionário
+            </button>
+          )}
         </div>
       )}
     </>

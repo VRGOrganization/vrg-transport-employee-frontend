@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
+import { Trash2 } from "lucide-react";
 import type { Employee } from "@/types/employee";
 import { InfoModalShell } from "@/components/ui/InfoModalShell";
 import { formatDateLongBR } from "@/lib/utils/date";
+import { EmployeeDeleteForm } from "./EmployeeDeleteForm";
 
 interface InfoRowProps {
   icon: string;
@@ -31,13 +34,50 @@ function InfoRow({ icon, label, value, colSpan, badge }: InfoRowProps) {
   );
 }
 
+type View = "info" | "delete-form";
+
 interface EmployeeInfoModalProps {
   employee: Employee;
   onClose: () => void;
   onEdit?: () => void;
+  /** Chamado após a exclusão permanente — a lista deve recarregar. */
+  onDeleted?: () => void;
+  /** Permite excluir permanentemente (somente admin). Default: true. */
+  canDelete?: boolean;
 }
 
-export function EmployeeInfoModal({ employee, onClose, onEdit }: EmployeeInfoModalProps) {
+export function EmployeeInfoModal({
+  employee,
+  onClose,
+  onEdit,
+  onDeleted,
+  canDelete = true,
+}: EmployeeInfoModalProps) {
+  const [view, setView] = useState<View>("info");
+
+  // Exclusão permanente só é oferecida para quem já está desativado — a
+  // desativação é o passo reversível anterior (o backend também recusa).
+  const showDeleteButton = canDelete && !employee.active;
+
+  const handleClose = view === "delete-form" ? () => setView("info") : onClose;
+
+  if (view === "delete-form") {
+    return (
+      <InfoModalShell
+        name={employee.name}
+        subtitle="Exclusão permanente do cadastro"
+        open
+        onClose={handleClose}
+      >
+        <EmployeeDeleteForm
+          employee={employee}
+          onCancel={() => setView("info")}
+          onDeleted={() => onDeleted?.()}
+        />
+      </InfoModalShell>
+    );
+  }
+
   return (
     <InfoModalShell
       name={employee.name}
@@ -73,6 +113,15 @@ export function EmployeeInfoModal({ employee, onClose, onEdit }: EmployeeInfoMod
       </div>
 
       <div className="px-6 py-4 bg-surface-container-low border-t border-outline-variant/20 flex items-center justify-end gap-3 shrink-0">
+        {showDeleteButton && (
+          <button
+            onClick={() => setView("delete-form")}
+            className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all border-2 border-error text-error hover:bg-error/10 mr-auto cursor-pointer"
+          >
+            <Trash2 className="size-4" />
+            Remover Funcionário
+          </button>
+        )}
         <button
           onClick={onClose}
           className="px-6 py-2.5 rounded-lg font-semibold text-sm transition-all bg-surface-container-high hover:bg-surface-container-highest text-on-surface shadow-sm"
