@@ -17,6 +17,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
+import { cn } from "@/lib/utils";
 import { getShiftLabel } from "@/lib/constants";
 import { resolveDisplayName, toTitleCase } from "@/lib/utils/string";
 import { buildStudentsCsv, downloadCsv } from "@/lib/csvUtils";
@@ -273,11 +274,20 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   };
 
   // ── Student action column ─────────────────────────────────────────
+  // Da 7ª linha da página em diante o menu de ações abre para CIMA. Abrindo
+  // para baixo nas últimas linhas ele estourava a altura do container da
+  // tabela — que rola em `overflow-x-auto` (o spec faz o eixo Y virar `auto`
+  // junto) — e o navegador criava um segundo scroll vertical, com o menu ainda
+  // por cima cortado. Abrindo para cima o menu fica dentro dos limites e o
+  // scroll extra deixa de existir.
+  const DROPDOWN_FLIP_AFTER_ROW = 6;
+
   const actionsColumn: Column<Student> = {
     key: "actions",
     label: "Ação",
     align: "right",
-    render: (student) => {
+    render: (student, index) => {
+      const opensUpward = index >= DROPDOWN_FLIP_AFTER_ROW;
       const alreadyHasLicense = licenseByStudentId[student._id] === true;
       const hasApprovedLicense = approvedLicenseByStudentId[student._id] === true;
       const hasPendingRequest = pendingRequestByStudentId[student._id] === true;
@@ -316,7 +326,12 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
         {openDropdownId === student._id && (
           <>
             <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenDropdownId(null); }} />
-            <div className="absolute right-0 mt-2 w-36 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+            <div
+              className={cn(
+                "absolute right-0 w-36 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100",
+                opensUpward ? "bottom-full mb-2" : "top-full mt-2",
+              )}
+            >
               {[
                 { icon: "visibility",  label: "Ver",         action: () => { setViewingStudent(student); setOpenDropdownId(null); }, disabled: false, title: undefined },
                 { icon: "edit",        label: "Editar",      action: () => { setEditingStudent(student);  setOpenDropdownId(null); }, disabled: false, title: undefined },

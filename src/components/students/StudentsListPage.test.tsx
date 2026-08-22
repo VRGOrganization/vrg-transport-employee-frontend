@@ -232,3 +232,51 @@ describe("StudentsListPage — bloqueio de 'Novo pedido' manual de carteirinha",
     });
   });
 });
+
+describe("StudentsListPage — direção do menu de ações", () => {
+  // Abrir para baixo nas últimas linhas estourava o container da tabela e
+  // criava um segundo scroll vertical. Da 7ª linha em diante o menu abre para
+  // cima (bottom-full) em vez de para baixo (top-full).
+  const manyStudents = Array.from({ length: 10 }, (_, i) =>
+    makeStudent({
+      _id: `student-${i + 1}`,
+      name: `Aluno ${String(i + 1).padStart(2, "0")}`,
+      email: `aluno${i + 1}@example.com`,
+    }),
+  );
+
+  beforeEach(() => {
+    listStudentsMock.mockResolvedValue(manyStudents);
+    getActiveEnrollmentMock.mockResolvedValue(OPEN_CYCLE);
+    httpGetMock.mockRejectedValue(new Error("not found"));
+  });
+
+  /** Abre o menu da linha informada (1-based) e devolve o container do menu. */
+  async function openMenuAtRow(rowNumber: number) {
+    const name = `Aluno ${String(rowNumber).padStart(2, "0")}`;
+    const row = (await screen.findByText(name)).closest("tr")!;
+    fireEvent.click(row.querySelector("button")!);
+    // o menu é o irmão posicionado do botão de ações
+    return row.querySelector('[class*="absolute"][class*="w-36"]') as HTMLElement;
+  }
+
+  it("abre para baixo nas seis primeiras linhas", async () => {
+    render(<StudentsListPage role="admin" />);
+
+    for (const rowNumber of [1, 6]) {
+      const menu = await openMenuAtRow(rowNumber);
+      expect(menu.className).toContain("top-full");
+      expect(menu.className).not.toContain("bottom-full");
+    }
+  });
+
+  it("abre para cima a partir da sétima linha", async () => {
+    render(<StudentsListPage role="admin" />);
+
+    for (const rowNumber of [7, 10]) {
+      const menu = await openMenuAtRow(rowNumber);
+      expect(menu.className).toContain("bottom-full");
+      expect(menu.className).not.toContain("top-full");
+    }
+  });
+});
