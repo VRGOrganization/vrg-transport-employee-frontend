@@ -19,7 +19,7 @@ vi.mock("@/services/studentService", () => ({
 vi.mock("@/services/banlistService", () => ({
   banlistService: {
     list: vi.fn(),
-    getByStudent: vi.fn().mockResolvedValue([]),
+    getHistory: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -96,6 +96,8 @@ describe("StudentsListPage — bloqueio de 'Novo pedido' manual de carteirinha",
     listStudentsMock.mockResolvedValue([makeStudent()]);
     listBansMock.mockResolvedValue([]);
     findRequestsByStudentMock.mockResolvedValue([]);
+    // clearAllMocks apaga o retorno declarado no vi.mock — rearmar aqui.
+    vi.mocked(banlistService.getHistory).mockResolvedValue([]);
   });
 
   it("desabilita 'Novo pedido' quando o ciclo de inscrição está fechado", async () => {
