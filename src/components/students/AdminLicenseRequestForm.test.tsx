@@ -210,6 +210,95 @@ describe("AdminLicenseRequestForm", () => {
     expect(adminCreateMock).not.toHaveBeenCalled();
   });
 
+  it("confirma a criação sem expor o id do pedido na mensagem", async () => {
+    await renderReady();
+
+    fireEvent.change(screen.getByPlaceholderText(/Digite ou selecione a faculdade/i), {
+      target: { value: "Faculdade Um" },
+    });
+    setShift("Manhã");
+    fireEvent.click(screen.getByLabelText("SEG Manhã"));
+    setSelect(/Ônibus \(seleção manual\)/i, "bus-1");
+    uploadAllDocs();
+
+    fireEvent.click(screen.getByRole("button", { name: /Revisar pedido/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /Confirmar e criar pedido/i }));
+
+    const banner = await screen.findByText(/Pedido criado com sucesso e adicionado à fila/i);
+    // Nem o id devolvido pela API nem um ObjectId cru podem aparecer na tela.
+    expect(banner.textContent).not.toContain("req-1");
+    expect(banner.textContent).not.toMatch(/\(id\b/i);
+    expect(banner.textContent).not.toMatch(/[0-9a-f]{24}/i);
+    expect(adminCreateMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("continua entregando o id do pedido para o onSuccess", async () => {
+    const onSuccess = vi.fn();
+    render(<AdminLicenseRequestForm studentId="student-1" onSuccess={onSuccess} />);
+    await waitFor(() =>
+      expect(document.querySelector('option[value="Faculdade Um"]')).not.toBeNull(),
+    );
+
+    fireEvent.change(screen.getByPlaceholderText(/Digite ou selecione a faculdade/i), {
+      target: { value: "Faculdade Um" },
+    });
+    setShift("Manhã");
+    fireEvent.click(screen.getByLabelText("SEG Manhã"));
+    setSelect(/Ônibus \(seleção manual\)/i, "bus-1");
+    uploadAllDocs();
+
+    fireEvent.click(screen.getByRole("button", { name: /Revisar pedido/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /Confirmar e criar pedido/i }));
+
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledWith("req-1"));
+  });
+
+  describe("foto 3x4 aceita apenas imagem", () => {
+    // A license-api decodifica a foto com Pillow e só aceita
+    // ALLOWED_PHOTO_FORMATS = {JPEG, PNG, WEBP} — PDF quebraria na geração.
+    const fotoInput = () =>
+      screen.getByLabelText(/Selecionar Foto 3x4/i).parentElement!.parentElement!
+        .querySelector('input[type="file"]') as HTMLInputElement;
+
+    it("não oferece PDF no seletor da foto 3x4", async () => {
+      await renderReady();
+
+      expect(fotoInput().accept).toBe("image/jpeg,image/png,image/webp");
+    });
+
+    it("mantém PDF disponível nos comprovantes", async () => {
+      await renderReady();
+
+      const comprovante = screen
+        .getByLabelText(/Selecionar Comprovante de matrícula/i)
+        .parentElement!.parentElement!.querySelector(
+          'input[type="file"]',
+        ) as HTMLInputElement;
+
+      expect(comprovante.accept).toContain("application/pdf");
+    });
+
+    it("recusa um PDF escolhido na foto 3x4 e explica o motivo", async () => {
+      await renderReady();
+
+      const pdf = new File(["x"], "foto.pdf", { type: "application/pdf" });
+      fireEvent.change(fotoInput(), { target: { files: [pdf] } });
+
+      await screen.findByText(/PDF não é aceito na foto 3x4/i);
+      expect(screen.queryByText("foto.pdf")).not.toBeInTheDocument();
+    });
+
+    it("aceita uma imagem na foto 3x4", async () => {
+      await renderReady();
+
+      const png = new File(["x"], "foto.png", { type: "image/png" });
+      fireEvent.change(fotoInput(), { target: { files: [png] } });
+
+      expect(await screen.findByText("foto.png")).toBeInTheDocument();
+      expect(screen.queryByText(/PDF não é aceito/i)).not.toBeInTheDocument();
+    });
+  });
+
   describe("coerência entre turno, grade de horários e ônibus", () => {
     it("mantém grade e ônibus bloqueados enquanto nenhum turno é escolhido", async () => {
       await renderReady();

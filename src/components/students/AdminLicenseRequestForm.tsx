@@ -29,7 +29,7 @@ const DAYS = ["SEG", "TER", "QUA", "QUI", "SEX"] as const;
 const PERIODS = SCHEDULE_PERIODS;
 
 const DOCUMENT_FIELDS = [
-  ["ProfilePhoto", "Foto 3x4", "Foto recente, rosto visível, fundo neutro."],
+  ["ProfilePhoto", "Foto 3x4", "Foto recente, rosto visível, fundo neutro. JPG, PNG ou WEBP."],
   ["EnrollmentProof", "Comprovante de matrícula", "Documento da faculdade confirmando matrícula ativa."],
   ["CourseSchedule", "Grade horária", "Grade de horários das aulas no período atual."],
   ["AcademicPeriodProof", "Comprovante de período letivo", "Confirma o período/semestre letivo em curso."],
@@ -131,7 +131,9 @@ export function AdminLicenseRequestForm({
   const [error, setError] = useState("");
   const [busIdError, setBusIdError] = useState("");
   const [scheduleError, setScheduleError] = useState("");
-  const [success, setSuccess] = useState<string | null>(null);
+  // Só sinaliza que o pedido foi criado — o id fica com o `onSuccess`, que é
+  // quem precisa dele; a tela não expõe o id ao funcionário.
+  const [success, setSuccess] = useState(false);
   const [view, setView] = useState<"form" | "review">("form");
 
   useEffect(() => {
@@ -248,6 +250,9 @@ export function AdminLicenseRequestForm({
       key={key}
       label={label}
       hint={hint}
+      // A foto 3x4 vira a imagem da carteirinha na license-api, que só aceita
+      // JPEG/PNG/WEBP — PDF aqui só falharia na geração.
+      imageOnly={key === "ProfilePhoto"}
       value={documents[key] ?? null}
       onChange={(file) => setDocuments((prev) => ({ ...prev, [key]: file }))}
     />
@@ -362,7 +367,7 @@ export function AdminLicenseRequestForm({
     setError("");
     try {
       const result = await licenseRequestService.adminCreate(payload);
-      setSuccess(result.requestId);
+      setSuccess(true);
       onSuccess?.(result.requestId);
     } catch (err) {
       setError((err as { message?: string }).message ?? "Erro ao criar o pedido.");
@@ -392,7 +397,7 @@ export function AdminLicenseRequestForm({
   if (success) {
     return (
       <StatusBanner variant="success">
-        Pedido criado com sucesso e adicionado à fila (id {success}).
+        Pedido criado com sucesso e adicionado à fila.
       </StatusBanner>
     );
   }
