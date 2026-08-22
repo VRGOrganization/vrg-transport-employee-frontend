@@ -39,6 +39,7 @@ export function SelectField({
         <select
           className={cn(
             "w-full h-14 bg-surface-container-lowest border border-on-surface-variant ring-0 focus:ring-2 focus:ring-primary rounded-xl text-on-surface text-base outline-none transition-all appearance-none",
+            "disabled:opacity-50 disabled:cursor-not-allowed",
             icon ? "pl-12 pr-4" : "px-4",
             error && "border-error focus:ring-error",
             className

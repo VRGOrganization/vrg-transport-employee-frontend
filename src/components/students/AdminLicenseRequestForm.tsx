@@ -18,9 +18,15 @@ import {
 } from "@/services/licenseRequestService";
 import { BLOOD_TYPES } from "@/types/student";
 import type { University, Bus } from "@/types/university.types";
+import {
+  SCHEDULE_PERIODS,
+  busMatchesShift,
+  filterScheduleByShift,
+  isPeriodAllowedForShift,
+} from "@/lib/shiftRules";
 
 const DAYS = ["SEG", "TER", "QUA", "QUI", "SEX"] as const;
-const PERIODS = ["Manhã", "Tarde", "Noite"] as const;
+const PERIODS = SCHEDULE_PERIODS;
 
 const DOCUMENT_FIELDS = [
   ["ProfilePhoto", "Foto 3x4", "Foto recente, rosto visível, fundo neutro."],
@@ -41,18 +47,34 @@ interface AdminLicenseRequestFormProps {
   onSuccess?: (requestId: string) => void;
 }
 
-/** Opções de ônibus para uma faculdade: prioriza os vinculados, cai para todos. */
-function buildBusOptions(buses: Bus[], universityId: string) {
+/**
+ * Opções de ônibus, aplicando em ordem os dois filtros da regra de negócio:
+ *
+ * 1. TURNO (obrigatório): sem turno escolhido a lista fica vazia — o campo só é
+ *    liberado depois da escolha. Com turno, só entram ônibus daquele turno
+ *    (`Integral` aceita todos; ônibus sem turno definido nunca são escondidos).
+ * 2. FACULDADE (quando cadastrada): dentro do turno, prioriza os ônibus
+ *    vinculados àquela faculdade. Faculdade não cadastrada (ou sem ônibus
+ *    vinculado no turno) lista todos os ônibus do turno.
+ */
+function buildBusOptions(buses: Bus[], universityId: string, shift: string) {
+  if (!shift) return [];
+
   const linked = (bus: Bus) =>
     (bus.universitySlots ?? []).some((s) => {
       const id = typeof s.universityId === "string" ? s.universityId : s.universityId?._id;
       return id === universityId;
     });
-  const linkedBuses = buses.filter(linked);
-  const list = linkedBuses.length > 0 ? linkedBuses : buses;
+
+  const shiftBuses = buses.filter((bus) => busMatchesShift(bus, shift));
+  const linkedBuses = universityId ? shiftBuses.filter(linked) : [];
+  const list = linkedBuses.length > 0 ? linkedBuses : shiftBuses;
+
   return list.map((bus) => ({
     value: bus._id,
-    label: `${bus.identifier}${linked(bus) ? " • vinculado" : ""}`,
+    label: `${bus.identifier}${bus.shift ? ` • ${bus.shift}` : ""}${
+      universityId && linked(bus) ? " • vinculado" : ""
+    }`,
   }));
 }
 
@@ -127,30 +149,68 @@ export function AdminLicenseRequestForm({
   }, [secondaryInstitution, universities]);
 
   const busOptions = useMemo(
-    () => buildBusOptions(buses, universityId),
-    [buses, universityId],
+    () => buildBusOptions(buses, universityId, shift),
+    [buses, universityId, shift],
   );
   const secondaryBusOptions = useMemo(
-    () => buildBusOptions(buses, secondaryUniversityId),
-    [buses, secondaryUniversityId],
+    () => buildBusOptions(buses, secondaryUniversityId, secondaryShift),
+    [buses, secondaryUniversityId, secondaryShift],
   );
 
-  const toggleSlot = useCallback((day: string, period: string) => {
-    setSchedule((prev) =>
-      prev.some((s) => s.day === day && s.period === period)
-        ? prev.filter((s) => !(s.day === day && s.period === period))
-        : [...prev, { day, period }],
-    );
-    setScheduleError((prev) => (prev ? "" : prev));
-  }, []);
+  // Trocar o turno invalida escolhas feitas no turno anterior: horários fora do
+  // novo turno saem da grade e o ônibus volta a vazio se não atender ao turno.
+  // Sem isso o pedido poderia ser enviado com dados incoerentes (ex.: turno
+  // Noite com horários da manhã).
+  useEffect(() => {
+    setSchedule((prev) => {
+      const next = filterScheduleByShift(prev, shift);
+      return next.length === prev.length ? prev : next;
+    });
+  }, [shift]);
 
-  const toggleSecondarySlot = useCallback((day: string, period: string) => {
-    setSecondarySchedule((prev) =>
-      prev.some((s) => s.day === day && s.period === period)
-        ? prev.filter((s) => !(s.day === day && s.period === period))
-        : [...prev, { day, period }],
+  useEffect(() => {
+    setSecondarySchedule((prev) => {
+      const next = filterScheduleByShift(prev, secondaryShift);
+      return next.length === prev.length ? prev : next;
+    });
+  }, [secondaryShift]);
+
+  useEffect(() => {
+    setBusId((prev) => (prev && !busOptions.some((o) => o.value === prev) ? "" : prev));
+  }, [busOptions]);
+
+  useEffect(() => {
+    setSecondaryBusId((prev) =>
+      prev && !secondaryBusOptions.some((o) => o.value === prev) ? "" : prev,
     );
-  }, []);
+  }, [secondaryBusOptions]);
+
+  // A grade só aceita períodos permitidos pelo turno — a UI já bloqueia os
+  // checkboxes, mas a guarda impede qualquer caminho inconsistente.
+  const toggleSlot = useCallback(
+    (day: string, period: string) => {
+      if (!isPeriodAllowedForShift(period, shift)) return;
+      setSchedule((prev) =>
+        prev.some((s) => s.day === day && s.period === period)
+          ? prev.filter((s) => !(s.day === day && s.period === period))
+          : [...prev, { day, period }],
+      );
+      setScheduleError((prev) => (prev ? "" : prev));
+    },
+    [shift],
+  );
+
+  const toggleSecondarySlot = useCallback(
+    (day: string, period: string) => {
+      if (!isPeriodAllowedForShift(period, secondaryShift)) return;
+      setSecondarySchedule((prev) =>
+        prev.some((s) => s.day === day && s.period === period)
+          ? prev.filter((s) => !(s.day === day && s.period === period))
+          : [...prev, { day, period }],
+      );
+    },
+    [secondaryShift],
+  );
 
   const handleBusChange = (value: string) => {
     setBusId(value);
@@ -199,6 +259,13 @@ export function AdminLicenseRequestForm({
     setBusIdError("");
     setScheduleError("");
 
+    // Turno é pré-requisito da grade e do ônibus — valida antes dos dois para a
+    // mensagem apontar a causa raiz em vez de dois erros derivados.
+    if (!shift) {
+      setError("Escolha o turno do aluno antes de continuar.");
+      return;
+    }
+
     let hasFieldError = false;
     if (!busId) {
       setBusIdError("Selecione um ônibus para o pedido.");
@@ -230,6 +297,10 @@ export function AdminLicenseRequestForm({
       }
       if (!secondaryDegree.trim()) {
         setError("Informe o curso da segunda instituição.");
+        return;
+      }
+      if (!secondaryShift) {
+        setError("Selecione o turno da segunda instituição.");
         return;
       }
       if (secondarySchedule.length === 0) {
@@ -426,6 +497,7 @@ export function AdminLicenseRequestForm({
         onDegreeChange={setDegree}
         shift={shift}
         onShiftChange={setShift}
+        shiftAriaLabel="Turno"
         schedule={schedule}
         onToggleSlot={toggleSlot}
         scheduleError={scheduleError}
@@ -496,6 +568,7 @@ export function AdminLicenseRequestForm({
           degreeAriaLabel="Curso / Graduação (2ª)"
           shift={secondaryShift}
           onShiftChange={setSecondaryShift}
+          shiftAriaLabel="Turno (2ª)"
           schedule={secondarySchedule}
           onToggleSlot={toggleSecondarySlot}
           scheduleAriaSuffix=" (2ª)"
