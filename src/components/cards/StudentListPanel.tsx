@@ -10,6 +10,12 @@ import type {
 import type { Bus } from "@/types/university.types";
 import { StudentListItem } from "./StudentListItem";
 import { StudentListToolbar } from "./StudentListToolbar";
+import {
+  buildQueueRequestByStudent,
+  compareQueueRequests,
+  compareWaitlistRequests,
+  sortStudentsByQueue,
+} from "@/lib/queueOrder";
 
 type PrioritySlot = {
   universityId?: unknown;
@@ -146,20 +152,14 @@ export function StudentListPanel({
     );
   }, [licenseRequests]);
 
-  // Mapa studentId -> pedido pendente (para ordenar a fila por prioridade → FIFO).
-  // priorityLevel vem recalculado do backend com as regras ATUAIS; ausente = 3
-  // (mesmo default do backend). Menor priorityLevel = maior prioridade.
-  const pendingRequestByStudent = useMemo(() => {
-    const map = new Map<string, { priorityLevel: number; createdAt: string }>();
-    for (const r of licenseRequests) {
-      if (r.status !== "pending") continue;
-      map.set(r.studentId, {
-        priorityLevel: typeof r.priorityLevel === "number" ? r.priorityLevel : 3,
-        createdAt: r.createdAt,
-      });
-    }
-    return map;
-  }, [licenseRequests]);
+  // Mapa studentId -> pedido que representa o aluno na fila. Um aluno pode ter
+  // mais de um pedido (ex.: rejeitado antigo + pendente novo); vale o pedido
+  // enfileirado mais recente. priorityLevel vem recalculado do backend com as
+  // regras ATUAIS; ausente = 3. Menor priorityLevel = maior prioridade.
+  const queueRequestByStudent = useMemo(
+    () => buildQueueRequestByStudent(licenseRequests),
+    [licenseRequests],
+  );
 
   const filteredStudents = useMemo(() => {
     const normalized = filter === "with-card" ? search.trim().toLowerCase() : "";
@@ -188,22 +188,16 @@ export function StudentListPanel({
         );
       });
 
-    // A fila de pendentes é exibida na ordem de aprovação: prioridade
-    // (priorityLevel asc) e, dentro do mesmo nível, FIFO por createdAt asc.
-    if (filter === "pending") {
-      list.sort((a, b) => {
-        const ra = pendingRequestByStudent.get(a._id);
-        const rb = pendingRequestByStudent.get(b._id);
-        const pa = ra?.priorityLevel ?? 3;
-        const pb = rb?.priorityLevel ?? 3;
-        if (pa !== pb) return pa - pb;
-        const ta = ra ? new Date(ra.createdAt).getTime() : 0;
-        const tb = rb ? new Date(rb.createdAt).getTime() : 0;
-        return ta - tb;
-      });
-    }
-
-    return list;
+    // Toda aba é exibida na ordem da fila — o backend devolve os pedidos por
+    // createdAt DESC e `GET /student` não tem ordenação garantida, então a
+    // ordem precisa ser imposta aqui. Pendentes/revisão seguem prioridade →
+    // FIFO (createdAt asc); a lista de espera respeita `filaPosition` primeiro.
+    // Sem isso a fila aparecia invertida (o último a entrar no topo).
+    return sortStudentsByQueue(
+      list,
+      queueRequestByStudent,
+      filter === "waitlisted" ? compareWaitlistRequests : compareQueueRequests,
+    );
   }, [
     students,
     filter,
@@ -213,7 +207,7 @@ export function StudentListPanel({
     waitlistedStudentIds,
     reviewStudentIds,
     priorityFilteredStudentIds,
-    pendingRequestByStudent,
+    queueRequestByStudent,
   ]);
 
 
@@ -227,13 +221,9 @@ export function StudentListPanel({
         if (pendings.length === 0) return new Set<string>();
         // Próximo a aprovar = maior prioridade (priorityLevel asc, recalculado
         // pelo backend) e, empatando, o mais antigo (FIFO por createdAt asc).
-        pendings.sort((a, b) => {
-          const pa = typeof a.priorityLevel === "number" ? a.priorityLevel : 3;
-          const pb = typeof b.priorityLevel === "number" ? b.priorityLevel : 3;
-          if (pa !== pb) return pa - pb;
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        });
-        return new Set([pendings[0].studentId]);
+        // Mesmo comparador da exibição: o topo da lista é sempre o selecionável.
+        const ordered = [...pendings].sort(compareQueueRequests);
+        return new Set([ordered[0].studentId]);
       }
 
       if (filter === "waitlisted") {
@@ -242,13 +232,8 @@ export function StudentListPanel({
           ? initialWaitlisted.filter((w) => priorityFilteredStudentIds.has(w.studentId))
           : initialWaitlisted;
         if (waitlisted.length === 0) return new Set<string>();
-        waitlisted.sort((a, b) => {
-          const pa = typeof a.filaPosition === "number" ? a.filaPosition : Number.MAX_VALUE;
-          const pb = typeof b.filaPosition === "number" ? b.filaPosition : Number.MAX_VALUE;
-          if (pa !== pb) return pa - pb;
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        });
-        return new Set([waitlisted[0].studentId]);
+        const ordered = [...waitlisted].sort(compareWaitlistRequests);
+        return new Set([ordered[0].studentId]);
       }
 
       return new Set<string>();
@@ -333,12 +318,9 @@ export function StudentListPanel({
       {!loading && !error && filteredStudents.length > 0 && (
         <div className="space-y-2">
           {filteredStudents.map((student) => {
-            const latestRequest =
-              licenseRequests
-                .filter((r) => r.studentId === student._id)
-                .sort(
-                  (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-                )[0] ?? null;
+            // Mesmo critério da fila: o pedido enfileirado mais recente
+            // representa o aluno (um `rejected` antigo não mascara o atual).
+            const latestRequest = queueRequestByStudent.get(student._id) ?? null;
             const isSelectable =
               // if set contains entries, only those ids are selectable
               (selectableStudentIds.size === 0 && true) || selectableStudentIds.has(student._id);

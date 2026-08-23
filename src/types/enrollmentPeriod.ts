@@ -8,6 +8,7 @@ export type EnrollmentCycleStatus = "scheduled" | "active" | "closed";
 
 export interface EnrollmentPeriod {
   _id: string;
+  /** Início/fim da JANELA de inscrição ativa — `null` quando não há janela aberta. */
   startDate: string | null;
   endDate: string | null;
   // Data de início real do ciclo, sem a sobrescrita de startDate pela janela

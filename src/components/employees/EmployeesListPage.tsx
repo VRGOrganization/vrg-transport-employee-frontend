@@ -65,7 +65,6 @@ const COLUMNS: Column<Employee>[] = [
 ];
 
 export function EmployeesListPage({ role }: { role: "admin" | "employee" }) {
-  void role;
   const [selected, setSelected]             = useState<Employee | null>(null);
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -275,6 +274,8 @@ export function EmployeesListPage({ role }: { role: "admin" | "employee" }) {
           employee={viewingEmployee}
           onClose={() => setViewingEmployee(null)}
           onEdit={() => { setSelected(viewingEmployee); setViewingEmployee(null); }}
+          canDelete={role === "admin"}
+          onDeleted={() => { setViewingEmployee(null); reloadAll(); }}
         />
       )}
       {createOpen && (
@@ -290,6 +291,7 @@ export function EmployeesListPage({ role }: { role: "admin" | "employee" }) {
           onClose={() => setSelected(null)}
           onUpdated={handleReload}
           onDeleted={handleReload}
+          canDelete={role === "admin"}
         />
       )}
       {toggleTarget && (

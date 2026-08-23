@@ -1,9 +1,17 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
+/** Tipos aceitos por documento comum (comprovantes): imagem ou PDF. */
 const ACCEPTED = "image/jpeg,image/png,image/webp,application/pdf";
+
+/**
+ * Tipos aceitos pela foto 3x4. A license-api só decodifica JPEG/PNG/WEBP
+ * (`ALLOWED_PHOTO_FORMATS`) e recusa o resto com ERR003, então um PDF aqui só
+ * quebraria na hora de gerar a carteirinha.
+ */
+const ACCEPTED_IMAGE_ONLY = "image/jpeg,image/png,image/webp";
 
 interface DocumentUploadFieldProps {
   label: string;
@@ -11,12 +19,14 @@ interface DocumentUploadFieldProps {
   value: File | null;
   onChange: (file: File | null) => void;
   required?: boolean;
+  /** Restringe o campo a imagens (sem PDF) — usado na foto 3x4. */
+  imageOnly?: boolean;
 }
 
 /**
  * Card de upload de um documento (imagem ou PDF), reutilizável no cadastro
  * interno do aluno e no wizard interno de carteirinha. Aceita os mesmos tipos
- * validados pelo backend (jpeg/png/webp/pdf).
+ * validados pelo backend (jpeg/png/webp/pdf); com `imageOnly`, apenas imagens.
  */
 export function DocumentUploadField({
   label,
@@ -24,16 +34,38 @@ export function DocumentUploadField({
   value,
   onChange,
   required = false,
+  imageOnly = false,
 }: DocumentUploadFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [typeError, setTypeError] = useState("");
+  const accepted = imageOnly ? ACCEPTED_IMAGE_ONLY : ACCEPTED;
+
+  /**
+   * O `accept` é só uma dica do seletor de arquivos: o usuário ainda pode
+   * escolher "todos os arquivos" e mandar um PDF. Por isso o tipo é validado de
+   * novo aqui, antes de guardar o arquivo no formulário.
+   */
+  const handleSelect = (file: File | null) => {
+    if (file && imageOnly && !ACCEPTED_IMAGE_ONLY.split(",").includes(file.type)) {
+      setTypeError("Envie uma imagem JPEG, PNG ou WEBP. PDF não é aceito na foto 3x4.");
+      onChange(null);
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+    setTypeError("");
+    onChange(file);
+  };
 
   return (
+    <div className="space-y-1">
     <div
       className={cn(
         "flex items-center gap-3 rounded-xl border p-3 transition-colors",
-        value
-          ? "border-primary/30 bg-primary/5"
-          : "border-outline-variant border-dashed bg-surface-container-lowest",
+        typeError
+          ? "border-error bg-error/5"
+          : value
+            ? "border-primary/30 bg-primary/5"
+            : "border-outline-variant border-dashed bg-surface-container-lowest",
       )}
     >
       <div
@@ -77,6 +109,7 @@ export function DocumentUploadField({
           <button
             type="button"
             onClick={() => {
+              setTypeError("");
               onChange(null);
               if (inputRef.current) inputRef.current.value = "";
             }}
@@ -92,10 +125,12 @@ export function DocumentUploadField({
       <input
         ref={inputRef}
         type="file"
-        accept={ACCEPTED}
+        accept={accepted}
         className="hidden"
-        onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+        onChange={(e) => handleSelect(e.target.files?.[0] ?? null)}
       />
+    </div>
+      {typeError && <p className="text-xs text-error ml-1">{typeError}</p>}
     </div>
   );
 }

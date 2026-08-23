@@ -7,6 +7,7 @@ import { http } from "@/services/http";
 import { studentService } from "@/services/studentService";
 import { banlistService } from "@/services/banlistService";
 import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
+import { licenseRequestService } from "@/services/licenseRequestService";
 import type { Student } from "@/types/student";
 import type { BanlistEntry } from "@/types/banlist";
 import type { LicenseRecord } from "@/types/cards.types";
@@ -16,6 +17,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
+import { cn } from "@/lib/utils";
 import { getShiftLabel } from "@/lib/constants";
 import { resolveDisplayName, toTitleCase } from "@/lib/utils/string";
 import { buildStudentsCsv, downloadCsv } from "@/lib/csvUtils";
@@ -63,7 +65,7 @@ const STUDENT_COLUMNS: Column<Student>[] = [
   {
     key: "institution",
     label: "Instituição",
-    render: (s) => <span className="text-sm text-on-surface-variant">{s.institution ?? "—"}</span>,
+    render: (s) => <span className="text-sm text-on-surface-variant">{s.institution ? toTitleCase(s.institution) : "—"}</span>,
   },
   {
     key: "shift",
@@ -162,6 +164,8 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   // demanda (ao abrir o dropdown), não há endpoint em lote no backend.
   const [hasOpenEnrollmentWindow, setHasOpenEnrollmentWindow] = useState<boolean | null>(null);
   const [licenseByStudentId, setLicenseByStudentId] = useState<Record<string, boolean>>({});
+  const [approvedLicenseByStudentId, setApprovedLicenseByStudentId] = useState<Record<string, boolean>>({});
+  const [pendingRequestByStudentId, setPendingRequestByStudentId] = useState<Record<string, boolean>>({});
   const [checkingLicenseId, setCheckingLicenseId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -174,11 +178,19 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   const checkStudentLicense = useCallback((studentId: string) => {
     if (studentId in licenseByStudentId || checkingLicenseId === studentId) return;
     setCheckingLicenseId(studentId);
-    http
-      .get<LicenseRecord>(`/license/searchByStudent/${studentId}`)
-      .then(() => setLicenseByStudentId((prev) => ({ ...prev, [studentId]: true })))
-      .catch(() => setLicenseByStudentId((prev) => ({ ...prev, [studentId]: false })))
-      .finally(() => setCheckingLicenseId((current) => (current === studentId ? null : current)));
+    Promise.allSettled([
+      http.get<LicenseRecord>(`/license/searchByStudent/${studentId}`),
+      licenseRequestService.findByStudent(studentId),
+    ]).then(([licenseResult, requestsResult]) => {
+      setLicenseByStudentId((prev) => ({ ...prev, [studentId]: licenseResult.status === "fulfilled" }));
+      const approvedLicense =
+        licenseResult.status === "fulfilled" && licenseResult.value?.status === "active";
+      setApprovedLicenseByStudentId((prev) => ({ ...prev, [studentId]: approvedLicense }));
+      const hasPendingRequest =
+        requestsResult.status === "fulfilled" &&
+        requestsResult.value.some((r) => r.status === "pending" || r.status === "waitlisted" || r.status === "partially_waitlisted");
+      setPendingRequestByStudentId((prev) => ({ ...prev, [studentId]: hasPendingRequest }));
+    }).finally(() => setCheckingLicenseId((current) => (current === studentId ? null : current)));
   }, [licenseByStudentId, checkingLicenseId]);
 
   // ── Lista de estudantes ativos ───────────────────────────────────
@@ -262,12 +274,23 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   };
 
   // ── Student action column ─────────────────────────────────────────
+  // Da 7ª linha da página em diante o menu de ações abre para CIMA. Abrindo
+  // para baixo nas últimas linhas ele estourava a altura do container da
+  // tabela — que rola em `overflow-x-auto` (o spec faz o eixo Y virar `auto`
+  // junto) — e o navegador criava um segundo scroll vertical, com o menu ainda
+  // por cima cortado. Abrindo para cima o menu fica dentro dos limites e o
+  // scroll extra deixa de existir.
+  const DROPDOWN_FLIP_AFTER_ROW = 6;
+
   const actionsColumn: Column<Student> = {
     key: "actions",
     label: "Ação",
     align: "right",
-    render: (student) => {
+    render: (student, index) => {
+      const opensUpward = index >= DROPDOWN_FLIP_AFTER_ROW;
       const alreadyHasLicense = licenseByStudentId[student._id] === true;
+      const hasApprovedLicense = approvedLicenseByStudentId[student._id] === true;
+      const hasPendingRequest = pendingRequestByStudentId[student._id] === true;
       const checkingLicense = checkingLicenseId === student._id;
       const windowClosed = hasOpenEnrollmentWindow === false;
       const missingPersonalDocuments = !student.hasPersonalDocuments;
@@ -275,10 +298,17 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
       let newRequestDisabledReason = "";
       if (checkingLicense) newRequestDisabledReason = "Verificando carteirinha…";
       else if (alreadyHasLicense) newRequestDisabledReason = "Este aluno já possui uma carteirinha cadastrada.";
+      else if (hasPendingRequest) newRequestDisabledReason = "Este aluno já possui uma solicitação em andamento.";
       else if (windowClosed) newRequestDisabledReason = "O ciclo de inscrição está fechado no momento.";
       else if (missingPersonalDocuments) newRequestDisabledReason = "Aluno sem Documento de Identidade e/ou Comprovante de Residência.";
 
       const newRequestDisabled = Boolean(newRequestDisabledReason);
+
+      let cardDisabledReason = "";
+      if (checkingLicense) cardDisabledReason = "Verificando carteirinha…";
+      else if (!hasApprovedLicense) cardDisabledReason = "A carteirinha deste aluno ainda não foi criada e aprovada.";
+
+      const cardDisabled = Boolean(cardDisabledReason);
 
       return (
       <div className="relative inline-block text-left">
@@ -296,12 +326,23 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
         {openDropdownId === student._id && (
           <>
             <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenDropdownId(null); }} />
-            <div className="absolute right-0 mt-2 w-36 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+            <div
+              className={cn(
+                "absolute right-0 w-36 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100",
+                opensUpward ? "bottom-full mb-2" : "top-full mt-2",
+              )}
+            >
               {[
                 { icon: "visibility",  label: "Ver",         action: () => { setViewingStudent(student); setOpenDropdownId(null); }, disabled: false, title: undefined },
                 { icon: "edit",        label: "Editar",      action: () => { setEditingStudent(student);  setOpenDropdownId(null); }, disabled: false, title: undefined },
                 { icon: "folder_open", label: "Documentos",  action: () => { setDocsStudent(student);    setOpenDropdownId(null); }, disabled: false, title: undefined },
-                { icon: "badge",       label: "Carteirinha", action: () => { setViewingCard(student);    setOpenDropdownId(null); }, disabled: false, title: undefined },
+                {
+                  icon: "badge",
+                  label: "Carteirinha",
+                  action: () => { setViewingCard(student); setOpenDropdownId(null); },
+                  disabled: cardDisabled,
+                  title: cardDisabledReason || undefined,
+                },
                 {
                   icon: "add_card",
                   label: "Novo pedido",

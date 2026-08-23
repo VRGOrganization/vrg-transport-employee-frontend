@@ -55,6 +55,9 @@ export interface LicenseRecord {
   _id: string;
   studentId: string;
   employeeId?: string;
+  /** Nome real do campo no backend (entidade License). */
+  enrollmentCycleId?: string | null;
+  /** @deprecated Leia enrollmentCycleId. */
   enrollmentPeriodId?: string | null;
   /** Presigned URL assinada (http(s)) ou base64/data URL legado. Use normalizeMediaSource/resolveToDataUrl. */
   imageLicense: string;
@@ -83,6 +86,10 @@ export interface LicenseRequestRecord {
     | "rejected"
     | "revision"
     | "waitlisted"
+    // Valor real do enum LicenseRequestStatus no backend: pedido em que parte
+    // dos dias entrou na lista de espera. Sem ele, a lista de espera fica
+    // subcontada em qualquer agregação.
+    | "partially_waitlisted"
     | "cancelled";
   rejectionReason: string | null;
   rejectedAt: string | null;
@@ -92,6 +99,12 @@ export interface LicenseRequestRecord {
   revisionFields?: string[];
   revisionMessage?: string | null;
   licenseId: string | null;
+  /**
+   * Ciclo de inscrição do pedido. Este é o nome real do campo na entidade e em
+   * todas as respostas HTTP do backend.
+   */
+  enrollmentCycleId?: string | null;
+  /** @deprecated Nunca existiu na resposta do backend — leia enrollmentCycleId. */
   enrollmentPeriodId?: string | null;
   filaPosition?: number | null;
   busId?: string | { _id: string } | null;
