@@ -82,7 +82,7 @@ export function StudentListItem({
           </>
         )}
         {large && (
-          <p className="mt-2 truncate text-sm text-on-surface-variant">{student.institution ? toTitleCase(student.institution) : "Instituição não informada"} — {student.degree ?? ""}</p>
+          <p className="mt-2 truncate text-sm text-on-surface-variant">{student.institution ? toTitleCase(student.institution) : "Instituição não informada"} · {student.degree ?? ""}</p>
         )}
       </div>
 

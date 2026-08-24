@@ -53,7 +53,7 @@ describe("roleLabel", () => {
     expect(roleLabel("student")).toBe("Estudante");
   });
   it("handles null/unknown gracefully", () => {
-    expect(roleLabel(null)).toBe("—");
+    expect(roleLabel(null)).toBe("-");
     expect(roleLabel("weird")).toBe("weird");
   });
 });

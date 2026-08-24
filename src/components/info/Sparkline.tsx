@@ -32,7 +32,7 @@ export function Sparkline({ values, width = 64, height = 20 }: SparklineProps) {
       height={height}
       viewBox={`0 0 ${width} ${height}`}
       role="img"
-      aria-label={`Fluxo semanal — ${label}`}
+      aria-label={`Fluxo semanal de ${label}`}
       className="shrink-0 overflow-visible"
     >
       <polyline

@@ -37,10 +37,10 @@ function toRows(passes: BusPass[]): ManifestRow[] {
       if (!data) continue;
       rows.push({
         key: `${pass.id}:${leg}`,
-        busIdentifier: data.busIdentifier ?? "—",
-        universityAcronym: data.universityAcronym ?? "—",
+        busIdentifier: data.busIdentifier ?? "-",
+        universityAcronym: data.universityAcronym ?? "-",
         leg,
-        period: data.period ?? "—",
+        period: data.period ?? "-",
         studentName: pass.studentName,
         studentRegistration: pass.studentRegistration,
         verificationCode: pass.verificationCode,
@@ -114,7 +114,7 @@ export function BusPassManifestPage({ role }: { role: "admin" | "employee" }) {
         label: "Aluno",
         render: (row) => (
           <div className="min-w-0">
-            <p className="truncate text-on-surface">{row.studentName || "—"}</p>
+            <p className="truncate text-on-surface">{row.studentName || "-"}</p>
             {row.studentRegistration ? (
               <p className="truncate text-xs text-on-surface-variant">
                 {row.studentRegistration}
@@ -128,7 +128,7 @@ export function BusPassManifestPage({ role }: { role: "admin" | "employee" }) {
         label: "Código",
         render: (row) => (
           <span className="font-mono text-xs text-on-surface-variant">
-            {row.verificationCode ?? "—"}
+            {row.verificationCode ?? "-"}
           </span>
         ),
       },
@@ -148,7 +148,7 @@ export function BusPassManifestPage({ role }: { role: "admin" | "employee" }) {
           </h1>
           <p className="text-sm text-on-surface-variant">
             Passes aprovados para {formatCivilDate(date)}
-            {weekday ? ` · ${weekday}` : ""} — {rows.length} embarque(s).
+            {weekday ? ` · ${weekday}` : ""} · {rows.length} embarque(s).
           </p>
         </div>
 

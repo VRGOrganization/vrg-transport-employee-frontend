@@ -162,7 +162,7 @@ function RosterContent({
           <span className="text-on-surface-variant">
             Turno:{" "}
             <span className="font-medium text-on-surface">
-              {bus?.shift ?? "—"}
+              {bus?.shift ?? "-"}
             </span>
           </span>
           <span className="text-on-surface-variant">
@@ -188,7 +188,7 @@ function RosterContent({
                       universityNames.get(id) ??
                       (typeof slot.universityId === "object"
                         ? slot.universityId.acronym
-                        : "—")
+                        : "-")
                     );
                   })
                   .join(" › ")}
@@ -288,7 +288,7 @@ function RosterContent({
                         {entry.name ?? "Sem nome"}
                       </span>
                       <span className="block truncate text-[11px] text-on-surface-muted">
-                        {entry.email ?? "—"}
+                        {entry.email ?? "-"}
                       </span>
                     </td>
                     {DAYS.map((day) => {

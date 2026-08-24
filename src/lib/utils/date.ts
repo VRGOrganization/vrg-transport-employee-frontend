@@ -69,16 +69,16 @@ export function brDayEndISO(civilDate: string): string {
 }
 
 export function formatDateBR(date: string | Date | null | undefined): string {
-  if (!date) return "—";
+  if (!date) return "-";
   const d = typeof date === "string" ? new Date(date) : date;
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleDateString("pt-BR", { timeZone: BRAZIL_TIME_ZONE });
 }
 
 export function formatDateLongBR(date: string | Date | null | undefined): string {
-  if (!date) return "—";
+  if (!date) return "-";
   const d = typeof date === "string" ? new Date(date) : date;
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleDateString("pt-BR", {
     timeZone: BRAZIL_TIME_ZONE,
     day: "2-digit",
@@ -88,9 +88,9 @@ export function formatDateLongBR(date: string | Date | null | undefined): string
 }
 
 export function formatDateTimeBR(date: string | Date | null | undefined): string {
-  if (!date) return "—";
+  if (!date) return "-";
   const d = typeof date === "string" ? new Date(date) : date;
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleString("pt-BR", { timeZone: BRAZIL_TIME_ZONE });
 }
 

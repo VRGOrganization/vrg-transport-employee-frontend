@@ -246,7 +246,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 /** Rótulo PT-BR do papel — o admin nunca vê o código cru do papel. */
 export function roleLabel(role: string | null | undefined): string {
-  if (!role) return "—";
+  if (!role) return "-";
   return ROLE_LABELS[role] ?? role;
 }
 

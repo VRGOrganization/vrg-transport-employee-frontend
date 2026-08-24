@@ -163,7 +163,7 @@ export function StudentInfoView({ student, onClose, onBan }: StudentInfoViewProp
 
             {/* Secondary stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <StatTile icon="schedule" label="Turno" value={student.shift || "—"} />
+              <StatTile icon="schedule" label="Turno" value={student.shift || "-"} />
               <StatTile icon="directions_bus" label="Já Usa Transporte" value={alreadyUsesTransport ? "Sim" : "Não"} />
               <StatTile icon="accessible" label="PCD" value={student.hasDisability ? "Sim" : "Não"} />
               <StatTile icon="calendar_today" label="Cadastro" value={registrationDate} />
@@ -218,7 +218,7 @@ export function StudentInfoView({ student, onClose, onBan }: StudentInfoViewProp
                                     {item.period}
                                   </span>
                                 ))
-                              : <span className="text-[11px] text-on-surface-variant/25 text-center">—</span>
+                              : <span className="text-[11px] text-on-surface-variant/25 text-center">-</span>
                             }
                           </div>
                         </div>

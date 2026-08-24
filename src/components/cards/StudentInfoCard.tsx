@@ -67,7 +67,7 @@ function ScheduleGrid({ schedule, title }: { schedule?: Schedule; title: string 
                       </span>
                     ))
                   ) : (
-                    <span className="text-center text-[11px] text-on-surface-variant/25">—</span>
+                    <span className="text-center text-[11px] text-on-surface-variant/25">-</span>
                   )}
                 </div>
               </div>
@@ -116,21 +116,21 @@ export function StudentInfoCard({ student, currentLicense }: StudentInfoCardProp
         </h3>
         <div className="grid grid-cols-1 gap-2 text-xs text-on-surface-variant md:grid-cols-2">
           <p>
-            <strong className="text-on-surface">Curso:</strong> {student.degree ?? "—"}
+            <strong className="text-on-surface">Curso:</strong> {student.degree ?? "-"}
           </p>
           <p>
-            <strong className="text-on-surface">Turno:</strong> {student.shift ?? "—"}
+            <strong className="text-on-surface">Turno:</strong> {student.shift ?? "-"}
           </p>
           <p className="md:col-span-2">
             <strong className="text-on-surface">Instituição:</strong>{" "}
-            {student.institution ? toTitleCase(student.institution) : "—"}
+            {student.institution ? toTitleCase(student.institution) : "-"}
           </p>
         </div>
       </div>
 
       <ScheduleGrid
         schedule={student.schedule}
-        title={hasSecondary ? "Grade — 1ª faculdade" : "Grade informada"}
+        title={hasSecondary ? "Grade da 1ª faculdade" : "Grade informada"}
       />
 
       {hasSecondary && (
@@ -140,22 +140,22 @@ export function StudentInfoCard({ student, currentLicense }: StudentInfoCardProp
             <div className="grid grid-cols-1 gap-2 text-xs text-on-surface-variant md:grid-cols-2">
               <p>
                 <strong className="text-on-surface">Curso:</strong>{" "}
-                {student.secondaryDegree ?? "—"}
+                {student.secondaryDegree ?? "-"}
               </p>
               <p>
                 <strong className="text-on-surface">Turno:</strong>{" "}
-                {student.secondaryShift ?? "—"}
+                {student.secondaryShift ?? "-"}
               </p>
               <p className="md:col-span-2">
                 <strong className="text-on-surface">Instituição:</strong>{" "}
-                {student.secondaryInstitution ? toTitleCase(student.secondaryInstitution) : "—"}
+                {student.secondaryInstitution ? toTitleCase(student.secondaryInstitution) : "-"}
               </p>
             </div>
           </div>
 
           <ScheduleGrid
             schedule={student.secondarySchedule}
-            title="Grade — 2ª faculdade"
+            title="Grade da 2ª faculdade"
           />
         </>
       )}

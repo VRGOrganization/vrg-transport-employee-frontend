@@ -15,9 +15,9 @@ interface BanHistoryModalProps {
 
 /** "22 de ago. de 2026 às 14:30" — data e hora, como o histórico exige. */
 function formatDateTime(iso: string): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleString("pt-BR", {
     day: "2-digit",
     month: "short",

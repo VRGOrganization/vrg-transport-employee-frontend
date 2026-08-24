@@ -147,7 +147,7 @@ export function BusPassSettingsPage() {
         </h1>
         <p className="text-sm text-on-surface-variant">
           Valem para todos os alunos. Alterações passam a valer nos próximos
-          pedidos — passes já aprovados não são afetados.
+          pedidos. Passes já aprovados não são afetados.
         </p>
       </header>
 

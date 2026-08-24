@@ -14,7 +14,7 @@ export function formatPercent(value: number, total: number): string {
 /** Hora curta (HH:MM) para o carimbo de última leitura. */
 export function formatClock(iso: string): string {
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleTimeString("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",

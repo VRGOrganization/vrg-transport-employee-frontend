@@ -38,7 +38,7 @@ export function BusPassDetailModal({ open, pass, onClose }: BusPassDetailModalPr
     <Modal open={open} onClose={onClose} title="Detalhe do passe" size="md">
       <div className="space-y-4 text-sm">
         <div>
-          <p className="font-medium text-on-surface">{pass.studentName || "—"}</p>
+          <p className="font-medium text-on-surface">{pass.studentName || "-"}</p>
           {pass.studentRegistration ? (
             <p className="text-xs text-on-surface-variant">{pass.studentRegistration}</p>
           ) : null}

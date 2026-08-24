@@ -65,7 +65,7 @@ const STUDENT_COLUMNS: Column<Student>[] = [
   {
     key: "institution",
     label: "Instituição",
-    render: (s) => <span className="text-sm text-on-surface-variant">{s.institution ? toTitleCase(s.institution) : "—"}</span>,
+    render: (s) => <span className="text-sm text-on-surface-variant">{s.institution ? toTitleCase(s.institution) : "-"}</span>,
   },
   {
     key: "shift",

@@ -105,10 +105,10 @@ async function downloadPdf(events: AuditEvent[]) {
       `Ação: ${e.action}`,
       `Resultado: ${e.outcome === "success" ? "Sucesso" : "Falha"}`,
       `Data: ${fmtDate(e.createdAt)}`,
-      `Executado por: ${e.actorName ?? e.actor?.id ?? "—"}${
+      `Executado por: ${e.actorName ?? e.actor?.id ?? "-"}${
         e.actor?.role ? ` (${e.actor.role})` : ""
       }`,
-      `Alvo: ${e.targetName ?? "—"}`,
+      `Alvo: ${e.targetName ?? "-"}`,
       `ID do registro: ${e.id}`,
     ];
     if (e.metadata && Object.keys(e.metadata).length > 0) {

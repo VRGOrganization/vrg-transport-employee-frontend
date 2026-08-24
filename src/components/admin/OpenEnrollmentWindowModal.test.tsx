@@ -52,8 +52,8 @@ describe("OpenEnrollmentWindowModal", () => {
     fireEvent.click(screen.getByLabelText(/^Faculdades específicas/));
 
     await waitFor(() => {
-      expect(screen.getByText(/U1 — Universidade Um/)).toBeInTheDocument();
-      expect(screen.getByText(/U2 — Universidade Dois/)).toBeInTheDocument();
+      expect(screen.getByText(/U1: Universidade Um/)).toBeInTheDocument();
+      expect(screen.getByText(/U2: Universidade Dois/)).toBeInTheDocument();
     });
   });
 
@@ -64,7 +64,7 @@ describe("OpenEnrollmentWindowModal", () => {
     fireEvent.change(screen.getByLabelText("Data de início"), { target: { value: "2030-04-01" } });
     fireEvent.change(screen.getByLabelText("Data de fim"), { target: { value: "2030-04-03" } });
     fireEvent.click(screen.getByLabelText(/^Faculdades específicas/));
-    await waitFor(() => screen.getByText(/U1 — Universidade Um/));
+    await waitFor(() => screen.getByText(/U1: Universidade Um/));
 
     fireEvent.click(screen.getByRole("button", { name: /abrir janela/i }));
 
@@ -93,8 +93,8 @@ describe("OpenEnrollmentWindowModal", () => {
     fireEvent.change(screen.getByLabelText("Data de início"), { target: { value: "2030-04-01" } });
     fireEvent.change(screen.getByLabelText("Data de fim"), { target: { value: "2030-04-03" } });
     fireEvent.click(screen.getByLabelText(/^Faculdades específicas/));
-    await waitFor(() => screen.getByText(/U1 — Universidade Um/));
-    fireEvent.click(screen.getByText(/U1 — Universidade Um/));
+    await waitFor(() => screen.getByText(/U1: Universidade Um/));
+    fireEvent.click(screen.getByText(/U1: Universidade Um/));
 
     fireEvent.click(screen.getByRole("button", { name: /abrir janela/i }));
 

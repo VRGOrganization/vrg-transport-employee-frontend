@@ -78,14 +78,12 @@ const CHIP_CLASS =
 // no fuso do navegador faria a data mostrada divergir da escolhida.
 function formatDate(dateValue: string | null | undefined): string {
   if (!dateValue) return "-";
-  const formatted = formatDateBR(dateValue);
-  return formatted === "—" ? "-" : formatted;
+  return formatDateBR(dateValue);
 }
 
 function formatDateTime(dateValue: string | null | undefined): string {
   if (!dateValue) return "-";
-  const formatted = formatDateTimeBR(dateValue);
-  return formatted === "—" ? "-" : formatted;
+  return formatDateTimeBR(dateValue);
 }
 
 function daysUntil(dateValue: string | null | undefined): number | null {
@@ -121,7 +119,7 @@ function getActiveCycleStatus(period: EnrollmentPeriod): CycleStatusBadge {
     return { label: "INSCRIÇÃO ABERTA", className: "text-success" };
   }
   return {
-    label: "CICLO ATIVO — SEM INSCRIÇÃO ABERTA",
+    label: "CICLO ATIVO, SEM INSCRIÇÃO ABERTA",
     className: "text-warning",
     supportText: "A equipe pode continuar processando a fila normalmente.",
   };
@@ -833,7 +831,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                           ? `Encerra em ${windowDaysLeft} dia${windowDaysLeft > 1 ? "s" : ""}.`
                           : windowDaysLeft === 0
                             ? "Encerra hoje."
-                            : "Prazo da janela expirado — será fechada na próxima verificação."}
+                            : "Prazo da janela expirado. Será fechada na próxima verificação."}
                       </span>
                     </div>
                   </div>
@@ -1093,7 +1091,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
         title="Cancelar agendamento do ciclo"
         description={
           scheduledPeriod
-            ? `O ciclo agendado para ${formatDate(scheduledPeriod.cycleStartDate)} será descartado. Nenhum aluno é afetado — ele ainda não começou. Depois disso você poderá agendar um novo ciclo.`
+            ? `O ciclo agendado para ${formatDate(scheduledPeriod.cycleStartDate)} será descartado. Nenhum aluno é afetado, porque ele ainda não começou. Depois disso você poderá agendar um novo ciclo.`
             : ""
         }
         icon={AlertTriangle}

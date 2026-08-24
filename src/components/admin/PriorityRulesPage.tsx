@@ -238,7 +238,7 @@ export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-xs text-on-surface-variant/50 italic mt-1">Sem critérios — aplica-se a todos</p>
+                    <p className="text-xs text-on-surface-variant/50 italic mt-1">Sem critérios: aplica-se a todos</p>
                   )}
                 </div>
 

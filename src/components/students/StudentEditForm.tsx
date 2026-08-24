@@ -79,7 +79,7 @@ export function StudentEditForm({
     ) => {
       if (newValue !== originalValue) {
         payload[field] = newValue;
-        changes.push({ label, from: originalValue || "—", to: newValue || "—" });
+        changes.push({ label, from: originalValue || "-", to: newValue || "-" });
       }
     };
 

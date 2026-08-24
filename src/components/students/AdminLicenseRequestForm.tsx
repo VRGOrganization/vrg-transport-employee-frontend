@@ -426,24 +426,24 @@ export function AdminLicenseRequestForm({
 
         <dl className="rounded-xl border border-outline-variant divide-y divide-outline-variant overflow-hidden">
           {[
-            ["Faculdade", institution.trim() || "—"],
-            ["Curso", degree.trim() || "—"],
-            ["Turno", shift || "—"],
-            ["Tipo sanguíneo", bloodType || "—"],
-            ["Ônibus", busLabel || "—"],
+            ["Faculdade", institution.trim() || "-"],
+            ["Curso", degree.trim() || "-"],
+            ["Turno", shift || "-"],
+            ["Tipo sanguíneo", bloodType || "-"],
+            ["Ônibus", busLabel || "-"],
             ["Modo de transporte", transportMode === "weekly" ? "Semanal" : "Regular"],
-            ["Horários", scheduleSummary.length > 0 ? scheduleSummary.join(", ") : "—"],
+            ["Horários", scheduleSummary.length > 0 ? scheduleSummary.join(", ") : "-"],
             ...(secondaryEnabled
               ? ([
-                  ["Faculdade (2ª)", secondaryInstitution.trim() || "—"],
-                  ["Curso (2ª)", secondaryDegree.trim() || "—"],
-                  ["Turno (2ª)", secondaryShift || "—"],
-                  ["Ônibus (2ª)", secondaryBusLabel || "—"],
+                  ["Faculdade (2ª)", secondaryInstitution.trim() || "-"],
+                  ["Curso (2ª)", secondaryDegree.trim() || "-"],
+                  ["Turno (2ª)", secondaryShift || "-"],
+                  ["Ônibus (2ª)", secondaryBusLabel || "-"],
                   [
                     "Horários (2ª)",
                     secondaryScheduleSummary.length > 0
                       ? secondaryScheduleSummary.join(", ")
-                      : "—",
+                      : "-",
                   ],
                 ] as const)
               : []),

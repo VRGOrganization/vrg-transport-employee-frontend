@@ -8,22 +8,22 @@ import { toTitleCase } from "@/lib/utils/string";
 
 const DELETE_TERMS = `Ao prosseguir com esta ação administrativa, declaro, sob plena consciência e responsabilidade, que estou ciente e em total concordância com as seguintes disposições e consequências jurídico-administrativas da exclusão permanente do cadastro:
 
-§ 1º — Exclusão Definitiva e Irreversível do Cadastro
-O registro do funcionário identificado neste ato será removido em caráter permanente da base de dados do Sistema VRG Transport, do serviço de transporte universitário municipalmente administrado pela Prefeitura de São Fidélis — Estado do Rio de Janeiro. Diferentemente da desativação, esta medida NÃO é reversível: uma vez concluída, não existe qualquer procedimento administrativo, funcionalidade do sistema ou recurso técnico capaz de restaurar o cadastro excluído.
+§ 1º. Exclusão Definitiva e Irreversível do Cadastro
+O registro do funcionário identificado neste ato será removido em caráter permanente da base de dados do Sistema VRG Transport, do serviço de transporte universitário municipalmente administrado pela Prefeitura de São Fidélis, no Estado do Rio de Janeiro. Diferentemente da desativação, esta medida NÃO é reversível: uma vez concluída, não existe qualquer procedimento administrativo, funcionalidade do sistema ou recurso técnico capaz de restaurar o cadastro excluído.
 
-§ 2º — Perda Irrecuperável dos Dados de Cadastro
-Serão apagados de forma definitiva o nome, o endereço de e-mail, a matrícula funcional, as credenciais de acesso e os demais dados vinculados ao cadastro deste funcionário. Nenhuma cópia recuperável permanecerá acessível pelo sistema, e nenhum administrador — independentemente do nível de privilégio — poderá desfazer esta operação após sua confirmação.
+§ 2º. Perda Irrecuperável dos Dados de Cadastro
+Serão apagados de forma definitiva o nome, o endereço de e-mail, a matrícula funcional, as credenciais de acesso e os demais dados vinculados ao cadastro deste funcionário. Nenhuma cópia recuperável permanecerá acessível pelo sistema, e nenhum administrador, independentemente do nível de privilégio, poderá desfazer esta operação após sua confirmação.
 
-§ 3º — Encerramento Imediato de Sessões e Acessos
+§ 3º. Encerramento Imediato de Sessões e Acessos
 Todas as sessões porventura ativas do funcionário nos portais vinculados a esta plataforma serão encerradas de forma imediata e automática, e quaisquer credenciais associadas deixarão de ser reconhecidas pelo sistema no mesmo instante da exclusão.
 
-§ 4º — Necessidade de Novo Cadastro
+§ 4º. Necessidade de Novo Cadastro
 Caso o funcionário venha a retornar ao quadro funcional, será obrigatório realizar um cadastro inteiramente novo, com nova matrícula e novas credenciais. O histórico anterior de cadastro não será restaurado nem vinculado ao novo registro, pois deixou de existir na base de dados.
 
-§ 5º — Registro Permanente para Fins de Auditoria e Transparência
+§ 5º. Registro Permanente para Fins de Auditoria e Transparência
 Os motivos declarados neste ato, bem como os dados de identificação do administrador responsável pela decisão, a data e hora da exclusão e os dados identificadores do cadastro excluído, serão permanentemente preservados no registro de auditoria para fins de transparência administrativa e conformidade com as políticas institucionais. O registro de auditoria é a única evidência remanescente da existência deste cadastro e não permite sua restauração.
 
-§ 6º — Alternativa Menos Gravosa e Responsabilidade Administrativa
+§ 6º. Alternativa Menos Gravosa e Responsabilidade Administrativa
 Declaro estar ciente de que a desativação do funcionário constitui medida reversível e suficiente para bloquear o acesso ao sistema, e que opto pela exclusão permanente de forma deliberada, por motivos legítimos e devidamente documentados, condizentes com as políticas de uso e as diretrizes do serviço de transporte universitário da Municipalidade de São Fidélis, assumindo integral responsabilidade sobre os efeitos jurídicos e administrativos irreversíveis decorrentes desta decisão.`;
 
 interface EmployeeDeleteFormProps {

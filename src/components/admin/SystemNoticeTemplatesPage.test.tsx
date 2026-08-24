@@ -63,10 +63,10 @@ describe("SystemNoticeTemplatesPage", () => {
     render(<SystemNoticeTemplatesPage />);
 
     await waitFor(() => expect(screen.getByLabelText("Título de WINDOW_OPEN")).toBeInTheDocument());
-    expect(screen.getByText("Fechamento de janela — 7 dias antes")).toBeInTheDocument();
-    expect(screen.getByText("Fechamento de janela — 3 dias antes")).toBeInTheDocument();
-    expect(screen.getByText("Fechamento de janela — 1 dia antes")).toBeInTheDocument();
-    expect(screen.getByText("Reset do ciclo — 7 dias antes")).toBeInTheDocument();
+    expect(screen.getByText("Fechamento de janela: 7 dias antes")).toBeInTheDocument();
+    expect(screen.getByText("Fechamento de janela: 3 dias antes")).toBeInTheDocument();
+    expect(screen.getByText("Fechamento de janela: 1 dia antes")).toBeInTheDocument();
+    expect(screen.getByText("Reset do ciclo: 7 dias antes")).toBeInTheDocument();
   });
 
   it("mostra estado vazio explícito quando a API não retorna templates", async () => {

@@ -36,7 +36,7 @@ const ITEM_SUFFIXES: Partial<Record<SystemNoticeTemplateKey, string>> = {
 
 function itemLabel(groupLabel: string, key: SystemNoticeTemplateKey): string {
   const suffix = ITEM_SUFFIXES[key];
-  return suffix ? `${groupLabel} — ${suffix}` : groupLabel;
+  return suffix ? `${groupLabel}: ${suffix}` : groupLabel;
 }
 
 type Draft = Record<SystemNoticeTemplateKey, { title: string; body: string }>;

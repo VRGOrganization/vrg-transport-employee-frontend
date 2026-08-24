@@ -143,7 +143,7 @@ export function AuditDetailModal({ event, onClose }: AuditDetailModalProps) {
             label="Executado por"
             value={
               <>
-                {event.actorName ?? "—"}
+                {event.actorName ?? "-"}
                 {event.actor?.role && (
                   <span className="text-on-surface-variant">
                     {" "}
@@ -153,7 +153,7 @@ export function AuditDetailModal({ event, onClose }: AuditDetailModalProps) {
               </>
             }
           />
-          <Row label="Alvo" value={event.targetName ?? "—"} />
+          <Row label="Alvo" value={event.targetName ?? "-"} />
         </div>
 
         <div className="px-6 pb-6 pt-2 border-t border-outline-variant/30 shrink-0 flex justify-end">

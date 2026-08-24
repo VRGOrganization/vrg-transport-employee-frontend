@@ -59,7 +59,7 @@ function legText(pass: BusPass): string {
       `Volta: ${pass.inbound.busIdentifier ?? "?"} → ${pass.inbound.universityAcronym ?? "?"}`,
     );
   }
-  return parts.join(" · ") || "—";
+  return parts.join(" · ") || "-";
 }
 
 /**
@@ -228,7 +228,7 @@ export function BusPassPage({ role }: { role: "admin" | "employee" }) {
         render: (row) => (
           <div className="min-w-0">
             <p className="truncate font-medium text-on-surface">
-              {row.studentName || "—"}
+              {row.studentName || "-"}
             </p>
             {row.studentRegistration ? (
               <p className="truncate text-xs text-on-surface-variant">
@@ -426,7 +426,7 @@ export function BusPassPage({ role }: { role: "admin" | "employee" }) {
         description={
           pendingAction === "reject"
             ? "O aluno verá este motivo. O passe é encerrado."
-            : "O aluno poderá corrigir e reenviar — por exemplo, escolhendo outro ônibus."
+            : "O aluno poderá corrigir e reenviar, por exemplo escolhendo outro ônibus."
         }
         confirmLabel={pendingAction === "reject" ? "Negar" : "Devolver"}
         loading={actionLoading}

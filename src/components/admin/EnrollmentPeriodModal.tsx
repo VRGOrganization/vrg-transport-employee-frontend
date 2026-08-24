@@ -229,7 +229,7 @@ export function EnrollmentPeriodModal({
             </div>
           ) : (
             <p className="rounded-lg border border-outline-variant/50 bg-surface-container-low px-3 py-2 text-sm text-on-surface-variant">
-              Nenhuma janela aberta — só a validade da carteirinha pode ser editada.
+              Nenhuma janela aberta. Só a validade da carteirinha pode ser editada.
               Abra uma janela de inscrição para ajustar as datas.
             </p>
           )}

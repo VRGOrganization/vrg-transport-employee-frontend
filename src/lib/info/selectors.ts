@@ -453,7 +453,7 @@ export function byUniversity(
     rows.push({
       universityId,
       name: university?.name ?? "Faculdade não identificada",
-      acronym: university?.acronym ?? "—",
+      acronym: university?.acronym ?? "-",
       temporary: Boolean(university?.temporary),
       students: entry.students.size,
       byShift: PERIODS.map((period) => ({

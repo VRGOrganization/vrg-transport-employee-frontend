@@ -301,7 +301,7 @@ export function OpenEnrollmentWindowModal({
                         className="accent-primary"
                       />
                       <span>
-                        {university.acronym} — {university.name}
+                        {university.acronym}: {university.name}
                       </span>
                     </label>
                   );

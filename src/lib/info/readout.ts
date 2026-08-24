@@ -49,7 +49,7 @@ function cellPhrase(day: Day, period: Period): string {
  * Escreve a situação do recorte em português corrido.
  *
  * Regras: nenhum número inventado; se um dado não existe, a frase ENCURTA em
- * vez de dizer "0" ou "—"; no máximo três sentenças. O usuário lê a situação
+ * vez de dizer "0" ou "-"; no máximo três sentenças. O usuário lê a situação
  * antes de olhar qualquer gráfico.
  */
 export function buildReadout(input: BuildReadoutInput): ReadoutToken[] {

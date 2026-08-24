@@ -286,7 +286,7 @@ describe("EnrollmentPeriodPage — selo de status com três estados (Núcleo 10)
     });
   });
 
-  it("mostra CICLO ATIVO — SEM INSCRIÇÃO ABERTA quando o ciclo está vivo sem janela aberta", async () => {
+  it("mostra CICLO ATIVO, SEM INSCRIÇÃO ABERTA quando o ciclo está vivo sem janela aberta", async () => {
     const noWindow = { ...activePeriodStub, startDate: null, endDate: null };
     vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(noWindow as never);
     vi.mocked(enrollmentPeriodService.list).mockResolvedValue([noWindow] as never);
@@ -294,7 +294,7 @@ describe("EnrollmentPeriodPage — selo de status com três estados (Núcleo 10)
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
       expect(
-        screen.getByText("CICLO ATIVO — SEM INSCRIÇÃO ABERTA"),
+        screen.getByText("CICLO ATIVO, SEM INSCRIÇÃO ABERTA"),
       ).toBeInTheDocument();
     });
     expect(screen.getByText(/equipe pode continuar/i)).toBeInTheDocument();

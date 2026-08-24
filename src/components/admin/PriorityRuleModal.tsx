@@ -182,11 +182,11 @@ export function PriorityRuleModal({ open, initial, nextSortOrder, onClose, onSav
           <div className="flex flex-col gap-1.5">
             <Label required>Prioridade</Label>
             <select value={form.level} onChange={(e) => setField("level", e.target.value)} className={fieldH}>
-              <option value="1">1ª — Máxima</option>
-              <option value="2">2ª — Alta</option>
-              <option value="3">3ª — Média</option>
-              <option value="4">4ª — Baixa</option>
-              <option value="5">5ª — Padrão</option>
+              <option value="1">1ª: Máxima</option>
+              <option value="2">2ª: Alta</option>
+              <option value="3">3ª: Média</option>
+              <option value="4">4ª: Baixa</option>
+              <option value="5">5ª: Padrão</option>
             </select>
             {errors.level && <p className="text-xs text-error">{errors.level}</p>}
           </div>
@@ -246,7 +246,7 @@ export function PriorityRuleModal({ open, initial, nextSortOrder, onClose, onSav
 
           {!form.alreadyUsesTransport && !form.hasDisability && (
             <p className="text-xs text-on-surface-variant/60 italic px-1">
-              Nenhuma condição marcada — esta regra será aplicada a todos os alunos em situação de empate.
+              Nenhuma condição marcada. Esta regra será aplicada a todos os alunos em situação de empate.
             </p>
           )}
 
@@ -288,7 +288,7 @@ export function PriorityRuleModal({ open, initial, nextSortOrder, onClose, onSav
             <span className={`size-4 rounded-full border-2 flex items-center justify-center transition-all ${form.active ? "border-success bg-success" : "border-outline-variant"}`}>
               {form.active && <span className="size-1.5 rounded-full bg-white" />}
             </span>
-            {form.active ? "Regra ativa — será usada nos desempates" : "Regra inativa — não será usada"}
+            {form.active ? "Regra ativa, será usada nos desempates" : "Regra inativa, não será usada"}
           </button>
         </div>
 
