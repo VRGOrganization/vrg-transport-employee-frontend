@@ -111,8 +111,9 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
       await courseApi.deactivate(pendingDeactivate._id);
       setPendingDeactivate(null);
       onCoursesChanged();
-    } catch {
-      setDeactivateError("Não foi possível desativar o curso. Tente novamente.");
+    } catch (err) {
+      const apiMessage = (err as { message?: string })?.message;
+      setDeactivateError(apiMessage || "Não foi possível desativar o curso. Tente novamente.");
     } finally {
       setDeactivating(false);
     }
@@ -250,6 +251,9 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
                 <p className="text-sm text-on-surface-variant mb-2">{pendingDeactivate.model}</p>
               )}
               <p>Esta ação desativará o curso. Ele não ficará mais disponível para novos cadastros.</p>
+              <p className="text-xs text-on-surface-muted mt-2">
+                Não é possível desativar se houver aluno com carteirinha aprovada vinculado a este curso.
+              </p>
             </>
           )
         }
