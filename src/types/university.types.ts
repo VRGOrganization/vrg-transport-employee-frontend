@@ -14,6 +14,9 @@ export interface University {
   // Presente na listagem (GET /university): true se existe ao menos um Bus
   // cobrindo essa faculdade. Ausente em respostas antigas/mockadas.
   hasBus?: boolean;
+  /** Id do ator que desativou (userId); `null`/ausente quando ativa. */
+  deactivatedBy?: string | null;
+  deactivatedAt?: string | null;
 }
 
 export type CourseModel = "Técnico" | "Tecnólogo" | "Bacharel" | "Licenciatura" | "Mestrado" | "Doutorado";
@@ -28,6 +31,11 @@ export interface Course {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Id do ator que desativou (userId); `null`/ausente quando ativo. */
+  deactivatedBy?: string | null;
+  /** Nome do ator resolvido pelo backend (aba "Cursos desativados"). */
+  deactivatedByName?: string | null;
+  deactivatedAt?: string | null;
 }
 
 /** Contador de vagas ocupadas de um vínculo faculdade+ônibus em um dia. */

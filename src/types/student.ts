@@ -9,6 +9,7 @@ export interface Student {
   bloodType?: string;
   universityId?: string | { _id: string; name: string; acronym: string };
   institution?: string;
+  courseId?: string | { _id: string; name: string } | null;
   photo?: string;
   schedule?: Array<{
     day: string;
