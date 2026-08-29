@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { universityApi, courseApi, busApi } from "@/lib/universityApi";
 import type { University, Course, Bus } from "@/types/university.types";
 import { UniversityTable } from "@/components/universities/UniversityTable";
+import { InactiveCoursesTable } from "@/components/universities/InactiveCoursesTable";
 import { CoursesPanel } from "@/components/universities/CoursesPanel";
 import { LinkedBusesPanel } from "@/components/universities/LinkedBusesPanel";
 import { UniversityFormModal } from "@/components/universities/UniversityFormModal";
@@ -14,15 +15,16 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { Plus, MapPin, BookOpen, Bus as BusIcon, Building2, AlertCircle, X, CheckCircle2, Ban, RotateCcw, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 type DetailTab = "courses" | "buses";
-type StatusTab = "active" | "inactive";
+type StatusTab = "active" | "inactive" | "inactive-courses";
 type SortOrder = "az" | "za" | "temp-first" | "fixed-first";
 type CoverageFilter = "all" | "covered" | "uncovered";
 
 const PAGE_SIZE = 5;
 
 const STATUS_TABS = [
-  { key: "active" as StatusTab,   label: "Ativas",      icon: CheckCircle2 },
-  { key: "inactive" as StatusTab, label: "Desativadas", icon: Ban },
+  { key: "active" as StatusTab,            label: "Ativas",             icon: CheckCircle2 },
+  { key: "inactive" as StatusTab,          label: "Desativadas",        icon: Ban },
+  { key: "inactive-courses" as StatusTab,  label: "Cursos desativados", icon: BookOpen },
 ];
 
 export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
@@ -49,6 +51,10 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
   const [reactivateError, setReactivateError] = useState("");
   const [error, setError] = useState("");
   const [coursesError, setCoursesError] = useState("");
+  const [inactiveCourses, setInactiveCourses] = useState<Course[]>([]);
+  const [reactivatingCourseId, setReactivatingCourseId] = useState<string | null>(null);
+  const [pendingReactivateCourse, setPendingReactivateCourse] = useState<Course | null>(null);
+  const [reactivateCourseError, setReactivateCourseError] = useState("");
 
   const loadUniversities = useCallback(async () => {
     setLoadingUniversities(true);
@@ -61,12 +67,15 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
         ]);
         setUniversities(unis);
         setBuses(busList);
-      } else {
+      } else if (statusTab === "inactive") {
         const unis = await universityApi.listInactive();
         setUniversities(unis);
+      } else {
+        const courses = await courseApi.listInactive();
+        setInactiveCourses(courses);
       }
     } catch {
-      setError("Não foi possível carregar as faculdades.");
+      setError(statusTab === "inactive-courses" ? "Não foi possível carregar os cursos desativados." : "Não foi possível carregar as faculdades.");
     } finally {
       setLoadingUniversities(false);
     }
@@ -136,6 +145,25 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
   const safePage = Math.min(currentPage, totalPages);
   const pageItems = filteredUniversities.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
+  const filteredInactiveCourses = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return inactiveCourses;
+    return inactiveCourses.filter((c) => {
+      const universityLabel =
+        typeof c.universityId === "string"
+          ? ""
+          : `${c.universityId.acronym} ${c.universityId.name}`.toLowerCase();
+      return c.name.toLowerCase().includes(query) || universityLabel.includes(query);
+    });
+  }, [inactiveCourses, search]);
+
+  const courseTotalPages = Math.max(1, Math.ceil(filteredInactiveCourses.length / PAGE_SIZE));
+  const courseSafePage = Math.min(currentPage, courseTotalPages);
+  const coursePageItems = filteredInactiveCourses.slice(
+    (courseSafePage - 1) * PAGE_SIZE,
+    courseSafePage * PAGE_SIZE,
+  );
+
   const handleSelect = (university: University | null) => {
     if (!university) {
       setSelected(null);
@@ -172,6 +200,28 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
       setReactivateError("Não foi possível reativar a faculdade. Tente novamente.");
     } finally {
       setReactivatingId(null);
+    }
+  };
+
+  const handleReactivateCourse = (id: string) => {
+    const course = inactiveCourses.find((c) => c._id === id) ?? null;
+    setReactivateCourseError("");
+    setPendingReactivateCourse(course);
+  };
+
+  const handleConfirmReactivateCourse = async () => {
+    if (!pendingReactivateCourse) return;
+    setReactivatingCourseId(pendingReactivateCourse._id);
+    setReactivateCourseError("");
+    try {
+      await courseApi.reactivate(pendingReactivateCourse._id);
+      await loadUniversities();
+      setPendingReactivateCourse(null);
+    } catch (err) {
+      const apiMessage = (err as { message?: string })?.message;
+      setReactivateCourseError(apiMessage || "Não foi possível reativar o curso. Tente novamente.");
+    } finally {
+      setReactivatingCourseId(null);
     }
   };
 
@@ -254,35 +304,45 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
             <div className={`shrink-0 bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm p-5 ${statusTab === "active" ? "w-96" : "flex-1"}`}>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wide">
-                  {statusTab === "active" ? "Faculdades ativas" : "Faculdades desativadas"}
+                  {statusTab === "active"
+                    ? "Faculdades ativas"
+                    : statusTab === "inactive"
+                      ? "Faculdades desativadas"
+                      : "Cursos desativados"}
                 </h2>
                 <span className="text-xs bg-info-container text-info px-2 py-0.5 rounded-full font-medium">
-                  {universities.length}
+                  {statusTab === "inactive-courses" ? inactiveCourses.length : universities.length}
                 </span>
               </div>
 
               <SearchInput
                 value={search}
                 onChange={setSearch}
-                placeholder="Buscar por nome ou sigla..."
+                placeholder={
+                  statusTab === "inactive-courses"
+                    ? "Buscar por curso, faculdade ou sigla..."
+                    : "Buscar por nome ou sigla..."
+                }
                 className="w-full mb-3"
               />
 
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <ArrowUpDown className="size-3.5 text-on-surface-variant shrink-0" />
-                <label htmlFor="university-sort" className="text-xs text-on-surface-variant">Ordenar:</label>
-                <select
-                  id="university-sort"
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value as SortOrder)}
-                  className="text-xs bg-surface-container border border-outline-variant rounded-lg px-2 py-1 text-on-surface outline-none focus:ring-2 focus:ring-primary/30"
-                >
-                  <option value="az">Nome (A → Z)</option>
-                  <option value="za">Nome (Z → A)</option>
-                  <option value="temp-first">Temporárias primeiro</option>
-                  <option value="fixed-first">Fixas primeiro</option>
-                </select>
-              </div>
+              {statusTab !== "inactive-courses" && (
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  <ArrowUpDown className="size-3.5 text-on-surface-variant shrink-0" />
+                  <label htmlFor="university-sort" className="text-xs text-on-surface-variant">Ordenar:</label>
+                  <select
+                    id="university-sort"
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+                    className="text-xs bg-surface-container border border-outline-variant rounded-lg px-2 py-1 text-on-surface outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    <option value="az">Nome (A → Z)</option>
+                    <option value="za">Nome (Z → A)</option>
+                    <option value="temp-first">Temporárias primeiro</option>
+                    <option value="fixed-first">Fixas primeiro</option>
+                  </select>
+                </div>
+              )}
 
               {statusTab === "active" && (
                 <div className="flex items-center gap-2 mb-4 flex-wrap">
@@ -314,7 +374,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                     emptyDescription: "Tente buscar por outro nome ou sigla.",
                   })}
                 />
-              ) : (
+              ) : statusTab === "inactive" ? (
                 <UniversityTable
                   universities={pageItems}
                   loading={loadingUniversities}
@@ -323,34 +383,73 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                   emptyTitle={search.trim() ? "Nenhuma faculdade encontrada" : "Nenhuma faculdade desativada"}
                   emptyDescription={search.trim() ? "Tente buscar por outro nome ou sigla." : "Faculdades desativadas aparecerão aqui."}
                 />
+              ) : (
+                <InactiveCoursesTable
+                  courses={coursePageItems}
+                  loading={loadingUniversities}
+                  onReactivate={handleReactivateCourse}
+                  reactivatingId={reactivatingCourseId}
+                  emptyTitle={search.trim() ? "Nenhum curso encontrado" : "Nenhum curso desativado"}
+                  emptyDescription={search.trim() ? "Tente buscar por outro nome, faculdade ou sigla." : "Cursos desativados aparecerão aqui."}
+                />
               )}
 
-              {!loadingUniversities && filteredUniversities.length > 0 && (
-                <div className="flex items-center justify-between mt-4 pt-3 border-t border-outline-variant">
-                  <span className="text-xs text-on-surface-variant">
-                    Página {safePage} de {totalPages} · {filteredUniversities.length} {filteredUniversities.length === 1 ? "faculdade" : "faculdades"}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={safePage <= 1}
-                      className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      aria-label="Página anterior"
-                    >
-                      <ChevronLeft className="size-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={safePage >= totalPages}
-                      className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      aria-label="Próxima página"
-                    >
-                      <ChevronRight className="size-4" />
-                    </button>
+              {statusTab === "inactive-courses" ? (
+                !loadingUniversities && filteredInactiveCourses.length > 0 && (
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-outline-variant">
+                    <span className="text-xs text-on-surface-variant">
+                      Página {courseSafePage} de {courseTotalPages} · {filteredInactiveCourses.length} {filteredInactiveCourses.length === 1 ? "curso" : "cursos"}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={courseSafePage <= 1}
+                        className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        aria-label="Página anterior"
+                      >
+                        <ChevronLeft className="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((p) => Math.min(courseTotalPages, p + 1))}
+                        disabled={courseSafePage >= courseTotalPages}
+                        className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        aria-label="Próxima página"
+                      >
+                        <ChevronRight className="size-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )
+              ) : (
+                !loadingUniversities && filteredUniversities.length > 0 && (
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-outline-variant">
+                    <span className="text-xs text-on-surface-variant">
+                      Página {safePage} de {totalPages} · {filteredUniversities.length} {filteredUniversities.length === 1 ? "faculdade" : "faculdades"}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={safePage <= 1}
+                        className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        aria-label="Página anterior"
+                      >
+                        <ChevronLeft className="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={safePage >= totalPages}
+                        className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        aria-label="Próxima página"
+                      >
+                        <ChevronRight className="size-4" />
+                      </button>
+                    </div>
+                  </div>
+                )
               )}
             </div>
 
@@ -495,6 +594,25 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
               <p className="text-base font-bold text-on-surface">{pendingReactivate.acronym}</p>
               <p className="text-sm text-on-surface-variant mb-2">{pendingReactivate.name}</p>
               <p>Esta ação reativará a faculdade. Ela voltará a aparecer para novos cadastros.</p>
+            </>
+          )
+        }
+      />
+      <ConfirmModal
+        open={!!pendingReactivateCourse}
+        onClose={() => { setPendingReactivateCourse(null); setReactivateCourseError(""); }}
+        onConfirm={handleConfirmReactivateCourse}
+        loading={!!reactivatingCourseId}
+        error={reactivateCourseError}
+        title="Reativar Curso"
+        icon={RotateCcw}
+        variant="success"
+        confirmLabel="Sim, reativar"
+        description={
+          pendingReactivateCourse && (
+            <>
+              <p className="text-base font-bold text-on-surface">{pendingReactivateCourse.name}</p>
+              <p>Esta ação reativará o curso. Ele voltará a aparecer para novos cadastros.</p>
             </>
           )
         }
