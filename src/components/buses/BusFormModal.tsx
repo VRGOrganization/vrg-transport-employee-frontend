@@ -118,6 +118,10 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
 
   const handleSubmit = async () => {
     if (!identifier.trim()) { setError("O identificador é obrigatório."); return; }
+    if (!/^\d{2}$/.test(identifier.trim())) {
+      setError("O identificador deve conter exatamente 2 dígitos numéricos (ex: 01, 02).");
+      return;
+    }
     const trimmed = capacity.trim();
     const parsedCap = trimmed.length > 0 ? parseInt(trimmed, 10) : undefined;
     if (parsedCap !== undefined && (Number.isNaN(parsedCap) || parsedCap < 1)) {
@@ -176,10 +180,14 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
             </label>
             <input
               value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="Ex: Ônibus 03"
+              onChange={(e) => setIdentifier(e.target.value.replace(/\D/g, "").slice(0, 2))}
+              inputMode="numeric"
+              pattern="\d{2}"
+              maxLength={2}
+              placeholder="Ex: 01"
               className="w-full px-4 py-2.5 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
+            <p className="mt-1 text-xs text-on-surface-muted">Exatamente 2 dígitos numéricos, único entre os ônibus (ex: 01, 02).</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-on-surface-variant mb-1">
