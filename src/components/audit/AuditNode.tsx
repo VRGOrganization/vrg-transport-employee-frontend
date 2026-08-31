@@ -103,7 +103,7 @@ export function AuditNode({
             </div>
             <p className="mt-1 text-xs text-on-surface-variant truncate">
               <span className="font-medium text-on-surface">
-                {event.actorName ?? event.actor?.id ?? "Sistema"}
+                {event.actorName ?? (event.actor ? "Executor não identificado" : "Sistema")}
               </span>
               {event.targetName && (
                 <>
