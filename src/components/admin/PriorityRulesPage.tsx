@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronUp, ChevronDown, Pencil, ShieldCheck, ToggleLeft, ToggleRight, Plus } from "lucide-react";
+import { ChevronUp, ChevronDown, Pencil, ShieldCheck, ToggleLeft, ToggleRight } from "lucide-react";
 import { priorityRuleService } from "@/services/priorityRuleService";
 import type { PriorityRule } from "@/types/priorityRule";
 import { PriorityRuleModal } from "@/components/admin/PriorityRuleModal";
@@ -151,13 +151,9 @@ export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {
             Configure os critérios que determinam a ordem de alocação de vagas nos ônibus
           </p>
         </div>
-        <button
-          onClick={() => { setEditing(null); setModalOpen(true); }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-container text-on-primary text-sm font-medium rounded-xl transition-colors shadow-sm"
-        >
-          <Plus className="size-4" />
-          Nova Regra
-        </button>
+        <Button variant="primary" size="sm" onClick={() => { setEditing(null); setModalOpen(true); }}>
+          Adicionar regra de prioridade
+        </Button>
       </div>
 
       {/* ── Stats ── */}

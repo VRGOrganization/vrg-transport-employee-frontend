@@ -12,7 +12,8 @@ import { DeactivateUniversityModal } from "@/components/universities/DeactivateU
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Tabs } from "@/components/ui/Tabs";
 import { SearchInput } from "@/components/ui/SearchInput";
-import { Plus, MapPin, BookOpen, Bus as BusIcon, Building2, AlertCircle, X, CheckCircle2, Ban, RotateCcw, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { MapPin, BookOpen, Bus as BusIcon, Building2, AlertCircle, X, CheckCircle2, Ban, RotateCcw, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 type DetailTab = "courses" | "buses";
 type StatusTab = "active" | "inactive" | "inactive-courses";
@@ -278,13 +279,9 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                 Cadastre faculdades, gerencie cursos e vincule ônibus
               </p>
             </div>
-            <button
-              onClick={() => setCreating(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-xl transition-colors shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
-              <Plus className="size-4.5" />
-              Nova Faculdade
-            </button>
+            <Button variant="primary" size="sm" onClick={() => setCreating(true)}>
+              Adicionar universidade
+            </Button>
           </div>
 
           <div className="mb-6">
