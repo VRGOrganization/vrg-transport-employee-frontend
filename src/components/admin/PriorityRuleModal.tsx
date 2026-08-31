@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -8,15 +8,21 @@ import { priorityRuleService } from "@/services/priorityRuleService";
 import type { PriorityRule, CriteriaLogic } from "@/types/priorityRule";
 import { CRITERION_TYPE_LABELS } from "@/types/priorityRule";
 
+const LEVEL_LABELS: Record<number, string> = {
+  1: "1ª: Máxima",
+  2: "2ª: Alta",
+  3: "3ª: Média",
+  4: "4ª: Baixa",
+  5: "5ª: Padrão",
+};
+
 interface Props {
   open: boolean;
   initial: PriorityRule | null;
-  /** sortOrder a atribuir a uma regra nova, de forma que ela caia no fim da
-   * lista em vez de saltar na frente de regras já organizadas (ver buildPayload). */
-  nextSortOrder: number;
   onClose: () => void;
   onSaved: (rule: PriorityRule) => void;
   onDeleted: (id: string) => void;
+  onRequestReactivate: (rule: PriorityRule) => void;
 }
 
 interface FormState {
@@ -24,7 +30,6 @@ interface FormState {
   name: string;
   description: string;
   criteriaLogic: CriteriaLogic;
-  active: boolean;
   alreadyUsesTransport: boolean;
   hasDisability: boolean;
 }
@@ -32,11 +37,10 @@ interface FormState {
 function buildFormState(rule: PriorityRule | null): FormState {
   if (!rule) {
     return {
-      level: "1",
+      level: "",
       name: "",
       description: "",
       criteriaLogic: "all",
-      active: true,
       alreadyUsesTransport: false,
       hasDisability: false,
     };
@@ -46,7 +50,6 @@ function buildFormState(rule: PriorityRule | null): FormState {
     name:          rule.name,
     description:   rule.description ?? "",
     criteriaLogic: rule.criteriaLogic,
-    active:        rule.active,
     alreadyUsesTransport: rule.criteria.some((c) => c.type === "already_uses_transport"),
     hasDisability:        rule.criteria.some((c) => c.type === "has_disability"),
   };
@@ -65,12 +68,14 @@ function Label({ children, required }: { children: React.ReactNode; required?: b
   );
 }
 
-export function PriorityRuleModal({ open, initial, nextSortOrder, onClose, onSaved, onDeleted }: Props) {
+export function PriorityRuleModal({ open, initial, onClose, onSaved, onDeleted, onRequestReactivate }: Props) {
   const [view, setView]       = useState<"form" | "confirm">("form");
   const [form, setForm]       = useState<FormState>(() => buildFormState(initial));
   const [errors, setErrors]   = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
+  const [vacantLevels, setVacantLevels] = useState<number[] | null>(null);
+  const [loadingVacant, setLoadingVacant] = useState(false);
 
   const [lastId, setLastId] = useState(initial?._id ?? null);
   if ((initial?._id ?? null) !== lastId) {
@@ -81,44 +86,61 @@ export function PriorityRuleModal({ open, initial, nextSortOrder, onClose, onSav
     setView("form");
   }
 
+  useEffect(() => {
+    if (!open || initial) return;
+    let cancelled = false;
+    setLoadingVacant(true);
+    priorityRuleService.vacantLevels()
+      .then((levels) => { if (!cancelled) setVacantLevels(levels); })
+      .catch(() => { if (!cancelled) setVacantLevels([]); })
+      .finally(() => { if (!cancelled) setLoadingVacant(false); });
+    return () => { cancelled = true; };
+  }, [open, initial]);
+
   const setField = <K extends keyof FormState>(key: K, val: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: val }));
     setErrors((prev) => { const n = { ...prev }; delete n[key]; return n; });
   };
 
   const bothChecked = form.alreadyUsesTransport && form.hasDisability;
+  const noVacantLevels = !initial && vacantLevels !== null && vacantLevels.length === 0;
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
-    const level = Number(form.level);
-    if (!form.level || isNaN(level) || level < 1 || level > 5 || !Number.isInteger(level))
-      errs.level = "Selecione a prioridade.";
+    if (!initial) {
+      const level = Number(form.level);
+      if (!form.level || isNaN(level) || level < 1 || level > 5 || !Number.isInteger(level))
+        errs.level = "Selecione a prioridade.";
+    }
     if (!form.name.trim()) errs.name = "Nome é obrigatório.";
     else if (form.name.trim().length > 100) errs.name = "Máximo 100 caracteres.";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  const buildPayload = () => ({
-    level:         Number(form.level),
-    name:          form.name.trim(),
-    description:   form.description.trim(),
-    criteriaLogic: form.criteriaLogic,
-    sortOrder:     initial?.sortOrder ?? nextSortOrder,
-    active:        form.active,
-    criteria: [
-      ...(form.alreadyUsesTransport ? [{ type: "already_uses_transport" as const }] : []),
-      ...(form.hasDisability ? [{ type: "has_disability" as const }] : []),
-    ],
-  });
+  const criteria = [
+    ...(form.alreadyUsesTransport ? [{ type: "already_uses_transport" as const }] : []),
+    ...(form.hasDisability ? [{ type: "has_disability" as const }] : []),
+  ];
 
   const handleSubmit = async () => {
     if (!validate()) return;
     setLoading(true); setError("");
     try {
       const saved = initial
-        ? await priorityRuleService.update(initial._id, buildPayload())
-        : await priorityRuleService.create(buildPayload());
+        ? await priorityRuleService.update(initial._id, {
+            name: form.name.trim(),
+            description: form.description.trim(),
+            criteriaLogic: form.criteriaLogic,
+            criteria,
+          })
+        : await priorityRuleService.create({
+            level: Number(form.level),
+            name: form.name.trim(),
+            description: form.description.trim(),
+            criteriaLogic: form.criteriaLogic,
+            criteria,
+          });
       onSaved(saved);
     } catch {
       setError("Não foi possível salvar a regra. Tente novamente.");
@@ -180,14 +202,33 @@ export function PriorityRuleModal({ open, initial, nextSortOrder, onClose, onSav
         {/* Nível + Nome */}
         <div className="grid grid-cols-[140px_1fr] gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label required>Prioridade</Label>
-            <select value={form.level} onChange={(e) => setField("level", e.target.value)} className={fieldH}>
-              <option value="1">1ª: Máxima</option>
-              <option value="2">2ª: Alta</option>
-              <option value="3">3ª: Média</option>
-              <option value="4">4ª: Baixa</option>
-              <option value="5">5ª: Padrão</option>
-            </select>
+            <Label required={!initial}>Prioridade</Label>
+            {initial ? (
+              <div className={`${fieldH} flex items-center text-on-surface-variant`}>
+                {LEVEL_LABELS[initial.level] ?? `${initial.level}ª`}
+              </div>
+            ) : (
+              <>
+                <select
+                  value={form.level}
+                  onChange={(e) => setField("level", e.target.value)}
+                  disabled={loadingVacant || noVacantLevels}
+                  className={fieldH}
+                >
+                  <option value="" disabled>
+                    {loadingVacant ? "Carregando..." : "Selecione"}
+                  </option>
+                  {(vacantLevels ?? []).map((level) => (
+                    <option key={level} value={level}>{LEVEL_LABELS[level] ?? `${level}ª`}</option>
+                  ))}
+                </select>
+                {noVacantLevels && (
+                  <p className="text-xs text-error">
+                    Já existem 5 regras ativas. Desative uma para criar outra.
+                  </p>
+                )}
+              </>
+            )}
             {errors.level && <p className="text-xs text-error">{errors.level}</p>}
           </div>
 
@@ -273,41 +314,33 @@ export function PriorityRuleModal({ open, initial, nextSortOrder, onClose, onSav
           )}
         </div>
 
-        {/* Status */}
-        <div className="flex flex-col gap-1.5">
-          <Label>Status da regra</Label>
-          <button
-            type="button"
-            onClick={() => setField("active", !form.active)}
-            className={`h-9 flex items-center gap-2.5 px-3 rounded-lg border text-sm font-medium transition-all cursor-pointer ${
-              form.active
-                ? "border-success bg-success/10 text-success"
-                : "border-outline-variant bg-surface-container-lowest text-on-surface-variant"
-            }`}
-          >
-            <span className={`size-4 rounded-full border-2 flex items-center justify-center transition-all ${form.active ? "border-success bg-success" : "border-outline-variant"}`}>
-              {form.active && <span className="size-1.5 rounded-full bg-white" />}
-            </span>
-            {form.active ? "Regra ativa, será usada nos desempates" : "Regra inativa, não será usada"}
-          </button>
-        </div>
-
         {error && <p className="text-sm text-error">{error}</p>}
 
         {/* Footer */}
         <div className="flex items-center gap-3 pt-1">
           {initial && (
-            <button
-              type="button"
-              onClick={() => setView("confirm")}
-              disabled={loading}
-              className="text-sm font-medium text-error/80 hover:text-error underline underline-offset-2 transition-colors disabled:opacity-50 mr-auto cursor-pointer"
-            >
-              Desativar regra
-            </button>
+            initial.active ? (
+              <button
+                type="button"
+                onClick={() => setView("confirm")}
+                disabled={loading}
+                className="text-sm font-medium text-error/80 hover:text-error underline underline-offset-2 transition-colors disabled:opacity-50 mr-auto cursor-pointer"
+              >
+                Desativar regra
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onRequestReactivate(initial)}
+                disabled={loading}
+                className="text-sm font-medium text-success hover:text-success/80 underline underline-offset-2 transition-colors disabled:opacity-50 mr-auto cursor-pointer"
+              >
+                Reativar regra
+              </button>
+            )
           )}
           <Button variant="outline" size="sm" onClick={onClose} disabled={loading}>Cancelar</Button>
-          <Button variant="primary" size="sm" loading={loading} onClick={() => void handleSubmit()}>
+          <Button variant="primary" size="sm" loading={loading} disabled={noVacantLevels} onClick={() => void handleSubmit()}>
             {initial ? "Salvar alterações" : "Criar regra"}
           </Button>
         </div>
