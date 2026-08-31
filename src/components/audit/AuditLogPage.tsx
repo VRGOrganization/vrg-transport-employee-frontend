@@ -333,7 +333,7 @@ export function AuditLogPage() {
           total={total}
           onPageChange={setPage}
           onPageSizeChange={(s) => {
-            setPageSize(s);
+            setPageSize(s as PageSize);
             setPage(1);
           }}
         />

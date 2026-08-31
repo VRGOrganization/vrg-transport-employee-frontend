@@ -320,7 +320,7 @@ export function NoticesPage({ role }: NoticesPageProps) {
                 pageSize={pageSize}
                 total={totalNotices}
                 onPageChange={setPage}
-                onPageSizeChange={setPageSize}
+                onPageSizeChange={(size) => setPageSize(size as PageSize)}
                 className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-4 py-3"
               />
             )}
