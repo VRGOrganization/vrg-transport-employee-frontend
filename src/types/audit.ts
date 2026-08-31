@@ -24,7 +24,6 @@ export interface AuditFilters {
   /** Match por categoria (prefixo, ex.: `student.`). */
   actionPrefix?: string;
   actorId?: string;
-  targetId?: string;
   /** CSV de papéis do ator (ex.: "admin,employee" para apenas funcionários). */
   actorRoles?: string;
   outcome?: "success" | "failure";

@@ -31,7 +31,7 @@ const STAFF_ROLES = "admin,employee";
 
 /**
  * Relatório de auditoria (admin). Timeline estilo git-log, filtros por tipo de
- * ação / pessoa / aluno / período, paginação server-side, seleção por destaque
+ * ação / pessoa / período, paginação server-side, seleção por destaque
  * (sem checkbox) e download em massa nos formatos JSON/PDF/CSV.
  */
 export function AuditLogPage() {
@@ -46,14 +46,12 @@ export function AuditLogPage() {
   const [category, setCategory] = useState("");
   const [outcome, setOutcome] = useState<"" | "success" | "failure">("");
   const [actorId, setActorId] = useState("");
-  const [targetId, setTargetId] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [staffOnly, setStaffOnly] = useState(false);
 
-  // participantes (para os selects)
+  // participantes (para o select "Pessoa")
   const [people, setPeople] = useState<AuditParticipant[]>([]);
-  const [students, setStudents] = useState<AuditParticipant[]>([]);
   const [peopleLoading, setPeopleLoading] = useState(true);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -68,14 +66,11 @@ export function AuditLogPage() {
   useEffect(() => {
     let alive = true;
     setPeopleLoading(true);
-    Promise.all([
-      auditService.participants(false),
-      auditService.participants(true),
-    ])
-      .then(([all, onlyStudents]) => {
+    auditService
+      .participants()
+      .then((all) => {
         if (!alive) return;
         setPeople(all);
-        setStudents(onlyStudents);
       })
       .catch(() => {})
       .finally(() => alive && setPeopleLoading(false));
@@ -93,7 +88,6 @@ export function AuditLogPage() {
       ...(categoryPrefix ? { actionPrefix: categoryPrefix } : {}),
       ...(outcome ? { outcome } : {}),
       ...(actorId ? { actorId } : {}),
-      ...(targetId ? { targetId } : {}),
       ...(staffOnly ? { actorRoles: STAFF_ROLES } : {}),
       ...(from ? { from: new Date(from).toISOString() } : {}),
       ...(to ? { to: new Date(`${to}T23:59:59`).toISOString() } : {}),
@@ -115,7 +109,6 @@ export function AuditLogPage() {
     categoryPrefix,
     outcome,
     actorId,
-    targetId,
     staffOnly,
     from,
     to,
@@ -126,7 +119,7 @@ export function AuditLogPage() {
   }, [load]);
 
   // Reset de página quando filtros mudam.
-  const filtersKey = `${categoryPrefix ?? ""}|${outcome}|${actorId}|${targetId}|${staffOnly}|${from}|${to}`;
+  const filtersKey = `${categoryPrefix ?? ""}|${outcome}|${actorId}|${staffOnly}|${from}|${to}`;
   const prevFiltersKey = useRef(filtersKey);
   useEffect(() => {
     if (prevFiltersKey.current !== filtersKey) {
@@ -184,7 +177,7 @@ export function AuditLogPage() {
       </header>
 
       {/* Filtros */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 items-end">
         <AuditSelect
           label="Tipo de ação"
           value={category}
@@ -204,13 +197,6 @@ export function AuditLogPage() {
           loading={peopleLoading}
           onChange={setActorId}
           highlightStaff
-        />
-        <ParticipantCombobox
-          label="Aluno"
-          value={targetId}
-          participants={students}
-          loading={peopleLoading}
-          onChange={setTargetId}
         />
         <div>
           <label className="block text-xs font-semibold text-on-surface-variant mb-1">

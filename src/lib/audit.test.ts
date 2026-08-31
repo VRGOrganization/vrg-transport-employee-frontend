@@ -7,9 +7,9 @@ import {
 } from "./audit";
 
 describe("categorizeAction", () => {
-  it("maps student.* to Estudante", () => {
-    expect(categorizeAction("student.ban").key).toBe("student");
-    expect(categorizeAction("student.verify").label).toBe("Estudante");
+  it("falls back to Outro for student.* (category removed, no dedicated filter)", () => {
+    expect(categorizeAction("student.ban").key).toBe("other");
+    expect(categorizeAction("student.verify").key).toBe("other");
   });
 
   it("maps license.* and license_request.* to Carteirinha", () => {
@@ -39,10 +39,10 @@ describe("categorizeAction", () => {
 
   it("gives every category a distinct color dot class", () => {
     const dots = new Set<string>();
-    ["student.x", "license.x", "admin.login", "employee.x", "university.x", "bus.x", "enrollment_period.x", "priority_rule.x"].forEach(
+    ["license.x", "admin.login", "employee.x", "university.x", "bus.x", "enrollment_period.x", "priority_rule.x"].forEach(
       (a) => dots.add(categorizeAction(a).dot),
     );
-    expect(dots.size).toBeGreaterThanOrEqual(7);
+    expect(dots.size).toBeGreaterThanOrEqual(6);
   });
 });
 

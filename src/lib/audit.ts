@@ -19,15 +19,6 @@ export interface AuditCategory {
 
 export const AUDIT_CATEGORIES: AuditCategory[] = [
   {
-    key: "student",
-    label: "Estudante",
-    prefixes: ["student.", "register.student"],
-    dot: "bg-sky-500",
-    chipBg: "bg-sky-500/12",
-    chipText: "text-sky-700 dark:text-sky-300",
-    ring: "ring-sky-500",
-  },
-  {
     key: "license",
     label: "Carteirinha",
     prefixes: ["license.", "license_request."],
