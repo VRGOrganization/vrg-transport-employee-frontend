@@ -62,9 +62,11 @@ describe("NoticeListItem", () => {
     expect(screen.getByText("Resultados da enquete")).toBeInTheDocument();
   });
 
-  it("esconde botão de apagar quando status=cancelled", () => {
+  // O backend permite o soft-delete de um aviso já cancelado, então o botão
+  // continua disponível nesse status (regressão de a755069).
+  it("mantém botão de apagar quando status=cancelled", () => {
     render(<NoticeListItem notice={makeNotice({ status: "cancelled" })} onDeleted={vi.fn()} />);
-    expect(screen.queryByRole("button", { name: /apagar aviso/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /apagar aviso/i })).toBeInTheDocument();
   });
 
   it("esconde botão de apagar para aviso de sistema, mesmo com status !== cancelled", () => {
