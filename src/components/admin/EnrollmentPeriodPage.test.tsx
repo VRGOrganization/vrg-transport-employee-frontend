@@ -20,6 +20,10 @@ const { activePeriodStub } = vi.hoisted(() => ({
     createdByAdminId: "a1",
     closedByAdminId: null,
     closedAt: null,
+    eligibilityScope: "specific_universities",
+    eligibleUniversities: [
+      { _id: "u1", name: "Universidade Federal Fluminense", acronym: "UFF" },
+    ],
     createdAt: "2030-01-01T00:00:00.000Z",
     updatedAt: "2030-01-01T00:00:00.000Z",
   },
@@ -48,6 +52,7 @@ vi.mock("@/services/enrollmentPeriodService", () => ({
     close: vi.fn().mockResolvedValue({ ...activePeriodStub, active: false }),
     scheduleReset: vi.fn().mockResolvedValue(activePeriodStub),
     openWindow: vi.fn(),
+    updateWindow: vi.fn().mockResolvedValue(activePeriodStub),
     closeWindow: vi.fn().mockResolvedValue({}),
   },
 }));
@@ -133,10 +138,10 @@ describe("EnrollmentPeriodPage — ações condicionadas ao estado da janela (N�
     vi.mocked(enrollmentPeriodService.list).mockResolvedValue([activePeriodStub] as never);
   });
 
-  it("with an open window: shows 'Editar' and 'Fechar janela', hides 'Abrir janela de inscrição'", async () => {
+  it("with an open window: shows 'Editar janela' and 'Fechar janela', hides 'Abrir janela de inscrição'", async () => {
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /editar/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /editar janela/i })).toBeInTheDocument();
     });
     expect(screen.getByRole("button", { name: /fechar janela/i })).toBeInTheDocument();
     expect(
@@ -200,6 +205,88 @@ describe("EnrollmentPeriodPage — ações condicionadas ao estado da janela (N�
   });
 });
 
+describe("EnrollmentPeriodPage — edição separada de ciclo e janela", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(activePeriodStub as never);
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([activePeriodStub] as never);
+  });
+
+  it("'Editar janela' saves the dates through updateWindow, never through update", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /editar janela/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /editar janela/i }));
+    await waitFor(() => {
+      expect(screen.getByText("Editar janela de inscrição")).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText(/data de fim/i), {
+      target: { value: "2030-06-20" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /salvar alterações/i }));
+
+    await waitFor(() => {
+      expect(enrollmentPeriodService.updateWindow).toHaveBeenCalledWith(
+        activePeriodStub._id,
+        expect.objectContaining({ endDate: expect.any(String) }),
+      );
+    });
+    expect(enrollmentPeriodService.update).not.toHaveBeenCalled();
+  });
+
+  it("the window modal shows how the window was opened, read-only", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /editar janela/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /editar janela/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Aberta para")).toBeInTheDocument();
+    });
+    expect(screen.getByText(/faculdades específicas/i)).toBeInTheDocument();
+    expect(screen.getByText(/UFF/)).toBeInTheDocument();
+    // Validade e capacidade não pertencem à janela.
+    expect(screen.queryByLabelText(/validade da carteirinha/i)).not.toBeInTheDocument();
+  });
+
+  it("'Editar ciclo' asks for confirmation before changing the validity of an occupied cycle", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /editar ciclo/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /editar ciclo/i }));
+    await waitFor(() => {
+      expect(screen.getByLabelText(/validade da carteirinha/i)).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText(/validade da carteirinha/i), {
+      target: { value: "9" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /salvar alterações/i }));
+
+    // filledSlots = 70 > 0 → confirmação da cascata antes de salvar.
+    await waitFor(() => {
+      expect(screen.getByText("Alterar validade da carteirinha?")).toBeInTheDocument();
+    });
+    expect(enrollmentPeriodService.update).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: /confirmar alteração/i }));
+
+    await waitFor(() => {
+      expect(enrollmentPeriodService.update).toHaveBeenCalledWith(activePeriodStub._id, {
+        licenseValidityMonths: 9,
+      });
+    });
+    expect(enrollmentPeriodService.updateWindow).not.toHaveBeenCalled();
+  });
+});
+
 describe("EnrollmentPeriodPage — funcionalidade de reabrir removida (Núcleo 10)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -211,7 +298,7 @@ describe("EnrollmentPeriodPage — funcionalidade de reabrir removida (Núcleo 1
 
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /editar/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /editar janela/i })).toBeInTheDocument();
     });
     expect(screen.queryByText(/reabrir/i)).not.toBeInTheDocument();
   });

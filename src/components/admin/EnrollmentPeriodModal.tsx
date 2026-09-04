@@ -6,19 +6,19 @@ import { Modal } from "@/components/ui/Modal";
 import {
   brDayEndISO,
   brDayStartISO,
-  computeLicenseExpiry,
   formatDateBR,
   toCivilBR,
 } from "@/lib/utils/date";
 import type { EnrollmentPeriod } from "@/types/enrollmentPeriod";
 
-// Só os campos alterados são enviados — startDate/endDate editam a JANELA ativa,
-// licenseValidityMonths edita o ciclo. O início do ciclo (cycleStartDate) não
-// é editável por aqui.
+import { enrollmentWindowScopeLabel } from "./enrollmentWindowScope";
+
+// Só as datas da JANELA. Validade da carteirinha e capacidade são do CICLO —
+// a primeira sai pelo EnrollmentCycleEditModal, a segunda é derivada dos
+// ônibus ativos e não é editável em lugar nenhum.
 export type EnrollmentPeriodFormPayload = Partial<{
   startDate: string;
   endDate: string;
-  licenseValidityMonths: number;
 }>;
 
 interface EnrollmentPeriodModalProps {
@@ -33,20 +33,17 @@ interface EnrollmentPeriodModalProps {
 interface FormState {
   startDate: string;
   endDate: string;
-  licenseValidityMonths: string;
 }
 
 interface FormErrors {
   startDate: string;
   endDate: string;
-  licenseValidityMonths: string;
   general: string;
 }
 
 const EMPTY_ERRORS: FormErrors = {
   startDate: "",
   endDate: "",
-  licenseValidityMonths: "",
   general: "",
 };
 
@@ -61,7 +58,6 @@ function buildInitialForm(period: EnrollmentPeriod): FormState {
   return {
     startDate: toInputDate(period.startDate),
     endDate: toInputDate(period.endDate),
-    licenseValidityMonths: String(period.licenseValidityMonths),
   };
 }
 
@@ -73,8 +69,6 @@ export function EnrollmentPeriodModal({
   onClose,
   onSubmit,
 }: EnrollmentPeriodModalProps) {
-  // As datas só são editáveis enquanto houver janela aberta; sem janela, apenas
-  // a validade do ciclo pode ser ajustada.
   const hasOpenWindow = Boolean(period.startDate && period.endDate);
 
   // A janela vive dentro do ciclo: do início do ciclo até o encerramento
@@ -103,39 +97,24 @@ export function EnrollmentPeriodModal({
     setErrors((prev) => ({ ...prev, [field]: "", general: "" }));
   };
 
-  // Validade sempre ancorada em cycleStartDate (início real do ciclo), nunca
-  // na janela — calculada em UTC, igual ao backend.
-  const licenseExpiryDate = (() => {
-    const months = Number(form.licenseValidityMonths);
-    if (!Number.isInteger(months) || months < 1) return "";
-    return computeLicenseExpiry(period.cycleStartDate, months);
-  })();
-
   const validate = (): EnrollmentPeriodFormPayload | null => {
     const nextErrors: FormErrors = { ...EMPTY_ERRORS };
     const initial = buildInitialForm(period);
 
-    const licenseValidityMonths = Number(form.licenseValidityMonths);
-    if (!Number.isInteger(licenseValidityMonths) || licenseValidityMonths < 1) {
-      nextErrors.licenseValidityMonths = "Validade deve ser maior ou igual a 1 mês.";
+    if (!form.startDate) nextErrors.startDate = "Data de início é obrigatória.";
+    if (!form.endDate) nextErrors.endDate = "Data de fim é obrigatória.";
+    if (form.startDate && form.endDate) {
+      const start = new Date(brDayStartISO(form.startDate));
+      const end = new Date(brDayEndISO(form.endDate));
+      if (end <= start) {
+        nextErrors.endDate = "Data de fim deve ser maior que a data de início.";
+      }
     }
-
-    if (hasOpenWindow) {
-      if (!form.startDate) nextErrors.startDate = "Data de início é obrigatória.";
-      if (!form.endDate) nextErrors.endDate = "Data de fim é obrigatória.";
-      if (form.startDate && form.endDate) {
-        const start = new Date(brDayStartISO(form.startDate));
-        const end = new Date(brDayEndISO(form.endDate));
-        if (end <= start) {
-          nextErrors.endDate = "Data de fim deve ser maior que a data de início.";
-        }
-      }
-      if (form.startDate && minCivil && form.startDate < minCivil) {
-        nextErrors.startDate = `A janela não pode começar antes do início do ciclo (${formatDateBR(period.cycleStartDate)}).`;
-      }
-      if (form.endDate && maxCivil && form.endDate > maxCivil) {
-        nextErrors.endDate = `A janela não pode terminar depois do encerramento do ciclo (${formatDateBR(period.resetScheduledFor)}).`;
-      }
+    if (form.startDate && minCivil && form.startDate < minCivil) {
+      nextErrors.startDate = `A janela não pode começar antes do início do ciclo (${formatDateBR(period.cycleStartDate)}).`;
+    }
+    if (form.endDate && maxCivil && form.endDate > maxCivil) {
+      nextErrors.endDate = `A janela não pode terminar depois do encerramento do ciclo (${formatDateBR(period.resetScheduledFor)}).`;
     }
 
     const hasErrors = Object.values(nextErrors).some((value) => value.length > 0);
@@ -146,14 +125,11 @@ export function EnrollmentPeriodModal({
 
     // Envia apenas os campos que mudaram.
     const payload: EnrollmentPeriodFormPayload = {};
-    if (hasOpenWindow && form.startDate !== initial.startDate) {
+    if (form.startDate !== initial.startDate) {
       payload.startDate = brDayStartISO(form.startDate);
     }
-    if (hasOpenWindow && form.endDate !== initial.endDate) {
+    if (form.endDate !== initial.endDate) {
       payload.endDate = brDayEndISO(form.endDate);
-    }
-    if (form.licenseValidityMonths !== initial.licenseValidityMonths) {
-      payload.licenseValidityMonths = licenseValidityMonths;
     }
 
     if (Object.keys(payload).length === 0) {
@@ -177,14 +153,14 @@ export function EnrollmentPeriodModal({
       open={open}
       onClose={loading ? () => {} : onClose}
       size="lg"
-      title="Editar período de inscrição"
+      title="Editar janela de inscrição"
     >
-      <form className="space-y-3" onSubmit={handleSubmit} noValidate>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-on-surface">
-            Janela de inscrição ativa
-          </label>
-          {hasOpenWindow ? (
+      {hasOpenWindow ? (
+        <form className="space-y-3" onSubmit={handleSubmit} noValidate>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-on-surface">
+              Janela de inscrição ativa
+            </label>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div>
                 <label
@@ -227,71 +203,81 @@ export function EnrollmentPeriodModal({
                 )}
               </div>
             </div>
+          </div>
+
+          <EligibilityScopeSummary period={period} />
+
+          {(errors.general || serverError) && (
+            <div className="rounded-xl border border-error/40 bg-error/10 px-3 py-2 text-sm text-error">
+              {errors.general || serverError}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" size="sm" disabled={loading} onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button type="submit" variant="primary" size="sm" loading={loading}>
+              Salvar alterações
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <div className="space-y-3">
+          <p className="rounded-lg border border-outline-variant/50 bg-surface-container-low px-3 py-2 text-sm text-on-surface-variant">
+            Nenhuma janela aberta. Abra uma janela de inscrição para ajustar as
+            datas.
+          </p>
+          {serverError && (
+            <div className="rounded-xl border border-error/40 bg-error/10 px-3 py-2 text-sm text-error">
+              {serverError}
+            </div>
+          )}
+          <div className="flex justify-end">
+            <Button type="button" variant="outline" size="sm" onClick={onClose}>
+              Fechar
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+/** Com qual opção a janela foi aberta — leitura, nunca edição. */
+function EligibilityScopeSummary({ period }: { period: EnrollmentPeriod }) {
+  const universities = period.eligibleUniversities ?? [];
+
+  return (
+    <div className="rounded-xl border border-outline-variant/60 bg-surface-container-low px-3 py-2.5">
+      <p className="text-xs font-medium text-on-surface-variant">Aberta para</p>
+      <p className="mt-0.5 text-sm font-medium text-on-surface">
+        {enrollmentWindowScopeLabel(period.eligibilityScope)}
+      </p>
+
+      {period.eligibilityScope === "specific_universities" && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {universities.length > 0 ? (
+            universities.map((university) => (
+              <span
+                key={university._id}
+                className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+                title={university.name}
+              >
+                {university.acronym}: {university.name}
+              </span>
+            ))
           ) : (
-            <p className="rounded-lg border border-outline-variant/50 bg-surface-container-low px-3 py-2 text-sm text-on-surface-variant">
-              Nenhuma janela aberta. Só a validade da carteirinha pode ser editada.
-              Abra uma janela de inscrição para ajustar as datas.
-            </p>
+            <span className="text-xs text-on-surface-variant">
+              Nenhuma faculdade elegível encontrada.
+            </span>
           )}
         </div>
+      )}
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div>
-            <label className="mb-0.5 block text-sm font-medium text-on-surface">
-              Capacidade (vagas-dia)
-            </label>
-            <div className="h-9 flex items-center rounded-lg border border-outline-variant/50 bg-surface-container-low px-3 text-sm text-on-surface-variant">
-              {period.totalSlots} vagas-dia (derivado dos ônibus)
-            </div>
-            <p className="mt-0.5 text-xs text-on-surface-variant">
-              Capacidade = soma dos ônibus ativos × dias úteis. Não editável.
-            </p>
-          </div>
-
-          <div>
-            <label
-              htmlFor="edit-validity-months"
-              className="mb-0.5 block text-sm font-medium text-on-surface"
-            >
-              Validade da carteirinha (meses)
-            </label>
-            <input
-              id="edit-validity-months"
-              type="number"
-              min={1}
-              step={1}
-              value={form.licenseValidityMonths}
-              onChange={(event) => setField("licenseValidityMonths", event.target.value)}
-              className="h-9 w-full rounded-lg border border-on-surface-variant bg-surface-container-low px-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Ex: 6"
-            />
-            {errors.licenseValidityMonths ? (
-              <p className="mt-0.5 text-xs text-error">{errors.licenseValidityMonths}</p>
-            ) : licenseExpiryDate ? (
-              <p className="mt-0.5 text-xs text-on-surface-variant">
-                Carteirinhas válidas até{" "}
-                <strong className="text-on-surface">{licenseExpiryDate}</strong>{" "}
-                (a partir do início do ciclo).
-              </p>
-            ) : null}
-          </div>
-        </div>
-
-        {(errors.general || serverError) && (
-          <div className="rounded-xl border border-error/40 bg-error/10 px-3 py-2 text-sm text-error">
-            {errors.general || serverError}
-          </div>
-        )}
-
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" size="sm" disabled={loading} onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" variant="primary" size="sm" loading={loading}>
-            Salvar alterações
-          </Button>
-        </div>
-      </form>
-    </Modal>
+      <p className="mt-2 text-xs text-on-surface-variant">
+        Para mudar quem participa, feche esta janela e abra uma nova.
+      </p>
+    </div>
   );
 }
