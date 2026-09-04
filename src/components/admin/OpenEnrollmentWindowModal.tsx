@@ -7,6 +7,7 @@ import { universityService } from "@/services/universityService";
 import type { University } from "@/types/university.types";
 import type { EnrollmentWindowEligibilityScope } from "@/types/enrollmentPeriod";
 import { brDayEndISO, brDayStartISO, formatDateBR, toCivilBR } from "@/lib/utils/date";
+import { ENROLLMENT_WINDOW_SCOPE_OPTIONS } from "./enrollmentWindowScope";
 
 export interface OpenEnrollmentWindowFormPayload {
   startDate: string;
@@ -40,27 +41,6 @@ const EMPTY_ERRORS: FormErrors = {
   eligibleUniversityIds: "",
 };
 
-const SCOPE_OPTIONS: Array<{
-  value: EnrollmentWindowEligibilityScope;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: "all",
-    label: "Todos os alunos",
-    description: "Qualquer aluno pode enviar solicitação nessa janela.",
-  },
-  {
-    value: "has_university",
-    label: "Só alunos com faculdade cadastrada",
-    description: "Exclui alunos sem faculdade vinculada ao cadastro.",
-  },
-  {
-    value: "specific_universities",
-    label: "Faculdades específicas",
-    description: "Restringe a uma ou mais faculdades escolhidas abaixo.",
-  },
-];
 
 function optionItemClass(selected: boolean): string {
   const base =
@@ -241,7 +221,7 @@ export function OpenEnrollmentWindowModal({
             Quem pode participar
           </label>
           <div className="space-y-2">
-            {SCOPE_OPTIONS.map((option) => {
+            {ENROLLMENT_WINDOW_SCOPE_OPTIONS.map((option) => {
               const selected = eligibilityScope === option.value;
               return (
                 <label key={option.value} className={optionItemClass(selected)}>
