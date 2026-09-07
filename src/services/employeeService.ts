@@ -10,4 +10,6 @@ export const employeeService = {
   update:     (id: string, data: EmployeeUpdatePayload) => http.patch<Employee>(`/employee/${id}`, data),
   deactivate: (id: string)                        => http.delete<{ message: string }>(`/employee/${id}`),
   reactivate: (id: string)                        => http.patch<Employee>(`/employee/${id}/activate`, {}),
+  /** Exclusão permanente — só funcionário desativado. Irreversível. */
+  remove:     (id: string, reasons: string[])     => http.delete<{ message: string }>(`/employee/${id}/permanent`, { reasons }),
 };

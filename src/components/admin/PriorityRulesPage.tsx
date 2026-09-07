@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronUp, ChevronDown, Pencil, ShieldCheck, ToggleLeft, ToggleRight, Plus } from "lucide-react";
+import { Pencil, ShieldCheck, ToggleLeft, ToggleRight, RotateCcw } from "lucide-react";
 import { priorityRuleService } from "@/services/priorityRuleService";
-import type { PriorityRule } from "@/types/priorityRule";
+import type { PriorityRule, ReactivationPreview, ReactivationResult } from "@/types/priorityRule";
 import { PriorityRuleModal } from "@/components/admin/PriorityRuleModal";
 import { DashboardStatCard } from "@/components/cards/DashboardStatCard";
 import { Modal } from "@/components/ui/Modal";
@@ -12,6 +12,7 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { Tabs } from "@/components/ui/Tabs";
 import { ErrorState, EmptyState } from "@/components/ui/states";
 import { toast } from "@/lib/toast";
+import type { ApiError } from "@/types/api";
 
 type Tab = "active" | "inactive";
 
@@ -40,6 +41,14 @@ function criterionLabel(c: PriorityRule["criteria"][number]): string {
   return c.type === "has_disability" ? "PCD" : "Já usa o sistema de transporte";
 }
 
+function applyReactivationResult(prev: PriorityRule[], result: ReactivationResult): PriorityRule[] {
+  const byId = new Map(prev.map((r) => [r._id, r]));
+  byId.set(result.reactivated._id, result.reactivated);
+  for (const r of result.cascaded) byId.set(r._id, r);
+  if (result.deactivated) byId.set(result.deactivated._id, result.deactivated);
+  return Array.from(byId.values());
+}
+
 export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {
   void role;
   const [rules, setRules]             = useState<PriorityRule[]>([]);
@@ -49,13 +58,17 @@ export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {
   const [search, setSearch]           = useState("");
   const [modalOpen, setModalOpen]     = useState(false);
   const [editing, setEditing]         = useState<PriorityRule | null>(null);
-  const [reordering, setReordering]   = useState<string | null>(null);
-  const [toggleTarget, setToggleTarget]   = useState<PriorityRule | null>(null);
-  const [toggleLoading, setToggleLoading] = useState(false);
-  const [toggleError, setToggleError]     = useState("");
 
-  const sorted = (list: PriorityRule[]) =>
-    [...list].sort((a, b) => a.sortOrder - b.sortOrder || a.level - b.level);
+  const [deactivateTarget, setDeactivateTarget]   = useState<PriorityRule | null>(null);
+  const [deactivateLoading, setDeactivateLoading] = useState(false);
+  const [deactivateError, setDeactivateError]     = useState("");
+
+  const [reactivatingId, setReactivatingId]           = useState<string | null>(null);
+  const [reactivatePreview, setReactivatePreview]     = useState<ReactivationPreview | null>(null);
+  const [reactivateLoading, setReactivateLoading]     = useState(false);
+  const [reactivateError, setReactivateError]         = useState("");
+
+  const sorted = (list: PriorityRule[]) => [...list].sort((a, b) => a.level - b.level);
 
   const loadRules = useCallback(async () => {
     setLoading(true); setError("");
@@ -70,47 +83,54 @@ export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {
 
   useEffect(() => { void loadRules(); }, [loadRules]);
 
-  // ── Reorder ↑/↓ ──────────────────────────────────────────────────────────
-  const handleMove = async (rule: PriorityRule, direction: "up" | "down") => {
-    const visible = sorted(rules.filter((r) => r.active === (tab === "active")));
-    const idx = visible.findIndex((r) => r._id === rule._id);
-    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= visible.length) return;
-
-    const neighbor = visible[swapIdx];
-    setReordering(rule._id);
+  // ── Deactivate ─────────────────────────────────────────────────────────────
+  const confirmDeactivate = async () => {
+    if (!deactivateTarget) return;
+    setDeactivateLoading(true); setDeactivateError("");
     try {
-      const [updA, updB] = await Promise.all([
-        priorityRuleService.update(rule._id,     { sortOrder: neighbor.sortOrder }),
-        priorityRuleService.update(neighbor._id, { sortOrder: rule.sortOrder }),
-      ]);
-      setRules((prev) =>
-        sorted(prev.map((r) => {
-          if (r._id === updA._id) return updA;
-          if (r._id === updB._id) return updB;
-          return r;
-        }))
-      );
-    } catch (err) {
-      const message = (err as { message?: string })?.message;
-      toast.error(message ?? "Não foi possível reordenar a regra. Tente novamente.");
+      await priorityRuleService.deactivate(deactivateTarget._id);
+      await loadRules();
+      setDeactivateTarget(null);
+    } catch {
+      setDeactivateError("Não foi possível desativar a regra. Tente novamente.");
     } finally {
-      setReordering(null);
+      setDeactivateLoading(false);
     }
   };
 
-  // ── Toggle confirmation ───────────────────────────────────────────────────
-  const confirmToggle = async () => {
-    if (!toggleTarget) return;
-    setToggleLoading(true); setToggleError("");
+  // ── Reactivate ─────────────────────────────────────────────────────────────
+  const handleReactivate = async (rule: PriorityRule) => {
+    setReactivatingId(rule._id);
+    setReactivateError("");
     try {
-      const updated = await priorityRuleService.toggle(toggleTarget._id);
-      setRules((prev) => sorted(prev.map((r) => (r._id === toggleTarget._id ? updated : r))));
-      setToggleTarget(null);
-    } catch {
-      setToggleError("Não foi possível alterar o status da regra. Tente novamente.");
+      const result = await priorityRuleService.reactivate(rule._id, false);
+      setRules((prev) => sorted(applyReactivationResult(prev, result)));
+      setModalOpen(false); setEditing(null);
+    } catch (err) {
+      const apiErr = err as ApiError;
+      const preview = (apiErr.details as { preview?: ReactivationPreview } | undefined)?.preview;
+      if (apiErr.status === 409 && preview) {
+        setReactivatePreview(preview);
+      } else {
+        toast.error(apiErr.message ?? "Não foi possível reativar a regra. Tente novamente.");
+      }
     } finally {
-      setToggleLoading(false);
+      setReactivatingId(null);
+    }
+  };
+
+  const confirmReactivate = async () => {
+    if (!reactivatePreview) return;
+    setReactivateLoading(true); setReactivateError("");
+    try {
+      const result = await priorityRuleService.reactivate(reactivatePreview.ruleId, true);
+      setRules((prev) => sorted(applyReactivationResult(prev, result)));
+      setReactivatePreview(null);
+      setModalOpen(false); setEditing(null);
+    } catch {
+      setReactivateError("Não foi possível reativar a regra. Tente novamente.");
+    } finally {
+      setReactivateLoading(false);
     }
   };
 
@@ -151,22 +171,18 @@ export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {
             Configure os critérios que determinam a ordem de alocação de vagas nos ônibus
           </p>
         </div>
-        <button
-          onClick={() => { setEditing(null); setModalOpen(true); }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-container text-on-primary text-sm font-medium rounded-xl transition-colors shadow-sm"
-        >
-          <Plus className="size-4" />
-          Nova Regra
-        </button>
+        <Button variant="primary" size="sm" onClick={() => { setEditing(null); setModalOpen(true); }}>
+          Adicionar regra de prioridade
+        </Button>
       </div>
 
       {/* ── Stats ── */}
       {!loading && rules.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-          <DashboardStatCard icon={ShieldCheck}   label="Total"          value={rules.length}                                                                   badge="TOTAL"    accent="primary"   />
-          <DashboardStatCard icon={ToggleRight}   label="Ativas"         value={rules.filter((r) => r.active).length}                                           badge="ATIVAS"   accent="secondary" />
-          <DashboardStatCard icon={ToggleLeft}    label="Inativas"       value={rules.filter((r) => !r.active).length}                                          badge="INATIVAS" accent="tertiary"  />
-          <DashboardStatCard icon={ShieldCheck}   label="Níveis em uso"  value={new Set(rules.filter((r) => r.active).map((r) => r.level)).size}                badge="NÍVEIS"   accent="primary"   />
+          <DashboardStatCard icon={ShieldCheck}   label="Total"          value={rules.length}                                    badge="TOTAL"    accent="primary"   />
+          <DashboardStatCard icon={ToggleRight}   label="Ativas"         value={rules.filter((r) => r.active).length}           badge="ATIVAS"   accent="secondary" />
+          <DashboardStatCard icon={ToggleLeft}    label="Inativas"       value={rules.filter((r) => !r.active).length}          badge="INATIVAS" accent="tertiary"  />
+          <DashboardStatCard icon={ShieldCheck}   label="Níveis em uso"  value={rules.filter((r) => r.active).length}           badge="NÍVEIS"   accent="primary"   />
         </div>
       )}
 
@@ -200,10 +216,8 @@ export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {
         />
       ) : (
         <div className="flex flex-col gap-3">
-          {displayed.map((rule, idx) => {
-            const isFirst = idx === 0;
-            const isLast  = idx === displayed.length - 1;
-            const moving  = reordering === rule._id;
+          {displayed.map((rule) => {
+            const reactivating = reactivatingId === rule._id;
 
             return (
               <div
@@ -226,6 +240,12 @@ export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {
                     <p className="text-xs text-on-surface-variant mb-2">{rule.description}</p>
                   )}
 
+                  {rule.level !== rule.originalLevel && (
+                    <p className="text-[11px] text-on-surface-variant/70 italic">
+                      Criada como nível {rule.originalLevel}ª
+                    </p>
+                  )}
+
                   {rule.criteria.length > 0 ? (
                     <ul className="flex flex-wrap gap-1.5 mt-2">
                       {rule.criteria.map((c, i) => (
@@ -238,32 +258,12 @@ export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-xs text-on-surface-variant/50 italic mt-1">Sem critérios — aplica-se a todos</p>
+                    <p className="text-xs text-on-surface-variant/50 italic mt-1">Sem critérios: aplica-se a todos</p>
                   )}
                 </div>
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
-                  {/* Move up */}
-                  <button
-                    disabled={isFirst || moving}
-                    onClick={() => void handleMove(rule, "up")}
-                    title="Mover para cima"
-                    className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <ChevronUp className="size-4" />
-                  </button>
-
-                  {/* Move down */}
-                  <button
-                    disabled={isLast || moving}
-                    onClick={() => void handleMove(rule, "down")}
-                    title="Mover para baixo"
-                    className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <ChevronDown className="size-4" />
-                  </button>
-
                   {/* Edit */}
                   <button
                     onClick={() => { setEditing(rule); setModalOpen(true); }}
@@ -273,16 +273,24 @@ export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {
                     <Pencil className="size-4" />
                   </button>
 
-                  {/* Toggle active */}
-                  <button
-                    onClick={() => { setToggleError(""); setToggleTarget(rule); }}
-                    title={rule.active ? "Desativar" : "Ativar"}
-                    className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-                  >
-                    {rule.active
-                      ? <ToggleRight className="size-4 text-success" />
-                      : <ToggleLeft  className="size-4" />}
-                  </button>
+                  {rule.active ? (
+                    <button
+                      onClick={() => { setDeactivateError(""); setDeactivateTarget(rule); }}
+                      title="Desativar"
+                      className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                    >
+                      <ToggleRight className="size-4 text-success" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => void handleReactivate(rule)}
+                      disabled={reactivating}
+                      title="Reativar"
+                      className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <RotateCcw className={`size-4 ${reactivating ? "animate-spin" : ""}`} />
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -294,42 +302,67 @@ export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {
       <PriorityRuleModal
         open={modalOpen}
         initial={editing}
-        nextSortOrder={rules.length > 0 ? Math.max(...rules.map((r) => r.sortOrder)) + 1 : 1}
         onClose={() => { setModalOpen(false); setEditing(null); }}
         onSaved={handleSaved}
         onDeleted={handleDeleted}
+        onRequestReactivate={(rule) => void handleReactivate(rule)}
       />
 
-      {/* ── Toggle confirmation modal ── */}
+      {/* ── Deactivate confirmation modal ── */}
       <Modal
-        open={!!toggleTarget}
-        onClose={() => { setToggleTarget(null); setToggleError(""); }}
+        open={!!deactivateTarget}
+        onClose={() => { setDeactivateTarget(null); setDeactivateError(""); }}
         closeOnBackdrop={false}
-        title={toggleTarget?.active ? "Desativar regra?" : "Ativar regra?"}
+        title="Desativar regra?"
         size="sm"
       >
         <p className="text-sm text-on-surface-variant mb-2">
-          {toggleTarget?.active ? (
-            <>A regra <strong className="text-on-surface">{toggleTarget.name}</strong> será{" "}
-              <span className="text-error font-medium">desativada</span> e deixará de ser avaliada em novas solicitações.</>
-          ) : (
-            <>A regra <strong className="text-on-surface">{toggleTarget?.name}</strong> será{" "}
-              <span className="text-success font-medium">ativada</span> e passará a ser avaliada em novas solicitações.</>
-          )}
+          A regra <strong className="text-on-surface">{deactivateTarget?.name}</strong> será{" "}
+          <span className="text-error font-medium">desativada</span> e deixará de ser avaliada em novas solicitações.
         </p>
         <p className="text-sm text-on-surface-variant mb-5">Tem certeza que deseja continuar?</p>
-        {toggleError && <p className="text-sm text-error mb-4">{toggleError}</p>}
+        {deactivateError && <p className="text-sm text-error mb-4">{deactivateError}</p>}
         <div className="flex gap-3">
-          <Button variant="outline" size="sm" fullWidth onClick={() => { setToggleTarget(null); setToggleError(""); }} disabled={toggleLoading}>
+          <Button variant="outline" size="sm" fullWidth onClick={() => { setDeactivateTarget(null); setDeactivateError(""); }} disabled={deactivateLoading}>
             Não
           </Button>
           <Button
             variant="primary" size="sm" fullWidth
-            loading={toggleLoading}
-            onClick={() => void confirmToggle()}
-            className={toggleTarget?.active ? "bg-error hover:bg-error/90 text-white border-0" : ""}
+            loading={deactivateLoading}
+            onClick={() => void confirmDeactivate()}
+            className="bg-error hover:bg-error/90 text-white border-0"
           >
-            Sim
+            Sim, desativar
+          </Button>
+        </div>
+      </Modal>
+
+      {/* ── Reactivation preview/confirmation modal ── */}
+      <Modal
+        open={!!reactivatePreview}
+        onClose={() => { setReactivatePreview(null); setReactivateError(""); }}
+        closeOnBackdrop={false}
+        title="Confirmar reativação"
+        size="sm"
+      >
+        <p className="text-sm text-on-surface-variant mb-2">
+          A regra <strong className="text-on-surface">{reactivatePreview?.ruleName}</strong> voltará ao nível{" "}
+          <strong className="text-on-surface">{reactivatePreview?.targetLevel}ª ({LEVEL_LABELS[reactivatePreview?.targetLevel ?? 0]})</strong>.
+        </p>
+        {reactivatePreview?.willDeactivate && (
+          <p className="text-sm text-on-surface-variant mb-5">
+            Para isso, a regra <strong className="text-on-surface">{reactivatePreview.willDeactivate.ruleName}</strong>{" "}
+            (atualmente nível {reactivatePreview.willDeactivate.level}ª) será{" "}
+            <span className="text-error font-medium">desativada</span>.
+          </p>
+        )}
+        {reactivateError && <p className="text-sm text-error mb-4">{reactivateError}</p>}
+        <div className="flex gap-3">
+          <Button variant="outline" size="sm" fullWidth onClick={() => { setReactivatePreview(null); setReactivateError(""); }} disabled={reactivateLoading}>
+            Cancelar
+          </Button>
+          <Button variant="primary" size="sm" fullWidth loading={reactivateLoading} onClick={() => void confirmReactivate()}>
+            Confirmar reativação
           </Button>
         </div>
       </Modal>

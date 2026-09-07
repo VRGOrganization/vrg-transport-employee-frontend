@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Check } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -9,9 +9,15 @@ import { StatusBanner } from "@/components/ui/StatusBanner";
 import { studentEditSchema } from "@/lib/validation/student";
 import { SHIFTS, BLOOD_TYPES } from "@/types/student";
 import { formatPhone } from "@/lib/formatters";
+import { courseService } from "@/services/universityService";
 import type { Student } from "@/types/student";
-import type { University } from "@/types/university.types";
+import type { University, Course } from "@/types/university.types";
 import type { ChangeEntry } from "@/components/students/StudentEditConfirmView";
+
+function extractId(value: string | { _id: string } | null | undefined): string {
+  if (!value) return "";
+  return typeof value === "string" ? value : value._id;
+}
 
 interface Props {
   student: Student;
@@ -43,14 +49,51 @@ export function StudentEditForm({
     shift: student.shift ?? "",
     bloodType: student.bloodType ?? "",
     degree: student.degree ?? "",
+    courseId: extractId(student.courseId),
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
+
+  const universityId = extractId(student.universityId);
+
+  useEffect(() => {
+    if (!universityId) return;
+    let cancelled = false;
+    // Sincronização com API externa (fetch on mount/dependency change) — o
+    // extra render de "loading=true" é o custo aceito desse padrão.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoadingCourses(true);
+    courseService
+      .listByUniversity(universityId)
+      .then((data) => {
+        if (!cancelled) setCourses(data);
+      })
+      .catch(() => {
+        if (!cancelled) setCourses([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingCourses(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [universityId]);
 
   const set = (field: keyof typeof values) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     setValues((prev) => ({ ...prev, [field]: e.target.value }));
     if (fieldErrors[field]) setFieldErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const setDegree = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const text = e.target.value;
+    const matched = courses.find(
+      (c) => c.name.toLowerCase() === text.trim().toLowerCase(),
+    );
+    setValues((prev) => ({ ...prev, degree: text, courseId: matched?._id ?? "" }));
+    if (fieldErrors.degree) setFieldErrors((prev) => ({ ...prev, degree: "" }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -79,7 +122,7 @@ export function StudentEditForm({
     ) => {
       if (newValue !== originalValue) {
         payload[field] = newValue;
-        changes.push({ label, from: originalValue || "—", to: newValue || "—" });
+        changes.push({ label, from: originalValue || "-", to: newValue || "-" });
       }
     };
 
@@ -90,6 +133,14 @@ export function StudentEditForm({
     diff("degree", "Curso", (data.degree ?? "").trim(), student.degree ?? "");
     diff("shift", "Turno", data.shift ?? "", student.shift ?? "");
     diff("bloodType", "Tipo sanguíneo", data.bloodType ?? "", student.bloodType ?? "");
+
+    // courseId acompanha o campo "Curso" (degree) mas não vira uma entrada
+    // própria no changelog — o texto do curso já comunica a mudança ao
+    // usuário; o id só existe para o backend persistir o vínculo estruturado.
+    const originalCourseId = extractId(student.courseId);
+    if ((data.courseId ?? "") !== originalCourseId) {
+      payload.courseId = data.courseId ?? "";
+    }
 
     if (changes.length === 0) {
       setFieldErrors({ _form: "Nenhuma alteração foi feita" });
@@ -124,92 +175,117 @@ export function StudentEditForm({
           <StatusBanner variant="error">{generalError ?? fieldErrors._form}</StatusBanner>
         )}
 
-        <Input
-          label="Nome completo"
-          type="text"
-          icon="person"
-          value={values.name}
-          onChange={set("name")}
-          error={fieldErrors.name}
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="Nome completo"
+            type="text"
+            icon="person"
+            value={values.name}
+            onChange={set("name")}
+            error={fieldErrors.name}
+          />
 
-        <Input
-          label="Nome social (opcional)"
-          type="text"
-          icon="badge"
-          placeholder="Como o(a) aluno(a) prefere ser chamado(a)"
-          value={values.socialName}
-          onChange={set("socialName")}
-          error={fieldErrors.socialName}
-        />
+          <Input
+            label="Nome social (opcional)"
+            type="text"
+            icon="badge"
+            placeholder="Como o(a) aluno(a) prefere ser chamado(a)"
+            value={values.socialName}
+            onChange={set("socialName")}
+            error={fieldErrors.socialName}
+          />
 
-        <Input
-          label="Telefone"
-          type="tel"
-          icon="phone"
-          value={formatPhone(values.telephone)}
-          onChange={(e) =>
-            setValues((prev) => ({
-              ...prev,
-              telephone: e.target.value.replace(/\D/g, "").slice(0, 11),
-            }))
-          }
-          error={fieldErrors.telephone}
-        />
+          <Input
+            label="Telefone"
+            type="tel"
+            icon="phone"
+            value={formatPhone(values.telephone)}
+            onChange={(e) =>
+              setValues((prev) => ({
+                ...prev,
+                telephone: e.target.value.replace(/\D/g, "").slice(0, 11),
+              }))
+            }
+            error={fieldErrors.telephone}
+          />
 
-        <div className="space-y-2">
-          <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
-            Instituição de Ensino (opcional)
-          </label>
-          <div className="relative group">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary pointer-events-none text-2xl transition-colors">
-              apartment
-            </span>
-            <input
-              list="student-edit-universities"
-              value={values.institution}
-              onChange={set("institution")}
-              placeholder={loadingUniversities ? "Carregando…" : "Nome da instituição"}
-              className="w-full h-14 bg-surface-container-lowest border border-on-surface-variant ring-0 focus:ring-2 focus:ring-primary rounded-xl text-on-surface pl-12 pr-4 text-base outline-none transition-all placeholder:text-outline/50"
-            />
-            <datalist id="student-edit-universities">
-              {universities.map((u) => (
-                <option key={u._id} value={u.name} />
-              ))}
-            </datalist>
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
+              Instituição de Ensino (opcional)
+            </label>
+            <div className="relative group">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary pointer-events-none text-2xl transition-colors">
+                apartment
+              </span>
+              <input
+                list="student-edit-universities"
+                value={values.institution}
+                onChange={set("institution")}
+                placeholder={loadingUniversities ? "Carregando…" : "Nome da instituição"}
+                className="w-full h-14 bg-surface-container-lowest border border-on-surface-variant ring-0 focus:ring-2 focus:ring-primary rounded-xl text-on-surface pl-12 pr-4 text-base outline-none transition-all placeholder:text-outline/50"
+              />
+              <datalist id="student-edit-universities">
+                {universities.map((u) => (
+                  <option key={u._id} value={u.name} />
+                ))}
+              </datalist>
+            </div>
+            {fieldErrors.institution && (
+              <p className="text-xs text-error mt-1 ml-1">{fieldErrors.institution}</p>
+            )}
           </div>
-          {fieldErrors.institution && (
-            <p className="text-xs text-error mt-1 ml-1">{fieldErrors.institution}</p>
-          )}
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">
+              Curso / Graduação (opcional)
+            </label>
+            <div className="relative group">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary pointer-events-none text-2xl transition-colors">
+                school
+              </span>
+              <input
+                list="student-edit-courses"
+                value={values.degree}
+                onChange={setDegree}
+                placeholder={
+                  !universityId
+                    ? "Selecione a instituição primeiro"
+                    : loadingCourses
+                      ? "Carregando…"
+                      : "Nome do curso"
+                }
+                className="w-full h-14 bg-surface-container-lowest border border-on-surface-variant ring-0 focus:ring-2 focus:ring-primary rounded-xl text-on-surface pl-12 pr-4 text-base outline-none transition-all placeholder:text-outline/50"
+              />
+              <datalist id="student-edit-courses">
+                {courses.map((c) => (
+                  <option key={c._id} value={c.name} />
+                ))}
+              </datalist>
+            </div>
+            {fieldErrors.degree && (
+              <p className="text-xs text-error mt-1 ml-1">{fieldErrors.degree}</p>
+            )}
+          </div>
+
+          <SelectField
+            label="Turno (opcional)"
+            icon="schedule"
+            options={SHIFTS}
+            placeholder="Selecione o turno"
+            value={values.shift}
+            onChange={set("shift")}
+            error={fieldErrors.shift}
+          />
+
+          <SelectField
+            label="Tipo Sanguíneo (opcional)"
+            options={BLOOD_TYPES.map((bt) => ({ value: bt, label: bt }))}
+            placeholder="Não informado"
+            value={values.bloodType}
+            onChange={set("bloodType")}
+            error={fieldErrors.bloodType}
+          />
         </div>
-
-        <Input
-          label="Curso / Graduação (opcional)"
-          type="text"
-          icon="school"
-          value={values.degree}
-          onChange={set("degree")}
-          error={fieldErrors.degree}
-        />
-
-        <SelectField
-          label="Turno (opcional)"
-          icon="schedule"
-          options={SHIFTS}
-          placeholder="Selecione o turno"
-          value={values.shift}
-          onChange={set("shift")}
-          error={fieldErrors.shift}
-        />
-
-        <SelectField
-          label="Tipo Sanguíneo (opcional)"
-          options={BLOOD_TYPES.map((bt) => ({ value: bt, label: bt }))}
-          placeholder="Não informado"
-          value={values.bloodType}
-          onChange={set("bloodType")}
-          error={fieldErrors.bloodType}
-        />
 
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="outline" size="sm" fullWidth onClick={onCancel}>

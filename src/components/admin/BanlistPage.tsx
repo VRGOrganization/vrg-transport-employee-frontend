@@ -81,7 +81,7 @@ const COLUMNS: Column<BanlistEntry>[] = [
     label: "Data do desbanimento",
     render: (entry) => (
       <span className="text-sm text-on-surface-variant">
-        {entry.unbannedAt ? new Date(entry.unbannedAt).toLocaleDateString("pt-BR") : "—"}
+        {entry.unbannedAt ? new Date(entry.unbannedAt).toLocaleDateString("pt-BR") : "-"}
       </span>
     ),
   },
@@ -139,7 +139,7 @@ export function BanlistPage({ role }: { role: "admin" | "employee" }) {
     render: (entry) => {
       const id = entry.active ? entry.bannedByAdminId : (entry.unbannedByAdminId ?? entry.bannedByAdminId);
       const name = id ? adminNames[id] : undefined;
-      return <span className="text-sm text-on-surface-variant">{name ?? "—"}</span>;
+      return <span className="text-sm text-on-surface-variant">{name ?? "-"}</span>;
     },
   };
 
@@ -148,7 +148,7 @@ export function BanlistPage({ role }: { role: "admin" | "employee" }) {
     label: "Motivo do desbanimento",
     render: (entry) => (
       <span className="text-sm text-on-surface-variant max-w-xs truncate block" title={entry.unbanReasons?.join("; ")}>
-        {entry.unbanReasons && entry.unbanReasons.length > 0 ? entry.unbanReasons.join("; ") : "—"}
+        {entry.unbanReasons && entry.unbanReasons.length > 0 ? entry.unbanReasons.join("; ") : "-"}
       </span>
     ),
   };
@@ -167,7 +167,7 @@ export function BanlistPage({ role }: { role: "admin" | "employee" }) {
           <ShieldCheck className="size-4" />
         </button>
       ) : (
-        <span className="text-xs text-on-surface-variant/50 italic mr-2">—</span>
+        <span className="text-xs text-on-surface-variant/50 italic mr-2">-</span>
       ),
   };
 

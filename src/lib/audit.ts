@@ -19,15 +19,6 @@ export interface AuditCategory {
 
 export const AUDIT_CATEGORIES: AuditCategory[] = [
   {
-    key: "student",
-    label: "Estudante",
-    prefixes: ["student.", "register.student"],
-    dot: "bg-sky-500",
-    chipBg: "bg-sky-500/12",
-    chipText: "text-sky-700 dark:text-sky-300",
-    ring: "ring-sky-500",
-  },
-  {
     key: "license",
     label: "Carteirinha",
     prefixes: ["license.", "license_request."],
@@ -44,7 +35,6 @@ export const AUDIT_CATEGORIES: AuditCategory[] = [
       "logout",
       "admin.login",
       "employee.login",
-      "student.login",
       "verify_email",
       "password.",
       "resend_verification_code",
@@ -134,27 +124,12 @@ export function categorizeAction(action: string): AuditCategory {
 
 /** Rótulos PT-BR legíveis para as ações mais comuns. Fallback: a própria action. */
 const ACTION_LABELS: Record<string, string> = {
-  "student.login": "Login de estudante",
   "admin.login": "Login de administrador",
   "employee.login": "Login de funcionário",
-  "student.login.pending_reissue_otp":
-    "Login de estudante (código de reemissão)",
   logout: "Encerramento de sessão",
   verify_email: "Verificação de e-mail",
   resend_verification_code: "Reenvio de código de verificação",
   "password.reset": "Redefinição de senha",
-  "register.student": "Cadastro de estudante",
-  "register.student.conflict": "Cadastro de estudante (conflito)",
-  "student.ban": "Banimento de estudante",
-  "student.unban": "Desbanimento de estudante",
-  "student.verify": "Aprovação de estudante",
-  "student.update": "Edição de estudante",
-  "student.adminCreate": "Cadastro de estudante (admin)",
-  "student.deactivate": "Desativação de estudante",
-  "student.activate": "Ativação de estudante",
-  "student.remove": "Remoção de estudante",
-  "student.email_correction": "Correção de e-mail do estudante",
-  "student.personal_documents.upload": "Envio de documentos do estudante",
   "license.create": "Emissão de carteirinha",
   "license.update": "Atualização de carteirinha",
   "license.update_existing": "Atualização de carteirinha existente",
@@ -241,12 +216,11 @@ export function actionLabel(action: string): string {
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
   employee: "Funcionário",
-  student: "Estudante",
 };
 
 /** Rótulo PT-BR do papel — o admin nunca vê o código cru do papel. */
 export function roleLabel(role: string | null | undefined): string {
-  if (!role) return "—";
+  if (!role) return "-";
   return ROLE_LABELS[role] ?? role;
 }
 

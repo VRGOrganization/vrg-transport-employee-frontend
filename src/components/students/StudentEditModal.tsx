@@ -58,13 +58,14 @@ export function StudentEditModal({ student, onClose, onUpdated }: Props) {
   };
 
   return (
-    <Modal open onClose={onClose} size="md">
+    <Modal open onClose={onClose} size="wide">
       {view === "edit" && (
         <StudentEditForm
           student={student}
           universities={universities}
           loadingUniversities={loadingUniversities}
           generalError={error}
+          hideHeader
           onCancel={() => { setError(""); onClose(); }}
           onPrepareConfirm={handlePrepareConfirm}
         />

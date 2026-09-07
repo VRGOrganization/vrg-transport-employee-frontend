@@ -15,11 +15,13 @@ import { BusTable } from "@/components/buses/BusTable";
 import { BusFormModal } from "@/components/buses/BusFormModal";
 import { BusStudentsDrawer } from "@/components/buses/BusStudentsDrawer";
 import { DeactivateBusModal } from "@/components/buses/DeactivateBusModal";
-import { Bus as BusIcon, Armchair, Building2, Unlink, CheckCircle2, Ban, RotateCcw, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Bus as BusIcon, Armchair, Building2, Unlink, CheckCircle2, Ban, RotateCcw, ArrowUpDown } from "lucide-react";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { DashboardStatCard } from "@/components/cards/DashboardStatCard";
 import { Tabs } from "@/components/ui/Tabs";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Button } from "@/components/ui/Button";
+import { Pagination } from "@/components/ui/Pagination";
 
 type StatusTab = "active" | "inactive";
 type SortOrder = "numeric" | "az" | "shift";
@@ -187,15 +189,9 @@ export function BusesPage({ role }: { role: "admin" | "employee" }) {
                 Cadastre ônibus, defina capacidade e visualize alunos por linha
               </p>
             </div>
-            <button
-              onClick={() => setCreating(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
-            >
-              <span className="material-symbols-outlined text-lg">
-                add
-              </span>
-              Novo Ônibus
-            </button>
+            <Button variant="primary" size="sm" onClick={() => setCreating(true)}>
+              Adicionar ônibus
+            </Button>
           </div>
 
           <div className="mb-6">
@@ -262,19 +258,6 @@ export function BusesPage({ role }: { role: "admin" | "employee" }) {
                   <option value="shift">Turno</option>
                 </select>
               </div>
-              <div className="flex items-center gap-2">
-                <label htmlFor="bus-page-size" className="text-xs text-on-surface-variant">Por página:</label>
-                <select
-                  id="bus-page-size"
-                  value={pageSize}
-                  onChange={(e) => setPageSize(Number(e.target.value) as PageSize)}
-                  className="text-xs bg-surface-container border border-outline-variant rounded-lg px-2 py-1 text-on-surface outline-none focus:ring-2 focus:ring-primary/30"
-                >
-                  {PAGE_SIZE_OPTIONS.map((n) => (
-                    <option key={n} value={n}>{n}</option>
-                  ))}
-                </select>
-              </div>
             </div>
             <span className="text-xs text-on-surface-variant">
               {sortedBuses.length} {sortedBuses.length === 1 ? "ônibus" : "ônibus"}
@@ -302,31 +285,15 @@ export function BusesPage({ role }: { role: "admin" | "employee" }) {
           )}
 
           {!loading && sortedBuses.length > 0 && (
-            <div className="flex items-center justify-between mt-4 pt-3 border-t border-outline-variant">
-              <span className="text-xs text-on-surface-variant">
-                Página {safePage} de {totalPages}
-              </span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={safePage <= 1}
-                  className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Página anterior"
-                >
-                  <ChevronLeft className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={safePage >= totalPages}
-                  className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Próxima página"
-                >
-                  <ChevronRight className="size-4" />
-                </button>
-              </div>
-            </div>
+            <Pagination
+              page={safePage}
+              pageSize={pageSize}
+              total={sortedBuses.length}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(size) => setPageSize(size as PageSize)}
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
+              className="mt-4 pt-3 border-t border-outline-variant"
+            />
           )}
         </main>
 

@@ -53,7 +53,7 @@ export function DashboardStatCard({
     typeof value === "number"
       ? value.toLocaleString("pt-BR")
       : value === null
-        ? "—"
+        ? "-"
         : value;
 
   const subInfoColor = subInfo?.warning

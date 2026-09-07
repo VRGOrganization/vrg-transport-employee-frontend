@@ -6,6 +6,7 @@ import { http } from "@/services/http";
 import { studentService } from "@/services/studentService";
 import { banlistService } from "@/services/banlistService";
 import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
+import { licenseRequestService } from "@/services/licenseRequestService";
 import type { Student } from "@/types/student";
 
 vi.mock("@/services/studentService", () => ({
@@ -18,13 +19,19 @@ vi.mock("@/services/studentService", () => ({
 vi.mock("@/services/banlistService", () => ({
   banlistService: {
     list: vi.fn(),
-    getByStudent: vi.fn().mockResolvedValue([]),
+    getHistory: vi.fn().mockResolvedValue([]),
   },
 }));
 
 vi.mock("@/services/enrollmentPeriodService", () => ({
   enrollmentPeriodService: {
     getActive: vi.fn(),
+  },
+}));
+
+vi.mock("@/services/licenseRequestService", () => ({
+  licenseRequestService: {
+    findByStudent: vi.fn(),
   },
 }));
 
@@ -43,6 +50,7 @@ const listStudentsMock = vi.mocked(studentService.list);
 const listBansMock = vi.mocked(banlistService.list);
 const getActiveEnrollmentMock = vi.mocked(enrollmentPeriodService.getActive);
 const httpGetMock = vi.mocked(http.get);
+const findRequestsByStudentMock = vi.mocked(licenseRequestService.findByStudent);
 
 function makeStudent(over: Partial<Student> = {}): Student {
   return {
@@ -87,6 +95,9 @@ describe("StudentsListPage — bloqueio de 'Novo pedido' manual de carteirinha",
     vi.clearAllMocks();
     listStudentsMock.mockResolvedValue([makeStudent()]);
     listBansMock.mockResolvedValue([]);
+    findRequestsByStudentMock.mockResolvedValue([]);
+    // clearAllMocks apaga o retorno declarado no vi.mock — rearmar aqui.
+    vi.mocked(banlistService.getHistory).mockResolvedValue([]);
   });
 
   it("desabilita 'Novo pedido' quando o ciclo de inscrição está fechado", async () => {
@@ -151,6 +162,23 @@ describe("StudentsListPage — bloqueio de 'Novo pedido' manual de carteirinha",
     expect(pushMock).not.toHaveBeenCalled();
   });
 
+  it("desabilita 'Novo pedido' quando o aluno já possui uma solicitação pendente", async () => {
+    getActiveEnrollmentMock.mockResolvedValue(OPEN_CYCLE);
+    httpGetMock.mockRejectedValue(new Error("not found"));
+    findRequestsByStudentMock.mockResolvedValue([{ status: "pending" }]);
+
+    render(<StudentsListPage role="admin" />);
+
+    await openDropdown("Aluno Um");
+
+    await waitFor(() => {
+      expect(screen.getByText("Novo pedido").closest("button")).toBeDisabled();
+    });
+
+    fireEvent.click(screen.getByText("Novo pedido"));
+    expect(pushMock).not.toHaveBeenCalled();
+  });
+
   it("permite 'Novo pedido' quando o ciclo está aberto, sem carteirinha e com documentos pessoais completos", async () => {
     getActiveEnrollmentMock.mockResolvedValue(OPEN_CYCLE);
     httpGetMock.mockRejectedValue(new Error("not found"));
@@ -165,5 +193,92 @@ describe("StudentsListPage — bloqueio de 'Novo pedido' manual de carteirinha",
 
     fireEvent.click(screen.getByText("Novo pedido"));
     expect(pushMock).toHaveBeenCalledWith("/admin/students/license/new?id=student-1");
+  });
+
+  it("desabilita 'Carteirinha' quando o aluno não possui carteirinha", async () => {
+    getActiveEnrollmentMock.mockResolvedValue(OPEN_CYCLE);
+    httpGetMock.mockRejectedValue(new Error("not found"));
+
+    render(<StudentsListPage role="admin" />);
+
+    await openDropdown("Aluno Um");
+
+    await waitFor(() => {
+      expect(screen.getByText("Carteirinha").closest("button")).toBeDisabled();
+    });
+  });
+
+  it("desabilita 'Carteirinha' quando a carteirinha existe mas não está aprovada (status diferente de active)", async () => {
+    getActiveEnrollmentMock.mockResolvedValue(OPEN_CYCLE);
+    httpGetMock.mockResolvedValue({ _id: "license-1", status: "rejected" });
+
+    render(<StudentsListPage role="admin" />);
+
+    await openDropdown("Aluno Um");
+
+    await waitFor(() => {
+      expect(screen.getByText("Carteirinha").closest("button")).toBeDisabled();
+    });
+  });
+
+  it("permite 'Carteirinha' quando a carteirinha existe com status active", async () => {
+    getActiveEnrollmentMock.mockResolvedValue(OPEN_CYCLE);
+    httpGetMock.mockResolvedValue({ _id: "license-1", status: "active" });
+
+    render(<StudentsListPage role="admin" />);
+
+    await openDropdown("Aluno Um");
+
+    await waitFor(() => {
+      expect(screen.getByText("Carteirinha").closest("button")).not.toBeDisabled();
+    });
+  });
+});
+
+describe("StudentsListPage — direção do menu de ações", () => {
+  // Abrir para baixo nas últimas linhas estourava o container da tabela e
+  // criava um segundo scroll vertical. Da 7ª linha em diante o menu abre para
+  // cima (bottom-full) em vez de para baixo (top-full).
+  const manyStudents = Array.from({ length: 10 }, (_, i) =>
+    makeStudent({
+      _id: `student-${i + 1}`,
+      name: `Aluno ${String(i + 1).padStart(2, "0")}`,
+      email: `aluno${i + 1}@example.com`,
+    }),
+  );
+
+  beforeEach(() => {
+    listStudentsMock.mockResolvedValue(manyStudents);
+    getActiveEnrollmentMock.mockResolvedValue(OPEN_CYCLE);
+    httpGetMock.mockRejectedValue(new Error("not found"));
+  });
+
+  /** Abre o menu da linha informada (1-based) e devolve o container do menu. */
+  async function openMenuAtRow(rowNumber: number) {
+    const name = `Aluno ${String(rowNumber).padStart(2, "0")}`;
+    const row = (await screen.findByText(name)).closest("tr")!;
+    fireEvent.click(row.querySelector("button")!);
+    // o menu é o irmão posicionado do botão de ações
+    return row.querySelector('[class*="absolute"][class*="w-36"]') as HTMLElement;
+  }
+
+  it("abre para baixo nas seis primeiras linhas", async () => {
+    render(<StudentsListPage role="admin" />);
+
+    for (const rowNumber of [1, 6]) {
+      const menu = await openMenuAtRow(rowNumber);
+      expect(menu.className).toContain("top-full");
+      expect(menu.className).not.toContain("bottom-full");
+    }
+  });
+
+  it("abre para cima a partir da sétima linha", async () => {
+    render(<StudentsListPage role="admin" />);
+
+    for (const rowNumber of [7, 10]) {
+      const menu = await openMenuAtRow(rowNumber);
+      expect(menu.className).toContain("bottom-full");
+      expect(menu.className).not.toContain("top-full");
+    }
   });
 });

@@ -14,6 +14,9 @@ export interface University {
   // Presente na listagem (GET /university): true se existe ao menos um Bus
   // cobrindo essa faculdade. Ausente em respostas antigas/mockadas.
   hasBus?: boolean;
+  /** Id do ator que desativou (userId); `null`/ausente quando ativa. */
+  deactivatedBy?: string | null;
+  deactivatedAt?: string | null;
 }
 
 export type CourseModel = "Técnico" | "Tecnólogo" | "Bacharel" | "Licenciatura" | "Mestrado" | "Doutorado";
@@ -28,12 +31,30 @@ export interface Course {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Id do ator que desativou (userId); `null`/ausente quando ativo. */
+  deactivatedBy?: string | null;
+  /** Nome do ator resolvido pelo backend (aba "Cursos desativados"). */
+  deactivatedByName?: string | null;
+  deactivatedAt?: string | null;
+}
+
+/** Contador de vagas ocupadas de um vínculo faculdade+ônibus em um dia. */
+export interface DaySlotCount {
+  day: string;
+  filledSlots: number;
 }
 
 export interface UniversitySlot {
   universityId: string | { _id: string; name: string; acronym: string };
   priorityOrder: number;
   filledSlots?: number;
+  /**
+   * Vagas ocupadas por dia neste vínculo. `bus.capacity` é o teto de CADA
+   * (ônibus × faculdade × dia) — não do ônibus inteiro —, então a soma de um
+   * ônibus num dia pode ultrapassar `capacity` legitimamente.
+   * Contador vivo do ciclo ATIVO: zerado no reset, não serve para histórico.
+   */
+  daySlots?: DaySlotCount[];
   pendingCount?: number;
   waitlistedCount?: number;
 }
@@ -54,6 +75,8 @@ export interface Bus {
   shift?: string | null;
   // contadores expostos pela API de listagem com filas
   waitlistedCount?: number;
+  /** Alocações ativas no ciclo (GET /bus/queue). */
+  activeCount?: number;
   pendingCount?: number;
   filledSlotsTotal?: number;
 }

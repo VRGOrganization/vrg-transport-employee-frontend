@@ -19,9 +19,9 @@ describe("licenseRequestService", () => {
     vi.clearAllMocks();
   });
 
-  it("getReviewCounts calls the review-counts endpoint without period", async () => {
+  it("getReviewCounts calls the review-counts endpoint without cycle", async () => {
     getMock.mockResolvedValueOnce({
-      enrollmentPeriodId: "period-1",
+      enrollmentCycleId: "cycle-1",
       reissueCount: 2,
       documentResendCount: 3,
     });
@@ -31,17 +31,19 @@ describe("licenseRequestService", () => {
     expect(getMock).toHaveBeenCalledWith("/license-request/review-counts");
   });
 
-  it("getReviewCounts includes enrollmentPeriodId when provided", async () => {
+  // O controller lê @Query('enrollmentCycleId'). Enviar `enrollmentPeriodId`
+  // fazia o filtro ser ignorado em silêncio, devolvendo sempre o ciclo ativo.
+  it("getReviewCounts includes enrollmentCycleId when provided", async () => {
     getMock.mockResolvedValueOnce({
-      enrollmentPeriodId: "period 1",
+      enrollmentCycleId: "cycle 1",
       reissueCount: 0,
       documentResendCount: 0,
     });
 
-    await licenseRequestService.getReviewCounts("period 1");
+    await licenseRequestService.getReviewCounts("cycle 1");
 
     expect(getMock).toHaveBeenCalledWith(
-      "/license-request/review-counts?enrollmentPeriodId=period%201",
+      "/license-request/review-counts?enrollmentCycleId=cycle%201",
     );
   });
 

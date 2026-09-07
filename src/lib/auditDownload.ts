@@ -33,9 +33,7 @@ function toCsv(events: AuditEvent[]): string {
     "acao_label",
     "resultado",
     "ator_nome",
-    "ator_id",
     "ator_papel",
-    "alvo_nome",
     "metadata",
   ];
   const rows = events.map((e) =>
@@ -45,10 +43,8 @@ function toCsv(events: AuditEvent[]): string {
       e.action,
       actionLabel(e.action),
       e.outcome,
-      e.actorName ?? "",
-      e.actor?.id ?? "",
+      e.actorName ?? (e.actor ? "Executor não identificado" : ""),
       e.actor?.role ?? "",
-      e.targetName ?? "",
       e.metadata ? JSON.stringify(e.metadata) : "",
     ]
       .map(csvCell)
@@ -105,10 +101,9 @@ async function downloadPdf(events: AuditEvent[]) {
       `Ação: ${e.action}`,
       `Resultado: ${e.outcome === "success" ? "Sucesso" : "Falha"}`,
       `Data: ${fmtDate(e.createdAt)}`,
-      `Executado por: ${e.actorName ?? e.actor?.id ?? "—"}${
+      `Executado por: ${e.actorName ?? (e.actor ? "Executor não identificado" : "-")}${
         e.actor?.role ? ` (${e.actor.role})` : ""
       }`,
-      `Alvo: ${e.targetName ?? "—"}`,
       `ID do registro: ${e.id}`,
     ];
     if (e.metadata && Object.keys(e.metadata).length > 0) {

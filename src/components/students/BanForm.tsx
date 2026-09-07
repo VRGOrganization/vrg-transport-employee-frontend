@@ -8,22 +8,22 @@ import { toTitleCase } from "@/lib/utils/string";
 
 const BAN_TERMS = `Ao prosseguir com esta ação administrativa, declaro, sob plena consciência e responsabilidade, que estou ciente e em total concordância com as seguintes disposições e consequências jurídico-administrativas do banimento:
 
-§ 1º — Restrição de Acesso Imediata e Irrestrita
-O estudante identificado neste registro terá todos os seus acessos aos serviços de transporte universitário municipalmente administrados pela Prefeitura de São Fidélis — Estado do Rio de Janeiro — revogados com efeito imediato, incluindo, mas não se limitando a: solicitações de carteirinha de transporte estudantil, inscrições em períodos de acesso, reserva de assentos em ônibus universitários e consulta a quaisquer benefícios vinculados ao Sistema VRG Transport.
+§ 1º. Restrição de Acesso Imediata e Irrestrita
+O estudante identificado neste registro terá todos os seus acessos aos serviços de transporte universitário municipalmente administrados pela Prefeitura de São Fidélis, Estado do Rio de Janeiro, revogados com efeito imediato, incluindo, mas não se limitando a: solicitações de carteirinha de transporte estudantil, inscrições em períodos de acesso, reserva de assentos em ônibus universitários e consulta a quaisquer benefícios vinculados ao Sistema VRG Transport.
 
-§ 2º — Encerramento de Sessões e Desativação de Conta
+§ 2º. Encerramento de Sessões e Desativação de Conta
 Todas as sessões ativas do estudante nos portais vinculados a esta plataforma serão encerradas de forma imediata e automática. A conta do estudante será desativada no mesmo instante, impossibilitando novos acessos enquanto o banimento permanecer em vigor.
 
-§ 3º — Bloqueio Permanente de Recadastramento
+§ 3º. Bloqueio Permanente de Recadastramento
 O CPF e o endereço de e-mail do estudante serão registrados na lista de restrições do sistema, impedindo qualquer tentativa de novo cadastro com as mesmas credenciais enquanto a vigência do banimento não for revogada por ato administrativo formal, garantindo a integridade e a efetividade da medida adotada.
 
-§ 4º — Reversibilidade do Banimento por Ato Administrativo
+§ 4º. Reversibilidade do Banimento por Ato Administrativo
 O banimento é uma medida administrativa de caráter temporário e reversível. Um administrador devidamente autorizado e credenciado poderá revogar esta restrição a qualquer tempo, mediante o registro formal de justificativa no sistema, restaurando integralmente os privilégios do estudante conforme os procedimentos e as normativas vigentes da instituição. A reversibilidade não isenta o ato presente de seus efeitos imediatos.
 
-§ 5º — Registro Permanente para Fins de Auditoria e Transparência
+§ 5º. Registro Permanente para Fins de Auditoria e Transparência
 Os motivos declarados neste ato, bem como os dados de identificação do administrador responsável pela decisão, a data e hora do banimento, serão permanentemente vinculados ao registro do estudante para fins de auditoria, transparência administrativa e conformidade com as políticas institucionais de gestão do serviço de transporte universitário da municipalidade.
 
-§ 6º — Responsabilidade Administrativa
+§ 6º. Responsabilidade Administrativa
 Declaro, por fim, que esta ação é fundamentada em motivos legítimos, devidamente documentados e plenamente condizentes com as políticas de uso e as diretrizes do serviço de transporte universitário da Municipalidade de São Fidélis, assumindo integral responsabilidade sobre os efeitos jurídicos e administrativos decorrentes desta decisão.`;
 
 interface BanFormProps {

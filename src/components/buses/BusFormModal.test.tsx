@@ -30,8 +30,8 @@ describe('BusFormModal', () => {
     render(<BusFormModal open={true} onClose={() => {}} onSubmit={onSubmit} />);
 
     // Identifier input
-    const identifier = screen.getByPlaceholderText('Ex: Ônibus 03');
-    fireEvent.change(identifier, { target: { value: 'Ônibus Teste' } });
+    const identifier = screen.getByPlaceholderText('Ex: 01');
+    fireEvent.change(identifier, { target: { value: '01' } });
 
     // Capacity left empty
     const submit = screen.getByRole('button', { name: /cadastrar/i });
@@ -40,11 +40,34 @@ describe('BusFormModal', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());
 
     const calledWith = onSubmit.mock.calls[0][0];
-    expect(calledWith.identifier).toBe('Ônibus Teste');
+    expect(calledWith.identifier).toBe('01');
     expect('capacity' in calledWith).toBe(true);
     expect(calledWith.capacity).toBeNull();
     // shift should not be present when not selected
     expect(calledWith.shift).toBeUndefined();
+  });
+
+  it('strips non-digits and caps identifier input at 2 characters', () => {
+    render(<BusFormModal open={true} onClose={() => {}} onSubmit={vi.fn()} />);
+
+    const identifier = screen.getByPlaceholderText('Ex: 01') as HTMLInputElement;
+    fireEvent.change(identifier, { target: { value: 'a1b2c3' } });
+
+    expect(identifier.value).toBe('12');
+  });
+
+  it('rejects an identifier that is not exactly 2 digits', async () => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    render(<BusFormModal open={true} onClose={() => {}} onSubmit={onSubmit} />);
+
+    const identifier = screen.getByPlaceholderText('Ex: 01');
+    fireEvent.change(identifier, { target: { value: '1' } });
+
+    const submit = screen.getByRole('button', { name: /cadastrar/i });
+    fireEvent.click(submit);
+
+    await screen.findByText('O identificador deve conter exatamente 2 dígitos numéricos (ex: 01, 02).');
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it('submits with selected shift', async () => {
@@ -52,8 +75,8 @@ describe('BusFormModal', () => {
     render(<BusFormModal open={true} onClose={() => {}} onSubmit={onSubmit} />);
 
     // fill identifier
-    const identifier = screen.getByPlaceholderText('Ex: Ônibus 03');
-    fireEvent.change(identifier, { target: { value: 'Ônibus Turno' } });
+    const identifier = screen.getByPlaceholderText('Ex: 01');
+    fireEvent.change(identifier, { target: { value: '02' } });
 
     // select shift (select has no associated for/id, use role)
     const select = screen.getByRole('combobox') as HTMLSelectElement;
@@ -71,7 +94,7 @@ describe('BusFormModal', () => {
     const onSubmit = vi.fn(() => Promise.resolve());
     const initial = {
       _id: 'bus-shift-1',
-      identifier: 'Ônibus Z',
+      identifier: '03',
       capacity: 20,
       shift: 'Manhã',
     } as any;
@@ -107,7 +130,7 @@ describe('BusFormModal', () => {
 
     const initial = {
       _id: 'bus-1',
-      identifier: 'Ônibus X',
+      identifier: '04',
       capacity: 40,
       universitySlots: [
         { universityId: 'u1', priorityOrder: 1 },
@@ -142,7 +165,7 @@ describe('BusFormModal', () => {
 
     const initial = {
       _id: 'bus-2',
-      identifier: 'Ônibus Y',
+      identifier: '05',
       capacity: 30,
       universitySlots: [
         { universityId: 'uA', priorityOrder: 3 },

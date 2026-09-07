@@ -10,11 +10,10 @@ const event: AuditEvent = {
   action: "license.reject",
   outcome: "failure",
   actor: { id: "emp-1", role: "employee" },
-  target: { studentId: "stu-1" },
+  target: { licenseId: "lic-1" },
   metadata: { reason: "documento ilegível" },
   createdAt: "2026-01-01T10:00:00Z",
   actorName: "Maria Funcionária",
-  targetName: "Aluno Alvo",
 };
 
 describe("AuditDetailModal", () => {

@@ -25,6 +25,7 @@ export const studentEditSchema = z.object({
   shift: z.string().optional(),
   bloodType: z.string().optional(),
   degree: z.string().optional(),
+  courseId: z.string().optional(),
 });
 
 export const studentAdminCreateSchema = z.object({

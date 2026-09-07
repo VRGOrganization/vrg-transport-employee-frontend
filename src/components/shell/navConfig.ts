@@ -12,6 +12,7 @@ import {
   SlidersHorizontal,
   MessageSquareText,
   ScrollText,
+  TicketCheck,
 } from "lucide-react";
 import type { NavItem, SideNavBrand } from "./SideNav";
 
@@ -24,6 +25,7 @@ export const ADMIN_NAV_ITEMS: readonly NavItem[] = [
   { icon: Bus,               label: "Frota",                 href: "/admin/buses"              },
   { icon: CalendarDays,      label: "Período de Inscrição",  href: "/admin/enrollment-period"  },
   { icon: IdCard,            label: "Carteirinhas",          href: "/admin/cards"              },
+  { icon: TicketCheck,       label: "Passes de ônibus",      href: "/admin/bus-pass"           },
   { icon: Bell,              label: "Avisos",                href: "/admin/notices"            },
   { icon: MessageSquareText, label: "Mensagens de sistema",  href: "/admin/system-notice-templates" },
   { icon: SlidersHorizontal, label: "Prioridades",           href: "/admin/priority-rules"     },
@@ -35,6 +37,7 @@ export const EMPLOYEE_NAV_ITEMS: readonly NavItem[] = [
   { icon: GraduationCap,   label: "Gerenciar Estudantes",   href: "/employee/students"     },
   { icon: Building2,       label: "Instituições",           href: "/employee/universities" },
   { icon: IdCard,          label: "Gerenciar Carteirinhas", href: "/employee/cards"        },
+  { icon: TicketCheck,     label: "Passes de ônibus",       href: "/employee/bus-pass"     },
   { icon: Bell,            label: "Avisos",                 href: "/employee/notices"      },
 ];
 

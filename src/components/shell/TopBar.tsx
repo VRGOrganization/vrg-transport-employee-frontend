@@ -14,9 +14,13 @@ function getPageTitle(pathname: string): string {
     "/admin/universities":     "Instituições",
     "/admin/buses":            "Frota",
     "/admin/priority-rules":   "Regras de Prioridade",
+    "/admin/bus-pass/manifest":"Manifesto de passes",
+    "/admin/bus-pass":         "Passes de ônibus",
     "/employee/dashboard":     "Painel",
     "/employee/students":      "Estudantes",
     "/employee/cards":         "Carteirinhas",
+    "/employee/bus-pass/manifest": "Manifesto de passes",
+    "/employee/bus-pass":      "Passes de ônibus",
   };
 
   for (const [path, title] of Object.entries(titles)) {

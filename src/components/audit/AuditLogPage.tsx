@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ScrollText, Users, Eraser } from "lucide-react";
+import { ScrollText, Eraser } from "lucide-react";
 import { auditService } from "@/services/auditService";
 import type { AuditEvent, AuditFilters, AuditParticipant } from "@/types/audit";
 import { AUDIT_CATEGORIES } from "@/lib/audit";
@@ -9,7 +9,6 @@ import { downloadAuditEvents } from "@/lib/auditDownload";
 import { Pagination } from "@/components/ui/Pagination";
 import { ErrorState, EmptyState } from "@/components/ui/states";
 import type { PageSize } from "@/lib/constants";
-import { cn } from "@/lib/utils";
 import { AuditTimeline } from "./AuditTimeline";
 import { AuditDetailModal } from "./AuditDetailModal";
 import { DownloadFormatMenu } from "./DownloadFormatMenu";
@@ -27,12 +26,12 @@ const OUTCOME_OPTIONS = [
   { value: "failure", label: "Falha" },
 ];
 
-const STAFF_ROLES = "admin,employee";
-
 /**
  * Relatório de auditoria (admin). Timeline estilo git-log, filtros por tipo de
- * ação / pessoa / aluno / período, paginação server-side, seleção por destaque
- * (sem checkbox) e download em massa nos formatos JSON/PDF/CSV.
+ * ação / pessoa / período, paginação server-side, seleção por destaque
+ * (sem checkbox) e download em massa nos formatos JSON/PDF/CSV. Mostra
+ * exclusivamente atividade de staff (admin/funcionário) — o backend nunca
+ * retorna eventos derivados de aluno.
  */
 export function AuditLogPage() {
   const [events, setEvents] = useState<AuditEvent[]>([]);
@@ -46,14 +45,11 @@ export function AuditLogPage() {
   const [category, setCategory] = useState("");
   const [outcome, setOutcome] = useState<"" | "success" | "failure">("");
   const [actorId, setActorId] = useState("");
-  const [targetId, setTargetId] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [staffOnly, setStaffOnly] = useState(false);
 
-  // participantes (para os selects)
+  // participantes (para o select "Pessoa")
   const [people, setPeople] = useState<AuditParticipant[]>([]);
-  const [students, setStudents] = useState<AuditParticipant[]>([]);
   const [peopleLoading, setPeopleLoading] = useState(true);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -68,14 +64,11 @@ export function AuditLogPage() {
   useEffect(() => {
     let alive = true;
     setPeopleLoading(true);
-    Promise.all([
-      auditService.participants(false),
-      auditService.participants(true),
-    ])
-      .then(([all, onlyStudents]) => {
+    auditService
+      .participants()
+      .then((all) => {
         if (!alive) return;
         setPeople(all);
-        setStudents(onlyStudents);
       })
       .catch(() => {})
       .finally(() => alive && setPeopleLoading(false));
@@ -93,8 +86,6 @@ export function AuditLogPage() {
       ...(categoryPrefix ? { actionPrefix: categoryPrefix } : {}),
       ...(outcome ? { outcome } : {}),
       ...(actorId ? { actorId } : {}),
-      ...(targetId ? { targetId } : {}),
-      ...(staffOnly ? { actorRoles: STAFF_ROLES } : {}),
       ...(from ? { from: new Date(from).toISOString() } : {}),
       ...(to ? { to: new Date(`${to}T23:59:59`).toISOString() } : {}),
     };
@@ -109,24 +100,14 @@ export function AuditLogPage() {
     } finally {
       setLoading(false);
     }
-  }, [
-    page,
-    pageSize,
-    categoryPrefix,
-    outcome,
-    actorId,
-    targetId,
-    staffOnly,
-    from,
-    to,
-  ]);
+  }, [page, pageSize, categoryPrefix, outcome, actorId, from, to]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   // Reset de página quando filtros mudam.
-  const filtersKey = `${categoryPrefix ?? ""}|${outcome}|${actorId}|${targetId}|${staffOnly}|${from}|${to}`;
+  const filtersKey = `${categoryPrefix ?? ""}|${outcome}|${actorId}|${from}|${to}`;
   const prevFiltersKey = useRef(filtersKey);
   useEffect(() => {
     if (prevFiltersKey.current !== filtersKey) {
@@ -184,7 +165,7 @@ export function AuditLogPage() {
       </header>
 
       {/* Filtros */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 items-end">
         <AuditSelect
           label="Tipo de ação"
           value={category}
@@ -204,13 +185,6 @@ export function AuditLogPage() {
           loading={peopleLoading}
           onChange={setActorId}
           highlightStaff
-        />
-        <ParticipantCombobox
-          label="Aluno"
-          value={targetId}
-          participants={students}
-          loading={peopleLoading}
-          onChange={setTargetId}
         />
         <div>
           <label className="block text-xs font-semibold text-on-surface-variant mb-1">
@@ -236,24 +210,6 @@ export function AuditLogPage() {
             className="w-full h-11 px-3 rounded-lg text-sm bg-surface-container-lowest text-on-surface ring-1 ring-outline/40 hover:ring-outline focus:ring-2 focus:ring-primary outline-none transition-all cursor-text"
           />
         </div>
-      </div>
-
-      {/* Toggle "Apenas Funcionários" */}
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setStaffOnly((v) => !v)}
-          aria-pressed={staffOnly}
-          className={cn(
-            "inline-flex items-center gap-2 h-9 px-3.5 rounded-lg text-sm font-semibold transition-all cursor-pointer",
-            staffOnly
-              ? "bg-amber-500 text-white shadow-sm"
-              : "bg-surface-container-high text-on-surface ring-1 ring-outline-variant/60 hover:bg-surface-container-highest",
-          )}
-        >
-          <Users className="size-4" />
-          Apenas Funcionários
-        </button>
       </div>
 
       {/* Barra de seleção / download em massa */}
@@ -333,7 +289,7 @@ export function AuditLogPage() {
           total={total}
           onPageChange={setPage}
           onPageSizeChange={(s) => {
-            setPageSize(s);
+            setPageSize(s as PageSize);
             setPage(1);
           }}
         />

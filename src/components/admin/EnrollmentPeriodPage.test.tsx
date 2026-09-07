@@ -5,11 +5,14 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 const { activePeriodStub } = vi.hoisted(() => ({
   activePeriodStub: {
     _id: "p1",
-    startDate: "2030-06-01T00:00:00.000Z",
-    endDate: "2030-06-15T23:59:59.999Z",
+    // Instantes na convenção do app: meia-noite e fim de dia de Brasília.
+    startDate: "2030-06-01T03:00:00.000Z",
+    endDate: "2030-06-16T02:59:59.999Z",
     // Distinta de startDate/endDate de propósito — simula uma repescagem
     // aberta meses depois do início real do ciclo.
-    cycleStartDate: "2030-01-01T00:00:00.000Z",
+    cycleStartDate: "2030-01-01T03:00:00.000Z",
+    resetScheduledFor: "2030-07-01T03:00:00.000Z",
+    status: "active",
     totalSlots: 350,
     filledSlots: 70,
     licenseValidityMonths: 6,
@@ -38,6 +41,7 @@ vi.mock("@/lib/toast", () => ({
 vi.mock("@/services/enrollmentPeriodService", () => ({
   enrollmentPeriodService: {
     getActive: vi.fn().mockResolvedValue(activePeriodStub),
+    getScheduled: vi.fn().mockResolvedValue(null),
     list: vi.fn().mockResolvedValue([activePeriodStub]),
     create: vi.fn().mockResolvedValue(activePeriodStub),
     update: vi.fn().mockResolvedValue(activePeriodStub),
@@ -282,7 +286,7 @@ describe("EnrollmentPeriodPage — selo de status com três estados (Núcleo 10)
     });
   });
 
-  it("mostra CICLO ATIVO — SEM INSCRIÇÃO ABERTA quando o ciclo está vivo sem janela aberta", async () => {
+  it("mostra CICLO ATIVO, SEM INSCRIÇÃO ABERTA quando o ciclo está vivo sem janela aberta", async () => {
     const noWindow = { ...activePeriodStub, startDate: null, endDate: null };
     vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(noWindow as never);
     vi.mocked(enrollmentPeriodService.list).mockResolvedValue([noWindow] as never);
@@ -290,7 +294,7 @@ describe("EnrollmentPeriodPage — selo de status com três estados (Núcleo 10)
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
       expect(
-        screen.getByText("CICLO ATIVO — SEM INSCRIÇÃO ABERTA"),
+        screen.getByText("CICLO ATIVO, SEM INSCRIÇÃO ABERTA"),
       ).toBeInTheDocument();
     });
     expect(screen.getByText(/equipe pode continuar/i)).toBeInTheDocument();
@@ -301,6 +305,7 @@ describe("EnrollmentPeriodPage — selo de status com três estados (Núcleo 10)
       ...activePeriodStub,
       _id: "p0",
       active: false,
+      status: "closed",
       startDate: null,
       endDate: null,
     };
@@ -396,5 +401,56 @@ describe("EnrollmentPeriodPage — confirmação reforçada em duas etapas de 'A
         5,
       );
     });
+  });
+});
+
+describe("EnrollmentPeriodPage — ciclo agendado", () => {
+  const scheduledStub = {
+    ...activePeriodStub,
+    _id: "p-sched",
+    active: false,
+    status: "scheduled",
+    startDate: null,
+    endDate: null,
+    cycleStartDate: "2030-09-10T03:00:00.000Z",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(enrollmentPeriodService.getActive).mockRejectedValue({ status: 404 });
+    vi.mocked(enrollmentPeriodService.getScheduled).mockResolvedValue(
+      scheduledStub as never,
+    );
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([
+      scheduledStub,
+    ] as never);
+  });
+
+  it("anuncia a data do agendamento no lugar de 'nenhum período aberto'", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+
+    expect(
+      await screen.findByText("CICLO AGENDADO PARA 10/09/2030"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("NENHUM PERÍODO ABERTO")).not.toBeInTheDocument();
+  });
+
+  it("troca 'Abrir novo período' por 'Cancelar agendamento' — só um ciclo por vez", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /cancelar agendamento/i }),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByRole("button", { name: /abrir novo período/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("mostra AGENDADO no histórico", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+
+    expect(await screen.findByText("AGENDADO")).toBeInTheDocument();
   });
 });

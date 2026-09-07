@@ -17,7 +17,7 @@ const SHIFT_MAP: Record<string, string> = {
 };
 
 function shiftLabel(shift: string | null | undefined): string {
-  if (!shift) return "—";
+  if (!shift) return "-";
   return SHIFT_MAP[shift] ?? shift;
 }
 

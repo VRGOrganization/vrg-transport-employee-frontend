@@ -22,6 +22,9 @@ const baseProps = {
   open: true,
   loading: false,
   serverError: "",
+  // Ciclo de 01/01/2030 a 01/07/2030 (meia-noite de Brasília).
+  cycleStartDate: "2030-01-01T03:00:00.000Z",
+  cycleEndDate: "2030-07-01T03:00:00.000Z",
   onClose: vi.fn(),
   onSubmit: vi.fn(() => Promise.resolve()),
 };
@@ -49,8 +52,8 @@ describe("OpenEnrollmentWindowModal", () => {
     fireEvent.click(screen.getByLabelText(/^Faculdades específicas/));
 
     await waitFor(() => {
-      expect(screen.getByText(/U1 — Universidade Um/)).toBeInTheDocument();
-      expect(screen.getByText(/U2 — Universidade Dois/)).toBeInTheDocument();
+      expect(screen.getByText(/U1: Universidade Um/)).toBeInTheDocument();
+      expect(screen.getByText(/U2: Universidade Dois/)).toBeInTheDocument();
     });
   });
 
@@ -61,7 +64,7 @@ describe("OpenEnrollmentWindowModal", () => {
     fireEvent.change(screen.getByLabelText("Data de início"), { target: { value: "2030-04-01" } });
     fireEvent.change(screen.getByLabelText("Data de fim"), { target: { value: "2030-04-03" } });
     fireEvent.click(screen.getByLabelText(/^Faculdades específicas/));
-    await waitFor(() => screen.getByText(/U1 — Universidade Um/));
+    await waitFor(() => screen.getByText(/U1: Universidade Um/));
 
     fireEvent.click(screen.getByRole("button", { name: /abrir janela/i }));
 
@@ -90,8 +93,8 @@ describe("OpenEnrollmentWindowModal", () => {
     fireEvent.change(screen.getByLabelText("Data de início"), { target: { value: "2030-04-01" } });
     fireEvent.change(screen.getByLabelText("Data de fim"), { target: { value: "2030-04-03" } });
     fireEvent.click(screen.getByLabelText(/^Faculdades específicas/));
-    await waitFor(() => screen.getByText(/U1 — Universidade Um/));
-    fireEvent.click(screen.getByText(/U1 — Universidade Um/));
+    await waitFor(() => screen.getByText(/U1: Universidade Um/));
+    fireEvent.click(screen.getByText(/U1: Universidade Um/));
 
     fireEvent.click(screen.getByRole("button", { name: /abrir janela/i }));
 
@@ -116,4 +119,75 @@ describe("OpenEnrollmentWindowModal", () => {
     render(<OpenEnrollmentWindowModal {...baseProps} serverError="Já existe uma janela de inscrição ativa." />);
     expect(screen.getByText("Já existe uma janela de inscrição ativa.")).toBeInTheDocument();
   });
+
+  it("trava os inputs no intervalo do ciclo", () => {
+    render(<OpenEnrollmentWindowModal {...baseProps} />);
+
+    const start = screen.getByLabelText(/data de início/i);
+    expect(start).toHaveAttribute("min", "2030-01-01");
+    expect(start).toHaveAttribute("max", "2030-07-01");
+    expect(screen.getByLabelText(/data de fim/i)).toHaveAttribute(
+      "max",
+      "2030-07-01",
+    );
+  });
+
+  it("recusa janela que começa antes do início do ciclo", async () => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    render(<OpenEnrollmentWindowModal {...baseProps} onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByLabelText(/data de início/i), {
+      target: { value: "2029-12-20" },
+    });
+    fireEvent.change(screen.getByLabelText(/data de fim/i), {
+      target: { value: "2030-02-01" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /abrir janela/i }));
+
+    expect(
+      await screen.findByText(/não pode começar antes do início do ciclo/i),
+    ).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("recusa janela que termina depois do encerramento do ciclo", async () => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    render(<OpenEnrollmentWindowModal {...baseProps} onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByLabelText(/data de início/i), {
+      target: { value: "2030-02-01" },
+    });
+    fireEvent.change(screen.getByLabelText(/data de fim/i), {
+      target: { value: "2030-08-01" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /abrir janela/i }));
+
+    expect(
+      await screen.findByText(/não pode terminar depois do encerramento do ciclo/i),
+    ).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("envia início e fim no fuso de Brasília (mesmo dia escolhido)", async () => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    render(<OpenEnrollmentWindowModal {...baseProps} onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByLabelText(/data de início/i), {
+      target: { value: "2030-02-01" },
+    });
+    fireEvent.change(screen.getByLabelText(/data de fim/i), {
+      target: { value: "2030-02-10" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /abrir janela/i }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+    const payload = onSubmit.mock.calls[0][0];
+    const asBRDate = (iso: string) =>
+      new Date(iso).toLocaleDateString("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+      });
+    expect(asBRDate(payload.startDate)).toBe("01/02/2030");
+    expect(asBRDate(payload.endDate)).toBe("10/02/2030");
+  });
+
 });

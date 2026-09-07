@@ -7,7 +7,7 @@ export const universityService = {
   listWithQueueCounts: async () => {
     const [universityList, queueResult] = await Promise.all([
       http.get<Paginated<University>>("/university").then(resolvePaginated),
-      http.get<{ enrollmentPeriodId: string | null; universities: Array<{ universityId: string; pendingCount: number; revisionCount: number; waitlistedCount: number }> }>("/university/queue"),
+      http.get<{ enrollmentCycleId: string | null; universities: Array<{ universityId: string; pendingCount: number; revisionCount: number; waitlistedCount: number }> }>("/university/queue"),
     ]);
     const queueMapById = new Map(
       (queueResult.universities ?? []).map((q) => [q.universityId, q]),
@@ -37,6 +37,10 @@ export const courseService = {
   list:                     ()                                                          => http.get<Course[]>("/course"),
   listByUniversity:         (universityId: string)                                     => http.get<Course[]>(`/course/by-university/${universityId}`),
   listInactiveByUniversity: (universityId: string)                                     => http.get<Course[]>(`/course/inactive/by-university/${universityId}`),
+  // GET /course/inactive é global (todas as faculdades), paginado — limit alto
+  // no MVP para trazer tudo em uma chamada; reavaliar paginação real na UI se
+  // o volume de cursos desativados crescer além disso.
+  listInactive:             ()                                                          => http.get<Paginated<Course>>("/course/inactive?limit=100").then(resolvePaginated),
   create:                   (data: { name: string; universityId: string; model?: CourseModel }) => http.post<Course>("/course", data),
   update:                   (id: string, data: { name?: string; model?: CourseModel | null })   => http.patch<Course>(`/course/${id}`, data),
   deactivate:               (id: string)                                               => http.delete<{ message: string }>(`/course/${id}`),

@@ -48,7 +48,7 @@ export function DashboardStatCards({
         <DashboardStatCard
           icon={Bus}
           label="Frota em operação (vaga-dia)"
-          value={fleetLabel ?? "—"}
+          value={fleetLabel ?? "-"}
           href="/admin/buses"
           tooltipContent="Vagas em vaga-dia: 1 vaga de ônibus equivale a 5 (segunda a sexta). O total é a soma das vagas dos ônibus ativos × 5."
           tooltipAriaLabel="O que é vaga-dia?"

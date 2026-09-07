@@ -1,10 +1,11 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { createMock, updateMock, deactivateMock } = vi.hoisted(() => ({
+const { createMock, updateMock, deactivateMock, vacantLevelsMock } = vi.hoisted(() => ({
   createMock: vi.fn(),
   updateMock: vi.fn(),
   deactivateMock: vi.fn(),
+  vacantLevelsMock: vi.fn(),
 }));
 
 vi.mock("@/services/priorityRuleService", () => ({
@@ -12,6 +13,7 @@ vi.mock("@/services/priorityRuleService", () => ({
     create: createMock,
     update: updateMock,
     deactivate: deactivateMock,
+    vacantLevels: vacantLevelsMock,
   },
 }));
 
@@ -22,12 +24,12 @@ function makeRule(overrides: Partial<PriorityRule> = {}): PriorityRule {
   return {
     _id: "rule-1",
     level: 1,
+    originalLevel: 1,
     name: "PCD",
     description: "",
     criteria: [],
     criteriaLogic: "all",
     active: true,
-    sortOrder: 0,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...overrides,
@@ -40,13 +42,21 @@ const baseProps = {
   onClose: vi.fn(),
   onSaved: vi.fn(),
   onDeleted: vi.fn(),
+  onRequestReactivate: vi.fn(),
 };
+
+async function selectFirstVacantLevel() {
+  const select = await screen.findByRole("combobox");
+  await waitFor(() => expect(select.querySelectorAll("option")).toHaveLength(6));
+  fireEvent.change(select, { target: { value: "1" } });
+}
 
 describe("PriorityRuleModal — condições amigáveis (transporte + PCD)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     createMock.mockResolvedValue(makeRule());
     updateMock.mockResolvedValue(makeRule());
+    vacantLevelsMock.mockResolvedValue([1, 2, 3, 4, 5]);
   });
 
   it("shows the two friendly condition checkboxes and no generic type/operator pickers", () => {
@@ -90,6 +100,7 @@ describe("PriorityRuleModal — condições amigáveis (transporte + PCD)", () =
       target: { value: "Regra PCD" },
     });
     fireEvent.click(screen.getByLabelText("É pessoa com deficiência (PCD)"));
+    await selectFirstVacantLevel();
     fireEvent.click(screen.getByRole("button", { name: "Criar regra" }));
 
     await waitFor(() => expect(createMock).toHaveBeenCalledOnce());
@@ -107,6 +118,7 @@ describe("PriorityRuleModal — condições amigáveis (transporte + PCD)", () =
       target: { value: "Regra transporte" },
     });
     fireEvent.click(screen.getByLabelText("Já usa o sistema de transporte"));
+    await selectFirstVacantLevel();
     fireEvent.click(screen.getByRole("button", { name: "Criar regra" }));
 
     await waitFor(() => expect(createMock).toHaveBeenCalledOnce());
@@ -126,6 +138,7 @@ describe("PriorityRuleModal — condições amigáveis (transporte + PCD)", () =
     fireEvent.click(screen.getByLabelText("É pessoa com deficiência (PCD)"));
     fireEvent.click(screen.getByLabelText("Já usa o sistema de transporte"));
     fireEvent.click(screen.getByText(/UMA das condições/i));
+    await selectFirstVacantLevel();
     fireEvent.click(screen.getByRole("button", { name: "Criar regra" }));
 
     await waitFor(() => expect(createMock).toHaveBeenCalledOnce());
@@ -146,6 +159,7 @@ describe("PriorityRuleModal — condições amigáveis (transporte + PCD)", () =
     fireEvent.change(screen.getByPlaceholderText(/Ex: Alunos/i), {
       target: { value: "Regra geral" },
     });
+    await selectFirstVacantLevel();
     fireEvent.click(screen.getByRole("button", { name: "Criar regra" }));
 
     await waitFor(() => expect(createMock).toHaveBeenCalledOnce());

@@ -7,6 +7,7 @@ import {
   AlarmClock,
   AlertTriangle,
   BadgeCheck,
+  CalendarClock,
   CalendarDays,
   CircleCheck,
   CircleDashed,
@@ -39,14 +40,22 @@ import { PanelCard } from "@/components/ui/PanelCard";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { cn } from "@/lib/utils";
 import { http } from "@/services/http";
-import { computeLicenseExpiry } from "@/lib/utils/date";
+import {
+  computeLicenseExpiry,
+  formatDateBR,
+  formatDateTimeBR,
+} from "@/lib/utils/date";
 import { resolvePaginated, type Paginated } from "@/types/api";
 import type {
   LicenseRequestRecord,
   StudentRecord,
   StudentsResponse,
 } from "@/types/cards.types";
-import type { EnrollmentPeriod, WaitlistEntry } from "@/types/enrollmentPeriod";
+import type {
+  EnrollmentCycleStatus,
+  EnrollmentPeriod,
+  WaitlistEntry,
+} from "@/types/enrollmentPeriod";
 import { resolveDisplayName } from "@/lib/utils/string";
 
 // A edição atinge a janela ativa (startDate/endDate) e/ou a validade do ciclo
@@ -64,18 +73,17 @@ const VAGA_DIA_TOOLTIP =
 const CHIP_CLASS =
   "inline-flex items-center gap-1.5 rounded-lg border border-outline-variant px-3 py-1.5 text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 
+// Sempre no fuso de Brasília: as datas são gravadas como instantes (a janela
+// termina às 23:59:59.999 BRT, que em UTC já é o dia seguinte), então renderizar
+// no fuso do navegador faria a data mostrada divergir da escolhida.
 function formatDate(dateValue: string | null | undefined): string {
   if (!dateValue) return "-";
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleDateString("pt-BR");
+  return formatDateBR(dateValue);
 }
 
 function formatDateTime(dateValue: string | null | undefined): string {
   if (!dateValue) return "-";
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleString("pt-BR");
+  return formatDateTimeBR(dateValue);
 }
 
 function daysUntil(dateValue: string | null | undefined): number | null {
@@ -111,10 +119,28 @@ function getActiveCycleStatus(period: EnrollmentPeriod): CycleStatusBadge {
     return { label: "INSCRIÇÃO ABERTA", className: "text-success" };
   }
   return {
-    label: "CICLO ATIVO — SEM INSCRIÇÃO ABERTA",
+    label: "CICLO ATIVO, SEM INSCRIÇÃO ABERTA",
     className: "text-warning",
     supportText: "A equipe pode continuar processando a fila normalmente.",
   };
+}
+
+const HISTORY_BADGE_LABEL: Record<EnrollmentCycleStatus, string> = {
+  scheduled: "AGENDADO",
+  active: "ABERTO",
+  closed: "ENCERRADO",
+};
+
+const HISTORY_BADGE_CLASS: Record<EnrollmentCycleStatus, string> = {
+  scheduled: "bg-warning/15 text-on-warning",
+  active: "bg-success/15 text-success",
+  closed: "bg-surface-container-high text-on-surface-variant",
+};
+
+// Ciclos criados antes do campo `status` existir só têm `active` — o backfill
+// preenche o banco, mas a tela não deve quebrar num payload antigo em cache.
+function resolveHistoryStatus(period: EnrollmentPeriod): EnrollmentCycleStatus {
+  return period.status ?? (period.active ? "active" : "closed");
 }
 
 function buildFallbackStudent(studentId: string): StudentRecord {
@@ -202,6 +228,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
   const [periods, setPeriods] = useState<EnrollmentPeriod[]>([]);
   const [activePeriod, setActivePeriod] = useState<EnrollmentPeriod | null>(null);
+  const [scheduledPeriod, setScheduledPeriod] = useState<EnrollmentPeriod | null>(null);
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [waitlistRequests, setWaitlistRequests] = useState<LicenseRequestRecord[]>([]);
 
@@ -233,6 +260,9 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
   const [showCloseWindowConfirm, setShowCloseWindowConfirm] = useState(false);
   const [closingWindow, setClosingWindow] = useState(false);
+
+  const [showCancelScheduledConfirm, setShowCancelScheduledConfirm] = useState(false);
+  const [cancelingScheduled, setCancelingScheduled] = useState(false);
 
   const studentMap = useMemo(
     () => new Map(students.map((student) => [student._id, student])),
@@ -270,14 +300,24 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const resolvedActive: EnrollmentPeriod | null = await enrollmentPeriodService.getActive().then(
-        (res) => (res && typeof res === "object" && "_id" in res ? res : null),
-        (err: unknown) => {
-          const apiError = err as { status?: number };
-          if (apiError.status !== 404) throw err;
-          return null;
-        },
-      );
+      // 404 e corpo vazio significam a mesma coisa aqui: não existe ciclo
+      // nesse estado. Só erro de verdade deve estourar.
+      const resolveCycle = (
+        request: Promise<EnrollmentPeriod>,
+      ): Promise<EnrollmentPeriod | null> =>
+        request.then(
+          (res) => (res && typeof res === "object" && "_id" in res ? res : null),
+          (err: unknown) => {
+            const apiError = err as { status?: number };
+            if (apiError.status !== 404) throw err;
+            return null;
+          },
+        );
+
+      const [resolvedActive, resolvedScheduled] = await Promise.all([
+        resolveCycle(enrollmentPeriodService.getActive()),
+        resolveCycle(enrollmentPeriodService.getScheduled()),
+      ]);
 
       const [periodsResponse, studentsResponse] = await Promise.all([
         enrollmentPeriodService.list(),
@@ -291,6 +331,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
       setPeriods(sortedPeriods);
       setActivePeriod(resolvedActive);
+      setScheduledPeriod(resolvedScheduled);
       setStudents(normalizeStudents(studentsResponse));
 
       if (resolvedActive?._id) {
@@ -477,6 +518,25 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
     }
   };
 
+  // Cancelar o agendamento é o mesmo "encerrar" do ciclo — sem cascata
+  // relevante, já que um ciclo agendado nunca teve alunos alocados.
+  const handleCancelScheduledConfirmed = async () => {
+    if (!scheduledPeriod) return;
+    setCancelingScheduled(true);
+    try {
+      await enrollmentPeriodService.close(scheduledPeriod._id);
+      setShowCancelScheduledConfirm(false);
+      toast.success("Agendamento do ciclo cancelado.");
+      await loadData();
+    } catch (err: unknown) {
+      const apiError = err as { message?: string };
+      toast.error(apiError.message ?? "Falha ao cancelar o agendamento.");
+      setShowCancelScheduledConfirm(false);
+    } finally {
+      setCancelingScheduled(false);
+    }
+  };
+
   const handleCloseWindow = () => {
     if (!activePeriod) return;
     setShowCloseWindowConfirm(true);
@@ -514,21 +574,37 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
   const occupancyPct = activePeriod ? Math.round(toProgressValue(activePeriod)) : 0;
   const windowDaysLeft = daysUntil(activePeriod?.endDate);
 
-  const heroTone: "success" | "warning" | "neutral" = !activePeriod
-    ? "neutral"
-    : hasOpenWindow
+  // Sem ciclo vivo ainda pode haver um agendado — os dois casos são bem
+  // diferentes pro admin (um pede ação, o outro é só esperar a data).
+  const heroTone: "success" | "warning" | "neutral" = activePeriod
+    ? hasOpenWindow
       ? "success"
-      : "warning";
-  const HeroIcon = !activePeriod ? CircleDashed : hasOpenWindow ? CircleCheck : PauseCircle;
+      : "warning"
+    : scheduledPeriod
+      ? "warning"
+      : "neutral";
+  const HeroIcon = activePeriod
+    ? hasOpenWindow
+      ? CircleCheck
+      : PauseCircle
+    : scheduledPeriod
+      ? CalendarClock
+      : CircleDashed;
   const heroToneClasses = {
     success: { wrap: "bg-success/10", icon: "text-success", label: "text-success" },
     warning: { wrap: "bg-warning/10", icon: "text-warning", label: "text-warning" },
     neutral: { wrap: "bg-surface-container-high", icon: "text-on-surface-variant", label: "text-on-surface" },
   }[heroTone];
-  const heroLabel = activePeriod ? cycleStatus!.label : "NENHUM PERÍODO ABERTO";
+  const heroLabel = activePeriod
+    ? cycleStatus!.label
+    : scheduledPeriod
+      ? `CICLO AGENDADO PARA ${formatDate(scheduledPeriod.cycleStartDate)}`
+      : "NENHUM PERÍODO ABERTO";
   const heroSupport = activePeriod
     ? cycleStatus!.supportText ?? "Os alunos podem enviar solicitações de carteirinha agora."
-    : "Abra um novo período para começar a receber inscrições dos alunos.";
+    : scheduledPeriod
+      ? "O ciclo abre sozinho nessa data. Até lá, nada muda para os alunos."
+      : "Abra um novo período para começar a receber inscrições dos alunos.";
 
   return (
     <>
@@ -602,6 +678,15 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                         Encerrar período
                       </Button>
                     </>
+                  ) : scheduledPeriod ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-error text-error hover:bg-error/10"
+                      onClick={() => setShowCancelScheduledConfirm(true)}
+                    >
+                      Cancelar agendamento
+                    </Button>
                   ) : (
                     <Button
                       variant="primary"
@@ -746,7 +831,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                           ? `Encerra em ${windowDaysLeft} dia${windowDaysLeft > 1 ? "s" : ""}.`
                           : windowDaysLeft === 0
                             ? "Encerra hoje."
-                            : "Prazo da janela expirado — será fechada na próxima verificação."}
+                            : "Prazo da janela expirado. Será fechada na próxima verificação."}
                       </span>
                     </div>
                   </div>
@@ -871,13 +956,9 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                         </td>
                         <td className="px-3 py-2">
                           <span
-                            className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                              period.active
-                                ? "bg-success/15 text-success"
-                                : "bg-surface-container-high text-on-surface-variant"
-                            }`}
+                            className={`rounded-full px-2 py-1 text-xs font-semibold ${HISTORY_BADGE_CLASS[resolveHistoryStatus(period)]}`}
                           >
-                            {period.active ? "ABERTO" : "ENCERRADO"}
+                            {HISTORY_BADGE_LABEL[resolveHistoryStatus(period)]}
                           </span>
                         </td>
                       </tr>
@@ -990,11 +1071,33 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
         open={showWindowModal}
         loading={windowSaving}
         serverError={windowError}
+        cycleStartDate={activePeriod?.cycleStartDate ?? ""}
+        cycleEndDate={activePeriod?.resetScheduledFor ?? ""}
         onClose={() => {
           if (windowSaving) return;
           setShowWindowModal(false);
         }}
         onSubmit={handleWindowSubmit}
+      />
+
+      <ConfirmModal
+        open={showCancelScheduledConfirm}
+        onClose={() => {
+          if (cancelingScheduled) return;
+          setShowCancelScheduledConfirm(false);
+        }}
+        onConfirm={handleCancelScheduledConfirmed}
+        loading={cancelingScheduled}
+        title="Cancelar agendamento do ciclo"
+        description={
+          scheduledPeriod
+            ? `O ciclo agendado para ${formatDate(scheduledPeriod.cycleStartDate)} será descartado. Nenhum aluno é afetado, porque ele ainda não começou. Depois disso você poderá agendar um novo ciclo.`
+            : ""
+        }
+        icon={AlertTriangle}
+        variant="warning"
+        confirmLabel="Cancelar agendamento"
+        cancelLabel="Voltar"
       />
 
       <ConfirmModal

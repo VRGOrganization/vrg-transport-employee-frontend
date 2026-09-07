@@ -43,7 +43,7 @@ export function BusPageHeader({
         </button>
         <div>
           <h1 className="font-headline text-2xl font-bold text-on-surface">
-            Ônibus {bus.identifier} · {bus.shift ?? "—"}
+            Ônibus {bus.identifier} · {bus.shift ?? "-"}
           </h1>
           <p className="text-sm text-on-surface-variant">
             Gerencie as carteirinhas deste ônibus.
