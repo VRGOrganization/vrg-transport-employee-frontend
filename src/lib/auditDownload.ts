@@ -34,7 +34,6 @@ function toCsv(events: AuditEvent[]): string {
     "resultado",
     "ator_nome",
     "ator_papel",
-    "alvo_nome",
     "metadata",
   ];
   const rows = events.map((e) =>
@@ -46,7 +45,6 @@ function toCsv(events: AuditEvent[]): string {
       e.outcome,
       e.actorName ?? (e.actor ? "Executor não identificado" : ""),
       e.actor?.role ?? "",
-      e.targetName ?? "",
       e.metadata ? JSON.stringify(e.metadata) : "",
     ]
       .map(csvCell)
@@ -106,7 +104,6 @@ async function downloadPdf(events: AuditEvent[]) {
       `Executado por: ${e.actorName ?? (e.actor ? "Executor não identificado" : "-")}${
         e.actor?.role ? ` (${e.actor.role})` : ""
       }`,
-      `Alvo: ${e.targetName ?? "-"}`,
       `ID do registro: ${e.id}`,
     ];
     if (e.metadata && Object.keys(e.metadata).length > 0) {

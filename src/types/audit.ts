@@ -13,7 +13,6 @@ export interface AuditEvent {
   metadata: Record<string, unknown> | null;
   createdAt: string;
   actorName: string | null;
-  targetName: string | null;
 }
 
 export interface AuditFilters {

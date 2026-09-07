@@ -49,6 +49,16 @@ describe("AuditLogPage", () => {
     expect(filters).not.toHaveProperty("targetId");
   });
 
+  it("does not show the 'Apenas Funcionários' toggle (backend already excludes student events)", async () => {
+    render(<AuditLogPage />);
+
+    await waitFor(() => expect(listMock).toHaveBeenCalled());
+    expect(screen.queryByText("Apenas Funcionários")).not.toBeInTheDocument();
+
+    const filters = listMock.mock.calls[0][0];
+    expect(filters).not.toHaveProperty("actorRoles");
+  });
+
   it("shows an empty state when there are no events", async () => {
     render(<AuditLogPage />);
 

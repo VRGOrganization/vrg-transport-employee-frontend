@@ -47,21 +47,24 @@ describe("categorizeAction", () => {
 });
 
 describe("roleLabel", () => {
-  it("translates roles to PT-BR", () => {
+  it("translates staff roles to PT-BR", () => {
     expect(roleLabel("admin")).toBe("Administrador");
     expect(roleLabel("employee")).toBe("Funcionário");
-    expect(roleLabel("student")).toBe("Estudante");
   });
-  it("handles null/unknown gracefully", () => {
+  it("handles null/unknown gracefully, including 'student' (no dedicated label)", () => {
     expect(roleLabel(null)).toBe("-");
     expect(roleLabel("weird")).toBe("weird");
+    expect(roleLabel("student")).toBe("student");
   });
 });
 
 describe("actionLabel", () => {
   it("returns a PT-BR label for known actions", () => {
-    expect(actionLabel("student.ban")).toBe("Banimento de estudante");
     expect(actionLabel("university.create")).toBe("Criação de instituição");
+  });
+
+  it("humanizes student.* actions instead of showing a dedicated label (no more student.* labels)", () => {
+    expect(actionLabel("student.ban")).toBe("Student ban");
   });
 
   it("maps the previously-raw actions flagged by the user", () => {
