@@ -1,6 +1,7 @@
 "use client";
 
-import { Ban, CheckCircle2, RotateCcw, ShieldOff } from "lucide-react";
+import { Ban, CheckCircle2, ClipboardList, RotateCcw, ShieldOff } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
@@ -85,7 +86,7 @@ function errorMessage(error: unknown, fallback: string): string {
 }
 
 export function BusPassPage({ role }: { role: "admin" | "employee" }) {
-  void role;
+  const manifestHref = `/${role}/bus-pass/manifest`;
 
   const [tab, setTab] = useState<TabKey>("pending");
   const [rows, setRows] = useState<BusPass[]>([]);
@@ -355,64 +356,84 @@ export function BusPassPage({ role }: { role: "admin" | "employee" }) {
 
   if (forbidden) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-xl font-semibold text-on-surface">
-          Passes de ônibus
-        </h1>
-        <StatusBanner variant="warning">
-          A operação de passes de ônibus não está habilitada para funcionários.
-          Peça a um administrador para ligá-la em Passes de ônibus →
-          Configurações.
-        </StatusBanner>
-      </div>
+      <main className="flex flex-1 flex-col bg-surface px-6 py-8 md:px-10">
+        <div className="w-full space-y-6">
+          <header className="space-y-1">
+            <p className="text-sm font-semibold uppercase tracking-wide text-primary">
+              Passes de ônibus
+            </p>
+            <h1 className="font-headline text-2xl font-semibold text-on-surface">
+              Passes de ônibus
+            </h1>
+          </header>
+          <StatusBanner variant="warning">
+            A operação de passes de ônibus não está habilitada para funcionários.
+            Peça a um administrador para ligá-la em Passes de ônibus →
+            Configurações.
+          </StatusBanner>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-on-surface">
-            Passes de ônibus
-          </h1>
-          <p className="text-sm text-on-surface-variant">
-            Pedidos pontuais para um dia fora da alocação fixa do aluno.
-          </p>
+    <main className="flex flex-1 flex-col bg-surface px-6 py-8 md:px-10">
+      <div className="w-full space-y-6">
+        <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold uppercase tracking-wide text-primary">
+              Passes de ônibus
+            </p>
+            <h1 className="font-headline text-2xl font-semibold text-on-surface">
+              Passes de ônibus
+            </h1>
+            <p className="max-w-2xl text-sm text-on-surface-variant">
+              Pedidos pontuais para um dia fora da alocação fixa do aluno.
+            </p>
+          </div>
+
+          <Link href={manifestHref}>
+            <Button type="button" variant="outline" size="sm" icon={<ClipboardList size={16} />}>
+              Manifesto de passes
+            </Button>
+          </Link>
+        </header>
+
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <Tabs items={tabs} value={tab} onChange={setTab} />
+
+          <label className="flex items-center gap-2 text-sm text-on-surface-variant">
+            Data da viagem
+            <input
+              type="date"
+              value={dateFilter}
+              min={dateFilterMin}
+              onChange={(event) => setDateFilter(event.target.value)}
+              className="rounded-lg border border-outline bg-surface px-3 py-1.5 text-sm text-on-surface"
+            />
+            {dateFilter ? (
+              <Button size="sm" variant="outline" onClick={() => setDateFilter("")}>
+                Limpar
+              </Button>
+            ) : null}
+          </label>
         </div>
 
-        <label className="flex items-center gap-2 text-sm text-on-surface-variant">
-          Data da viagem
-          <input
-            type="date"
-            value={dateFilter}
-            min={dateFilterMin}
-            onChange={(event) => setDateFilter(event.target.value)}
-            className="rounded-lg border border-outline bg-surface px-3 py-1.5 text-sm text-on-surface"
-          />
-          {dateFilter ? (
-            <Button size="sm" variant="outline" onClick={() => setDateFilter("")}>
-              Limpar
-            </Button>
-          ) : null}
-        </label>
-      </header>
-
-      <Tabs items={tabs} value={tab} onChange={setTab} />
-
-      <DataTable
-        columns={columns}
-        rows={rows}
-        rowKey={(row) => row.id}
-        onRowClick={(row) => setDetailPass(row)}
-        loading={loading}
-        error={error ?? undefined}
-        empty="Nenhum passe nesta aba."
-        page={page}
-        pageSize={pageSize}
-        total={total}
-        onPageChange={setPage}
-        onPageSizeChange={setPageSize}
-      />
+        <DataTable
+          columns={columns}
+          rows={rows}
+          rowKey={(row) => row.id}
+          onRowClick={(row) => setDetailPass(row)}
+          loading={loading}
+          error={error ?? undefined}
+          empty="Nenhum passe nesta aba."
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      </div>
 
       <BusPassDetailModal
         open={detailPass !== null}
@@ -462,6 +483,6 @@ export function BusPassPage({ role }: { role: "admin" | "employee" }) {
         onClose={() => setRevokeTarget(null)}
         onConfirm={handleRevoke}
       />
-    </div>
+    </main>
   );
 }

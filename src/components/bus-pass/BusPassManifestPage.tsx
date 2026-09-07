@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { PageHeader } from "@/components/layout/PageHeader";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import type { PageSize } from "@/lib/constants";
 import { busPassService } from "@/services/busPassService";
@@ -57,7 +58,7 @@ function toRows(passes: BusPass[]): ManifestRow[] {
 }
 
 export function BusPassManifestPage({ role }: { role: "admin" | "employee" }) {
-  void role;
+  const backHref = `/${role}/bus-pass`;
 
   const [date, setDate] = useState(todayInBR());
   const [passes, setPasses] = useState<BusPass[]>([]);
@@ -140,42 +141,40 @@ export function BusPassManifestPage({ role }: { role: "admin" | "employee" }) {
   const weekday = passes[0] ? weekdayLabel(passes[0].travelDayOfWeek) : null;
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-on-surface">
-            Manifesto de passes
-          </h1>
-          <p className="text-sm text-on-surface-variant">
-            Passes aprovados para {formatCivilDate(date)}
-            {weekday ? ` · ${weekday}` : ""} · {rows.length} embarque(s).
-          </p>
-        </div>
+    <main className="flex flex-1 flex-col bg-surface px-6 py-8 md:px-10">
+      <div className="w-full space-y-6">
+        <PageHeader
+          back={backHref}
+          title="Manifesto de passes"
+          subtitle={`Passes aprovados para ${formatCivilDate(date)}${weekday ? ` · ${weekday}` : ""} · ${rows.length} embarque(s).`}
+          rightSlot={
+            <label className="flex items-center gap-2 text-sm text-on-surface-variant">
+              Data
+              <input
+                type="date"
+                value={date}
+                onChange={(event) => setDate(event.target.value)}
+                className="rounded-lg border border-outline bg-surface px-3 py-1.5 text-sm text-on-surface"
+              />
+            </label>
+          }
+          className="mb-0"
+        />
 
-        <label className="flex items-center gap-2 text-sm text-on-surface-variant">
-          Data
-          <input
-            type="date"
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-            className="rounded-lg border border-outline bg-surface px-3 py-1.5 text-sm text-on-surface"
-          />
-        </label>
-      </header>
-
-      <DataTable
-        columns={columns}
-        rows={paginated}
-        rowKey={(row) => row.key}
-        loading={loading}
-        error={error ?? undefined}
-        empty="Nenhum passe aprovado para esta data."
-        page={page}
-        pageSize={pageSize}
-        total={rows.length}
-        onPageChange={setPage}
-        onPageSizeChange={setPageSize}
-      />
-    </div>
+        <DataTable
+          columns={columns}
+          rows={paginated}
+          rowKey={(row) => row.key}
+          loading={loading}
+          error={error ?? undefined}
+          empty="Nenhum passe aprovado para esta data."
+          page={page}
+          pageSize={pageSize}
+          total={rows.length}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      </div>
+    </main>
   );
 }
