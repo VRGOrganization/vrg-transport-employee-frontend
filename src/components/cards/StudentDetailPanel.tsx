@@ -404,6 +404,7 @@ export function StudentDetailPanel({
           )}
 
           <DocumentsGrid
+            previewItems={previewItems}
             licenseItems={licensePreviewItems}
             personalItems={personalPreviewItems}
             loadingImages={loadingSelected}
