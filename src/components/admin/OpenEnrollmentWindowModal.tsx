@@ -14,6 +14,7 @@ export interface OpenEnrollmentWindowFormPayload {
   endDate: string;
   eligibilityScope: EnrollmentWindowEligibilityScope;
   eligibleUniversityIds?: string[];
+  resetEligibleStudentsOnOpen: boolean;
 }
 
 interface OpenEnrollmentWindowModalProps {
@@ -41,6 +42,28 @@ const EMPTY_ERRORS: FormErrors = {
   eligibleUniversityIds: "",
 };
 
+
+
+/**
+ * Diz, na linguagem do admin, quem exatamente perde a carteirinha — o texto
+ * muda com o escopo porque "todos os alunos" e "os alunos do IFF" são decisões
+ * muito diferentes para se lerem igual.
+ */
+function describeAffectedStudents(
+  scope: EnrollmentWindowEligibilityScope,
+  selectedUniversities: University[],
+): string {
+  if (scope === "specific_universities") {
+    const acronyms = selectedUniversities.map((u) => u.acronym).join(", ");
+    return acronyms
+      ? `Alunos de ${acronyms}`
+      : "Alunos das faculdades selecionadas";
+  }
+  if (scope === "has_university") {
+    return "Alunos com faculdade cadastrada";
+  }
+  return "Todos os alunos com carteirinha neste ciclo";
+}
 
 function optionItemClass(selected: boolean): string {
   const base =
@@ -71,6 +94,7 @@ export function OpenEnrollmentWindowModal({
   const [universities, setUniversities] = useState<University[]>([]);
   const [universitiesLoading, setUniversitiesLoading] = useState(false);
   const [universitiesError, setUniversitiesError] = useState("");
+  const [resetEligibleStudents, setResetEligibleStudents] = useState(false);
   const [errors, setErrors] = useState<FormErrors>(EMPTY_ERRORS);
 
   // Reseta o form a cada abertura sem efeito — ajuste de estado durante o
@@ -84,6 +108,7 @@ export function OpenEnrollmentWindowModal({
       setEndDate("");
       setEligibilityScope("all");
       setSelectedUniversityIds([]);
+      setResetEligibleStudents(false);
       setErrors(EMPTY_ERRORS);
     }
   }
@@ -164,8 +189,14 @@ export function OpenEnrollmentWindowModal({
       ...(eligibilityScope === "specific_universities"
         ? { eligibleUniversityIds: selectedUniversityIds }
         : {}),
+      resetEligibleStudentsOnOpen: resetEligibleStudents,
     };
   };
+
+  const affectedStudentsLabel = describeAffectedStudents(
+    eligibilityScope,
+    universities.filter((u) => selectedUniversityIds.includes(u._id)),
+  );
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -293,6 +324,54 @@ export function OpenEnrollmentWindowModal({
             )}
           </div>
         )}
+
+        <div className="rounded-xl border border-outline-variant bg-surface-container-low p-3">
+          <label
+            htmlFor="window-reset-eligible"
+            className="flex cursor-pointer items-start gap-2.5"
+          >
+            <input
+              id="window-reset-eligible"
+              type="checkbox"
+              checked={resetEligibleStudents}
+              onChange={(event) => setResetEligibleStudents(event.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-error"
+            />
+            <span>
+              <span className="block text-sm font-medium text-on-surface">
+                Encerrar as carteirinhas ao abrir esta janela
+              </span>
+              <span className="block text-xs text-on-surface-variant">
+                Use quando os alunos alcançados precisarem refazer o pedido
+                nesta janela.
+              </span>
+            </span>
+          </label>
+
+          {resetEligibleStudents && (
+            <div
+              role="alert"
+              className="mt-3 space-y-1.5 rounded-lg border border-error/40 bg-error/5 p-3 text-xs text-on-surface"
+            >
+              <p className="text-sm font-semibold text-error">
+                Esta ação não pode ser desfeita.
+              </p>
+              <p>
+                {affectedStudentsLabel} perderão a carteirinha atual, a vaga no
+                ônibus e os passes em aberto, e precisarão refazer o pedido
+                dentro desta janela. Solicitações em análise serão canceladas.
+              </p>
+              <p className="text-on-surface-variant">
+                Alunos fora do escopo desta janela não são afetados, e o ciclo
+                de inscrição não é encerrado.
+              </p>
+              <p className="text-on-surface-variant">
+                Se a janela começar em uma data futura, o encerramento acontece
+                no dia de abertura, não agora.
+              </p>
+            </div>
+          )}
+        </div>
 
         {serverError && (
           <div className="rounded-xl border border-error/40 bg-error/10 px-3 py-2 text-sm text-error">

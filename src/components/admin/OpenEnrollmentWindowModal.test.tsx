@@ -44,7 +44,10 @@ describe("OpenEnrollmentWindowModal", () => {
   it("defaults to 'Todos os alunos' and does not show the multi-select", () => {
     render(<OpenEnrollmentWindowModal {...baseProps} />);
     expect(screen.getByLabelText(/^Todos os alunos/)).toBeChecked();
-    expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
+    // O único checkbox fora do escopo 'específicas' é o de encerrar
+    // carteirinhas; nenhuma faculdade é listada.
+    expect(screen.queryByText(/U1: Universidade Um/)).not.toBeInTheDocument();
+    expect(screen.queryAllByRole("checkbox")).toHaveLength(1);
   });
 
   it("shows the university multi-select only when 'Faculdades específicas' is selected", async () => {
@@ -190,4 +193,70 @@ describe("OpenEnrollmentWindowModal", () => {
     expect(asBRDate(payload.endDate)).toBe("10/02/2030");
   });
 
+
+  // Reset é destrutivo e opt-in: o admin tem que pedir, e tem que ver o que
+  // está pedindo antes de confirmar.
+  describe("encerrar carteirinhas ao abrir", () => {
+    const fillDates = () => {
+      fireEvent.change(screen.getByLabelText("Data de início"), {
+        target: { value: "2030-04-01" },
+      });
+      fireEvent.change(screen.getByLabelText("Data de fim"), {
+        target: { value: "2030-04-03" },
+      });
+    };
+
+    it("nasce desmarcado e não manda a flag ligada", async () => {
+      const onSubmit = vi.fn(() => Promise.resolve());
+      render(<OpenEnrollmentWindowModal {...baseProps} onSubmit={onSubmit} />);
+
+      expect(
+        screen.getByLabelText(/encerrar as carteirinhas/i),
+      ).not.toBeChecked();
+
+      fillDates();
+      fireEvent.click(screen.getByRole("button", { name: /abrir janela/i }));
+
+      await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+      expect(onSubmit.mock.calls[0][0].resetEligibleStudentsOnOpen).toBe(false);
+    });
+
+    it("marcar mostra o aviso do que será perdido", () => {
+      render(<OpenEnrollmentWindowModal {...baseProps} />);
+
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByLabelText(/encerrar as carteirinhas/i));
+
+      const warning = screen.getByRole("alert");
+      expect(warning).toHaveTextContent(/vaga/i);
+      expect(warning).toHaveTextContent(/passe/i);
+      // O admin precisa saber o que NÃO acontece, senão o botão parece o
+      // encerramento de ciclo.
+      expect(warning).toHaveTextContent(/ciclo/i);
+    });
+
+    it("com escopo de faculdades, o aviso nomeia as faculdades escolhidas", async () => {
+      render(<OpenEnrollmentWindowModal {...baseProps} />);
+
+      fireEvent.click(screen.getByLabelText(/^Faculdades específicas/));
+      await waitFor(() => screen.getByText(/U1: Universidade Um/));
+      fireEvent.click(screen.getByLabelText(/U1: Universidade Um/));
+      fireEvent.click(screen.getByLabelText(/encerrar as carteirinhas/i));
+
+      expect(screen.getByRole("alert")).toHaveTextContent(/U1/);
+    });
+
+    it("envia a flag ligada quando marcado", async () => {
+      const onSubmit = vi.fn(() => Promise.resolve());
+      render(<OpenEnrollmentWindowModal {...baseProps} onSubmit={onSubmit} />);
+
+      fillDates();
+      fireEvent.click(screen.getByLabelText(/encerrar as carteirinhas/i));
+      fireEvent.click(screen.getByRole("button", { name: /abrir janela/i }));
+
+      await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+      expect(onSubmit.mock.calls[0][0].resetEligibleStudentsOnOpen).toBe(true);
+    });
+  });
 });

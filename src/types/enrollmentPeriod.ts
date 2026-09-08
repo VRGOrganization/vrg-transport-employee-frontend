@@ -33,6 +33,9 @@ export interface EnrollmentPeriod {
    */
   eligibilityScope: EnrollmentWindowEligibilityScope | null;
   eligibleUniversities: EligibleUniversity[] | null;
+  /** A janela aberta encerrou as carteirinhas dos alunos que alcança. */
+  windowResetEligibleStudentsOnOpen?: boolean;
+  windowResetAppliedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

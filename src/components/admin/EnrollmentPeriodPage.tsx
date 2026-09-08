@@ -35,6 +35,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { ReinforcedConfirmModal } from "@/components/ui/ReinforcedConfirmModal";
+import { AcknowledgeConfirmModal } from "@/components/ui/AcknowledgeConfirmModal";
 import { toast } from "@/lib/toast";
 import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
 import { PanelCard } from "@/components/ui/PanelCard";
@@ -262,6 +263,10 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
   const [showWindowModal, setShowWindowModal] = useState(false);
   const [windowSaving, setWindowSaving] = useState(false);
+  // Janela pedida com reset fica retida aqui até o admin dar ciência do que os
+  // alunos vão perder — a chamada só sai depois da confirmação.
+  const [pendingWindowPayload, setPendingWindowPayload] =
+    useState<OpenEnrollmentWindowFormPayload | null>(null);
   const [windowError, setWindowError] = useState("");
 
   const [showCloseWindowConfirm, setShowCloseWindowConfirm] = useState(false);
@@ -532,16 +537,39 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
   const handleWindowSubmit = async (payload: OpenEnrollmentWindowFormPayload) => {
     if (!activePeriod) return;
+
+    // Abrir janela é rotina; abrir janela encerrando carteirinha não é. O
+    // segundo caso passa por uma confirmação separada antes de qualquer
+    // chamada ao backend.
+    if (payload.resetEligibleStudentsOnOpen) {
+      setPendingWindowPayload(payload);
+      return;
+    }
+
+    await openWindowWithPayload(payload);
+  };
+
+  const openWindowWithPayload = async (
+    payload: OpenEnrollmentWindowFormPayload,
+  ) => {
+    if (!activePeriod) return;
     setWindowSaving(true);
     setWindowError("");
     try {
       await enrollmentPeriodService.openWindow(activePeriod._id, payload);
+      setPendingWindowPayload(null);
       setShowWindowModal(false);
-      toast.success("Janela de inscrição aberta com sucesso.");
+      toast.success(
+        payload.resetEligibleStudentsOnOpen
+          ? "Janela aberta. As carteirinhas dos alunos alcançados foram encerradas."
+          : "Janela de inscrição aberta com sucesso.",
+      );
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
       setWindowError(apiError.message ?? "Não foi possível abrir a janela de inscrição.");
+      // Volta ao formulário: o erro é exibido lá, junto dos campos.
+      setPendingWindowPayload(null);
     } finally {
       setWindowSaving(false);
     }
@@ -858,6 +886,19 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                         value={formatDate(activePeriod.endDate)}
                       />
                     </div>
+                    {activePeriod.windowResetEligibleStudentsOnOpen && (
+                      <div
+                        className="flex items-center gap-2 rounded-xl border border-error/30 bg-error/5 px-3 py-2.5 text-sm text-on-surface"
+                        data-testid="window-reset-badge"
+                      >
+                        <AlertTriangle className="size-4 shrink-0 text-error" />
+                        <span>
+                          {activePeriod.windowResetAppliedAt
+                            ? "Esta janela encerrou as carteirinhas dos alunos que alcança."
+                            : "Esta janela encerrará as carteirinhas dos alunos que alcança quando começar."}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 rounded-xl border border-secondary/20 bg-secondary/5 px-3 py-2.5 text-sm text-on-surface">
                       <Timer className="size-4 shrink-0 text-secondary" />
                       <span>
@@ -1126,6 +1167,32 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
           setShowWindowModal(false);
         }}
         onSubmit={handleWindowSubmit}
+      />
+
+      <AcknowledgeConfirmModal
+        open={pendingWindowPayload !== null}
+        loading={windowSaving}
+        onClose={() => {
+          if (windowSaving) return;
+          setPendingWindowPayload(null);
+        }}
+        onConfirm={() => {
+          if (pendingWindowPayload) void openWindowWithPayload(pendingWindowPayload);
+        }}
+        title="Confirmar encerramento das carteirinhas"
+        description={
+          <span>
+            Ao abrir esta janela, os alunos que ela alcança perderão a
+            carteirinha, a vaga no ônibus e os passes em aberto, e precisarão
+            refazer o pedido. As solicitações em análise deles serão canceladas.
+            <span className="mt-2 block">
+              O ciclo de inscrição continua aberto e os alunos fora do escopo
+              desta janela não são afetados.
+            </span>
+          </span>
+        }
+        acknowledgeLabel="Entendi que os alunos alcançados perderão carteirinha, vaga e passes, e precisarão refazer o pedido."
+        confirmLabel="Abrir janela e encerrar"
       />
 
       <ConfirmModal

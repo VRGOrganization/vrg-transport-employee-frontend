@@ -13,6 +13,9 @@ export interface OpenEnrollmentWindowPayload {
   endDate: string;
   eligibilityScope: EnrollmentWindowEligibilityScope;
   eligibleUniversityIds?: string[];
+  // Encerra carteirinha, vaga e passes dos alunos alcançados pela janela ao
+  // abri-la. Não encerra o ciclo.
+  resetEligibleStudentsOnOpen?: boolean;
 }
 
 export const enrollmentPeriodService = {

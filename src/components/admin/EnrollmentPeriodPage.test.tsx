@@ -541,3 +541,131 @@ describe("EnrollmentPeriodPage — ciclo agendado", () => {
     expect(await screen.findByText("AGENDADO")).toBeInTheDocument();
   });
 });
+
+// Reset de carteirinhas ao abrir a janela: destrutivo e opt-in, então a página
+// nunca pode mandar direto — tem que passar pelo modal de ciência.
+describe("EnrollmentPeriodPage — encerrar carteirinhas ao abrir janela", () => {
+  const noWindowPeriod = {
+    ...activePeriodStub,
+    startDate: null,
+    endDate: null,
+  };
+
+  const openWindowModal = async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+    const trigger = await screen.findByRole("button", {
+      name: /abrir janela de inscrição/i,
+    });
+    fireEvent.click(trigger);
+    await screen.findByLabelText("Data de início");
+  };
+
+  const fillDates = () => {
+    fireEvent.change(screen.getByLabelText("Data de início"), {
+      target: { value: "2030-04-01" },
+    });
+    fireEvent.change(screen.getByLabelText("Data de fim"), {
+      target: { value: "2030-04-03" },
+    });
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(
+      noWindowPeriod as never,
+    );
+    vi.mocked(enrollmentPeriodService.getScheduled).mockResolvedValue(
+      null as never,
+    );
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([
+      activePeriodStub,
+    ] as never);
+    vi.mocked(enrollmentPeriodService.openWindow).mockResolvedValue({} as never);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("sem a flag, abre a janela direto", async () => {
+    await openWindowModal();
+    fillDates();
+    fireEvent.click(screen.getByRole("button", { name: /^abrir janela$/i }));
+
+    await waitFor(() =>
+      expect(enrollmentPeriodService.openWindow).toHaveBeenCalledOnce(),
+    );
+    expect(
+      vi.mocked(enrollmentPeriodService.openWindow).mock.calls[0][1]
+        .resetEligibleStudentsOnOpen,
+    ).toBe(false);
+  });
+
+  it("com a flag, pede ciência antes de mandar qualquer coisa", async () => {
+    await openWindowModal();
+    fillDates();
+    fireEvent.click(screen.getByLabelText(/encerrar as carteirinhas/i));
+    fireEvent.click(screen.getByRole("button", { name: /^abrir janela$/i }));
+
+    await screen.findByText(/confirmar encerramento das carteirinhas/i);
+    expect(enrollmentPeriodService.openWindow).not.toHaveBeenCalled();
+  });
+
+  it("o botão de confirmar fica travado até marcar a ciência", async () => {
+    await openWindowModal();
+    fillDates();
+    fireEvent.click(screen.getByLabelText(/encerrar as carteirinhas/i));
+    fireEvent.click(screen.getByRole("button", { name: /^abrir janela$/i }));
+
+    await screen.findByText(/confirmar encerramento das carteirinhas/i);
+    const confirm = screen.getByRole("button", {
+      name: /abrir janela e encerrar/i,
+    });
+    expect(confirm).toBeDisabled();
+
+    fireEvent.click(screen.getByLabelText(/entendi que/i));
+    expect(confirm).toBeEnabled();
+  });
+
+  it("confirmada a ciência, envia a flag ligada", async () => {
+    await openWindowModal();
+    fillDates();
+    fireEvent.click(screen.getByLabelText(/encerrar as carteirinhas/i));
+    fireEvent.click(screen.getByRole("button", { name: /^abrir janela$/i }));
+
+    await screen.findByText(/confirmar encerramento das carteirinhas/i);
+    fireEvent.click(screen.getByLabelText(/entendi que/i));
+    fireEvent.click(
+      screen.getByRole("button", { name: /abrir janela e encerrar/i }),
+    );
+
+    await waitFor(() =>
+      expect(enrollmentPeriodService.openWindow).toHaveBeenCalledOnce(),
+    );
+    expect(
+      vi.mocked(enrollmentPeriodService.openWindow).mock.calls[0][1]
+        .resetEligibleStudentsOnOpen,
+    ).toBe(true);
+  });
+
+  it("cancelar a ciência não abre a janela", async () => {
+    await openWindowModal();
+    fillDates();
+    fireEvent.click(screen.getByLabelText(/encerrar as carteirinhas/i));
+    fireEvent.click(screen.getByRole("button", { name: /^abrir janela$/i }));
+
+    await screen.findByText(/confirmar encerramento das carteirinhas/i);
+    // O formulário da janela continua montado atrás, então há dois "Cancelar":
+    // o do modal de ciência é o último a entrar no DOM.
+    const cancelButtons = screen.getAllByRole("button", { name: /^cancelar$/i });
+    fireEvent.click(cancelButtons[cancelButtons.length - 1]);
+
+    await waitFor(() =>
+      expect(
+        screen.queryByText(/confirmar encerramento das carteirinhas/i),
+      ).not.toBeInTheDocument(),
+    );
+    expect(enrollmentPeriodService.openWindow).not.toHaveBeenCalled();
+  });
+});
+
