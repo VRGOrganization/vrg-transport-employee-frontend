@@ -145,7 +145,6 @@ describe("buildInfoCsv", () => {
 
     expect(csv).toContain("Cabeçalho do recorte");
     expect(csv).toContain("UNIFLU · Quarta");
-    expect(csv).toContain("Pessoas");
     expect(csv).toContain("Derivado das solicitações de carteirinha");
   });
 
@@ -213,7 +212,6 @@ describe("buildInfoJson", () => {
     expect(parsed.generatedAt).toBe("2026-03-01T14:32:00.000Z");
     expect(parsed.origin).toContain("allocationSummary");
     expect(parsed.lens.filterLabels).toEqual(["UA"]);
-    expect(parsed.lens.metric).toBe("pessoas");
   });
 
   it("bate com a tela nos números da grade", () => {

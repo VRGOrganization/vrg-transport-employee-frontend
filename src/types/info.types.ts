@@ -19,8 +19,6 @@ export const UNKNOWN_COURSE_KEY = "__nao_identificado__";
 /** Chave do balde de ônibus não identificado (alocação sem busId resolvível). */
 export const UNKNOWN_BUS_KEY = "__onibus_nao_identificado__";
 
-export type InfoMetric = "pessoas" | "pernas";
-
 /**
  * A "lente": o recorte único que TODOS os painéis obedecem. Vive na URL, de
  * modo que um recorte é um link compartilhável.
@@ -38,7 +36,6 @@ export interface InfoLens {
   day: Day | null;
   /** Recorte de turno vindo da grade. */
   period: Period | null;
-  metric: InfoMetric;
 }
 
 export const EMPTY_LENS: InfoLens = {
@@ -49,7 +46,6 @@ export const EMPTY_LENS: InfoLens = {
   shift: null,
   day: null,
   period: null,
-  metric: "pessoas",
 };
 
 export type SeatStatus = "active" | "waitlisted";
@@ -81,7 +77,7 @@ export interface Seat {
 // ── Saídas dos seletores ────────────────────────────────────────────────────
 
 export interface GridCell {
-  /** Valor na métrica pedida (pessoas distintas ou pernas). */
+  /** Alunos distintos na célula. */
   value: number;
   /** Alunos distintos na célula — base do drill-down. */
   studentIds: string[];

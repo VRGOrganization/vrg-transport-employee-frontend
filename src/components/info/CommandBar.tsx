@@ -2,10 +2,9 @@
 
 import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { DownloadFormatMenu } from "@/components/audit/DownloadFormatMenu";
 import type { AuditDownloadFormat } from "@/lib/auditDownload";
-import type { CycleSummary, InfoLens, InfoMetric } from "@/types/info.types";
+import type { CycleSummary, InfoLens } from "@/types/info.types";
 import { formatClock } from "@/lib/info/format";
 import { CycleSelector } from "./CycleSelector";
 import { FilterPopover, type FilterOption } from "./FilterPopover";
@@ -24,11 +23,6 @@ interface CommandBarProps {
   onDownload: (format: AuditDownloadFormat) => void;
   downloadDisabled: boolean;
 }
-
-const METRIC_TABS: Array<{ key: InfoMetric; label: string }> = [
-  { key: "pessoas", label: "Pessoas" },
-  { key: "pernas", label: "Pernas" },
-];
 
 /**
  * Barra de comando: tudo que muda o recorte mora aqui, na mesma faixa. O
@@ -70,7 +64,7 @@ export function CommandBar({
 
       <div className="h-5 w-px shrink-0 bg-outline-variant" aria-hidden="true" />
 
-      <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto">
+      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
         <FilterPopover
           name="Faculdade"
           value={lens.universityId}
@@ -113,41 +107,6 @@ export function CommandBar({
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
-        <div className="flex items-center gap-1">
-          <div
-            role="tablist"
-            aria-label="Métrica"
-            className="flex items-center gap-0.5 rounded-lg bg-surface-container-high p-0.5"
-          >
-            {METRIC_TABS.map((tab) => {
-              const active = lens.metric === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => onPatchLens({ metric: tab.key })}
-                  className={cn(
-                    "rounded-md px-2.5 py-1 text-xs font-semibold cursor-pointer",
-                    "transition-colors duration-150",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                    active
-                      ? "bg-primary text-on-primary"
-                      : "text-on-surface-variant hover:text-on-surface",
-                  )}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-          <InfoTooltip
-            ariaLabel="O que são pernas"
-            content="Pernas conta ida e volta separadamente; um aluno que só volta de ônibus ocupa uma perna."
-          />
-        </div>
-
         {generatedAt && (
           <span className="hidden text-xs tabular-nums text-on-surface-muted lg:inline">
             Lido às {formatClock(generatedAt)}

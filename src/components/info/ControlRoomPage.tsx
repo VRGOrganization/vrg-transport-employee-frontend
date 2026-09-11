@@ -182,7 +182,6 @@ export function ControlRoomPage() {
                 grid={view.grid}
                 totals={view.totals}
                 lens={view.effectiveLens}
-                metric={view.effectiveLens.metric}
                 palette={palette}
                 capacityByBusDay={view.capacityByBusDay}
                 onPatchLens={patchLens}
@@ -242,7 +241,6 @@ export function ControlRoomPage() {
           >
             <FleetRails
               fleet={view.fleet}
-              metric={view.effectiveLens.metric}
               palette={palette}
               lens={view.effectiveLens}
               universityNames={universityNames}

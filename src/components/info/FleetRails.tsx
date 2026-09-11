@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { DAY_LABELS } from "@/types/cards.types";
-import { DAYS, type BusLoad, type InfoLens, type InfoMetric } from "@/types/info.types";
+import { DAYS, type BusLoad, type InfoLens } from "@/types/info.types";
 import type { BusPalette } from "@/lib/info/palette";
 import { compareIdentifiers } from "@/lib/info/normalize";
 import { formatNumber } from "@/lib/info/format";
@@ -13,7 +13,6 @@ type SortMode = "pico" | "identificador" | "media";
 
 interface FleetRailsProps {
   fleet: BusLoad[];
-  metric: InfoMetric;
   palette: BusPalette;
   lens: InfoLens;
   universityNames: Map<string, string>;
@@ -35,7 +34,6 @@ const SORT_LABEL: Record<SortMode, string> = {
 /** A frota como trilhos: um ônibus por linha, a semana inteira lado a lado. */
 export function FleetRails({
   fleet,
-  metric,
   palette,
   lens,
   universityNames,
@@ -120,7 +118,6 @@ export function FleetRails({
           <FleetRail
             key={load.busId || load.busIdentifier}
             load={load}
-            metric={metric}
             palette={palette}
             lens={lens}
             universityNames={universityNames}
