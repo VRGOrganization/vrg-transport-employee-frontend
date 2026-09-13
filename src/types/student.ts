@@ -25,8 +25,6 @@ export interface Student {
     returnPeriod: string;
   };
   hasDisability?: boolean;
-  distanceKm?: number;
-  courseSemester?: number;
   status?: 'PENDING' | 'ACTIVE' | 'EXPIRED';
   isInstitutionalEmail?: boolean;
   hasPersonalDocuments?: boolean;

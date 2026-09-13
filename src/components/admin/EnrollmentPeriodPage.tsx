@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { EnrollmentPeriodBanner } from "@/components/admin/EnrollmentPeriodBanner";
 import { EnrollmentPeriodModal } from "@/components/admin/EnrollmentPeriodModal";
+import { EnrollmentCycleEditModal } from "@/components/admin/EnrollmentCycleEditModal";
 import {
   OpenPeriodModal,
   type OpenPeriodFormPayload,
@@ -34,6 +35,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { ReinforcedConfirmModal } from "@/components/ui/ReinforcedConfirmModal";
+import { AcknowledgeConfirmModal } from "@/components/ui/AcknowledgeConfirmModal";
 import { toast } from "@/lib/toast";
 import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
 import { PanelCard } from "@/components/ui/PanelCard";
@@ -58,14 +60,16 @@ import type {
 } from "@/types/enrollmentPeriod";
 import { resolveDisplayName } from "@/lib/utils/string";
 
-// A edição atinge a janela ativa (startDate/endDate) e/ou a validade do ciclo
-// (licenseValidityMonths); o modal envia apenas os campos que mudaram, por
-// isso todos são opcionais.
-type EnrollmentPeriodPayload = Partial<{
+// Janela e ciclo são editados separadamente: a janela só tem datas (e o modal
+// envia apenas as que mudaram), o ciclo só tem a validade da carteirinha.
+type EnrollmentWindowPayload = Partial<{
   startDate: string;
   endDate: string;
-  licenseValidityMonths: number;
 }>;
+
+interface EnrollmentCyclePayload {
+  licenseValidityMonths: number;
+}
 
 const VAGA_DIA_TOOLTIP =
   "Vagas em vaga-dia: 1 vaga de ônibus equivale a 5 (segunda a sexta). O total é a soma das vagas dos ônibus ativos × 5.";
@@ -237,10 +241,13 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
   const [openPeriodError, setOpenPeriodError] = useState("");
 
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCycleEditModal, setShowCycleEditModal] = useState(false);
+  const [cycleModalError, setCycleModalError] = useState("");
+  const [cycleSaving, setCycleSaving] = useState(false);
   const [periodSaving, setPeriodSaving] = useState(false);
   const [periodModalError, setPeriodModalError] = useState("");
 
-  const [pendingPeriodPayload, setPendingPeriodPayload] = useState<EnrollmentPeriodPayload | null>(null);
+  const [pendingPeriodPayload, setPendingPeriodPayload] = useState<EnrollmentCyclePayload | null>(null);
   const [showValidityConfirm, setShowValidityConfirm] = useState(false);
   const [validityConfirmSaving, setValidityConfirmSaving] = useState(false);
   const [validityConfirmError, setValidityConfirmError] = useState("");
@@ -256,6 +263,10 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
   const [showWindowModal, setShowWindowModal] = useState(false);
   const [windowSaving, setWindowSaving] = useState(false);
+  // Janela pedida com reset fica retida aqui até o admin dar ciência do que os
+  // alunos vão perder — a chamada só sai depois da confirmação.
+  const [pendingWindowPayload, setPendingWindowPayload] =
+    useState<OpenEnrollmentWindowFormPayload | null>(null);
   const [windowError, setWindowError] = useState("");
 
   const [showCloseWindowConfirm, setShowCloseWindowConfirm] = useState(false);
@@ -381,40 +392,63 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
     setShowEditModal(true);
   };
 
-  const handleSavePeriod = async (payload: EnrollmentPeriodPayload) => {
+  const handleOpenCycleEdit = () => {
+    if (!activePeriod) return;
+    setCycleModalError("");
+    setShowCycleEditModal(true);
+  };
+
+  const handleSaveWindow = async (payload: EnrollmentWindowPayload) => {
     if (!activePeriod) return;
     if (Object.keys(payload).length === 0) {
       setShowEditModal(false);
       return;
     }
 
+    setPeriodSaving(true);
+    setPeriodModalError("");
+    try {
+      await enrollmentPeriodService.updateWindow(activePeriod._id, payload);
+      toast.success("Janela de inscrição atualizada com sucesso.");
+      setShowEditModal(false);
+      await loadData();
+    } catch (err: unknown) {
+      const apiError = err as { message?: string };
+      setPeriodModalError(apiError.message ?? "Não foi possível salvar a janela.");
+    } finally {
+      setPeriodSaving(false);
+    }
+  };
+
+  const handleSaveCycle = async (payload: EnrollmentCyclePayload) => {
+    if (!activePeriod) return;
+
     // Mudar a validade da carteirinha desloca retroativamente a data de
     // expiração de todo aluno já alocado no ciclo — pede confirmação extra
-    // quando há alunos afetados. Mudar só as datas da janela não afeta
-    // carteirinha nenhuma e segue direto.
-    const changesValidity =
-      payload.licenseValidityMonths !== undefined &&
-      payload.licenseValidityMonths !== activePeriod.licenseValidityMonths;
-    if (changesValidity && activePeriod.filledSlots > 0) {
+    // quando há alunos afetados.
+    if (
+      payload.licenseValidityMonths !== activePeriod.licenseValidityMonths &&
+      activePeriod.filledSlots > 0
+    ) {
       setPendingPeriodPayload(payload);
-      setShowEditModal(false);
+      setShowCycleEditModal(false);
       setValidityConfirmError("");
       setShowValidityConfirm(true);
       return;
     }
 
-    setPeriodSaving(true);
-    setPeriodModalError("");
+    setCycleSaving(true);
+    setCycleModalError("");
     try {
       await enrollmentPeriodService.update(activePeriod._id, payload);
-      toast.success("Período atualizado com sucesso.");
-      setShowEditModal(false);
+      toast.success("Ciclo atualizado com sucesso.");
+      setShowCycleEditModal(false);
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      setPeriodModalError(apiError.message ?? "Não foi possível salvar o período.");
+      setCycleModalError(apiError.message ?? "Não foi possível salvar o ciclo.");
     } finally {
-      setPeriodSaving(false);
+      setCycleSaving(false);
     }
   };
 
@@ -424,13 +458,13 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
     setValidityConfirmError("");
     try {
       await enrollmentPeriodService.update(activePeriod._id, pendingPeriodPayload);
-      toast.success("Período atualizado com sucesso.");
+      toast.success("Ciclo atualizado com sucesso.");
       setShowValidityConfirm(false);
       setPendingPeriodPayload(null);
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      setValidityConfirmError(apiError.message ?? "Não foi possível salvar o período.");
+      setValidityConfirmError(apiError.message ?? "Não foi possível salvar o ciclo.");
     } finally {
       setValidityConfirmSaving(false);
     }
@@ -447,11 +481,11 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
     try {
       await enrollmentPeriodService.close(activePeriod._id);
       setShowCloseConfirm(false);
-      toast.success("Período encerrado com sucesso.");
+      toast.success("Ciclo encerrado com sucesso.");
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      toast.error(apiError.message ?? "Falha ao encerrar o período.");
+      toast.error(apiError.message ?? "Falha ao encerrar o ciclo.");
       setShowCloseConfirm(false);
     } finally {
       setClosingPeriod(false);
@@ -464,7 +498,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
   // Passo 1 (dias) só decide o prazo; a confirmação reforçada (passo 2) é
   // quem de fato dispara o agendamento, já que ao vencer o prazo a mesma
-  // cascata de "Encerrar período" roda sozinha (cron).
+  // cascata de "Encerrar ciclo" roda sozinha (cron).
   const handleScheduleResetSubmit = async (days: number) => {
     setPendingResetDays(days);
     setShowScheduleResetModal(false);
@@ -503,16 +537,39 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
   const handleWindowSubmit = async (payload: OpenEnrollmentWindowFormPayload) => {
     if (!activePeriod) return;
+
+    // Abrir janela é rotina; abrir janela encerrando carteirinha não é. O
+    // segundo caso passa por uma confirmação separada antes de qualquer
+    // chamada ao backend.
+    if (payload.resetEligibleStudentsOnOpen) {
+      setPendingWindowPayload(payload);
+      return;
+    }
+
+    await openWindowWithPayload(payload);
+  };
+
+  const openWindowWithPayload = async (
+    payload: OpenEnrollmentWindowFormPayload,
+  ) => {
+    if (!activePeriod) return;
     setWindowSaving(true);
     setWindowError("");
     try {
       await enrollmentPeriodService.openWindow(activePeriod._id, payload);
+      setPendingWindowPayload(null);
       setShowWindowModal(false);
-      toast.success("Janela de inscrição aberta com sucesso.");
+      toast.success(
+        payload.resetEligibleStudentsOnOpen
+          ? "Janela aberta. As carteirinhas dos alunos alcançados foram encerradas."
+          : "Janela de inscrição aberta com sucesso.",
+      );
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
       setWindowError(apiError.message ?? "Não foi possível abrir a janela de inscrição.");
+      // Volta ao formulário: o erro é exibido lá, junto dos campos.
+      setPendingWindowPayload(null);
     } finally {
       setWindowSaving(false);
     }
@@ -675,7 +732,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                         className="border-error text-error hover:bg-error/10"
                         onClick={handleClosePeriod}
                       >
-                        Encerrar período
+                        Encerrar ciclo
                       </Button>
                     </>
                   ) : scheduledPeriod ? (
@@ -715,6 +772,11 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                     ATIVO
                   </span>
                 }
+                actions={
+                  <button type="button" onClick={handleOpenCycleEdit} className={CHIP_CLASS}>
+                    Editar ciclo
+                  </button>
+                }
               >
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -738,7 +800,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                     />
                     <Metric
                       icon={AlarmClock}
-                      label="Limpeza geral (reset)"
+                      label="Encerramento de ciclo"
                       value={
                         activePeriod.resetScheduledFor
                           ? formatDateTime(activePeriod.resetScheduledFor)
@@ -746,7 +808,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                       }
                       hint={
                         activePeriod.resetScheduledFor
-                          ? "cascata automática nesta data"
+                          ? undefined
                           : `≈ ${activePeriod.licenseValidityMonths} meses após a abertura`
                       }
                     />
@@ -824,6 +886,19 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                         value={formatDate(activePeriod.endDate)}
                       />
                     </div>
+                    {activePeriod.windowResetEligibleStudentsOnOpen && (
+                      <div
+                        className="flex items-center gap-2 rounded-xl border border-error/30 bg-error/5 px-3 py-2.5 text-sm text-on-surface"
+                        data-testid="window-reset-badge"
+                      >
+                        <AlertTriangle className="size-4 shrink-0 text-error" />
+                        <span>
+                          {activePeriod.windowResetAppliedAt
+                            ? "Esta janela encerrou as carteirinhas dos alunos que alcança."
+                            : "Esta janela encerrará as carteirinhas dos alunos que alcança quando começar."}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 rounded-xl border border-secondary/20 bg-secondary/5 px-3 py-2.5 text-sm text-on-surface">
                       <Timer className="size-4 shrink-0 text-secondary" />
                       <span>
@@ -979,7 +1054,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
         }}
         onConfirm={handleCloseConfirmed}
         loading={closingPeriod}
-        title="Encerrar período"
+        title="Encerrar ciclo"
         description={cascadeImpactDescription}
         confirmWord="ENCERRAR"
         confirmLabel="Encerrar"
@@ -1007,11 +1082,25 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
             if (periodSaving) return;
             setShowEditModal(false);
           }}
-          onSubmit={handleSavePeriod}
+          onSubmit={handleSaveWindow}
         />
       )}
 
-      {activePeriod && pendingPeriodPayload?.licenseValidityMonths !== undefined && (
+      {activePeriod && (
+        <EnrollmentCycleEditModal
+          open={showCycleEditModal}
+          period={activePeriod}
+          loading={cycleSaving}
+          serverError={cycleModalError}
+          onClose={() => {
+            if (cycleSaving) return;
+            setShowCycleEditModal(false);
+          }}
+          onSubmit={handleSaveCycle}
+        />
+      )}
+
+      {activePeriod && pendingPeriodPayload && (
         <ConfirmModal
           open={showValidityConfirm}
           onClose={() => {
@@ -1078,6 +1167,32 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
           setShowWindowModal(false);
         }}
         onSubmit={handleWindowSubmit}
+      />
+
+      <AcknowledgeConfirmModal
+        open={pendingWindowPayload !== null}
+        loading={windowSaving}
+        onClose={() => {
+          if (windowSaving) return;
+          setPendingWindowPayload(null);
+        }}
+        onConfirm={() => {
+          if (pendingWindowPayload) void openWindowWithPayload(pendingWindowPayload);
+        }}
+        title="Confirmar encerramento das carteirinhas"
+        description={
+          <span>
+            Ao abrir esta janela, os alunos que ela alcança perderão a
+            carteirinha, a vaga no ônibus e os passes em aberto, e precisarão
+            refazer o pedido. As solicitações em análise deles serão canceladas.
+            <span className="mt-2 block">
+              O ciclo de inscrição continua aberto e os alunos fora do escopo
+              desta janela não são afetados.
+            </span>
+          </span>
+        }
+        acknowledgeLabel="Entendi que os alunos alcançados perderão carteirinha, vaga e passes, e precisarão refazer o pedido."
+        confirmLabel="Abrir janela e encerrar"
       />
 
       <ConfirmModal

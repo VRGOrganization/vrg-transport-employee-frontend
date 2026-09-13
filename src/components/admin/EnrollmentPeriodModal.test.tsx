@@ -23,6 +23,8 @@ function makePeriod(overrides: Partial<EnrollmentPeriod> = {}): EnrollmentPeriod
     createdByAdminId: 'a1',
     closedByAdminId: null,
     closedAt: null,
+    eligibilityScope: 'all',
+    eligibleUniversities: null,
     createdAt: '2030-11-01T00:00:00.000Z',
     updatedAt: '2030-11-01T00:00:00.000Z',
     ...overrides,
@@ -43,36 +45,28 @@ describe('EnrollmentPeriodModal (edição da janela aberta)', () => {
     vi.clearAllMocks();
   });
 
-  it('shows the edit title and "Salvar alterações" as the submit label', () => {
+  it('shows the window edit title and "Salvar alterações" as the submit label', () => {
     render(<EnrollmentPeriodModal {...baseProps} />);
-    expect(screen.getByText('Editar período de inscrição')).toBeInTheDocument();
+    expect(screen.getByText('Editar janela de inscrição')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /salvar alterações/i })).toBeInTheDocument();
   });
 
-  it('pre-fills the form with the window dates and validity', () => {
+  it('pre-fills the form with the window dates', () => {
     render(<EnrollmentPeriodModal {...baseProps} />);
     expect(screen.getByDisplayValue('2030-12-01')).toBeInTheDocument();
     expect(screen.getByDisplayValue('2030-12-31')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('6')).toBeInTheDocument();
   });
 
-  it('submits only the changed fields (validity only when dates untouched)', async () => {
-    const onSubmit = vi.fn(() => Promise.resolve());
-    render(<EnrollmentPeriodModal {...baseProps} onSubmit={onSubmit} />);
+  it('does not offer capacity nor license validity — those belong to the cycle', () => {
+    render(<EnrollmentPeriodModal {...baseProps} />);
 
-    fireEvent.change(screen.getByLabelText(/validade da carteirinha/i), {
-      target: { value: '8' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
-
-    await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
-    const payload = onSubmit.mock.calls[0][0];
-    expect(payload).toEqual({ licenseValidityMonths: 8 });
-    expect('startDate' in payload).toBe(false);
-    expect('endDate' in payload).toBe(false);
+    expect(screen.queryByLabelText(/validade da carteirinha/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    expect(screen.queryByText(/vagas-dia/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/capacidade/i)).not.toBeInTheDocument();
   });
 
-  it('submits the changed window dates as ISO', async () => {
+  it('submits the changed window dates as ISO and nothing else', async () => {
     const onSubmit = vi.fn(() => Promise.resolve());
     render(<EnrollmentPeriodModal {...baseProps} onSubmit={onSubmit} />);
 
@@ -83,9 +77,8 @@ describe('EnrollmentPeriodModal (edição da janela aberta)', () => {
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
     const payload = onSubmit.mock.calls[0][0];
+    expect(Object.keys(payload)).toEqual(['endDate']);
     expect(toCivilBR(payload.endDate as string)).toBe('2030-12-20');
-    expect('startDate' in payload).toBe(false);
-    expect('licenseValidityMonths' in payload).toBe(false);
   });
 
   it('blocks submit with a message when nothing changed', async () => {
@@ -98,38 +91,74 @@ describe('EnrollmentPeriodModal (edição da janela aberta)', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it('with no open window: hides window date fields, still edits validity', async () => {
+  it('rejects an end date before the start date', async () => {
     const onSubmit = vi.fn(() => Promise.resolve());
+    render(<EnrollmentPeriodModal {...baseProps} onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByLabelText(/data de fim/i), {
+      target: { value: '2030-11-01' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
+
+    expect(await screen.findByText(/data de fim deve ser maior/i)).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  describe('escopo da janela (somente leitura)', () => {
+    it('shows "Todos os alunos" for the all scope', () => {
+      render(<EnrollmentPeriodModal {...baseProps} />);
+      expect(screen.getByText('Todos os alunos')).toBeInTheDocument();
+    });
+
+    it('shows the has_university scope label', () => {
+      render(
+        <EnrollmentPeriodModal
+          {...baseProps}
+          period={makePeriod({ eligibilityScope: 'has_university' })}
+        />,
+      );
+      expect(screen.getByText(/só alunos com faculdade cadastrada/i)).toBeInTheDocument();
+    });
+
+    it('lists the eligible universities for the specific scope', () => {
+      render(
+        <EnrollmentPeriodModal
+          {...baseProps}
+          period={makePeriod({
+            eligibilityScope: 'specific_universities',
+            eligibleUniversities: [
+              { _id: 'u1', name: 'Universidade Federal Fluminense', acronym: 'UFF' },
+              { _id: 'u2', name: 'Faculdade de Medicina de Campos', acronym: 'FMC' },
+            ],
+          })}
+        />,
+      );
+
+      expect(screen.getByText(/faculdades específicas/i)).toBeInTheDocument();
+      expect(screen.getByText(/UFF/)).toBeInTheDocument();
+      expect(screen.getByText(/FMC/)).toBeInTheDocument();
+    });
+
+    it('explains that changing the scope requires reopening the window', () => {
+      render(<EnrollmentPeriodModal {...baseProps} />);
+      expect(screen.getByText(/feche esta janela e abra uma nova/i)).toBeInTheDocument();
+    });
+  });
+
+  it('with no open window: shows an empty state and no submit', () => {
     render(
       <EnrollmentPeriodModal
         {...baseProps}
         period={makePeriod({ startDate: null, endDate: null })}
-        onSubmit={onSubmit}
       />,
     );
 
     expect(screen.queryByLabelText(/data de início/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/data de fim/i)).not.toBeInTheDocument();
     expect(screen.getByText(/nenhuma janela aberta/i)).toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText(/validade da carteirinha/i), {
-      target: { value: '9' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
-
-    await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
-    expect(onSubmit.mock.calls[0][0]).toEqual({ licenseValidityMonths: 9 });
-  });
-
-  it('no slots input field — only one number input (licenseValidityMonths)', () => {
-    render(<EnrollmentPeriodModal {...baseProps} />);
-    const numberInputs = screen.queryAllByRole('spinbutton');
-    expect(numberInputs).toHaveLength(1);
-  });
-
-  it('shows derived read-only capacity for the period', () => {
-    render(<EnrollmentPeriodModal {...baseProps} period={makePeriod({ totalSlots: 350 })} />);
-    expect(screen.getByText(/350 vagas-dia/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /salvar alterações/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('shows server error (e.g. no active window to update)', () => {

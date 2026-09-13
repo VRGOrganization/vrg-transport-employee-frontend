@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { http } from "@/services/http";
+import { transportUsageService } from "@/services/transportUsageService";
 import type { ImageRecord, PhotoType } from "@/types/cards.types";
 import { PHOTO_TYPE_LABELS } from "@/types/cards.types";
 import { isPdfDataUrl, normalizeMediaSource } from "@/lib/cardUtils";
@@ -47,6 +48,8 @@ const DOC_ORDER: PhotoType[] = [
   "SecondaryEnrollmentProof",
   "SecondaryCourseSchedule",
   "SecondaryAcademicPeriodProof",
+  "TransportCardProof",
+  "DisabilityProof",
   "LicenseImage",
 ];
 
@@ -69,11 +72,7 @@ export function StudentDocumentsModal({
     setLoading(true);
     Promise.all([
       http.get<ImageRecord[]>(`/image/student/${studentId}`),
-      http
-        .get<{ studentId: string; alreadyUsesTransport: boolean }>(
-          `/transport-usage/student/${studentId}`,
-        )
-        .catch(() => null),
+      transportUsageService.getByStudent(studentId).catch(() => null),
     ])
       .then(([data, transportUsage]) => {
         const alreadyUsesTransport = transportUsage?.alreadyUsesTransport ?? false;

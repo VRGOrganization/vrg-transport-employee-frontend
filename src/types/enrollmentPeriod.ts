@@ -27,8 +27,23 @@ export interface EnrollmentPeriod {
   closedWaitlistCount?: number;
   waitlistClosedAt?: string | null;
   resetScheduledFor?: string;
+  /**
+   * Com qual opção a janela ativa foi aberta. `null` quando não há janela
+   * aberta; `eligibleUniversities` só vem preenchido no escopo específico.
+   */
+  eligibilityScope: EnrollmentWindowEligibilityScope | null;
+  eligibleUniversities: EligibleUniversity[] | null;
+  /** A janela aberta encerrou as carteirinhas dos alunos que alcança. */
+  windowResetEligibleStudentsOnOpen?: boolean;
+  windowResetAppliedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface EligibleUniversity {
+  _id: string;
+  name: string;
+  acronym: string;
 }
 
 export type EnrollmentWindowEligibilityScope =
