@@ -78,13 +78,16 @@ export function PriorityRuleModal({ open, initial, onClose, onSaved, onDeleted, 
   const [loadingVacant, setLoadingVacant] = useState(false);
 
   const [lastId, setLastId] = useState(initial?._id ?? null);
-  if ((initial?._id ?? null) !== lastId) {
+  const [wasOpen, setWasOpen] = useState(open);
+  if ((initial?._id ?? null) !== lastId || (open && !wasOpen)) {
     setLastId(initial?._id ?? null);
     setForm(buildFormState(initial));
     setErrors({});
     setError("");
     setView("form");
+    if (!initial) setVacantLevels(null);
   }
+  if (open !== wasOpen) setWasOpen(open);
 
   useEffect(() => {
     if (!open || initial) return;
@@ -104,6 +107,7 @@ export function PriorityRuleModal({ open, initial, onClose, onSaved, onDeleted, 
 
   const bothChecked = form.alreadyUsesTransport && form.hasDisability;
   const noVacantLevels = !initial && vacantLevels !== null && vacantLevels.length === 0;
+  const createDisabled = !initial && (loadingVacant || vacantLevels === null);
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
@@ -340,7 +344,7 @@ export function PriorityRuleModal({ open, initial, onClose, onSaved, onDeleted, 
             )
           )}
           <Button variant="outline" size="sm" onClick={onClose} disabled={loading}>Cancelar</Button>
-          <Button variant="primary" size="sm" loading={loading} disabled={noVacantLevels} onClick={() => void handleSubmit()}>
+          <Button variant="primary" size="sm" loading={loading} disabled={noVacantLevels || createDisabled} onClick={() => void handleSubmit()}>
             {initial ? "Salvar alterações" : "Criar regra"}
           </Button>
         </div>
