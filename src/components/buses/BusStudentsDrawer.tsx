@@ -97,7 +97,7 @@ function UniversitySection({
                       {student.days?.includes(day) ? (
                         <Check className="size-4 text-success mx-auto" />
                       ) : (
-                        <span className="text-on-surface-muted text-xs">—</span>
+                        <span className="text-on-surface-muted text-xs">-</span>
                       )}
                     </td>
                   ))}
@@ -271,7 +271,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
                     <p className="text-xs text-on-surface-variant">
                       {busCapacity == null
                         ? "Sem limite de vagas"
-                        : `${loading ? "—" : maxDailyOccupancy} / ${busCapacity} vagas preenchidas (pico/dia)`}
+                        : `${loading ? "-" : maxDailyOccupancy} / ${busCapacity} vagas preenchidas (pico/dia)`}
                     </p>
                   </div>
                 </div>
@@ -306,7 +306,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-low border border-outline-variant/50">
                   <Users className="size-3.5 text-on-surface-muted" />
                   <span className="text-xs font-semibold text-on-surface">
-                    {loading ? "—" : students.length} aluno
+                    {loading ? "-" : students.length} aluno
                     {students.length !== 1 ? "s" : ""}
                   </span>
                 </div>
@@ -326,7 +326,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
                       <span className="font-bold text-on-surface">
                         {DAY_SHORT[day]}
                       </span>
-                      <span className="text-on-surface-muted mx-0.5">—</span>
+                      <span className="text-on-surface-muted mx-0.5">-</span>
                       {loading ? (
                         <span className="text-on-surface-muted">…</span>
                       ) : busCapacity == null ? (
@@ -395,7 +395,7 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
                     return (
                       <UniversitySection
                         key={sid}
-                        label={`P${slot.priorityOrder} — ${getAcronym(slot.universityId)}`}
+                        label={`P${slot.priorityOrder}: ${getAcronym(slot.universityId)}`}
                         students={items}
                       />
                     );

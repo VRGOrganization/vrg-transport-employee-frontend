@@ -2,14 +2,15 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PAGE_SIZE_OPTIONS, type PageSize } from "@/lib/constants";
+import { PAGE_SIZE_OPTIONS } from "@/lib/constants";
 
 interface PaginationProps {
   page: number;
-  pageSize: PageSize;
+  pageSize: number;
   total: number;
   onPageChange: (page: number) => void;
-  onPageSizeChange: (size: PageSize) => void;
+  onPageSizeChange: (size: number) => void;
+  pageSizeOptions?: readonly number[];
   className?: string;
 }
 
@@ -19,6 +20,7 @@ export function Pagination({
   total,
   onPageChange,
   onPageSizeChange,
+  pageSizeOptions = PAGE_SIZE_OPTIONS,
   className,
 }: PaginationProps) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -35,7 +37,7 @@ export function Pagination({
       <div className="flex items-center gap-2">
         <span>Por página:</span>
         <div className="flex items-center gap-1">
-          {PAGE_SIZE_OPTIONS.map((s) => (
+          {pageSizeOptions.map((s) => (
             <button
               key={s}
               onClick={() => onPageSizeChange(s)}

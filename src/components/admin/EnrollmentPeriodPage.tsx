@@ -7,6 +7,7 @@ import {
   AlarmClock,
   AlertTriangle,
   BadgeCheck,
+  CalendarClock,
   CalendarDays,
   CircleCheck,
   CircleDashed,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 import { EnrollmentPeriodBanner } from "@/components/admin/EnrollmentPeriodBanner";
 import { EnrollmentPeriodModal } from "@/components/admin/EnrollmentPeriodModal";
+import { EnrollmentCycleEditModal } from "@/components/admin/EnrollmentCycleEditModal";
 import {
   OpenPeriodModal,
   type OpenPeriodFormPayload,
@@ -33,30 +35,41 @@ import {
 import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { ReinforcedConfirmModal } from "@/components/ui/ReinforcedConfirmModal";
+import { AcknowledgeConfirmModal } from "@/components/ui/AcknowledgeConfirmModal";
 import { toast } from "@/lib/toast";
 import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
 import { PanelCard } from "@/components/ui/PanelCard";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { cn } from "@/lib/utils";
 import { http } from "@/services/http";
-import { computeLicenseExpiry } from "@/lib/utils/date";
+import {
+  computeLicenseExpiry,
+  formatDateBR,
+  formatDateTimeBR,
+} from "@/lib/utils/date";
 import { resolvePaginated, type Paginated } from "@/types/api";
 import type {
   LicenseRequestRecord,
   StudentRecord,
   StudentsResponse,
 } from "@/types/cards.types";
-import type { EnrollmentPeriod, WaitlistEntry } from "@/types/enrollmentPeriod";
+import type {
+  EnrollmentCycleStatus,
+  EnrollmentPeriod,
+  WaitlistEntry,
+} from "@/types/enrollmentPeriod";
 import { resolveDisplayName } from "@/lib/utils/string";
 
-// A edição atinge a janela ativa (startDate/endDate) e/ou a validade do ciclo
-// (licenseValidityMonths); o modal envia apenas os campos que mudaram, por
-// isso todos são opcionais.
-type EnrollmentPeriodPayload = Partial<{
+// Janela e ciclo são editados separadamente: a janela só tem datas (e o modal
+// envia apenas as que mudaram), o ciclo só tem a validade da carteirinha.
+type EnrollmentWindowPayload = Partial<{
   startDate: string;
   endDate: string;
-  licenseValidityMonths: number;
 }>;
+
+interface EnrollmentCyclePayload {
+  licenseValidityMonths: number;
+}
 
 const VAGA_DIA_TOOLTIP =
   "Vagas em vaga-dia: 1 vaga de ônibus equivale a 5 (segunda a sexta). O total é a soma das vagas dos ônibus ativos × 5.";
@@ -64,18 +77,17 @@ const VAGA_DIA_TOOLTIP =
 const CHIP_CLASS =
   "inline-flex items-center gap-1.5 rounded-lg border border-outline-variant px-3 py-1.5 text-xs font-medium text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 
+// Sempre no fuso de Brasília: as datas são gravadas como instantes (a janela
+// termina às 23:59:59.999 BRT, que em UTC já é o dia seguinte), então renderizar
+// no fuso do navegador faria a data mostrada divergir da escolhida.
 function formatDate(dateValue: string | null | undefined): string {
   if (!dateValue) return "-";
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleDateString("pt-BR");
+  return formatDateBR(dateValue);
 }
 
 function formatDateTime(dateValue: string | null | undefined): string {
   if (!dateValue) return "-";
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleString("pt-BR");
+  return formatDateTimeBR(dateValue);
 }
 
 function daysUntil(dateValue: string | null | undefined): number | null {
@@ -111,10 +123,28 @@ function getActiveCycleStatus(period: EnrollmentPeriod): CycleStatusBadge {
     return { label: "INSCRIÇÃO ABERTA", className: "text-success" };
   }
   return {
-    label: "CICLO ATIVO — SEM INSCRIÇÃO ABERTA",
+    label: "CICLO ATIVO, SEM INSCRIÇÃO ABERTA",
     className: "text-warning",
     supportText: "A equipe pode continuar processando a fila normalmente.",
   };
+}
+
+const HISTORY_BADGE_LABEL: Record<EnrollmentCycleStatus, string> = {
+  scheduled: "AGENDADO",
+  active: "ABERTO",
+  closed: "ENCERRADO",
+};
+
+const HISTORY_BADGE_CLASS: Record<EnrollmentCycleStatus, string> = {
+  scheduled: "bg-warning/15 text-on-warning",
+  active: "bg-success/15 text-success",
+  closed: "bg-surface-container-high text-on-surface-variant",
+};
+
+// Ciclos criados antes do campo `status` existir só têm `active` — o backfill
+// preenche o banco, mas a tela não deve quebrar num payload antigo em cache.
+function resolveHistoryStatus(period: EnrollmentPeriod): EnrollmentCycleStatus {
+  return period.status ?? (period.active ? "active" : "closed");
 }
 
 function buildFallbackStudent(studentId: string): StudentRecord {
@@ -202,6 +232,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
   const [periods, setPeriods] = useState<EnrollmentPeriod[]>([]);
   const [activePeriod, setActivePeriod] = useState<EnrollmentPeriod | null>(null);
+  const [scheduledPeriod, setScheduledPeriod] = useState<EnrollmentPeriod | null>(null);
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [waitlistRequests, setWaitlistRequests] = useState<LicenseRequestRecord[]>([]);
 
@@ -210,10 +241,13 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
   const [openPeriodError, setOpenPeriodError] = useState("");
 
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCycleEditModal, setShowCycleEditModal] = useState(false);
+  const [cycleModalError, setCycleModalError] = useState("");
+  const [cycleSaving, setCycleSaving] = useState(false);
   const [periodSaving, setPeriodSaving] = useState(false);
   const [periodModalError, setPeriodModalError] = useState("");
 
-  const [pendingPeriodPayload, setPendingPeriodPayload] = useState<EnrollmentPeriodPayload | null>(null);
+  const [pendingPeriodPayload, setPendingPeriodPayload] = useState<EnrollmentCyclePayload | null>(null);
   const [showValidityConfirm, setShowValidityConfirm] = useState(false);
   const [validityConfirmSaving, setValidityConfirmSaving] = useState(false);
   const [validityConfirmError, setValidityConfirmError] = useState("");
@@ -229,10 +263,17 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
   const [showWindowModal, setShowWindowModal] = useState(false);
   const [windowSaving, setWindowSaving] = useState(false);
+  // Janela pedida com reset fica retida aqui até o admin dar ciência do que os
+  // alunos vão perder — a chamada só sai depois da confirmação.
+  const [pendingWindowPayload, setPendingWindowPayload] =
+    useState<OpenEnrollmentWindowFormPayload | null>(null);
   const [windowError, setWindowError] = useState("");
 
   const [showCloseWindowConfirm, setShowCloseWindowConfirm] = useState(false);
   const [closingWindow, setClosingWindow] = useState(false);
+
+  const [showCancelScheduledConfirm, setShowCancelScheduledConfirm] = useState(false);
+  const [cancelingScheduled, setCancelingScheduled] = useState(false);
 
   const studentMap = useMemo(
     () => new Map(students.map((student) => [student._id, student])),
@@ -270,14 +311,24 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const resolvedActive: EnrollmentPeriod | null = await enrollmentPeriodService.getActive().then(
-        (res) => (res && typeof res === "object" && "_id" in res ? res : null),
-        (err: unknown) => {
-          const apiError = err as { status?: number };
-          if (apiError.status !== 404) throw err;
-          return null;
-        },
-      );
+      // 404 e corpo vazio significam a mesma coisa aqui: não existe ciclo
+      // nesse estado. Só erro de verdade deve estourar.
+      const resolveCycle = (
+        request: Promise<EnrollmentPeriod>,
+      ): Promise<EnrollmentPeriod | null> =>
+        request.then(
+          (res) => (res && typeof res === "object" && "_id" in res ? res : null),
+          (err: unknown) => {
+            const apiError = err as { status?: number };
+            if (apiError.status !== 404) throw err;
+            return null;
+          },
+        );
+
+      const [resolvedActive, resolvedScheduled] = await Promise.all([
+        resolveCycle(enrollmentPeriodService.getActive()),
+        resolveCycle(enrollmentPeriodService.getScheduled()),
+      ]);
 
       const [periodsResponse, studentsResponse] = await Promise.all([
         enrollmentPeriodService.list(),
@@ -291,6 +342,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
       setPeriods(sortedPeriods);
       setActivePeriod(resolvedActive);
+      setScheduledPeriod(resolvedScheduled);
       setStudents(normalizeStudents(studentsResponse));
 
       if (resolvedActive?._id) {
@@ -340,40 +392,63 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
     setShowEditModal(true);
   };
 
-  const handleSavePeriod = async (payload: EnrollmentPeriodPayload) => {
+  const handleOpenCycleEdit = () => {
+    if (!activePeriod) return;
+    setCycleModalError("");
+    setShowCycleEditModal(true);
+  };
+
+  const handleSaveWindow = async (payload: EnrollmentWindowPayload) => {
     if (!activePeriod) return;
     if (Object.keys(payload).length === 0) {
       setShowEditModal(false);
       return;
     }
 
+    setPeriodSaving(true);
+    setPeriodModalError("");
+    try {
+      await enrollmentPeriodService.updateWindow(activePeriod._id, payload);
+      toast.success("Janela de inscrição atualizada com sucesso.");
+      setShowEditModal(false);
+      await loadData();
+    } catch (err: unknown) {
+      const apiError = err as { message?: string };
+      setPeriodModalError(apiError.message ?? "Não foi possível salvar a janela.");
+    } finally {
+      setPeriodSaving(false);
+    }
+  };
+
+  const handleSaveCycle = async (payload: EnrollmentCyclePayload) => {
+    if (!activePeriod) return;
+
     // Mudar a validade da carteirinha desloca retroativamente a data de
     // expiração de todo aluno já alocado no ciclo — pede confirmação extra
-    // quando há alunos afetados. Mudar só as datas da janela não afeta
-    // carteirinha nenhuma e segue direto.
-    const changesValidity =
-      payload.licenseValidityMonths !== undefined &&
-      payload.licenseValidityMonths !== activePeriod.licenseValidityMonths;
-    if (changesValidity && activePeriod.filledSlots > 0) {
+    // quando há alunos afetados.
+    if (
+      payload.licenseValidityMonths !== activePeriod.licenseValidityMonths &&
+      activePeriod.filledSlots > 0
+    ) {
       setPendingPeriodPayload(payload);
-      setShowEditModal(false);
+      setShowCycleEditModal(false);
       setValidityConfirmError("");
       setShowValidityConfirm(true);
       return;
     }
 
-    setPeriodSaving(true);
-    setPeriodModalError("");
+    setCycleSaving(true);
+    setCycleModalError("");
     try {
       await enrollmentPeriodService.update(activePeriod._id, payload);
-      toast.success("Período atualizado com sucesso.");
-      setShowEditModal(false);
+      toast.success("Ciclo atualizado com sucesso.");
+      setShowCycleEditModal(false);
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      setPeriodModalError(apiError.message ?? "Não foi possível salvar o período.");
+      setCycleModalError(apiError.message ?? "Não foi possível salvar o ciclo.");
     } finally {
-      setPeriodSaving(false);
+      setCycleSaving(false);
     }
   };
 
@@ -383,13 +458,13 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
     setValidityConfirmError("");
     try {
       await enrollmentPeriodService.update(activePeriod._id, pendingPeriodPayload);
-      toast.success("Período atualizado com sucesso.");
+      toast.success("Ciclo atualizado com sucesso.");
       setShowValidityConfirm(false);
       setPendingPeriodPayload(null);
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      setValidityConfirmError(apiError.message ?? "Não foi possível salvar o período.");
+      setValidityConfirmError(apiError.message ?? "Não foi possível salvar o ciclo.");
     } finally {
       setValidityConfirmSaving(false);
     }
@@ -406,11 +481,11 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
     try {
       await enrollmentPeriodService.close(activePeriod._id);
       setShowCloseConfirm(false);
-      toast.success("Período encerrado com sucesso.");
+      toast.success("Ciclo encerrado com sucesso.");
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      toast.error(apiError.message ?? "Falha ao encerrar o período.");
+      toast.error(apiError.message ?? "Falha ao encerrar o ciclo.");
       setShowCloseConfirm(false);
     } finally {
       setClosingPeriod(false);
@@ -423,7 +498,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
   // Passo 1 (dias) só decide o prazo; a confirmação reforçada (passo 2) é
   // quem de fato dispara o agendamento, já que ao vencer o prazo a mesma
-  // cascata de "Encerrar período" roda sozinha (cron).
+  // cascata de "Encerrar ciclo" roda sozinha (cron).
   const handleScheduleResetSubmit = async (days: number) => {
     setPendingResetDays(days);
     setShowScheduleResetModal(false);
@@ -462,18 +537,60 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
   const handleWindowSubmit = async (payload: OpenEnrollmentWindowFormPayload) => {
     if (!activePeriod) return;
+
+    // Abrir janela é rotina; abrir janela encerrando carteirinha não é. O
+    // segundo caso passa por uma confirmação separada antes de qualquer
+    // chamada ao backend.
+    if (payload.resetEligibleStudentsOnOpen) {
+      setPendingWindowPayload(payload);
+      return;
+    }
+
+    await openWindowWithPayload(payload);
+  };
+
+  const openWindowWithPayload = async (
+    payload: OpenEnrollmentWindowFormPayload,
+  ) => {
+    if (!activePeriod) return;
     setWindowSaving(true);
     setWindowError("");
     try {
       await enrollmentPeriodService.openWindow(activePeriod._id, payload);
+      setPendingWindowPayload(null);
       setShowWindowModal(false);
-      toast.success("Janela de inscrição aberta com sucesso.");
+      toast.success(
+        payload.resetEligibleStudentsOnOpen
+          ? "Janela aberta. As carteirinhas dos alunos alcançados foram encerradas."
+          : "Janela de inscrição aberta com sucesso.",
+      );
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
       setWindowError(apiError.message ?? "Não foi possível abrir a janela de inscrição.");
+      // Volta ao formulário: o erro é exibido lá, junto dos campos.
+      setPendingWindowPayload(null);
     } finally {
       setWindowSaving(false);
+    }
+  };
+
+  // Cancelar o agendamento é o mesmo "encerrar" do ciclo — sem cascata
+  // relevante, já que um ciclo agendado nunca teve alunos alocados.
+  const handleCancelScheduledConfirmed = async () => {
+    if (!scheduledPeriod) return;
+    setCancelingScheduled(true);
+    try {
+      await enrollmentPeriodService.close(scheduledPeriod._id);
+      setShowCancelScheduledConfirm(false);
+      toast.success("Agendamento do ciclo cancelado.");
+      await loadData();
+    } catch (err: unknown) {
+      const apiError = err as { message?: string };
+      toast.error(apiError.message ?? "Falha ao cancelar o agendamento.");
+      setShowCancelScheduledConfirm(false);
+    } finally {
+      setCancelingScheduled(false);
     }
   };
 
@@ -514,21 +631,37 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
   const occupancyPct = activePeriod ? Math.round(toProgressValue(activePeriod)) : 0;
   const windowDaysLeft = daysUntil(activePeriod?.endDate);
 
-  const heroTone: "success" | "warning" | "neutral" = !activePeriod
-    ? "neutral"
-    : hasOpenWindow
+  // Sem ciclo vivo ainda pode haver um agendado — os dois casos são bem
+  // diferentes pro admin (um pede ação, o outro é só esperar a data).
+  const heroTone: "success" | "warning" | "neutral" = activePeriod
+    ? hasOpenWindow
       ? "success"
-      : "warning";
-  const HeroIcon = !activePeriod ? CircleDashed : hasOpenWindow ? CircleCheck : PauseCircle;
+      : "warning"
+    : scheduledPeriod
+      ? "warning"
+      : "neutral";
+  const HeroIcon = activePeriod
+    ? hasOpenWindow
+      ? CircleCheck
+      : PauseCircle
+    : scheduledPeriod
+      ? CalendarClock
+      : CircleDashed;
   const heroToneClasses = {
     success: { wrap: "bg-success/10", icon: "text-success", label: "text-success" },
     warning: { wrap: "bg-warning/10", icon: "text-warning", label: "text-warning" },
     neutral: { wrap: "bg-surface-container-high", icon: "text-on-surface-variant", label: "text-on-surface" },
   }[heroTone];
-  const heroLabel = activePeriod ? cycleStatus!.label : "NENHUM PERÍODO ABERTO";
+  const heroLabel = activePeriod
+    ? cycleStatus!.label
+    : scheduledPeriod
+      ? `CICLO AGENDADO PARA ${formatDate(scheduledPeriod.cycleStartDate)}`
+      : "NENHUM PERÍODO ABERTO";
   const heroSupport = activePeriod
     ? cycleStatus!.supportText ?? "Os alunos podem enviar solicitações de carteirinha agora."
-    : "Abra um novo período para começar a receber inscrições dos alunos.";
+    : scheduledPeriod
+      ? "O ciclo abre sozinho nessa data. Até lá, nada muda para os alunos."
+      : "Abra um novo período para começar a receber inscrições dos alunos.";
 
   return (
     <>
@@ -599,9 +732,18 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                         className="border-error text-error hover:bg-error/10"
                         onClick={handleClosePeriod}
                       >
-                        Encerrar período
+                        Encerrar ciclo
                       </Button>
                     </>
+                  ) : scheduledPeriod ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-error text-error hover:bg-error/10"
+                      onClick={() => setShowCancelScheduledConfirm(true)}
+                    >
+                      Cancelar agendamento
+                    </Button>
                   ) : (
                     <Button
                       variant="primary"
@@ -630,6 +772,11 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                     ATIVO
                   </span>
                 }
+                actions={
+                  <button type="button" onClick={handleOpenCycleEdit} className={CHIP_CLASS}>
+                    Editar ciclo
+                  </button>
+                }
               >
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -653,7 +800,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                     />
                     <Metric
                       icon={AlarmClock}
-                      label="Limpeza geral (reset)"
+                      label="Encerramento de ciclo"
                       value={
                         activePeriod.resetScheduledFor
                           ? formatDateTime(activePeriod.resetScheduledFor)
@@ -661,7 +808,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                       }
                       hint={
                         activePeriod.resetScheduledFor
-                          ? "cascata automática nesta data"
+                          ? undefined
                           : `≈ ${activePeriod.licenseValidityMonths} meses após a abertura`
                       }
                     />
@@ -739,6 +886,19 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                         value={formatDate(activePeriod.endDate)}
                       />
                     </div>
+                    {activePeriod.windowResetEligibleStudentsOnOpen && (
+                      <div
+                        className="flex items-center gap-2 rounded-xl border border-error/30 bg-error/5 px-3 py-2.5 text-sm text-on-surface"
+                        data-testid="window-reset-badge"
+                      >
+                        <AlertTriangle className="size-4 shrink-0 text-error" />
+                        <span>
+                          {activePeriod.windowResetAppliedAt
+                            ? "Esta janela encerrou as carteirinhas dos alunos que alcança."
+                            : "Esta janela encerrará as carteirinhas dos alunos que alcança quando começar."}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 rounded-xl border border-secondary/20 bg-secondary/5 px-3 py-2.5 text-sm text-on-surface">
                       <Timer className="size-4 shrink-0 text-secondary" />
                       <span>
@@ -746,7 +906,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                           ? `Encerra em ${windowDaysLeft} dia${windowDaysLeft > 1 ? "s" : ""}.`
                           : windowDaysLeft === 0
                             ? "Encerra hoje."
-                            : "Prazo da janela expirado — será fechada na próxima verificação."}
+                            : "Prazo da janela expirado. Será fechada na próxima verificação."}
                       </span>
                     </div>
                   </div>
@@ -871,13 +1031,9 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                         </td>
                         <td className="px-3 py-2">
                           <span
-                            className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                              period.active
-                                ? "bg-success/15 text-success"
-                                : "bg-surface-container-high text-on-surface-variant"
-                            }`}
+                            className={`rounded-full px-2 py-1 text-xs font-semibold ${HISTORY_BADGE_CLASS[resolveHistoryStatus(period)]}`}
                           >
-                            {period.active ? "ABERTO" : "ENCERRADO"}
+                            {HISTORY_BADGE_LABEL[resolveHistoryStatus(period)]}
                           </span>
                         </td>
                       </tr>
@@ -898,7 +1054,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
         }}
         onConfirm={handleCloseConfirmed}
         loading={closingPeriod}
-        title="Encerrar período"
+        title="Encerrar ciclo"
         description={cascadeImpactDescription}
         confirmWord="ENCERRAR"
         confirmLabel="Encerrar"
@@ -926,11 +1082,25 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
             if (periodSaving) return;
             setShowEditModal(false);
           }}
-          onSubmit={handleSavePeriod}
+          onSubmit={handleSaveWindow}
         />
       )}
 
-      {activePeriod && pendingPeriodPayload?.licenseValidityMonths !== undefined && (
+      {activePeriod && (
+        <EnrollmentCycleEditModal
+          open={showCycleEditModal}
+          period={activePeriod}
+          loading={cycleSaving}
+          serverError={cycleModalError}
+          onClose={() => {
+            if (cycleSaving) return;
+            setShowCycleEditModal(false);
+          }}
+          onSubmit={handleSaveCycle}
+        />
+      )}
+
+      {activePeriod && pendingPeriodPayload && (
         <ConfirmModal
           open={showValidityConfirm}
           onClose={() => {
@@ -990,11 +1160,59 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
         open={showWindowModal}
         loading={windowSaving}
         serverError={windowError}
+        cycleStartDate={activePeriod?.cycleStartDate ?? ""}
+        cycleEndDate={activePeriod?.resetScheduledFor ?? ""}
         onClose={() => {
           if (windowSaving) return;
           setShowWindowModal(false);
         }}
         onSubmit={handleWindowSubmit}
+      />
+
+      <AcknowledgeConfirmModal
+        open={pendingWindowPayload !== null}
+        loading={windowSaving}
+        onClose={() => {
+          if (windowSaving) return;
+          setPendingWindowPayload(null);
+        }}
+        onConfirm={() => {
+          if (pendingWindowPayload) void openWindowWithPayload(pendingWindowPayload);
+        }}
+        title="Confirmar encerramento das carteirinhas"
+        description={
+          <span>
+            Ao abrir esta janela, os alunos que ela alcança perderão a
+            carteirinha, a vaga no ônibus e os passes em aberto, e precisarão
+            refazer o pedido. As solicitações em análise deles serão canceladas.
+            <span className="mt-2 block">
+              O ciclo de inscrição continua aberto e os alunos fora do escopo
+              desta janela não são afetados.
+            </span>
+          </span>
+        }
+        acknowledgeLabel="Entendi que os alunos alcançados perderão carteirinha, vaga e passes, e precisarão refazer o pedido."
+        confirmLabel="Abrir janela e encerrar"
+      />
+
+      <ConfirmModal
+        open={showCancelScheduledConfirm}
+        onClose={() => {
+          if (cancelingScheduled) return;
+          setShowCancelScheduledConfirm(false);
+        }}
+        onConfirm={handleCancelScheduledConfirmed}
+        loading={cancelingScheduled}
+        title="Cancelar agendamento do ciclo"
+        description={
+          scheduledPeriod
+            ? `O ciclo agendado para ${formatDate(scheduledPeriod.cycleStartDate)} será descartado. Nenhum aluno é afetado, porque ele ainda não começou. Depois disso você poderá agendar um novo ciclo.`
+            : ""
+        }
+        icon={AlertTriangle}
+        variant="warning"
+        confirmLabel="Cancelar agendamento"
+        cancelLabel="Voltar"
       />
 
       <ConfirmModal

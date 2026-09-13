@@ -205,3 +205,88 @@ describe('StudentListPanel — prioridade dinâmica', () => {
     expect(screen.queryByText('Update Aprovado')).toBeNull();
   });
 });
+
+describe('StudentListPanel — ordem FIFO da fila', () => {
+  // O backend devolve os pedidos por createdAt DESC e `GET /student` não tem
+  // ordenação garantida: sem ordenação no cliente a fila aparecia invertida
+  // (criava-se A e depois B, e a lista mostrava B | A).
+  const alunoA = makeStudent('s-a', 'Aluno A');
+  const alunoB = makeStudent('s-b', 'Aluno B');
+  const pedidoA = makeRequest('r-a', 's-a', 'uni-1', 'pending', '2026-08-21T10:00:00Z');
+  const pedidoB = makeRequest('r-b', 's-b', 'uni-1', 'pending', '2026-08-21T10:05:00Z');
+
+  const nomesNaTela = () =>
+    screen
+      .getAllByText(/^Aluno [AB]$/)
+      .map((el) => el.textContent);
+
+  it('mostra o primeiro a entrar no topo (A criado antes de B)', () => {
+    renderPanel({
+      // ordem "ruim" vinda de GET /student e pedidos em createdAt DESC
+      students: [alunoB, alunoA],
+      licenseRequests: [pedidoB, pedidoA],
+      pendingStudentIds: new Set(['s-a', 's-b']),
+      filter: 'pending',
+    });
+
+    expect(nomesNaTela()).toEqual(['Aluno A', 'Aluno B']);
+  });
+
+  it('mantém a ordem FIFO independentemente da ordem de entrada', () => {
+    renderPanel({
+      students: [alunoA, alunoB],
+      licenseRequests: [pedidoA, pedidoB],
+      pendingStudentIds: new Set(['s-a', 's-b']),
+      filter: 'pending',
+    });
+
+    expect(nomesNaTela()).toEqual(['Aluno A', 'Aluno B']);
+  });
+
+  it('prioridade vence o FIFO: pedido mais novo com prioridade maior sobe', () => {
+    const pedidoBPrioritario = {
+      ...pedidoB,
+      priorityLevel: 1,
+    } as LicenseRequestRecord;
+
+    renderPanel({
+      students: [alunoA, alunoB],
+      licenseRequests: [pedidoA, pedidoBPrioritario],
+      pendingStudentIds: new Set(['s-a', 's-b']),
+      filter: 'pending',
+    });
+
+    expect(nomesNaTela()).toEqual(['Aluno B', 'Aluno A']);
+  });
+
+  it('aba de aprovados também respeita a ordem da fila', () => {
+    renderPanel({
+      students: [alunoB, alunoA],
+      licenseRequests: [pedidoB, pedidoA],
+      licensedStudentIds: new Set(['s-a', 's-b']),
+      filter: 'with-card',
+    });
+
+    expect(nomesNaTela()).toEqual(['Aluno A', 'Aluno B']);
+  });
+
+  it('lista de espera respeita filaPosition antes do FIFO', () => {
+    const esperaA = {
+      ...makeRequest('w-a', 's-a', 'uni-1', 'waitlisted', '2026-08-21T10:00:00Z'),
+      filaPosition: 2,
+    } as LicenseRequestRecord;
+    const esperaB = {
+      ...makeRequest('w-b', 's-b', 'uni-1', 'waitlisted', '2026-08-21T10:05:00Z'),
+      filaPosition: 1,
+    } as LicenseRequestRecord;
+
+    renderPanel({
+      students: [alunoA, alunoB],
+      licenseRequests: [esperaA, esperaB],
+      waitlistedStudentIds: new Set(['s-a', 's-b']),
+      filter: 'waitlisted',
+    });
+
+    expect(nomesNaTela()).toEqual(['Aluno B', 'Aluno A']);
+  });
+});

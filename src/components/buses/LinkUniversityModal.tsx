@@ -86,7 +86,7 @@ export default function LinkUniversityModal({ open, currentSlots = [], onClose, 
           >
             {universities.map((u) => (
               <option key={u._id} value={u._id}>
-                {u.acronym} — {u.name}
+                {u.acronym}: {u.name}
               </option>
             ))}
           </select>

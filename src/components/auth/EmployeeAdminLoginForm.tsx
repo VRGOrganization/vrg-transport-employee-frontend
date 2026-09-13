@@ -97,23 +97,12 @@ export function EmployeeAdminLoginForm() {
 
         {/* Senha */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label
-              htmlFor="password-field"
-              className="text-xs font-bold uppercase tracking-wider text-on-surface-variant"
-            >
-              Senha
-            </label>
-            {values.role === "employee" && (
-              <button
-                type="button"
-                onClick={() => setShowForgotPassword(true)}
-                className="text-xs text-primary hover:underline font-medium"
-              >
-                Esqueci minha senha
-              </button>
-            )}
-          </div>
+          <label
+            htmlFor="password-field"
+            className="text-xs font-bold uppercase tracking-wider text-on-surface-variant"
+          >
+            Senha
+          </label>
           <Input
             id="password-field"
             type="password"
@@ -124,6 +113,17 @@ export function EmployeeAdminLoginForm() {
             onChange={(e) => setValue("password", e.target.value)}
             error={errors.password}
           />
+          {values.role === "employee" && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-xs text-primary hover:underline font-medium"
+              >
+                Esqueci minha senha
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Submit */}

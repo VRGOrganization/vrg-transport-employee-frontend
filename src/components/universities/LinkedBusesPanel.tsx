@@ -66,8 +66,9 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
       await busApi.unlinkUniversity(pendingUnlink._id, university._id);
       onBusesChanged();
       setPendingUnlink(null);
-    } catch {
-      setUnlinkError("Não foi possível desvincular o ônibus. Tente novamente.");
+    } catch (err) {
+      const message = (err as { message?: string })?.message;
+      setUnlinkError(message ?? "Não foi possível desvincular o ônibus. Tente novamente.");
     } finally {
       setLoadingId(null);
     }

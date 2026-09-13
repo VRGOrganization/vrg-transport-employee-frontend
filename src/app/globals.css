@@ -392,3 +392,71 @@ input:-webkit-autofill:focus {
 
 .animate-toast-in  { animation: toast-in  0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .animate-toast-out { animation: toast-out 0.28s cubic-bezier(0.7, 0, 0.84, 0) both; }
+
+/* ════════════════════════════════════════
+   SALA DE CONTROLE (/admin/info)
+   ════════════════════════════════════════ */
+
+/* Curva de saída forte: movimento começa rápido e desacelera — dá a sensação
+   de resposta imediata que uma ease-out nativa não entrega. */
+:root {
+  --info-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Revelação escalonada dos painéis — só na primeira montagem. O atraso é
+   aplicado inline (--info-delay) na ordem de leitura. */
+@keyframes info-panel-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.info-panel-enter {
+  animation: info-panel-in 240ms var(--info-ease-out) both;
+  animation-delay: var(--info-delay, 0ms);
+}
+
+/* Células e barras TRANSICIONAM de tamanho em vez de remontar: é isso que faz
+   a troca de lente parecer viva em vez de piscar. */
+.info-fill {
+  transition: height 260ms var(--info-ease-out);
+}
+
+.info-bar {
+  transition: width 260ms var(--info-ease-out);
+}
+
+/* "Zero real" ≠ "sem dado": a hachura diagonal marca a célula vazia. */
+.info-hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 3px,
+    var(--color-outline-variant) 3px,
+    var(--color-outline-variant) 4px
+  );
+  opacity: 0.5;
+}
+
+/* Esqueleto estrutural: respira de leve, sem pulsar como enfeite. */
+@keyframes info-skeleton {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 0.8; }
+}
+
+.info-skeleton {
+  animation: info-skeleton 1.4s ease-in-out infinite;
+}
+
+/* Movimento reduzido desliga tudo — sem versão "suave" de meio-termo.
+   Transições de cor e opacidade ficam, porque ajudam a compreensão. */
+@media (prefers-reduced-motion: reduce) {
+  .info-panel-enter,
+  .info-skeleton {
+    animation: none;
+  }
+
+  .info-fill,
+  .info-bar {
+    transition: none;
+  }
+}

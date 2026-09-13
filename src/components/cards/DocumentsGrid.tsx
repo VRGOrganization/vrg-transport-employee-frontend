@@ -4,6 +4,9 @@ import { DocumentPreview } from "@/components/cards/CardPageComponents";
 import type { PreviewItem } from "@/types/cards.types";
 
 interface DocumentsGridProps {
+  /** Lista completa e ordenada usada pelo lightbox (StudentDetailPanel.previewItems) —
+   *  os índices abertos precisam bater com essa ordem, não com a montada localmente aqui. */
+  previewItems: PreviewItem[];
   licenseItems: PreviewItem[];
   personalItems: PreviewItem[];
   loadingImages: boolean;
@@ -41,14 +44,13 @@ function CollapsibleSection({
 }
 
 export function DocumentsGrid({
+  previewItems,
   licenseItems,
   personalItems,
   loadingImages,
   onOpenLightbox,
   civilName,
 }: DocumentsGridProps) {
-  const allItems = [...personalItems, ...licenseItems];
-
   return (
     <div className="rounded-xl border border-outline-variant/40 divide-y divide-outline-variant/40 overflow-hidden">
       {personalItems.length > 0 && (
@@ -60,7 +62,7 @@ export function DocumentsGrid({
           )}
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {personalItems.map((item) => {
-              const index = allItems.indexOf(item);
+              const index = previewItems.indexOf(item);
               return (
                 <DocumentPreview
                   key={item.title}
@@ -79,7 +81,7 @@ export function DocumentsGrid({
         <CollapsibleSection title="Documentos da Solicitação">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {licenseItems.map((item) => {
-              const index = allItems.indexOf(item);
+              const index = previewItems.indexOf(item);
               return (
                 <DocumentPreview
                   key={item.title}

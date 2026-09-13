@@ -110,7 +110,7 @@ export function PollResultsPanel({ noticeId, status }: Props) {
                   {entry.optionIds
                     .map((id) => results.aggregate.find((o) => o.optionId === id)?.label ?? id)
                     .join(", ")}{" "}
-                  — {formatDateTime(entry.votedAt)}
+                  em {formatDateTime(entry.votedAt)}
                 </p>
               </div>
             ))}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { UserX, CheckCircle2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
+import { InfoModalShell } from "@/components/ui/InfoModalShell";
 import { toast } from "@/lib/toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { employeeService } from "@/services/employeeService";
@@ -10,18 +11,27 @@ import type { Employee } from "@/types/employee";
 import { EmployeeInfoView } from "./EmployeeInfoView";
 import { EmployeeEditForm } from "./EmployeeEditForm";
 import { EmployeeEditConfirmView } from "./EmployeeEditConfirmView";
+import { EmployeeDeleteForm } from "./EmployeeDeleteForm";
 import type { ChangeEntry } from "./EmployeeEditForm";
 
-type View = "info" | "edit" | "edit-confirm" | "delete-confirm" | "activate-confirm";
+type View =
+  | "info"
+  | "edit"
+  | "edit-confirm"
+  | "delete-confirm"
+  | "activate-confirm"
+  | "permanent-delete";
 
 interface Props {
   employee: Employee;
   onClose: () => void;
   onUpdated: (updated: Employee) => void;
   onDeleted: (id: string) => void;
+  /** Permite excluir permanentemente (somente admin). Default: true. */
+  canDelete?: boolean;
 }
 
-export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props) {
+export function EmployeeModal({ employee, onClose, onUpdated, onDeleted, canDelete = true }: Props) {
   const [view, setView] = useState<View>("edit");
   const [pendingPayload, setPendingPayload] = useState<Record<string, string>>({});
   const [pendingChanges, setPendingChanges] = useState<ChangeEntry[]>([]);
@@ -80,6 +90,23 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
     }
   };
 
+  if (view === "permanent-delete") {
+    return (
+      <InfoModalShell
+        name={employee.name}
+        subtitle="Exclusão permanente do cadastro"
+        open
+        onClose={() => setView("info")}
+      >
+        <EmployeeDeleteForm
+          employee={employee}
+          onCancel={() => setView("info")}
+          onDeleted={() => onDeleted(employee._id)}
+        />
+      </InfoModalShell>
+    );
+  }
+
   if (view === "delete-confirm") {
     return (
       <ConfirmModal
@@ -136,6 +163,9 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted }: Props
           onEdit={() => setView("edit")}
           onRequestDelete={() => setView("delete-confirm")}
           onRequestActivate={() => setView("activate-confirm")}
+          onRequestPermanentDelete={
+            canDelete && !employee.active ? () => setView("permanent-delete") : undefined
+          }
         />
       )}
       {view === "edit" && (

@@ -76,7 +76,7 @@ export default function BusReleaseModal({ open, bus, onClose, onSuccess }: BusRe
     <BottomSheet
       open={open}
       onClose={onClose}
-      title={`Liberar vagas — ${bus.identifier}`}
+      title={`Liberar vagas: ${bus.identifier}`}
       actions={
         <div className="flex gap-3">
           <Button variant="outline" fullWidth onClick={onClose} disabled={loading}>

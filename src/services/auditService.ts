@@ -20,7 +20,6 @@ function buildQuery(filters: AuditFilters): string {
     ["action", filters.action],
     ["actionPrefix", filters.actionPrefix],
     ["actorId", filters.actorId],
-    ["targetId", filters.targetId],
     ["actorRoles", filters.actorRoles],
     ["outcome", filters.outcome],
     ["from", filters.from],
@@ -39,8 +38,5 @@ export const auditService = {
   list: (filters: AuditFilters = {}) =>
     http.get<AuditListResult>(`/audit${buildQuery(filters)}`),
 
-  participants: (onlyStudents = false) =>
-    http.get<AuditParticipant[]>(
-      `/audit/participants${onlyStudents ? "?onlyStudents=true" : ""}`,
-    ),
+  participants: () => http.get<AuditParticipant[]>("/audit/participants"),
 };

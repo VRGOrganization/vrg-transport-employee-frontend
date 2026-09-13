@@ -13,7 +13,6 @@ export interface AuditEvent {
   metadata: Record<string, unknown> | null;
   createdAt: string;
   actorName: string | null;
-  targetName: string | null;
 }
 
 export interface AuditFilters {
@@ -24,7 +23,6 @@ export interface AuditFilters {
   /** Match por categoria (prefixo, ex.: `student.`). */
   actionPrefix?: string;
   actorId?: string;
-  targetId?: string;
   /** CSV de papéis do ator (ex.: "admin,employee" para apenas funcionários). */
   actorRoles?: string;
   outcome?: "success" | "failure";

@@ -36,7 +36,7 @@ export function StatCard({ icon, label, value, accent = "primary" }: StatCardPro
       </div>
       <div className="min-w-0">
         <p className="text-2xl font-headline font-bold text-on-surface leading-none">
-          {value === null ? "—" : value.toLocaleString("pt-BR")}
+          {value === null ? "-" : value.toLocaleString("pt-BR")}
         </p>
         <p className="text-xs text-on-surface-variant mt-1 truncate">{label}</p>
       </div>

@@ -5,11 +5,14 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 const { activePeriodStub } = vi.hoisted(() => ({
   activePeriodStub: {
     _id: "p1",
-    startDate: "2030-06-01T00:00:00.000Z",
-    endDate: "2030-06-15T23:59:59.999Z",
+    // Instantes na convenção do app: meia-noite e fim de dia de Brasília.
+    startDate: "2030-06-01T03:00:00.000Z",
+    endDate: "2030-06-16T02:59:59.999Z",
     // Distinta de startDate/endDate de propósito — simula uma repescagem
     // aberta meses depois do início real do ciclo.
-    cycleStartDate: "2030-01-01T00:00:00.000Z",
+    cycleStartDate: "2030-01-01T03:00:00.000Z",
+    resetScheduledFor: "2030-07-01T03:00:00.000Z",
+    status: "active",
     totalSlots: 350,
     filledSlots: 70,
     licenseValidityMonths: 6,
@@ -17,6 +20,10 @@ const { activePeriodStub } = vi.hoisted(() => ({
     createdByAdminId: "a1",
     closedByAdminId: null,
     closedAt: null,
+    eligibilityScope: "specific_universities",
+    eligibleUniversities: [
+      { _id: "u1", name: "Universidade Federal Fluminense", acronym: "UFF" },
+    ],
     createdAt: "2030-01-01T00:00:00.000Z",
     updatedAt: "2030-01-01T00:00:00.000Z",
   },
@@ -38,12 +45,14 @@ vi.mock("@/lib/toast", () => ({
 vi.mock("@/services/enrollmentPeriodService", () => ({
   enrollmentPeriodService: {
     getActive: vi.fn().mockResolvedValue(activePeriodStub),
+    getScheduled: vi.fn().mockResolvedValue(null),
     list: vi.fn().mockResolvedValue([activePeriodStub]),
     create: vi.fn().mockResolvedValue(activePeriodStub),
     update: vi.fn().mockResolvedValue(activePeriodStub),
     close: vi.fn().mockResolvedValue({ ...activePeriodStub, active: false }),
     scheduleReset: vi.fn().mockResolvedValue(activePeriodStub),
     openWindow: vi.fn(),
+    updateWindow: vi.fn().mockResolvedValue(activePeriodStub),
     closeWindow: vi.fn().mockResolvedValue({}),
   },
 }));
@@ -129,10 +138,10 @@ describe("EnrollmentPeriodPage — ações condicionadas ao estado da janela (N�
     vi.mocked(enrollmentPeriodService.list).mockResolvedValue([activePeriodStub] as never);
   });
 
-  it("with an open window: shows 'Editar' and 'Fechar janela', hides 'Abrir janela de inscrição'", async () => {
+  it("with an open window: shows 'Editar janela' and 'Fechar janela', hides 'Abrir janela de inscrição'", async () => {
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /editar/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /editar janela/i })).toBeInTheDocument();
     });
     expect(screen.getByRole("button", { name: /fechar janela/i })).toBeInTheDocument();
     expect(
@@ -196,6 +205,88 @@ describe("EnrollmentPeriodPage — ações condicionadas ao estado da janela (N�
   });
 });
 
+describe("EnrollmentPeriodPage — edição separada de ciclo e janela", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(activePeriodStub as never);
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([activePeriodStub] as never);
+  });
+
+  it("'Editar janela' saves the dates through updateWindow, never through update", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /editar janela/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /editar janela/i }));
+    await waitFor(() => {
+      expect(screen.getByText("Editar janela de inscrição")).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText(/data de fim/i), {
+      target: { value: "2030-06-20" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /salvar alterações/i }));
+
+    await waitFor(() => {
+      expect(enrollmentPeriodService.updateWindow).toHaveBeenCalledWith(
+        activePeriodStub._id,
+        expect.objectContaining({ endDate: expect.any(String) }),
+      );
+    });
+    expect(enrollmentPeriodService.update).not.toHaveBeenCalled();
+  });
+
+  it("the window modal shows how the window was opened, read-only", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /editar janela/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /editar janela/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Aberta para")).toBeInTheDocument();
+    });
+    expect(screen.getByText(/faculdades específicas/i)).toBeInTheDocument();
+    expect(screen.getByText(/UFF/)).toBeInTheDocument();
+    // Validade e capacidade não pertencem à janela.
+    expect(screen.queryByLabelText(/validade da carteirinha/i)).not.toBeInTheDocument();
+  });
+
+  it("'Editar ciclo' asks for confirmation before changing the validity of an occupied cycle", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /editar ciclo/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /editar ciclo/i }));
+    await waitFor(() => {
+      expect(screen.getByLabelText(/validade da carteirinha/i)).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText(/validade da carteirinha/i), {
+      target: { value: "9" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /salvar alterações/i }));
+
+    // filledSlots = 70 > 0 → confirmação da cascata antes de salvar.
+    await waitFor(() => {
+      expect(screen.getByText("Alterar validade da carteirinha?")).toBeInTheDocument();
+    });
+    expect(enrollmentPeriodService.update).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: /confirmar alteração/i }));
+
+    await waitFor(() => {
+      expect(enrollmentPeriodService.update).toHaveBeenCalledWith(activePeriodStub._id, {
+        licenseValidityMonths: 9,
+      });
+    });
+    expect(enrollmentPeriodService.updateWindow).not.toHaveBeenCalled();
+  });
+});
+
 describe("EnrollmentPeriodPage — funcionalidade de reabrir removida (Núcleo 10)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -207,7 +298,7 @@ describe("EnrollmentPeriodPage — funcionalidade de reabrir removida (Núcleo 1
 
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /editar/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /editar janela/i })).toBeInTheDocument();
     });
     expect(screen.queryByText(/reabrir/i)).not.toBeInTheDocument();
   });
@@ -282,7 +373,7 @@ describe("EnrollmentPeriodPage — selo de status com três estados (Núcleo 10)
     });
   });
 
-  it("mostra CICLO ATIVO — SEM INSCRIÇÃO ABERTA quando o ciclo está vivo sem janela aberta", async () => {
+  it("mostra CICLO ATIVO, SEM INSCRIÇÃO ABERTA quando o ciclo está vivo sem janela aberta", async () => {
     const noWindow = { ...activePeriodStub, startDate: null, endDate: null };
     vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(noWindow as never);
     vi.mocked(enrollmentPeriodService.list).mockResolvedValue([noWindow] as never);
@@ -290,7 +381,7 @@ describe("EnrollmentPeriodPage — selo de status com três estados (Núcleo 10)
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
       expect(
-        screen.getByText("CICLO ATIVO — SEM INSCRIÇÃO ABERTA"),
+        screen.getByText("CICLO ATIVO, SEM INSCRIÇÃO ABERTA"),
       ).toBeInTheDocument();
     });
     expect(screen.getByText(/equipe pode continuar/i)).toBeInTheDocument();
@@ -301,6 +392,7 @@ describe("EnrollmentPeriodPage — selo de status com três estados (Núcleo 10)
       ...activePeriodStub,
       _id: "p0",
       active: false,
+      status: "closed",
       startDate: null,
       endDate: null,
     };
@@ -314,7 +406,7 @@ describe("EnrollmentPeriodPage — selo de status com três estados (Núcleo 10)
   });
 });
 
-describe("EnrollmentPeriodPage — confirmação reforçada de 'Encerrar período' (Núcleo 11)", () => {
+describe("EnrollmentPeriodPage — confirmação reforçada de 'Encerrar ciclo' (Núcleo 11)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(activePeriodStub as never);
@@ -324,10 +416,10 @@ describe("EnrollmentPeriodPage — confirmação reforçada de 'Encerrar períod
   it("keeps the confirm button disabled until 'ENCERRAR' is typed, and only then calls close()", async () => {
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Encerrar período" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Encerrar ciclo" })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Encerrar período" }));
+    fireEvent.click(screen.getByRole("button", { name: "Encerrar ciclo" }));
 
     const confirmButton = await screen.findByRole("button", { name: "Encerrar" });
     expect(confirmButton).toBeDisabled();
@@ -348,10 +440,10 @@ describe("EnrollmentPeriodPage — confirmação reforçada de 'Encerrar períod
   it("shows the waitlist count and occupancy as part of the impact summary", async () => {
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Encerrar período" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Encerrar ciclo" })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Encerrar período" }));
+    fireEvent.click(screen.getByRole("button", { name: "Encerrar ciclo" }));
 
     await waitFor(() => {
       expect(
@@ -398,3 +490,182 @@ describe("EnrollmentPeriodPage — confirmação reforçada em duas etapas de 'A
     });
   });
 });
+
+describe("EnrollmentPeriodPage — ciclo agendado", () => {
+  const scheduledStub = {
+    ...activePeriodStub,
+    _id: "p-sched",
+    active: false,
+    status: "scheduled",
+    startDate: null,
+    endDate: null,
+    cycleStartDate: "2030-09-10T03:00:00.000Z",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(enrollmentPeriodService.getActive).mockRejectedValue({ status: 404 });
+    vi.mocked(enrollmentPeriodService.getScheduled).mockResolvedValue(
+      scheduledStub as never,
+    );
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([
+      scheduledStub,
+    ] as never);
+  });
+
+  it("anuncia a data do agendamento no lugar de 'nenhum período aberto'", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+
+    expect(
+      await screen.findByText("CICLO AGENDADO PARA 10/09/2030"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("NENHUM PERÍODO ABERTO")).not.toBeInTheDocument();
+  });
+
+  it("troca 'Abrir novo período' por 'Cancelar agendamento' — só um ciclo por vez", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /cancelar agendamento/i }),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByRole("button", { name: /abrir novo período/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("mostra AGENDADO no histórico", async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+
+    expect(await screen.findByText("AGENDADO")).toBeInTheDocument();
+  });
+});
+
+// Reset de carteirinhas ao abrir a janela: destrutivo e opt-in, então a página
+// nunca pode mandar direto — tem que passar pelo modal de ciência.
+describe("EnrollmentPeriodPage — encerrar carteirinhas ao abrir janela", () => {
+  const noWindowPeriod = {
+    ...activePeriodStub,
+    startDate: null,
+    endDate: null,
+  };
+
+  const openWindowModal = async () => {
+    render(<EnrollmentPeriodPage role="admin" />);
+    const trigger = await screen.findByRole("button", {
+      name: /abrir janela de inscrição/i,
+    });
+    fireEvent.click(trigger);
+    await screen.findByLabelText("Data de início");
+  };
+
+  const fillDates = () => {
+    fireEvent.change(screen.getByLabelText("Data de início"), {
+      target: { value: "2030-04-01" },
+    });
+    fireEvent.change(screen.getByLabelText("Data de fim"), {
+      target: { value: "2030-04-03" },
+    });
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(
+      noWindowPeriod as never,
+    );
+    vi.mocked(enrollmentPeriodService.getScheduled).mockResolvedValue(
+      null as never,
+    );
+    vi.mocked(enrollmentPeriodService.list).mockResolvedValue([
+      activePeriodStub,
+    ] as never);
+    vi.mocked(enrollmentPeriodService.openWindow).mockResolvedValue({} as never);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("sem a flag, abre a janela direto", async () => {
+    await openWindowModal();
+    fillDates();
+    fireEvent.click(screen.getByRole("button", { name: /^abrir janela$/i }));
+
+    await waitFor(() =>
+      expect(enrollmentPeriodService.openWindow).toHaveBeenCalledOnce(),
+    );
+    expect(
+      vi.mocked(enrollmentPeriodService.openWindow).mock.calls[0][1]
+        .resetEligibleStudentsOnOpen,
+    ).toBe(false);
+  });
+
+  it("com a flag, pede ciência antes de mandar qualquer coisa", async () => {
+    await openWindowModal();
+    fillDates();
+    fireEvent.click(screen.getByLabelText(/encerrar as carteirinhas/i));
+    fireEvent.click(screen.getByRole("button", { name: /^abrir janela$/i }));
+
+    await screen.findByText(/confirmar encerramento das carteirinhas/i);
+    expect(enrollmentPeriodService.openWindow).not.toHaveBeenCalled();
+  });
+
+  it("o botão de confirmar fica travado até marcar a ciência", async () => {
+    await openWindowModal();
+    fillDates();
+    fireEvent.click(screen.getByLabelText(/encerrar as carteirinhas/i));
+    fireEvent.click(screen.getByRole("button", { name: /^abrir janela$/i }));
+
+    await screen.findByText(/confirmar encerramento das carteirinhas/i);
+    const confirm = screen.getByRole("button", {
+      name: /abrir janela e encerrar/i,
+    });
+    expect(confirm).toBeDisabled();
+
+    fireEvent.click(screen.getByLabelText(/entendi que/i));
+    expect(confirm).toBeEnabled();
+  });
+
+  it("confirmada a ciência, envia a flag ligada", async () => {
+    await openWindowModal();
+    fillDates();
+    fireEvent.click(screen.getByLabelText(/encerrar as carteirinhas/i));
+    fireEvent.click(screen.getByRole("button", { name: /^abrir janela$/i }));
+
+    await screen.findByText(/confirmar encerramento das carteirinhas/i);
+    fireEvent.click(screen.getByLabelText(/entendi que/i));
+    fireEvent.click(
+      screen.getByRole("button", { name: /abrir janela e encerrar/i }),
+    );
+
+    await waitFor(() =>
+      expect(enrollmentPeriodService.openWindow).toHaveBeenCalledOnce(),
+    );
+    expect(
+      vi.mocked(enrollmentPeriodService.openWindow).mock.calls[0][1]
+        .resetEligibleStudentsOnOpen,
+    ).toBe(true);
+  });
+
+  it("cancelar a ciência não abre a janela", async () => {
+    await openWindowModal();
+    fillDates();
+    fireEvent.click(screen.getByLabelText(/encerrar as carteirinhas/i));
+    fireEvent.click(screen.getByRole("button", { name: /^abrir janela$/i }));
+
+    await screen.findByText(/confirmar encerramento das carteirinhas/i);
+    // O formulário da janela continua montado atrás, então há dois "Cancelar":
+    // o do modal de ciência é o último a entrar no DOM.
+    const cancelButtons = screen.getAllByRole("button", { name: /^cancelar$/i });
+    fireEvent.click(cancelButtons[cancelButtons.length - 1]);
+
+    await waitFor(() =>
+      expect(
+        screen.queryByText(/confirmar encerramento das carteirinhas/i),
+      ).not.toBeInTheDocument(),
+    );
+    expect(enrollmentPeriodService.openWindow).not.toHaveBeenCalled();
+  });
+});
+

@@ -28,7 +28,6 @@ describe("auditService.list", () => {
       limit: 30,
       actionPrefix: "student.",
       actorId: "admin-1",
-      targetId: "stu-1",
       outcome: "failure",
     });
     const url = getMock.mock.calls[0][0];
@@ -37,7 +36,6 @@ describe("auditService.list", () => {
     expect(url).toContain("limit=30");
     expect(url).toContain("actionPrefix=student.");
     expect(url).toContain("actorId=admin-1");
-    expect(url).toContain("targetId=stu-1");
     expect(url).toContain("outcome=failure");
   });
 
@@ -62,15 +60,8 @@ describe("auditService.participants", () => {
     getMock.mockResolvedValue([]);
   });
 
-  it("calls /audit/participants without query by default", async () => {
+  it("calls /audit/participants without query", async () => {
     await auditService.participants();
     expect(getMock).toHaveBeenCalledWith("/audit/participants");
-  });
-
-  it("adds onlyStudents=true when requested", async () => {
-    await auditService.participants(true);
-    expect(getMock).toHaveBeenCalledWith(
-      "/audit/participants?onlyStudents=true",
-    );
   });
 });

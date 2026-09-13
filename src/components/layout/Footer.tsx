@@ -14,9 +14,6 @@ export function Footer() {
             </p>
           </div>
         </div>
-        <p className="font-label text-[10px] text-outline">
-          © 2026 Prefeitura de São Fidélis. Todos os direitos reservados.
-        </p>
       </div>
     </footer>
   );

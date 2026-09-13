@@ -7,9 +7,9 @@ import {
 } from "./audit";
 
 describe("categorizeAction", () => {
-  it("maps student.* to Estudante", () => {
-    expect(categorizeAction("student.ban").key).toBe("student");
-    expect(categorizeAction("student.verify").label).toBe("Estudante");
+  it("falls back to Outro for student.* (category removed, no dedicated filter)", () => {
+    expect(categorizeAction("student.ban").key).toBe("other");
+    expect(categorizeAction("student.verify").key).toBe("other");
   });
 
   it("maps license.* and license_request.* to Carteirinha", () => {
@@ -39,29 +39,32 @@ describe("categorizeAction", () => {
 
   it("gives every category a distinct color dot class", () => {
     const dots = new Set<string>();
-    ["student.x", "license.x", "admin.login", "employee.x", "university.x", "bus.x", "enrollment_period.x", "priority_rule.x"].forEach(
+    ["license.x", "admin.login", "employee.x", "university.x", "bus.x", "enrollment_period.x", "priority_rule.x"].forEach(
       (a) => dots.add(categorizeAction(a).dot),
     );
-    expect(dots.size).toBeGreaterThanOrEqual(7);
+    expect(dots.size).toBeGreaterThanOrEqual(6);
   });
 });
 
 describe("roleLabel", () => {
-  it("translates roles to PT-BR", () => {
+  it("translates staff roles to PT-BR", () => {
     expect(roleLabel("admin")).toBe("Administrador");
     expect(roleLabel("employee")).toBe("Funcionário");
-    expect(roleLabel("student")).toBe("Estudante");
   });
-  it("handles null/unknown gracefully", () => {
-    expect(roleLabel(null)).toBe("—");
+  it("handles null/unknown gracefully, including 'student' (no dedicated label)", () => {
+    expect(roleLabel(null)).toBe("-");
     expect(roleLabel("weird")).toBe("weird");
+    expect(roleLabel("student")).toBe("student");
   });
 });
 
 describe("actionLabel", () => {
   it("returns a PT-BR label for known actions", () => {
-    expect(actionLabel("student.ban")).toBe("Banimento de estudante");
     expect(actionLabel("university.create")).toBe("Criação de instituição");
+  });
+
+  it("humanizes student.* actions instead of showing a dedicated label (no more student.* labels)", () => {
+    expect(actionLabel("student.ban")).toBe("Student ban");
   });
 
   it("maps the previously-raw actions flagged by the user", () => {

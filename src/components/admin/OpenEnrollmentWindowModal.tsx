@@ -6,18 +6,26 @@ import { Modal } from "@/components/ui/Modal";
 import { universityService } from "@/services/universityService";
 import type { University } from "@/types/university.types";
 import type { EnrollmentWindowEligibilityScope } from "@/types/enrollmentPeriod";
+import { brDayEndISO, brDayStartISO, formatDateBR, toCivilBR } from "@/lib/utils/date";
+import { ENROLLMENT_WINDOW_SCOPE_OPTIONS } from "./enrollmentWindowScope";
 
 export interface OpenEnrollmentWindowFormPayload {
   startDate: string;
   endDate: string;
   eligibilityScope: EnrollmentWindowEligibilityScope;
   eligibleUniversityIds?: string[];
+  resetEligibleStudentsOnOpen: boolean;
 }
 
 interface OpenEnrollmentWindowModalProps {
   open: boolean;
   loading: boolean;
   serverError: string;
+  // Limites do ciclo dono da janela: início do ciclo e encerramento previsto
+  // (resetScheduledFor). A janela vive dentro desse intervalo — o backend
+  // recusa fora dele, aqui só evitamos a ida-e-volta.
+  cycleStartDate: string;
+  cycleEndDate: string;
   onClose: () => void;
   onSubmit: (payload: OpenEnrollmentWindowFormPayload) => Promise<void>;
 }
@@ -34,27 +42,28 @@ const EMPTY_ERRORS: FormErrors = {
   eligibleUniversityIds: "",
 };
 
-const SCOPE_OPTIONS: Array<{
-  value: EnrollmentWindowEligibilityScope;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: "all",
-    label: "Todos os alunos",
-    description: "Qualquer aluno pode enviar solicitação nessa janela.",
-  },
-  {
-    value: "has_university",
-    label: "Só alunos com faculdade cadastrada",
-    description: "Exclui alunos sem faculdade vinculada ao cadastro.",
-  },
-  {
-    value: "specific_universities",
-    label: "Faculdades específicas",
-    description: "Restringe a uma ou mais faculdades escolhidas abaixo.",
-  },
-];
+
+
+/**
+ * Diz, na linguagem do admin, quem exatamente perde a carteirinha — o texto
+ * muda com o escopo porque "todos os alunos" e "os alunos do IFF" são decisões
+ * muito diferentes para se lerem igual.
+ */
+function describeAffectedStudents(
+  scope: EnrollmentWindowEligibilityScope,
+  selectedUniversities: University[],
+): string {
+  if (scope === "specific_universities") {
+    const acronyms = selectedUniversities.map((u) => u.acronym).join(", ");
+    return acronyms
+      ? `Alunos de ${acronyms}`
+      : "Alunos das faculdades selecionadas";
+  }
+  if (scope === "has_university") {
+    return "Alunos com faculdade cadastrada";
+  }
+  return "Todos os alunos com carteirinha neste ciclo";
+}
 
 function optionItemClass(selected: boolean): string {
   const base =
@@ -70,9 +79,13 @@ export function OpenEnrollmentWindowModal({
   open,
   loading,
   serverError,
+  cycleStartDate,
+  cycleEndDate,
   onClose,
   onSubmit,
 }: OpenEnrollmentWindowModalProps) {
+  const minCivil = toCivilBR(cycleStartDate);
+  const maxCivil = toCivilBR(cycleEndDate);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [eligibilityScope, setEligibilityScope] =
@@ -81,6 +94,7 @@ export function OpenEnrollmentWindowModal({
   const [universities, setUniversities] = useState<University[]>([]);
   const [universitiesLoading, setUniversitiesLoading] = useState(false);
   const [universitiesError, setUniversitiesError] = useState("");
+  const [resetEligibleStudents, setResetEligibleStudents] = useState(false);
   const [errors, setErrors] = useState<FormErrors>(EMPTY_ERRORS);
 
   // Reseta o form a cada abertura sem efeito — ajuste de estado durante o
@@ -94,6 +108,7 @@ export function OpenEnrollmentWindowModal({
       setEndDate("");
       setEligibilityScope("all");
       setSelectedUniversityIds([]);
+      setResetEligibleStudents(false);
       setErrors(EMPTY_ERRORS);
     }
   }
@@ -141,11 +156,18 @@ export function OpenEnrollmentWindowModal({
     if (!endDate) nextErrors.endDate = "Data de fim é obrigatória.";
 
     if (startDate && endDate) {
-      const start = new Date(`${startDate}T00:00:00.000Z`);
-      const end = new Date(`${endDate}T23:59:59.999Z`);
+      const start = new Date(brDayStartISO(startDate));
+      const end = new Date(brDayEndISO(endDate));
       if (end <= start) {
         nextErrors.endDate = "Data de fim deve ser maior que a data de início.";
       }
+    }
+
+    if (startDate && minCivil && startDate < minCivil) {
+      nextErrors.startDate = `A janela não pode começar antes do início do ciclo (${formatDateBR(cycleStartDate)}).`;
+    }
+    if (endDate && maxCivil && endDate > maxCivil) {
+      nextErrors.endDate = `A janela não pode terminar depois do encerramento do ciclo (${formatDateBR(cycleEndDate)}).`;
     }
 
     if (
@@ -161,14 +183,20 @@ export function OpenEnrollmentWindowModal({
     if (hasErrors) return null;
 
     return {
-      startDate: `${startDate}T00:00:00.000Z`,
-      endDate: `${endDate}T23:59:59.999Z`,
+      startDate: brDayStartISO(startDate),
+      endDate: brDayEndISO(endDate),
       eligibilityScope,
       ...(eligibilityScope === "specific_universities"
         ? { eligibleUniversityIds: selectedUniversityIds }
         : {}),
+      resetEligibleStudentsOnOpen: resetEligibleStudents,
     };
   };
+
+  const affectedStudentsLabel = describeAffectedStudents(
+    eligibilityScope,
+    universities.filter((u) => selectedUniversityIds.includes(u._id)),
+  );
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -179,7 +207,7 @@ export function OpenEnrollmentWindowModal({
 
   return (
     <Modal open={open} onClose={loading ? () => {} : onClose} size="lg" title="Abrir janela de inscrição">
-      <form className="space-y-3" onSubmit={handleSubmit}>
+      <form className="space-y-3" onSubmit={handleSubmit} noValidate>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
             <label htmlFor="window-start-date" className="mb-0.5 block text-sm font-medium text-on-surface">
@@ -188,6 +216,8 @@ export function OpenEnrollmentWindowModal({
             <input
               id="window-start-date"
               type="date"
+              min={minCivil}
+              max={maxCivil}
               value={startDate}
               onChange={(event) => {
                 setStartDate(event.target.value);
@@ -204,6 +234,8 @@ export function OpenEnrollmentWindowModal({
             <input
               id="window-end-date"
               type="date"
+              min={startDate || minCivil}
+              max={maxCivil}
               value={endDate}
               onChange={(event) => {
                 setEndDate(event.target.value);
@@ -220,7 +252,7 @@ export function OpenEnrollmentWindowModal({
             Quem pode participar
           </label>
           <div className="space-y-2">
-            {SCOPE_OPTIONS.map((option) => {
+            {ENROLLMENT_WINDOW_SCOPE_OPTIONS.map((option) => {
               const selected = eligibilityScope === option.value;
               return (
                 <label key={option.value} className={optionItemClass(selected)}>
@@ -280,7 +312,7 @@ export function OpenEnrollmentWindowModal({
                         className="accent-primary"
                       />
                       <span>
-                        {university.acronym} — {university.name}
+                        {university.acronym}: {university.name}
                       </span>
                     </label>
                   );
@@ -292,6 +324,54 @@ export function OpenEnrollmentWindowModal({
             )}
           </div>
         )}
+
+        <div className="rounded-xl border border-outline-variant bg-surface-container-low p-3">
+          <label
+            htmlFor="window-reset-eligible"
+            className="flex cursor-pointer items-start gap-2.5"
+          >
+            <input
+              id="window-reset-eligible"
+              type="checkbox"
+              checked={resetEligibleStudents}
+              onChange={(event) => setResetEligibleStudents(event.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-error"
+            />
+            <span>
+              <span className="block text-sm font-medium text-on-surface">
+                Encerrar as carteirinhas ao abrir esta janela
+              </span>
+              <span className="block text-xs text-on-surface-variant">
+                Use quando os alunos alcançados precisarem refazer o pedido
+                nesta janela.
+              </span>
+            </span>
+          </label>
+
+          {resetEligibleStudents && (
+            <div
+              role="alert"
+              className="mt-3 space-y-1.5 rounded-lg border border-error/40 bg-error/5 p-3 text-xs text-on-surface"
+            >
+              <p className="text-sm font-semibold text-error">
+                Esta ação não pode ser desfeita.
+              </p>
+              <p>
+                {affectedStudentsLabel} perderão a carteirinha atual, a vaga no
+                ônibus e os passes em aberto, e precisarão refazer o pedido
+                dentro desta janela. Solicitações em análise serão canceladas.
+              </p>
+              <p className="text-on-surface-variant">
+                Alunos fora do escopo desta janela não são afetados, e o ciclo
+                de inscrição não é encerrado.
+              </p>
+              <p className="text-on-surface-variant">
+                Se a janela começar em uma data futura, o encerramento acontece
+                no dia de abertura, não agora.
+              </p>
+            </div>
+          )}
+        </div>
 
         {serverError && (
           <div className="rounded-xl border border-error/40 bg-error/10 px-3 py-2 text-sm text-error">

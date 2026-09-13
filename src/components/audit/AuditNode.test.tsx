@@ -7,14 +7,13 @@ import type { AuditEvent } from "@/types/audit";
 
 const event: AuditEvent = {
   id: "evt-1",
-  action: "student.ban",
+  action: "employee.deactivate",
   outcome: "success",
   actor: { id: "admin-1", role: "admin" },
-  target: { studentId: "stu-1" },
+  target: { employeeId: "emp-1" },
   metadata: null,
   createdAt: "2026-01-01T10:00:00Z",
   actorName: "Fulano Admin",
-  targetName: "Aluno Alvo",
 };
 
 function renderNode(props: Partial<React.ComponentProps<typeof AuditNode>> = {}) {
@@ -35,16 +34,15 @@ function renderNode(props: Partial<React.ComponentProps<typeof AuditNode>> = {})
 }
 
 describe("AuditNode", () => {
-  it("shows the PT-BR action label, actor and target", () => {
+  it("shows the PT-BR action label and actor", () => {
     renderNode();
-    expect(screen.getByText("Banimento de estudante")).toBeInTheDocument();
+    expect(screen.getByText("Desativação de funcionário")).toBeInTheDocument();
     expect(screen.getByText("Fulano Admin")).toBeInTheDocument();
-    expect(screen.getByText("Aluno Alvo")).toBeInTheDocument();
   });
 
   it("opens the detail when the card is clicked", () => {
     const { onOpen } = renderNode();
-    fireEvent.click(screen.getByText("Banimento de estudante"));
+    fireEvent.click(screen.getByText("Desativação de funcionário"));
     expect(onOpen).toHaveBeenCalledWith(event);
   });
 

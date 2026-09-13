@@ -9,12 +9,12 @@ export interface Criterion {
 export interface PriorityRule {
   _id: string;
   level: 1 | 2 | 3 | 4 | 5;
+  originalLevel: 1 | 2 | 3 | 4 | 5;
   name: string;
   description: string;
   criteria: Criterion[];
   criteriaLogic: CriteriaLogic;
   active: boolean;
-  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -26,10 +26,31 @@ export interface CreatePriorityRulePayload {
   criteria?: Criterion[];
   criteriaLogic?: CriteriaLogic;
   active?: boolean;
-  sortOrder?: number;
 }
 
-export type UpdatePriorityRulePayload = Partial<CreatePriorityRulePayload>;
+export type UpdatePriorityRulePayload = Partial<
+  Omit<CreatePriorityRulePayload, "level" | "active">
+>;
+
+export interface ReactivationPreviewRuleRef {
+  ruleId: string;
+  ruleName: string;
+  level: number;
+}
+
+export interface ReactivationPreview {
+  ruleId: string;
+  ruleName: string;
+  targetLevel: number;
+  cascadedRuleIds: string[];
+  willDeactivate: ReactivationPreviewRuleRef | null;
+}
+
+export interface ReactivationResult {
+  reactivated: PriorityRule;
+  cascaded: PriorityRule[];
+  deactivated: PriorityRule | null;
+}
 
 export const CRITERION_TYPE_LABELS: Record<CriterionType, string> = {
   already_uses_transport: "Já usa o sistema de transporte",

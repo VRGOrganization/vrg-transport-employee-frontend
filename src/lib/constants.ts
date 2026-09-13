@@ -15,7 +15,7 @@ export const SHIFT_LABEL: Record<string, string> = {
 } as const;
 
 export function getShiftLabel(shift: string | null | undefined): string {
-  if (!shift) return "—";
+  if (!shift) return "-";
   return SHIFT_LABEL[shift] ?? shift;
 }
 

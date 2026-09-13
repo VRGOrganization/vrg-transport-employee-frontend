@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bell, Plus, SearchX, ListFilter } from "lucide-react";
+import { Bell, SearchX, ListFilter } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { Tabs } from "@/components/ui/Tabs";
@@ -186,10 +186,11 @@ export function NoticesPage({ role }: NoticesPageProps) {
 
             <Button
               type="button"
-              icon={<Plus className="size-4" />}
+              variant="primary"
+              size="sm"
               onClick={() => setCreateOpen(true)}
             >
-              Criar aviso
+              Adicionar aviso
             </Button>
           </header>
 
@@ -319,7 +320,7 @@ export function NoticesPage({ role }: NoticesPageProps) {
                 pageSize={pageSize}
                 total={totalNotices}
                 onPageChange={setPage}
-                onPageSizeChange={setPageSize}
+                onPageSizeChange={(size) => setPageSize(size as PageSize)}
                 className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-4 py-3"
               />
             )}

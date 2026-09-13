@@ -43,7 +43,7 @@ describe("NoticesPage", () => {
   it("renderiza para admin com botão de criação e lista", async () => {
     render(<NoticesPage role="admin" />);
 
-    expect(screen.getByRole("button", { name: /criar aviso/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /adicionar aviso/i })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText("Aviso importante")).toBeInTheDocument());
     expect(listNoticesMock).toHaveBeenCalledWith();
   });
@@ -51,7 +51,7 @@ describe("NoticesPage", () => {
   it("renderiza para employee com o mesmo comportamento", async () => {
     render(<NoticesPage role="employee" />);
 
-    expect(screen.getByRole("button", { name: /criar aviso/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /adicionar aviso/i })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText("Aviso importante")).toBeInTheDocument());
     expect(listNoticesMock).toHaveBeenCalledWith();
   });

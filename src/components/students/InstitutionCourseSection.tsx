@@ -5,9 +5,14 @@ import { Input } from "@/components/ui/Input";
 import { SelectField, type SelectOption } from "@/components/ui/SelectField";
 import { SHIFTS } from "@/types/student";
 import type { University } from "@/types/university.types";
+import {
+  SCHEDULE_PERIODS,
+  isFullTimeShift,
+  isPeriodAllowedForShift,
+} from "@/lib/shiftRules";
 
 const DAYS = ["SEG", "TER", "QUA", "QUI", "SEX"] as const;
-const PERIODS = ["Manhã", "Tarde", "Noite"] as const;
+const PERIODS = SCHEDULE_PERIODS;
 
 export interface ScheduleSlot {
   day: string;
@@ -35,6 +40,8 @@ interface InstitutionCourseSectionProps {
 
   shift: string;
   onShiftChange: (value: string) => void;
+  /** aria-label do campo turno (para acessibilidade/testes). */
+  shiftAriaLabel?: string;
 
   schedule: ScheduleSlot[];
   onToggleSlot: (day: string, period: string) => void;
@@ -82,6 +89,7 @@ export function InstitutionCourseSection({
   degreeAriaLabel,
   shift,
   onShiftChange,
+  shiftAriaLabel,
   schedule,
   onToggleSlot,
   scheduleAriaSuffix = "",
@@ -100,6 +108,11 @@ export function InstitutionCourseSection({
   const datalistId = `${idPrefix}-universities-datalist`;
   const isSelected = (day: string, period: string) =>
     schedule.some((s) => s.day === day && s.period === period);
+
+  // Turno é o pré-requisito da grade e do ônibus: sem ele não há como saber
+  // quais períodos/ônibus são válidos, então os dois ficam bloqueados.
+  const shiftSelected = Boolean(shift);
+  const isPeriodAllowed = (period: string) => isPeriodAllowedForShift(period, shift);
 
   return (
     <>
@@ -160,6 +173,7 @@ export function InstitutionCourseSection({
             icon="schedule"
             options={SHIFTS}
             placeholder="Selecione o turno"
+            aria-label={shiftAriaLabel}
             value={shift}
             onChange={(e) => onShiftChange(e.target.value)}
           />
@@ -168,8 +182,21 @@ export function InstitutionCourseSection({
       </section>
 
       {/* ── Horário ─────────────────────────────────────────────────── */}
-      <section className="space-y-3 rounded-xl border border-outline-variant p-4">
+      {/* Cada checkbox carrega seu próprio `disabled` — aqui só o realce visual
+          de que a grade ainda não está liberada. */}
+      <section
+        className={`space-y-3 rounded-xl border border-outline-variant p-4 ${
+          shiftSelected ? "" : "opacity-60"
+        }`}
+      >
         <h3 className="text-sm font-bold text-on-surface">Grade de horários</h3>
+        <p className="text-xs text-on-surface-variant -mt-1">
+          {!shiftSelected
+            ? "Selecione o turno para liberar a grade de horários."
+            : isFullTimeShift(shift)
+              ? "Turno Integral: todos os períodos liberados."
+              : `Turno ${shift}: apenas horários do período ${shift.toLowerCase()}.`}
+        </p>
         {scheduleError && <p className="text-xs text-error -mt-1">{scheduleError}</p>}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -187,17 +214,28 @@ export function InstitutionCourseSection({
               {DAYS.map((day) => (
                 <tr key={day}>
                   <td className="p-2 font-bold text-on-surface">{day}</td>
-                  {PERIODS.map((period) => (
-                    <td key={period} className="p-2 text-center">
-                      <input
-                        type="checkbox"
-                        checked={isSelected(day, period)}
-                        onChange={() => onToggleSlot(day, period)}
-                        className="size-4 accent-primary cursor-pointer"
-                        aria-label={`${day} ${period}${scheduleAriaSuffix}`}
-                      />
-                    </td>
-                  ))}
+                  {PERIODS.map((period) => {
+                    const allowed = isPeriodAllowed(period);
+                    return (
+                      <td key={period} className="p-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected(day, period)}
+                          disabled={!allowed}
+                          onChange={() => onToggleSlot(day, period)}
+                          className="size-4 accent-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                          aria-label={`${day} ${period}${scheduleAriaSuffix}`}
+                          title={
+                            shiftSelected
+                              ? allowed
+                                ? undefined
+                                : `Indisponível para o turno ${shift}.`
+                              : "Selecione o turno primeiro."
+                          }
+                        />
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -213,7 +251,14 @@ export function InstitutionCourseSection({
             label="Ônibus (seleção manual)"
             icon="directions_bus"
             options={busOptions}
-            placeholder="Selecione o ônibus"
+            disabled={!shiftSelected}
+            placeholder={
+              shiftSelected
+                ? busOptions.length > 0
+                  ? "Selecione o ônibus"
+                  : "Nenhum ônibus para este turno"
+                : "Selecione o turno primeiro"
+            }
             aria-label={busAriaLabel}
             value={busId}
             onChange={(e) => onBusChange(e.target.value)}
@@ -221,6 +266,13 @@ export function InstitutionCourseSection({
           />
           {extraTransportFields}
         </div>
+        <p className="text-xs text-on-surface-variant">
+          {!shiftSelected
+            ? "Selecione o turno para liberar a lista de ônibus."
+            : universityId
+              ? "Mostrando ônibus vinculados à faculdade e do turno selecionado."
+              : "Faculdade não cadastrada: mostrando todos os ônibus do turno selecionado."}
+        </p>
       </section>
 
       {/* ── Documentos desta faculdade ──────────────────────────────────── */}
