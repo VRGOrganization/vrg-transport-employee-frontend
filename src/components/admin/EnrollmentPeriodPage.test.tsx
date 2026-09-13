@@ -406,7 +406,7 @@ describe("EnrollmentPeriodPage — selo de status com três estados (Núcleo 10)
   });
 });
 
-describe("EnrollmentPeriodPage — confirmação reforçada de 'Encerrar período' (Núcleo 11)", () => {
+describe("EnrollmentPeriodPage — confirmação reforçada de 'Encerrar ciclo' (Núcleo 11)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(enrollmentPeriodService.getActive).mockResolvedValue(activePeriodStub as never);
@@ -416,10 +416,10 @@ describe("EnrollmentPeriodPage — confirmação reforçada de 'Encerrar períod
   it("keeps the confirm button disabled until 'ENCERRAR' is typed, and only then calls close()", async () => {
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Encerrar período" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Encerrar ciclo" })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Encerrar período" }));
+    fireEvent.click(screen.getByRole("button", { name: "Encerrar ciclo" }));
 
     const confirmButton = await screen.findByRole("button", { name: "Encerrar" });
     expect(confirmButton).toBeDisabled();
@@ -440,10 +440,10 @@ describe("EnrollmentPeriodPage — confirmação reforçada de 'Encerrar períod
   it("shows the waitlist count and occupancy as part of the impact summary", async () => {
     render(<EnrollmentPeriodPage role="admin" />);
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Encerrar período" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Encerrar ciclo" })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Encerrar período" }));
+    fireEvent.click(screen.getByRole("button", { name: "Encerrar ciclo" }));
 
     await waitFor(() => {
       expect(

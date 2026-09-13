@@ -481,11 +481,11 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
     try {
       await enrollmentPeriodService.close(activePeriod._id);
       setShowCloseConfirm(false);
-      toast.success("Período encerrado com sucesso.");
+      toast.success("Ciclo encerrado com sucesso.");
       await loadData();
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      toast.error(apiError.message ?? "Falha ao encerrar o período.");
+      toast.error(apiError.message ?? "Falha ao encerrar o ciclo.");
       setShowCloseConfirm(false);
     } finally {
       setClosingPeriod(false);
@@ -498,7 +498,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
 
   // Passo 1 (dias) só decide o prazo; a confirmação reforçada (passo 2) é
   // quem de fato dispara o agendamento, já que ao vencer o prazo a mesma
-  // cascata de "Encerrar período" roda sozinha (cron).
+  // cascata de "Encerrar ciclo" roda sozinha (cron).
   const handleScheduleResetSubmit = async (days: number) => {
     setPendingResetDays(days);
     setShowScheduleResetModal(false);
@@ -732,7 +732,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                         className="border-error text-error hover:bg-error/10"
                         onClick={handleClosePeriod}
                       >
-                        Encerrar período
+                        Encerrar ciclo
                       </Button>
                     </>
                   ) : scheduledPeriod ? (
@@ -800,7 +800,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                     />
                     <Metric
                       icon={AlarmClock}
-                      label="Limpeza geral (reset)"
+                      label="Encerramento de ciclo"
                       value={
                         activePeriod.resetScheduledFor
                           ? formatDateTime(activePeriod.resetScheduledFor)
@@ -808,7 +808,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
                       }
                       hint={
                         activePeriod.resetScheduledFor
-                          ? "cascata automática nesta data"
+                          ? undefined
                           : `≈ ${activePeriod.licenseValidityMonths} meses após a abertura`
                       }
                     />
@@ -1054,7 +1054,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
         }}
         onConfirm={handleCloseConfirmed}
         loading={closingPeriod}
-        title="Encerrar período"
+        title="Encerrar ciclo"
         description={cascadeImpactDescription}
         confirmWord="ENCERRAR"
         confirmLabel="Encerrar"
