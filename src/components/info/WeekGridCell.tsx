@@ -3,7 +3,7 @@
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 import { DAY_LABELS } from "@/types/cards.types";
-import type { Day, GridCell, InfoMetric, Period } from "@/types/info.types";
+import type { Day, GridCell, Period } from "@/types/info.types";
 import type { BusPalette } from "@/lib/info/palette";
 import { PERIOD_COLOR_VAR, busLabel } from "@/lib/info/palette";
 import { formatNumber } from "@/lib/info/format";
@@ -14,7 +14,6 @@ interface WeekGridCellProps {
   cell: GridCell;
   /** Máximo da grade — a célula fala de demanda, não de capacidade. */
   max: number;
-  metric: InfoMetric;
   selected: boolean;
   palette: BusPalette;
   tabIndex: number;
@@ -29,7 +28,6 @@ export const WeekGridCell = forwardRef<HTMLButtonElement, WeekGridCellProps>(
       period,
       cell,
       max,
-      metric,
       selected,
       palette,
       tabIndex,
@@ -42,14 +40,7 @@ export const WeekGridCell = forwardRef<HTMLButtonElement, WeekGridCellProps>(
     const fillPercent = max > 0 ? (cell.value / max) * 100 : 0;
     const busCount = cell.byBus.length;
 
-    const unit =
-      metric === "pessoas"
-        ? cell.value === 1
-          ? "aluno"
-          : "alunos"
-        : cell.value === 1
-          ? "perna"
-          : "pernas";
+    const unit = cell.value === 1 ? "aluno" : "alunos";
     const label = `${DAY_LABELS[day]}, ${period.toLocaleLowerCase("pt-BR")}: ${formatNumber(
       cell.value,
     )} ${unit} em ${busCount} ônibus`;

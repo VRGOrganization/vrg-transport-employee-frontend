@@ -90,6 +90,12 @@ export function NoticesPage({ role }: NoticesPageProps) {
     setRecentNotice((current) => (current?.id === noticeId ? null : current));
   };
 
+  const handleUpdated = (updated: Notice) => {
+    setNotices((current) =>
+      current.map((notice) => (notice.id === updated.id ? updated : notice)),
+    );
+  };
+
   const tabNotices = useMemo(
     () =>
       notices.filter((notice) =>
@@ -309,7 +315,12 @@ export function NoticesPage({ role }: NoticesPageProps) {
             {!loading && !error && totalNotices > 0 && (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {paginatedNotices.map((notice) => (
-                  <NoticeListItem key={notice.id} notice={notice} onDeleted={handleDeleted} />
+                  <NoticeListItem
+                    key={notice.id}
+                    notice={notice}
+                    onDeleted={handleDeleted}
+                    onUpdated={handleUpdated}
+                  />
                 ))}
               </div>
             )}

@@ -153,23 +153,19 @@ export function useControlRoomView(
   );
 
   // ── Painéis ───────────────────────────────────────────────────────────────
-  const grid = useMemo(
-    () => gridByDayPeriod(lensedSeats, effectiveLens.metric),
-    [lensedSeats, effectiveLens.metric],
-  );
+  const grid = useMemo(() => gridByDayPeriod(lensedSeats), [lensedSeats]);
 
   const totals = useMemo(
-    () => gridTotals(lensedSeats, grid, effectiveLens.metric),
-    [lensedSeats, grid, effectiveLens.metric],
+    () => gridTotals(lensedSeats, grid),
+    [lensedSeats, grid],
   );
 
   const frequency = useMemo(() => frequencyProfile(lensedSeats), [lensedSeats]);
   const overlap = useMemo(() => dayOverlap(lensedSeats), [lensedSeats]);
 
   const fleet = useMemo(
-    () =>
-      byBus(lensedSeats, snapshot?.buses ?? [], effectiveLens.metric, isActiveCycle),
-    [lensedSeats, snapshot?.buses, effectiveLens.metric, isActiveCycle],
+    () => byBus(lensedSeats, snapshot?.buses ?? [], isActiveCycle),
+    [lensedSeats, snapshot?.buses, isActiveCycle],
   );
 
   const institutions = useMemo(

@@ -10,7 +10,6 @@ import {
   type Grid,
   type GridTotals,
   type InfoLens,
-  type InfoMetric,
   type Period,
 } from "@/types/info.types";
 import type { BusPalette } from "@/lib/info/palette";
@@ -22,7 +21,6 @@ interface WeekGridProps {
   grid: Grid;
   totals: GridTotals;
   lens: InfoLens;
-  metric: InfoMetric;
   palette: BusPalette;
   /** Capacidade por (ônibus × dia), para o tooltip mostrar `x/y vagas`. */
   capacityByBusDay: Map<string, { filled: number; capacity: number | null }>;
@@ -47,7 +45,6 @@ export function WeekGrid({
   grid,
   totals,
   lens,
-  metric,
   palette,
   capacityByBusDay,
   onPatchLens,
@@ -118,7 +115,7 @@ export function WeekGrid({
           Semana
         </h2>
         <p className="text-[11px] uppercase tracking-[0.08em] text-on-surface-muted">
-          {metric === "pessoas" ? "Alunos" : "Pernas"} por dia e turno
+          Alunos por dia e turno
         </p>
       </header>
 
@@ -220,7 +217,6 @@ export function WeekGrid({
                       period={period}
                       cell={cell}
                       max={totals.max}
-                      metric={metric}
                       palette={palette}
                       selected={lens.day === day && lens.period === period}
                       tabIndex={isFocusable ? 0 : -1}
