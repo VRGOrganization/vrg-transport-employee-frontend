@@ -82,9 +82,9 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md outline-none"
+        className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col outline-none"
       >
-        <div className="flex items-center justify-between px-6 pt-6 pb-4">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
           <div className="flex items-center gap-3">
             <div className="size-9 bg-primary/10 rounded-xl flex items-center justify-center">
               <Mail className="size-5 text-primary" />
@@ -103,7 +103,7 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
           </button>
         </div>
 
-        <div className="px-6 pb-6">
+        <div className="px-6 pb-6 overflow-y-auto min-h-0">
           {step === "form" ? (
             <form onSubmit={handleSubmit} className="space-y-5">
               <p className="text-sm text-on-surface-variant">

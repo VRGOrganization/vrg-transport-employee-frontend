@@ -167,13 +167,13 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 outline-none"
+        className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-sm mx-4 max-h-[90vh] flex flex-col outline-none"
       >
-        <h2 id={titleId} className="text-lg font-bold text-on-surface mb-5">
+        <h2 id={titleId} className="text-lg font-bold text-on-surface px-6 pt-6 pb-5 shrink-0">
           {initial ? "Editar Ônibus" : "Novo Ônibus"}
         </h2>
 
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto px-6 pb-1 min-h-0">
           <div>
             <label className="block text-sm font-medium text-on-surface-variant mb-1">
               Identificador
@@ -271,9 +271,9 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
           </div>
         </div>
 
-        {error && <p className="mt-3 text-sm text-error">{error}</p>}
+        {error && <p className="mt-3 px-6 text-sm text-error shrink-0">{error}</p>}
 
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-3 px-6 py-6 shrink-0">
           <button
             type="button"
             onClick={onClose}
