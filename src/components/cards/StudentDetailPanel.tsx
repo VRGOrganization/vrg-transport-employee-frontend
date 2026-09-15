@@ -443,7 +443,7 @@ export function StudentDetailPanel({
             com base nesta solicitação. Não é possível desfazer por aqui.
           </>
         }
-        confirmLabel="Sim, aprovar"
+        confirmLabel="Aprovar"
       />
 
       {lightboxIndex !== null && previewItems[lightboxIndex]?.dataUrl && (

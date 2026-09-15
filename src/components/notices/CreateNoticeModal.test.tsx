@@ -68,7 +68,7 @@ describe("CreateNoticeModal", () => {
     await userEvent.click(screen.getByRole("button", { name: "15 dias" }));
     await userEvent.type(screen.getByLabelText("Título"), "Aviso importante");
     await userEvent.click(screen.getByRole("button", { name: /enviar/i }));
-    await userEvent.click(screen.getByRole("button", { name: /sim, publicar/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^publicar$/i }));
 
     await waitFor(() =>
       expect(createNoticeMock).toHaveBeenCalledWith(
@@ -94,7 +94,7 @@ describe("CreateNoticeModal", () => {
     await userEvent.type(screen.getByLabelText("Opção 1"), "Sim");
     await userEvent.type(screen.getByLabelText("Opção 2"), "Não");
     await userEvent.click(screen.getByRole("button", { name: /enviar/i }));
-    await userEvent.click(screen.getByRole("button", { name: /sim, publicar/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^publicar$/i }));
 
     await waitFor(() =>
       expect(createNoticeMock).toHaveBeenCalledWith(
@@ -116,7 +116,7 @@ describe("CreateNoticeModal", () => {
 
     await userEvent.type(screen.getByLabelText("Título"), "Aviso importante");
     await userEvent.click(screen.getByRole("button", { name: /enviar/i }));
-    await userEvent.click(screen.getByRole("button", { name: /sim, publicar/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^publicar$/i }));
 
     await waitFor(() =>
       expect(createNoticeMock).toHaveBeenCalledWith(
@@ -145,7 +145,7 @@ describe("CreateNoticeModal", () => {
     expect(screen.getByText(/publicar este aviso/i)).toBeInTheDocument();
     expect(createNoticeMock).not.toHaveBeenCalled();
 
-    await userEvent.click(screen.getByRole("button", { name: /sim, publicar/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^publicar$/i }));
 
     await waitFor(() => expect(createNoticeMock).toHaveBeenCalledTimes(1));
     expect(onCreated).toHaveBeenCalledWith(notice);

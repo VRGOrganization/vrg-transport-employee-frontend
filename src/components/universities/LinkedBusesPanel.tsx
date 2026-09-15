@@ -174,7 +174,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
         title="Desvincular Ônibus"
         icon={Unlink}
         variant="warning"
-        confirmLabel="Sim, desvincular"
+        confirmLabel="Desvincular"
         description={
           pendingUnlink && (
             <>

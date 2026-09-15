@@ -584,7 +584,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
         title="Reativar Faculdade"
         icon={RotateCcw}
         variant="success"
-        confirmLabel="Sim, reativar"
+        confirmLabel="Reativar"
         description={
           pendingReactivate && (
             <>
@@ -604,7 +604,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
         title="Reativar Curso"
         icon={RotateCcw}
         variant="success"
-        confirmLabel="Sim, reativar"
+        confirmLabel="Reativar"
         description={
           pendingReactivateCourse && (
             <>

@@ -67,16 +67,34 @@ export function ReinforcedConfirmModal({
 
       {error && <StatusBanner variant="error" className="mb-4">{error}</StatusBanner>}
 
-      <div className="flex gap-3">
-        <Button variant="outline" size="sm" fullWidth onClick={onClose} disabled={loading}>
+      <div className="flex justify-center gap-3">
+        <Button variant="outline" size="sm" onClick={onClose} disabled={loading}>
           {cancelLabel}
         </Button>
         <button
           disabled={loading || !unlocked}
           onClick={onConfirm}
-          className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors bg-error text-white hover:bg-error/90"
+          className="flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-error px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-error/90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
         >
-          {loading ? "…" : confirmLabel}
+          {loading && (
+            <svg className="size-4 shrink-0 animate-spin" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+          )}
+          {confirmLabel}
         </button>
       </div>
     </Modal>

@@ -87,6 +87,6 @@ describe("ReinforcedConfirmModal", () => {
     fireEvent.change(screen.getByLabelText(/digite ENCERRAR/i), {
       target: { value: "ENCERRAR" },
     });
-    expect(screen.getByRole("button", { name: "…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Encerrar" })).toBeDisabled();
   });
 });

@@ -113,7 +113,7 @@ describe("NoticeListItem", () => {
     );
 
     await userEvent.click(screen.getByRole("button", { name: /apagar aviso/i }));
-    await userEvent.click(screen.getByRole("button", { name: /sim, apagar/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^apagar$/i }));
 
     await waitFor(() => expect(deleteMock).toHaveBeenCalledWith("notice-1"));
     expect(onDeleted).toHaveBeenCalledWith("notice-1");

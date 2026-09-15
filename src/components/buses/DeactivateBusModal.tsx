@@ -125,25 +125,25 @@ export function DeactivateBusModal({
             </div>
           </div>
 
-          <div className="px-8 py-4 bg-surface-container-low border-t border-outline-variant/20 flex gap-3 shrink-0">
+          <div className="px-8 py-4 bg-surface-container-low border-t border-outline-variant/20 flex justify-center gap-3 shrink-0">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 px-4 py-2.5 rounded-full border-2 border-outline-variant text-on-surface-variant font-bold text-sm hover:bg-surface-container-high transition-colors disabled:opacity-50"
+              className="px-6 py-2.5 rounded-full border-2 border-outline-variant text-on-surface-variant font-bold text-sm whitespace-nowrap hover:bg-surface-container-high transition-colors disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={!canConfirm}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full bg-error text-white hover:bg-error/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center justify-center gap-2 whitespace-nowrap px-6 py-2.5 text-sm font-bold rounded-full bg-error text-white hover:bg-error/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading
                 ? <Loader2 className="size-4 animate-spin" />
                 : <Ban className="size-4" />
               }
-              {loading ? "Desativando..." : "Sim, desativar"}
+              {loading ? "Desativando…" : "Desativar"}
             </button>
           </div>
         </form>

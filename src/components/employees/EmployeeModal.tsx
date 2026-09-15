@@ -124,7 +124,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted, canDele
             O cadastro poderá ser reativado posteriormente.
           </>
         }
-        confirmLabel="Sim, desativar"
+        confirmLabel="Desativar"
       />
     );
   }
@@ -145,7 +145,7 @@ export function EmployeeModal({ employee, onClose, onUpdated, onDeleted, canDele
             O funcionário <strong className="capitalize">{employee.name}</strong> recuperará acesso ao sistema imediatamente.
           </>
         }
-        confirmLabel="Sim, reativar"
+        confirmLabel="Reativar"
       />
     );
   }

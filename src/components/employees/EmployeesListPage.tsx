@@ -309,7 +309,7 @@ export function EmployeesListPage({ role }: { role: "admin" | "employee" }) {
               ? <><strong>{toggleTarget.name}</strong> perderá acesso ao sistema imediatamente. O cadastro poderá ser reativado posteriormente.</>
               : <><strong>{toggleTarget.name}</strong> recuperará acesso ao sistema imediatamente.</>
           }
-          confirmLabel={toggleTarget.active ? "Sim, desativar" : "Sim, reativar"}
+          confirmLabel={toggleTarget.active ? "Desativar" : "Reativar"}
         />
       )}
     </>

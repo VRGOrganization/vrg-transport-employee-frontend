@@ -242,7 +242,7 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
         title="Desativar Curso"
         icon={Ban}
         variant="danger"
-        confirmLabel="Sim, desativar"
+        confirmLabel="Desativar"
         description={
           pendingDeactivate && (
             <>

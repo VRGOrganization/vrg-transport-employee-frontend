@@ -330,7 +330,7 @@ export function BusesPage({ role }: { role: "admin" | "employee" }) {
         title="Reativar Ônibus"
         icon={RotateCcw}
         variant="success"
-        confirmLabel="Sim, reativar"
+        confirmLabel="Reativar"
         description={
           pendingReactivate && (
             <>

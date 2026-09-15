@@ -1,11 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Eye, EyeOff, MessageSquareWarning, Save } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import {
+  AlarmClock,
+  DoorOpen,
+  Eye,
+  EyeOff,
+  MessageSquareWarning,
+  RefreshCw,
+  Save,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { PanelCard } from "@/components/ui/PanelCard";
 import { FieldShell } from "@/components/ui/FieldShell";
 import { EmptyState, ErrorState } from "@/components/ui/states";
+import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import { systemNoticeTemplateService } from "@/services/systemNoticeTemplateService";
 import type {
@@ -16,13 +27,30 @@ import { sectorContactInfoService } from "@/services/sectorContactInfoService";
 
 interface TemplateGroup {
   label: string;
+  description: string;
+  icon: LucideIcon;
   keys: SystemNoticeTemplateKey[];
 }
 
 const GROUPS: TemplateGroup[] = [
-  { label: "Abertura de janela", keys: ["WINDOW_OPEN"] },
-  { label: "Fechamento de janela", keys: ["WINDOW_CLOSE_7", "WINDOW_CLOSE_3", "WINDOW_CLOSE_1"] },
-  { label: "Reset do ciclo", keys: ["CYCLE_RESET_7", "CYCLE_RESET_3", "CYCLE_RESET_1"] },
+  {
+    label: "Abertura de janela",
+    description: "Disparado assim que os alunos passam a poder enviar solicitações.",
+    icon: DoorOpen,
+    keys: ["WINDOW_OPEN"],
+  },
+  {
+    label: "Fechamento de janela",
+    description: "Lembretes enviados na reta final antes da janela fechar.",
+    icon: AlarmClock,
+    keys: ["WINDOW_CLOSE_7", "WINDOW_CLOSE_3", "WINDOW_CLOSE_1"],
+  },
+  {
+    label: "Reset do ciclo",
+    description: "Avisa quem vai perder a carteirinha quando o ciclo reiniciar.",
+    icon: RefreshCw,
+    keys: ["CYCLE_RESET_7", "CYCLE_RESET_3", "CYCLE_RESET_1"],
+  },
 ];
 
 const ITEM_SUFFIXES: Partial<Record<SystemNoticeTemplateKey, string>> = {
@@ -178,165 +206,188 @@ export function SystemNoticeTemplatesPage({ role }: { role: "admin" | "employee"
   };
 
   return (
-    <div className="p-8 min-h-[calc(100vh-4rem)]">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-on-surface">Mensagens de sistema</h1>
-        <p className="text-sm text-on-surface-muted mt-1">
-          Edite o título e o corpo dos avisos automáticos enviados aos alunos. O
-          texto salvo aqui é o que será usado no próximo disparo automático de
-          cada evento.
-        </p>
-      </div>
+    <main className="px-6 py-5 bg-surface">
+      <div className="w-full max-w-3xl space-y-6">
+        <header>
+          <h1 className="text-2xl font-bold text-on-surface">Mensagens de sistema</h1>
+          <p className="text-sm text-on-surface-variant">
+            Edite o título e o corpo dos avisos automáticos enviados aos alunos. O
+            texto salvo aqui é o que será usado no próximo disparo automático de
+            cada evento.
+          </p>
+        </header>
 
-      {loading && (
-        <div className="flex flex-col gap-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-32 rounded-2xl bg-surface-container-low animate-pulse" />
-          ))}
-        </div>
-      )}
+        {loading && (
+          <div className="flex flex-col gap-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-32 rounded-2xl bg-surface-container-low animate-pulse" />
+            ))}
+          </div>
+        )}
 
-      {!loading && error && <ErrorState message={error} onRetry={() => void load()} />}
+        {!loading && error && <ErrorState message={error} onRetry={() => void load()} />}
 
-      {!loading && !error && templates.length === 0 && (
-        <EmptyState
-          icon={MessageSquareWarning}
-          title="Nenhum template de sistema encontrado"
-          description="Nenhum template de aviso foi encontrado. Contate o suporte técnico se isso persistir."
-        />
-      )}
+        {!loading && !error && templates.length === 0 && (
+          <EmptyState
+            icon={MessageSquareWarning}
+            title="Nenhum template de sistema encontrado"
+            description="Nenhum template de aviso foi encontrado. Contate o suporte técnico se isso persistir."
+          />
+        )}
 
-      {!loading && !error && templates.length > 0 && (
-        <div className="flex flex-col gap-8">
-          {GROUPS.map((group) => (
-            <section key={group.label}>
-              <h2 className="text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-3">
-                {group.label}
-              </h2>
-              <div className="flex flex-col gap-4">
-                {group.keys.map((key) => {
-                  const current = draft[key];
-                  if (!current) return null;
-                  const dirty = isDirty(key);
-                  const saving = savingKeys.has(key);
-                  const original = templateByKey(key);
-                  const showingPreview = previewKey === key;
-                  const titleError = current.title.trim() ? undefined : "Campo obrigatório";
-                  const bodyError = current.body.trim() ? undefined : "Campo obrigatório";
+        {!loading && !error && templates.length > 0 && (
+          <div className="flex flex-col gap-6">
+            {GROUPS.map((group) => (
+              <section key={group.label} className="space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <group.icon className="size-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="text-sm font-bold text-on-surface">{group.label}</h2>
+                    <p className="text-xs text-on-surface-variant">{group.description}</p>
+                  </div>
+                </div>
 
-                  return (
-                    <div
-                      key={key}
-                      className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-5 space-y-3"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-semibold text-on-surface">
-                          {itemLabel(group.label, key)}
-                        </p>
-                        {original && (
-                          <p className="text-xs text-on-surface-variant shrink-0">
-                            Atualizado em {formatUpdatedAt(original.updatedAt)}
-                          </p>
+                <div className="flex flex-col gap-3 border-l-2 border-outline-variant/50 pl-4">
+                  {group.keys.map((key) => {
+                    const current = draft[key];
+                    if (!current) return null;
+                    const dirty = isDirty(key);
+                    const saving = savingKeys.has(key);
+                    const original = templateByKey(key);
+                    const showingPreview = previewKey === key;
+                    const titleError = current.title.trim() ? undefined : "Campo obrigatório";
+                    const bodyError = current.body.trim() ? undefined : "Campo obrigatório";
+
+                    return (
+                      <PanelCard
+                        key={key}
+                        className={cn(
+                          "space-y-3 p-5 transition-colors",
+                          dirty && "border-primary/40 bg-primary/3",
                         )}
-                      </div>
-                      <FieldShell label="Título" required error={titleError}>
-                        <Input
-                          aria-label={`Título de ${key}`}
-                          value={current.title}
-                          onChange={(e) => handleFieldChange(key, "title", e.target.value)}
-                        />
-                      </FieldShell>
-                      <FieldShell label="Corpo" required error={bodyError}>
-                        <textarea
-                          aria-label={`Corpo de ${key}`}
-                          value={current.body}
-                          onChange={(e) => handleFieldChange(key, "body", e.target.value)}
-                          className="w-full min-h-24 bg-surface-container-lowest border border-on-surface-variant rounded-xl p-3 text-on-surface outline-none focus:ring-2 focus:ring-primary"
-                        />
-                      </FieldShell>
-
-                      {showingPreview && (
-                        <div className="rounded-xl border border-outline-variant/40 bg-surface p-4">
-                          <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">
-                            Como o aluno vai ver
-                          </p>
-                          <p className="text-sm font-semibold text-on-surface">
-                            {current.title.trim() || "(sem título)"}
-                          </p>
-                          <p className="text-sm text-on-surface-variant mt-1 whitespace-pre-wrap">
-                            {current.body.trim() || "(sem corpo)"}
-                          </p>
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-on-surface">
+                              {itemLabel(group.label, key)}
+                            </p>
+                            {dirty && (
+                              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                                não salvo
+                              </span>
+                            )}
+                          </div>
+                          {original && (
+                            <p className="text-xs text-on-surface-variant shrink-0">
+                              Atualizado em {formatUpdatedAt(original.updatedAt)}
+                            </p>
+                          )}
                         </div>
-                      )}
+                        <FieldShell label="Título" required error={titleError}>
+                          <Input
+                            aria-label={`Título de ${key}`}
+                            value={current.title}
+                            onChange={(e) => handleFieldChange(key, "title", e.target.value)}
+                          />
+                        </FieldShell>
+                        <FieldShell label="Corpo" required error={bodyError}>
+                          <textarea
+                            aria-label={`Corpo de ${key}`}
+                            value={current.body}
+                            onChange={(e) => handleFieldChange(key, "body", e.target.value)}
+                            rows={3}
+                            className="w-full resize-y rounded-xl border border-on-surface-variant bg-surface-container-lowest p-3 text-sm text-on-surface outline-none transition-all focus:ring-2 focus:ring-primary"
+                          />
+                        </FieldShell>
 
-                      {saveErrors[key] && (
-                        <p className="text-xs text-error">{saveErrors[key]}</p>
-                      )}
+                        {showingPreview && (
+                          <div className="rounded-xl border border-outline-variant/40 bg-surface p-4">
+                            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                              Como o aluno vai ver
+                            </p>
+                            <p className="text-sm font-semibold text-on-surface">
+                              {current.title.trim() || "(sem título)"}
+                            </p>
+                            <p className="mt-1 whitespace-pre-wrap text-sm text-on-surface-variant">
+                              {current.body.trim() || "(sem corpo)"}
+                            </p>
+                          </div>
+                        )}
 
-                      <div className="flex justify-between items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setPreviewKey(showingPreview ? null : key)}
-                          className="flex items-center gap-1.5 text-xs font-medium text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
-                        >
-                          {showingPreview
-                            ? <EyeOff className="size-3.5" />
-                            : <Eye className="size-3.5" />}
-                          {showingPreview ? "Ocultar prévia" : "Pré-visualizar"}
-                        </button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          icon={<Save className="size-4" />}
-                          disabled={!dirty}
-                          loading={saving}
-                          onClick={() => void handleSave(key)}
-                        >
-                          Salvar
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
+                        {saveErrors[key] && (
+                          <p className="text-xs text-error">{saveErrors[key]}</p>
+                        )}
 
-      <section className="mt-8">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-3">
-          Endereço do setor
-        </h2>
-        <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-5 space-y-3">
-          <FieldShell label="Endereço do setor">
-            <Input
-              aria-label="Endereço do setor"
-              value={addressDraft}
-              disabled={!canEditAddress}
-              onChange={(e) => setAddressDraft(e.target.value)}
-            />
-          </FieldShell>
-          {canEditAddress ? (
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                size="sm"
-                icon={<Save className="size-4" />}
-                disabled={addressDraft === address}
-                loading={savingAddress}
-                onClick={() => void handleSaveAddress()}
-              >
-                Salvar endereço
-              </Button>
-            </div>
-          ) : (
+                        <div className="flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewKey(showingPreview ? null : key)}
+                            className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-on-surface-variant transition-colors hover:text-on-surface"
+                          >
+                            {showingPreview
+                              ? <EyeOff className="size-3.5" />
+                              : <Eye className="size-3.5" />}
+                            {showingPreview ? "Ocultar prévia" : "Pré-visualizar"}
+                          </button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            icon={<Save className="size-4" />}
+                            disabled={!dirty}
+                            loading={saving}
+                            onClick={() => void handleSave(key)}
+                          >
+                            Salvar
+                          </Button>
+                        </div>
+                      </PanelCard>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
+
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-sm font-bold text-on-surface">Endereço do setor</h2>
             <p className="text-xs text-on-surface-variant">
-              Somente administradores alteram o endereço do setor.
+              Mostrado nas mensagens que orientam o aluno a comparecer pessoalmente.
             </p>
-          )}
-        </div>
-      </section>
-    </div>
+          </div>
+          <PanelCard className="space-y-3 p-5">
+            <FieldShell label="Endereço do setor">
+              <Input
+                aria-label="Endereço do setor"
+                value={addressDraft}
+                disabled={!canEditAddress}
+                onChange={(e) => setAddressDraft(e.target.value)}
+              />
+            </FieldShell>
+            {canEditAddress ? (
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  icon={<Save className="size-4" />}
+                  disabled={addressDraft === address}
+                  loading={savingAddress}
+                  onClick={() => void handleSaveAddress()}
+                >
+                  Salvar endereço
+                </Button>
+              </div>
+            ) : (
+              <p className="text-xs text-on-surface-variant">
+                Somente administradores alteram o endereço do setor.
+              </p>
+            )}
+          </PanelCard>
+        </section>
+      </div>
+    </main>
   );
 }
