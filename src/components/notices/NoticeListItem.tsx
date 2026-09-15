@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/Button";
 import { formatDate } from "@/lib/license-formatters";
 import { DeleteNoticeButton } from "./DeleteNoticeButton";
 import { PollResultsPanel } from "./PollResultsPanel";
+import { TogglePinButton } from "./TogglePinButton";
 import type { Notice, NoticeStatus, NoticeType } from "@/services/noticeService";
 
 interface Props {
   notice: Notice;
   onDeleted: (noticeId: string) => void;
+  onUpdated: (notice: Notice) => void;
 }
 
 const TYPE_LABELS: Record<NoticeType, string> = {
@@ -38,7 +40,7 @@ const STATUS_CLASSES: Record<NoticeStatus, string> = {
   expired: "bg-surface-container-high text-on-surface-variant",
 };
 
-export function NoticeListItem({ notice, onDeleted }: Props) {
+export function NoticeListItem({ notice, onDeleted, onUpdated }: Props) {
   const [resultsOpen, setResultsOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const TypeIcon = TYPE_ICONS[notice.type];
@@ -81,9 +83,14 @@ export function NoticeListItem({ notice, onDeleted }: Props) {
             Ver resultados
           </Button>
         )}
-        {notice.authorRole !== "system" && (
-          <DeleteNoticeButton noticeId={notice.id} onDeleted={onDeleted} />
+        {notice.status === "published" && (
+          <TogglePinButton
+            noticeId={notice.id}
+            pinned={notice.pinned}
+            onToggled={onUpdated}
+          />
         )}
+        <DeleteNoticeButton noticeId={notice.id} onDeleted={onDeleted} />
       </div>
 
       {resultsOpen && (
