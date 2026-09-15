@@ -50,7 +50,7 @@ describe("SystemNoticeTemplatesPage", () => {
   });
 
   it("lista os 7 templates agrupados por evento", async () => {
-    render(<SystemNoticeTemplatesPage />);
+    render(<SystemNoticeTemplatesPage role="admin" />);
 
     await waitFor(() => expect(screen.getByLabelText("Título de WINDOW_OPEN")).toBeInTheDocument());
     expect(screen.getByRole("heading", { name: "Abertura de janela" })).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe("SystemNoticeTemplatesPage", () => {
   });
 
   it("cada item mostra rótulo próprio distinguindo os templates do mesmo grupo", async () => {
-    render(<SystemNoticeTemplatesPage />);
+    render(<SystemNoticeTemplatesPage role="admin" />);
 
     await waitFor(() => expect(screen.getByLabelText("Título de WINDOW_OPEN")).toBeInTheDocument());
     expect(screen.getByText("Fechamento de janela: 7 dias antes")).toBeInTheDocument();
@@ -72,7 +72,7 @@ describe("SystemNoticeTemplatesPage", () => {
   it("mostra estado vazio explícito quando a API não retorna templates", async () => {
     listMock.mockReset();
     listMock.mockResolvedValue([]);
-    render(<SystemNoticeTemplatesPage />);
+    render(<SystemNoticeTemplatesPage role="admin" />);
 
     await waitFor(() =>
       expect(screen.getByText("Nenhum template de sistema encontrado")).toBeInTheDocument(),
@@ -83,7 +83,7 @@ describe("SystemNoticeTemplatesPage", () => {
   it("botão salvar fica desabilitado até o item ser alterado, e chama a API correta", async () => {
     const updated = { ...makeTemplates()[0], title: "Novo título" };
     updateMock.mockResolvedValueOnce(updated);
-    render(<SystemNoticeTemplatesPage />);
+    render(<SystemNoticeTemplatesPage role="admin" />);
 
     await waitFor(() => expect(screen.getByLabelText("Título de WINDOW_OPEN")).toBeInTheDocument());
 
@@ -108,7 +108,7 @@ describe("SystemNoticeTemplatesPage", () => {
   describe("Endereço do setor", () => {
     it("exibe o endereço já configurado", async () => {
       getAddressMock.mockResolvedValue({ address: "Rua das Flores, 123" });
-      render(<SystemNoticeTemplatesPage />);
+      render(<SystemNoticeTemplatesPage role="admin" />);
 
       await waitFor(() =>
         expect(screen.getByLabelText("Endereço do setor")).toHaveValue(
@@ -120,7 +120,7 @@ describe("SystemNoticeTemplatesPage", () => {
     it("botão salvar do endereço fica desabilitado até o campo ser alterado, e chama a API correta", async () => {
       getAddressMock.mockResolvedValue({ address: "Rua Antiga, 1" });
       updateAddressMock.mockResolvedValueOnce({ address: "Rua Nova, 2" });
-      render(<SystemNoticeTemplatesPage />);
+      render(<SystemNoticeTemplatesPage role="admin" />);
 
       const addressInput = await screen.findByLabelText("Endereço do setor");
       const saveButton = screen.getByRole("button", {
@@ -137,6 +137,35 @@ describe("SystemNoticeTemplatesPage", () => {
       await waitFor(() =>
         expect(updateAddressMock).toHaveBeenCalledWith("Rua Nova, 2"),
       );
+    });
+  });
+
+  describe("funcionário", () => {
+    it("edita e salva templates", async () => {
+      updateMock.mockResolvedValue({ ...makeTemplates()[0], title: "Novo título" });
+      render(<SystemNoticeTemplatesPage role="employee" />);
+
+      const title = await screen.findByLabelText("Título de WINDOW_OPEN");
+      expect(title).not.toBeDisabled();
+      await userEvent.clear(title);
+      await userEvent.type(title, "Novo título");
+
+      const saveButtons = screen.getAllByRole("button", { name: /^salvar$/i });
+      await userEvent.click(saveButtons[0]);
+
+      await waitFor(() =>
+        expect(updateMock).toHaveBeenCalledWith("WINDOW_OPEN", expect.objectContaining({ title: "Novo título" })),
+      );
+    });
+
+    it("vê o endereço do setor sem poder alterar", async () => {
+      getAddressMock.mockResolvedValue({ address: "Rua do Setor, 10" });
+      render(<SystemNoticeTemplatesPage role="employee" />);
+
+      const address = await screen.findByLabelText("Endereço do setor");
+      await waitFor(() => expect(address).toHaveValue("Rua do Setor, 10"));
+      expect(address).toBeDisabled();
+      expect(screen.queryByRole("button", { name: /salvar endereço/i })).not.toBeInTheDocument();
     });
   });
 });

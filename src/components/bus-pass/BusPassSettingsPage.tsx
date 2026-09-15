@@ -41,11 +41,7 @@ function NumberField({
   );
 }
 
-/**
- * Configurações do passe. Exclusiva do ADMIN — inclusive o toggle que decide
- * se funcionários podem operar a fila: quem opera não decide a própria
- * permissão.
- */
+/** Configurações do passe. Exclusiva do ADMIN. */
 export function BusPassSettingsPage() {
   const [settings, setSettings] = useState<BusPassSettings | null>(null);
   const [initialSettings, setInitialSettings] = useState<BusPassSettings | null>(null);
@@ -96,12 +92,6 @@ export function BusPassSettingsPage() {
     }
     if (!initialSettings || settings.maxHorizonDays !== initialSettings.maxHorizonDays) {
       changes.maxHorizonDays = settings.maxHorizonDays;
-    }
-    if (
-      !initialSettings ||
-      settings.employeeOperationEnabled !== initialSettings.employeeOperationEnabled
-    ) {
-      changes.employeeOperationEnabled = settings.employeeOperationEnabled;
     }
 
     if (Object.keys(changes).length === 0) {
@@ -178,29 +168,6 @@ export function BusPassSettingsPage() {
           max={60}
           onChange={(maxHorizonDays) => patch({ maxHorizonDays })}
         />
-      </section>
-
-      <section className="rounded-xl border border-outline-variant bg-surface-container-low p-5">
-        <label className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            checked={settings.employeeOperationEnabled}
-            onChange={(event) =>
-              patch({ employeeOperationEnabled: event.target.checked })
-            }
-            className="mt-1 size-4 accent-primary"
-          />
-          <span>
-            <span className="text-sm font-medium text-on-surface">
-              Permitir que funcionários operem passes
-            </span>
-            <span className="mt-0.5 block text-xs text-on-surface-variant">
-              Com a chave desligada, só administradores aprovam, negam,
-              devolvem ou revogam passes. Esta tela de configurações permanece
-              exclusiva do administrador em qualquer caso.
-            </span>
-          </span>
-        </label>
       </section>
 
       <div className="flex items-center gap-3">

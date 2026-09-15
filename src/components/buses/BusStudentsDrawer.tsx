@@ -19,6 +19,8 @@ import { AlertCircle, Bus as BusIcon, Check, Users, UserX, X } from "lucide-reac
 interface Props {
   bus: Bus | null;
   onClose: () => void;
+  /** Liberar vagas é exclusivo do admin no backend. */
+  canReleaseSlots?: boolean;
 }
 
 const DAYS = ["SEG", "TER", "QUA", "QUI", "SEX"] as const;
@@ -111,7 +113,7 @@ function UniversitySection({
   );
 }
 
-export function BusStudentsDrawer({ bus, onClose }: Props) {
+export function BusStudentsDrawer({ bus, onClose, canReleaseSlots = false }: Props) {
   const [students, setStudents] = useState<BusStudent[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -276,13 +278,15 @@ export function BusStudentsDrawer({ bus, onClose }: Props) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setConfirmOpen(true)}
-                    disabled={actionLoading}
-                    className="px-3 py-2 rounded-lg bg-warning-container text-on-warning text-sm font-medium hover:bg-warning/20 transition-colors disabled:opacity-50"
-                  >
-                    {actionLoading ? "Liberando..." : "Liberar vagas"}
-                  </button>
+                  {canReleaseSlots && (
+                    <button
+                      onClick={() => setConfirmOpen(true)}
+                      disabled={actionLoading}
+                      className="px-3 py-2 rounded-lg bg-warning-container text-on-warning text-sm font-medium hover:bg-warning/20 transition-colors disabled:opacity-50"
+                    >
+                      {actionLoading ? "Liberando..." : "Liberar vagas"}
+                    </button>
+                  )}
                   <button
                     onClick={onClose}
                     className="p-2 rounded-lg text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors"

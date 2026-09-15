@@ -59,7 +59,9 @@ function formatUpdatedAt(iso: string): string {
   });
 }
 
-export function SystemNoticeTemplatesPage() {
+export function SystemNoticeTemplatesPage({ role }: { role: "admin" | "employee" }) {
+  // Funcionário edita os templates; o endereço do setor segue exclusivo do admin.
+  const canEditAddress = role === "admin";
   const [templates, setTemplates] = useState<SystemNoticeTemplate[]>([]);
   const [draft, setDraft] = useState<Draft>({} as Draft);
   const [loading, setLoading] = useState(true);
@@ -311,21 +313,28 @@ export function SystemNoticeTemplatesPage() {
             <Input
               aria-label="Endereço do setor"
               value={addressDraft}
+              disabled={!canEditAddress}
               onChange={(e) => setAddressDraft(e.target.value)}
             />
           </FieldShell>
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              size="sm"
-              icon={<Save className="size-4" />}
-              disabled={addressDraft === address}
-              loading={savingAddress}
-              onClick={() => void handleSaveAddress()}
-            >
-              Salvar endereço
-            </Button>
-          </div>
+          {canEditAddress ? (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                size="sm"
+                icon={<Save className="size-4" />}
+                disabled={addressDraft === address}
+                loading={savingAddress}
+                onClick={() => void handleSaveAddress()}
+              >
+                Salvar endereço
+              </Button>
+            </div>
+          ) : (
+            <p className="text-xs text-on-surface-variant">
+              Somente administradores alteram o endereço do setor.
+            </p>
+          )}
         </div>
       </section>
     </div>
