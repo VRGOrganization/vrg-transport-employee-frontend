@@ -41,7 +41,7 @@ function cycleLabel(cycle: CycleSummary | null): string {
   return `${formatDateBR(cycle.cycleStartDate)} a ${formatDateBR(cycle.endDate)}`;
 }
 
-/** Cabeçalho comum aos três formatos: recorte, métrica, origem e horário. */
+/** Cabeçalho comum aos três formatos: recorte, origem e horário. */
 function headerLines(view: InfoExportView): string[][] {
   return [
     ["Relatório", "Informações do sistema de transporte"],
@@ -50,7 +50,6 @@ function headerLines(view: InfoExportView): string[][] {
       "Filtros",
       view.filterLabels.length > 0 ? view.filterLabels.join(" · ") : "nenhum",
     ],
-    ["Métrica", view.lens.metric === "pessoas" ? "Pessoas" : "Pernas"],
     ["Gerado em", formatDateTimeBR(view.generatedAt)],
     ["Origem", ORIGIN_NOTE],
   ];

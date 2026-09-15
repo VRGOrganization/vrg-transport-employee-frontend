@@ -33,20 +33,10 @@ function seat(over: Partial<Seat> = {}): Seat {
 
 describe("gridByDayPeriod", () => {
   it("monta uma grade de 5 dias por 3 turnos", () => {
-    const grid = gridByDayPeriod([], "pessoas");
+    const grid = gridByDayPeriod([]);
 
     expect(Object.keys(grid)).toEqual(["SEG", "TER", "QUA", "QUI", "SEX"]);
     expect(Object.keys(grid.SEG)).toEqual(["Manhã", "Tarde", "Noite"]);
-  });
-
-  it("pessoas difere de pernas quando há viagem de ida-só", () => {
-    const seats = [
-      seat({ studentId: "s1", legs: 1 }),
-      seat({ studentId: "s2", legs: 2 }),
-    ];
-
-    expect(gridByDayPeriod(seats, "pessoas").SEG["Manhã"].value).toBe(2);
-    expect(gridByDayPeriod(seats, "pernas").SEG["Manhã"].value).toBe(3);
   });
 
   it("deduplica o aluno dentro da célula ao contar pessoas", () => {
@@ -56,7 +46,7 @@ describe("gridByDayPeriod", () => {
       seat({ studentId: "s1", busId: "bus-2", busIdentifier: "Ônibus 02" }),
     ];
 
-    expect(gridByDayPeriod(seats, "pessoas").SEG["Manhã"].value).toBe(1);
+    expect(gridByDayPeriod(seats).SEG["Manhã"].value).toBe(1);
   });
 
   it("quebra a célula por ônibus", () => {
@@ -66,7 +56,7 @@ describe("gridByDayPeriod", () => {
       seat({ studentId: "s3", busId: "bus-2", busIdentifier: "Ônibus 02" }),
     ];
 
-    const cell = gridByDayPeriod(seats, "pessoas").SEG["Manhã"];
+    const cell = gridByDayPeriod(seats).SEG["Manhã"];
     expect(cell.byBus).toEqual([
       { busId: "bus-1", busIdentifier: "Ônibus 01", value: 1 },
       { busId: "bus-2", busIdentifier: "Ônibus 02", value: 2 },
@@ -80,26 +70,12 @@ describe("gridTotals", () => {
       seat({ studentId: "s1", day: "SEG", period: "Manhã" }),
       seat({ studentId: "s1", day: "SEG", period: "Noite" }),
     ];
-    const grid = gridByDayPeriod(seats, "pessoas");
+    const grid = gridByDayPeriod(seats);
 
-    const totals = gridTotals(seats, grid, "pessoas");
+    const totals = gridTotals(seats, grid);
 
     expect(totals.byDay.SEG).toBe(1);
     expect(totals.total).toBe(1);
-  });
-
-  it("soma pernas nos totais quando a métrica é pernas", () => {
-    const seats = [
-      seat({ studentId: "s1", legs: 2 }),
-      seat({ studentId: "s1", day: "TER", legs: 1 }),
-    ];
-    const grid = gridByDayPeriod(seats, "pernas");
-
-    const totals = gridTotals(seats, grid, "pernas");
-
-    expect(totals.byDay.SEG).toBe(2);
-    expect(totals.byDay.TER).toBe(1);
-    expect(totals.total).toBe(3);
   });
 
   it("expõe o máximo da grade", () => {
@@ -108,9 +84,9 @@ describe("gridTotals", () => {
       seat({ studentId: "s2" }),
       seat({ studentId: "s3", day: "SEX", period: "Noite" }),
     ];
-    const grid = gridByDayPeriod(seats, "pessoas");
+    const grid = gridByDayPeriod(seats);
 
-    expect(gridTotals(seats, grid, "pessoas").max).toBe(2);
+    expect(gridTotals(seats, grid).max).toBe(2);
   });
 });
 
@@ -121,7 +97,7 @@ describe("gridExtremes", () => {
       seat({ studentId: "s2", day: "QUA", period: "Noite" }),
       seat({ studentId: "s3", day: "SEX", period: "Manhã" }),
     ];
-    const grid = gridByDayPeriod(seats, "pessoas");
+    const grid = gridByDayPeriod(seats);
 
     const { peak, valley } = gridExtremes(grid);
 
@@ -130,7 +106,7 @@ describe("gridExtremes", () => {
   });
 
   it("devolve nulos quando não há nenhum assento", () => {
-    const { peak, valley } = gridExtremes(gridByDayPeriod([], "pessoas"));
+    const { peak, valley } = gridExtremes(gridByDayPeriod([]));
 
     expect(peak).toBeNull();
     expect(valley).toBeNull();
@@ -184,7 +160,7 @@ describe("byBus", () => {
       seat({ studentId: "s3", busId: "bus-2", busIdentifier: "Ônibus 02" }),
     ];
 
-    const loads = byBus(seats, [bus(), bus({ _id: "bus-2", identifier: "Ônibus 02" })], "pessoas", false);
+    const loads = byBus(seats, [bus(), bus({ _id: "bus-2", identifier: "Ônibus 02" })], false);
 
     expect(loads[0].busId).toBe("bus-2");
     expect(loads[0].peak).toBe(2);
@@ -199,7 +175,7 @@ describe("byBus", () => {
       seat({ studentId: "s3", universityId: "uni-2" }),
     ];
 
-    const loads = byBus(seats, [bus()], "pessoas", false);
+    const loads = byBus(seats, [bus()], false);
 
     expect(loads[0].days[0].byUniversity).toEqual([
       { universityId: "uni-2", value: 2 },
@@ -227,8 +203,8 @@ describe("byBus", () => {
     });
     const seats = [seat()];
 
-    const comContador = byBus(seats, [withSlots], "pessoas", true);
-    const semContador = byBus(seats, [withSlots], "pessoas", false);
+    const comContador = byBus(seats, [withSlots], true);
+    const semContador = byBus(seats, [withSlots], false);
 
     // Capacidade é POR faculdade × dia; o total do dia soma os vínculos.
     expect(comContador[0].days[0].counterFilled).toBe(17);
@@ -236,7 +212,7 @@ describe("byBus", () => {
   });
 
   it("expõe capacidade nula como sem limite", () => {
-    const loads = byBus([seat()], [bus({ capacity: null })], "pessoas", false);
+    const loads = byBus([seat()], [bus({ capacity: null })], false);
 
     expect(loads[0].capacity).toBeNull();
   });

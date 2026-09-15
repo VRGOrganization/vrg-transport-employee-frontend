@@ -34,15 +34,14 @@ const PALETTE = createBusPalette(
 
 function renderGrid(seats: Seat[], lens: InfoLens = EMPTY_LENS) {
   const onPatchLens = vi.fn();
-  const grid = gridByDayPeriod(seats, lens.metric);
-  const totals = gridTotals(seats, grid, lens.metric);
+  const grid = gridByDayPeriod(seats);
+  const totals = gridTotals(seats, grid);
 
   render(
     <WeekGrid
       grid={grid}
       totals={totals}
       lens={lens}
-      metric={lens.metric}
       palette={PALETTE}
       capacityByBusDay={new Map()}
       onPatchLens={onPatchLens}
@@ -167,20 +166,6 @@ describe("WeekGrid", () => {
     await user.keyboard("{Escape}");
 
     expect(onPatchLens).toHaveBeenCalledWith({ day: null, period: null });
-  });
-
-  it("mostra pernas quando a métrica é pernas", () => {
-    renderGrid(
-      [
-        seat({ studentId: "a", legs: 2 }),
-        seat({ studentId: "b", legs: 1 }),
-      ],
-      { ...EMPTY_LENS, metric: "pernas" },
-    );
-
-    expect(
-      screen.getByRole("gridcell", { name: /Segunda, manhã: 3 pernas/ }),
-    ).toBeInTheDocument();
   });
 
   it("usa singular no rótulo de uma única pessoa", () => {

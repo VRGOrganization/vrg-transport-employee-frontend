@@ -1,9 +1,4 @@
-import {
-  EMPTY_LENS,
-  type InfoLens,
-  type InfoMetric,
-  type Seat,
-} from "@/types/info.types";
+import { EMPTY_LENS, type InfoLens, type Seat } from "@/types/info.types";
 import { isDay, isPeriod } from "./normalize";
 
 /**
@@ -25,7 +20,7 @@ export function applyLens(seats: Seat[], lens: InfoLens): Seat[] {
   });
 }
 
-/** `true` quando há algum recorte além do ciclo e da métrica. */
+/** `true` quando há algum recorte além do ciclo. */
 export function hasActiveFilters(lens: InfoLens): boolean {
   return Boolean(
     lens.universityId ||
@@ -45,7 +40,6 @@ const PARAM_KEYS = {
   shift: "shift",
   day: "day",
   period: "period",
-  metric: "metric",
 } as const;
 
 /** Serializa a lente para a URL. Valores padrão são omitidos. */
@@ -58,7 +52,6 @@ export function lensToSearchParams(lens: InfoLens): URLSearchParams {
   if (lens.shift) params.set(PARAM_KEYS.shift, lens.shift);
   if (lens.day) params.set(PARAM_KEYS.day, lens.day);
   if (lens.period) params.set(PARAM_KEYS.period, lens.period);
-  if (lens.metric !== "pessoas") params.set(PARAM_KEYS.metric, lens.metric);
   return params;
 }
 
@@ -74,7 +67,6 @@ export function lensFromSearchParams(
   const shift = get(PARAM_KEYS.shift);
   const day = get(PARAM_KEYS.day);
   const period = get(PARAM_KEYS.period);
-  const metric = get(PARAM_KEYS.metric);
 
   return {
     cycleId: get(PARAM_KEYS.cycleId),
@@ -84,15 +76,10 @@ export function lensFromSearchParams(
     shift: isPeriod(shift) ? shift : null,
     day: isDay(day) ? day : null,
     period: isPeriod(period) ? period : null,
-    metric: metric === "pernas" ? "pernas" : "pessoas",
   };
 }
 
-/** Limpa os recortes, preservando ciclo e métrica (que não são "filtros"). */
+/** Limpa os recortes, preservando o ciclo (que não é "filtro"). */
 export function clearFilters(lens: InfoLens): InfoLens {
-  return { ...EMPTY_LENS, cycleId: lens.cycleId, metric: lens.metric };
-}
-
-export function isMetric(value: unknown): value is InfoMetric {
-  return value === "pessoas" || value === "pernas";
+  return { ...EMPTY_LENS, cycleId: lens.cycleId };
 }

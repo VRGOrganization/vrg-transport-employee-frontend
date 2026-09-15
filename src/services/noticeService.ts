@@ -63,6 +63,9 @@ export const noticeService = {
 
   deleteNotice: (noticeId: string) => http.delete<void>(`/employee/notices/${noticeId}`),
 
+  togglePin: (noticeId: string, pinned: boolean) =>
+    http.patch<Notice>(`/employee/notices/${noticeId}/pin`, { pinned }),
+
   getPollResults: (noticeId: string) => http.get<PollResults>(`/employee/notices/${noticeId}/results`),
 
   // Endpoint retorna CSV como texto puro — não passa por http (que sempre faz JSON.parse).

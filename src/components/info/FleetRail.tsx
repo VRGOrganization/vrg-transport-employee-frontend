@@ -3,14 +3,13 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { DAY_LABELS } from "@/types/cards.types";
-import type { BusLoad, Day, InfoLens, InfoMetric } from "@/types/info.types";
+import type { BusLoad, Day, InfoLens } from "@/types/info.types";
 import type { BusPalette } from "@/lib/info/palette";
 import { busLabel } from "@/lib/info/palette";
 import { formatNumber } from "@/lib/info/format";
 
 interface FleetRailProps {
   load: BusLoad;
-  metric: InfoMetric;
   palette: BusPalette;
   lens: InfoLens;
   universityNames: Map<string, string>;
@@ -28,7 +27,6 @@ interface FleetRailProps {
  */
 export function FleetRail({
   load,
-  metric,
   palette,
   lens,
   universityNames,
@@ -94,7 +92,7 @@ export function FleetRail({
             <button
               key={day.day}
               type="button"
-              aria-label={`${busLabel(load.busIdentifier)}, ${DAY_LABELS[day.day]}: ${formatNumber(day.value)} ${metric === "pessoas" ? (day.value === 1 ? "aluno" : "alunos") : day.value === 1 ? "perna" : "pernas"}`}
+              aria-label={`${busLabel(load.busIdentifier)}, ${DAY_LABELS[day.day]}: ${formatNumber(day.value)} ${day.value === 1 ? "aluno" : "alunos"}`}
               onMouseEnter={() => setHoveredDay(day.day)}
               onMouseLeave={() => setHoveredDay(null)}
               onFocus={() => setHoveredDay(day.day)}

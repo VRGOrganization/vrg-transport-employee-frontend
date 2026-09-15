@@ -97,8 +97,8 @@ describe("applyLens", () => {
 });
 
 describe("hasActiveFilters", () => {
-  it("ciclo e métrica não contam como recorte", () => {
-    expect(hasActiveFilters(lens({ cycleId: "c1", metric: "pernas" }))).toBe(false);
+  it("ciclo não conta como recorte", () => {
+    expect(hasActiveFilters(lens({ cycleId: "c1" }))).toBe(false);
   });
 
   it("qualquer recorte de dado conta", () => {
@@ -117,7 +117,6 @@ describe("serialização na URL", () => {
       shift: "Noite",
       day: "QUA",
       period: "Tarde",
-      metric: "pernas",
     });
 
     const restored = lensFromSearchParams(lensToSearchParams(original));
@@ -136,7 +135,6 @@ describe("serialização na URL", () => {
       day: "DOM",
       period: "Madrugada",
       shift: "Integral",
-      metric: "bananas",
     });
 
     const restored = lensFromSearchParams(params);
@@ -145,16 +143,15 @@ describe("serialização na URL", () => {
     expect(restored.period).toBeNull();
     // Integral não é um período de viagem.
     expect(restored.shift).toBeNull();
-    expect(restored.metric).toBe("pessoas");
   });
 });
 
 describe("clearFilters", () => {
-  it("limpa os recortes preservando ciclo e métrica", () => {
+  it("limpa os recortes preservando o ciclo", () => {
     const out = clearFilters(
-      lens({ cycleId: "c1", metric: "pernas", day: "SEG", universityId: "uni-1" }),
+      lens({ cycleId: "c1", day: "SEG", universityId: "uni-1" }),
     );
 
-    expect(out).toEqual(lens({ cycleId: "c1", metric: "pernas" }));
+    expect(out).toEqual(lens({ cycleId: "c1" }));
   });
 });

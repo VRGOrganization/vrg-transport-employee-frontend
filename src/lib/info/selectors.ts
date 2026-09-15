@@ -13,7 +13,6 @@ import {
   type Grid,
   type GridCell,
   type GridTotals,
-  type InfoMetric,
   type Period,
   type Seat,
   type UniversityBreakdown,
@@ -33,19 +32,12 @@ function emptyCell(): GridCell {
   return { value: 0, studentIds: [], byBus: [] };
 }
 
-/**
- * Grade 5 dias × 3 turnos.
- *
- * `pessoas` conta alunos DISTINTOS na célula; `pernas` soma ida e volta. As
- * duas nunca se somam: uma fala de gente, a outra de viagens.
- */
-export function gridByDayPeriod(seats: Seat[], metric: InfoMetric): Grid {
+/** Grade 5 dias × 3 turnos. Conta alunos DISTINTOS em cada célula. */
+export function gridByDayPeriod(seats: Seat[]): Grid {
   const grid = {} as Grid;
   // Acumuladores paralelos: alunos distintos por célula e por (célula, ônibus).
   const cellStudents = new Map<string, Set<string>>();
-  const cellLegs = new Map<string, number>();
   const busStudents = new Map<string, Map<string, Set<string>>>();
-  const busLegs = new Map<string, Map<string, number>>();
   const busIdentifiers = new Map<string, string>();
 
   for (const day of DAYS) {
@@ -60,17 +52,12 @@ export function gridByDayPeriod(seats: Seat[], metric: InfoMetric): Grid {
     let students = cellStudents.get(cellKey);
     if (!students) cellStudents.set(cellKey, (students = new Set()));
     students.add(seat.studentId);
-    cellLegs.set(cellKey, (cellLegs.get(cellKey) ?? 0) + seat.legs);
 
     let perBusStudents = busStudents.get(cellKey);
     if (!perBusStudents) busStudents.set(cellKey, (perBusStudents = new Map()));
     let busSet = perBusStudents.get(busKey);
     if (!busSet) perBusStudents.set(busKey, (busSet = new Set()));
     busSet.add(seat.studentId);
-
-    let perBusLegs = busLegs.get(cellKey);
-    if (!perBusLegs) busLegs.set(cellKey, (perBusLegs = new Map()));
-    perBusLegs.set(busKey, (perBusLegs.get(busKey) ?? 0) + seat.legs);
 
     busIdentifiers.set(busKey, seat.busIdentifier);
   }
@@ -82,20 +69,15 @@ export function gridByDayPeriod(seats: Seat[], metric: InfoMetric): Grid {
       if (!students) continue;
 
       const perBusStudents = busStudents.get(cellKey) ?? new Map();
-      const perBusLegs = busLegs.get(cellKey) ?? new Map();
 
       const byBus = Array.from(perBusStudents.entries(), ([busKey, set]) => ({
         busId: busKey === "__none__" ? "" : busKey,
         busIdentifier: busIdentifiers.get(busKey) ?? "",
-        value:
-          metric === "pessoas"
-            ? (set as Set<string>).size
-            : (perBusLegs.get(busKey) ?? 0),
+        value: (set as Set<string>).size,
       })).sort((a, b) => compareIdentifiers(a.busIdentifier, b.busIdentifier));
 
       grid[day][period] = {
-        value:
-          metric === "pessoas" ? students.size : (cellLegs.get(cellKey) ?? 0),
+        value: students.size,
         studentIds: Array.from(students),
         byBus,
       };
@@ -111,36 +93,23 @@ export function gridByDayPeriod(seats: Seat[], metric: InfoMetric): Grid {
  * Totais por dia/turno recontam alunos distintos a partir dos assentos — somar
  * as células duplicaria quem viaja em mais de um turno no mesmo dia.
  */
-export function gridTotals(
-  seats: Seat[],
-  grid: Grid,
-  metric: InfoMetric,
-): GridTotals {
+export function gridTotals(seats: Seat[], grid: Grid): GridTotals {
   const byDay = {} as Record<Day, number>;
   const byPeriod = {} as Record<Period, number>;
 
-  if (metric === "pessoas") {
-    const dayStudents = new Map<Day, Set<string>>();
-    const periodStudents = new Map<Period, Set<string>>();
-    for (const seat of seats) {
-      let ds = dayStudents.get(seat.day);
-      if (!ds) dayStudents.set(seat.day, (ds = new Set()));
-      ds.add(seat.studentId);
-      let ps = periodStudents.get(seat.period);
-      if (!ps) periodStudents.set(seat.period, (ps = new Set()));
-      ps.add(seat.studentId);
-    }
-    for (const day of DAYS) byDay[day] = dayStudents.get(day)?.size ?? 0;
-    for (const period of PERIODS)
-      byPeriod[period] = periodStudents.get(period)?.size ?? 0;
-  } else {
-    for (const day of DAYS) byDay[day] = 0;
-    for (const period of PERIODS) byPeriod[period] = 0;
-    for (const seat of seats) {
-      byDay[seat.day] += seat.legs;
-      byPeriod[seat.period] += seat.legs;
-    }
+  const dayStudents = new Map<Day, Set<string>>();
+  const periodStudents = new Map<Period, Set<string>>();
+  for (const seat of seats) {
+    let ds = dayStudents.get(seat.day);
+    if (!ds) dayStudents.set(seat.day, (ds = new Set()));
+    ds.add(seat.studentId);
+    let ps = periodStudents.get(seat.period);
+    if (!ps) periodStudents.set(seat.period, (ps = new Set()));
+    ps.add(seat.studentId);
   }
+  for (const day of DAYS) byDay[day] = dayStudents.get(day)?.size ?? 0;
+  for (const period of PERIODS)
+    byPeriod[period] = periodStudents.get(period)?.size ?? 0;
 
   let max = 0;
   for (const day of DAYS) {
@@ -149,10 +118,7 @@ export function gridTotals(
     }
   }
 
-  const total =
-    metric === "pessoas"
-      ? new Set(seats.map((s) => s.studentId)).size
-      : seats.reduce((sum, s) => sum + s.legs, 0);
+  const total = new Set(seats.map((s) => s.studentId)).size;
 
   return { byDay, byPeriod, max, total };
 }
@@ -245,7 +211,6 @@ export function dayOverlap(seats: Seat[]): Record<Day, Record<Day, number>> {
 export function byBus(
   seats: Seat[],
   buses: Bus[],
-  metric: InfoMetric,
   showCounters: boolean,
 ): BusLoad[] {
   const busById = new Map(buses.map((b) => [b._id, b]));
@@ -255,7 +220,7 @@ export function byBus(
     {
       identifier: string;
       students: Set<string>;
-      days: Map<Day, { students: Set<string>; legs: number; byUniversity: Map<string, Set<string>> }>;
+      days: Map<Day, { students: Set<string>; byUniversity: Map<string, Set<string>> }>;
     }
   >();
 
@@ -278,11 +243,10 @@ export function byBus(
     if (!dayEntry) {
       entry.days.set(
         seat.day,
-        (dayEntry = { students: new Set(), legs: 0, byUniversity: new Map() }),
+        (dayEntry = { students: new Set(), byUniversity: new Map() }),
       );
     }
     dayEntry.students.add(seat.studentId);
-    dayEntry.legs += seat.legs;
 
     const uniKey = seat.universityId ?? "";
     let uniSet = dayEntry.byUniversity.get(uniKey);
@@ -296,11 +260,7 @@ export function byBus(
 
     const days = DAYS.map((day) => {
       const dayEntry = entry.days.get(day);
-      const value = dayEntry
-        ? metric === "pessoas"
-          ? dayEntry.students.size
-          : dayEntry.legs
-        : 0;
+      const value = dayEntry ? dayEntry.students.size : 0;
 
       let counterFilled: number | null = null;
       if (showCounters && bus?.universitySlots) {
