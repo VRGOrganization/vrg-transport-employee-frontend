@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Download, Search } from "lucide-react";
-import { Modal } from "@/components/ui/Modal";
+import { Drawer } from "@/components/ui/Drawer";
 import { ErrorState } from "@/components/ui/states";
 import { cn } from "@/lib/utils";
 import { DAY_LABELS } from "@/types/cards.types";
@@ -150,10 +150,10 @@ function RosterContent({
   const slots = bus?.universitySlots ?? [];
 
   return (
-    <Modal
+    <Drawer
       open={open}
       onClose={onClose}
-      size="xl"
+      side="right"
       title={busIdentifier ? busLabel(busIdentifier) : "Ônibus"}
     >
       <div className="space-y-3">
@@ -259,7 +259,7 @@ function RosterContent({
         )}
 
         {!loading && !error && (
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-96 overflow-auto">
             <table className="w-full border-collapse text-sm">
               <thead className="sticky top-0 bg-surface-container-lowest">
                 <tr className="border-b border-outline-variant">
@@ -360,6 +360,6 @@ function RosterContent({
           </p>
         </div>
       </div>
-    </Modal>
+    </Drawer>
   );
 }

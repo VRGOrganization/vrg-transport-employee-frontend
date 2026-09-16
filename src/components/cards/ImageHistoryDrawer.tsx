@@ -1,12 +1,12 @@
 "use client";
 
-import { ChevronDown, ChevronUp, History, X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { ChevronDown, ChevronUp, History } from "lucide-react";
+import { useEffect, useState } from "react";
 import { normalizeMediaSource } from "@/lib/cardUtils";
 import { http } from "@/services/http";
 import type { ImageHistoryRecord, PhotoType } from "@/types/cards.types";
 import { PHOTO_TYPE_LABELS } from "@/types/cards.types";
-import { useModalA11y } from "@/hooks/ui/useModalA11y";
+import { Drawer } from "@/components/ui/Drawer";
 
 interface ImageHistoryDrawerProps {
   studentId: string | null; // null = fechado
@@ -39,9 +39,6 @@ export function ImageHistoryDrawer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [expandedType, setExpandedType] = useState<PhotoType | null>(null);
-  const titleId = useId();
-  const panelRef = useRef<HTMLElement>(null);
-  useModalA11y(panelRef, onClose, !!studentId);
 
   useEffect(() => {
     if (!studentId) {
@@ -67,47 +64,27 @@ export function ImageHistoryDrawer({
       .finally(() => setLoading(false));
   }, [studentId]);
 
-  if (!studentId) return null;
-
   const grouped = groupByPhotoType(records);
   const types = Array.from(grouped.keys());
 
   return (
-    <>
-      {/* Overlay */}
-      <div className="fixed inset-0 z-40 bg-black/30" onClick={onClose} />
-
-      {/* Drawer */}
-      <aside
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        className="fixed right-0 top-0 z-50 h-full w-full max-w-md bg-surface-container-lowest shadow-2xl flex flex-col outline-none"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-outline-variant/30 px-5 py-4">
-          <div className="flex items-center gap-2">
-            <History className="size-5 text-primary" />
-            <div>
-              <p id={titleId} className="text-sm font-bold text-on-surface">
-                Histórico de Documentos
-              </p>
-              <p className="text-xs text-on-surface-variant">{studentName}</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Fechar modal"
-            className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-          >
-            <X className="size-4.5" />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+    <Drawer
+      open={!!studentId}
+      onClose={onClose}
+      side="right"
+      dismissible="free"
+      closeOnBackdrop
+      title={
+        <span className="flex items-center gap-2">
+          <History className="size-5 text-primary" />
+          <span className="flex flex-col">
+            <span className="text-sm font-bold text-on-surface">Histórico de Documentos</span>
+            <span className="text-xs font-normal text-on-surface-variant">{studentName}</span>
+          </span>
+        </span>
+      }
+    >
+      <div className="space-y-3">
           {loading && (
             <p className="text-sm text-on-surface-variant text-center py-8">
               Carregando histórico…
@@ -205,8 +182,7 @@ export function ImageHistoryDrawer({
                 </div>
               );
             })}
-        </div>
-      </aside>
-    </>
+      </div>
+    </Drawer>
   );
 }
