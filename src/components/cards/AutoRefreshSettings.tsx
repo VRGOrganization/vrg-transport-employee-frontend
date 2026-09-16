@@ -43,7 +43,7 @@ export function AutoRefreshSettings({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-2 w-64 rounded-xl border border-outline-variant bg-surface-container-lowest p-3 shadow-lg">
+        <div className="absolute right-0 top-full z-[var(--z-dropdown)] mt-2 w-64 rounded-xl border border-outline-variant bg-surface-container-lowest p-3 shadow-lg">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
             Atualização automática
           </p>
@@ -72,7 +72,7 @@ export function AutoRefreshSettings({
               <HelpCircle className="size-4 cursor-help text-on-surface-variant transition-colors hover:text-on-surface" />
               <span
                 role="tooltip"
-                className="pointer-events-none absolute right-0 top-full z-30 mt-2 w-56 rounded-lg bg-on-surface px-3 py-2 text-[11px] leading-snug text-surface opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100"
+                className="pointer-events-none absolute right-0 top-full z-[var(--z-dropdown)] mt-2 w-56 rounded-lg bg-on-surface px-3 py-2 text-[11px] leading-snug text-surface opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100"
               >
                 {enabled
                   ? `A lista recarrega sozinha a cada ${intervalSeconds}s. Clique no botão para pausar e atualizar apenas quando quiser.`

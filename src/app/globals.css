@@ -89,6 +89,21 @@
 }
 
 /* ════════════════════════════════════════
+   ESCALA DE Z-INDEX
+   Única fonte de empilhamento do app — nunca
+   usar z-10/z-20/z-30/z-40/z-50/z-60/z-[9999]
+   cru, sempre z-[var(--z-*)] correspondente à
+   camada.
+   ════════════════════════════════════════ */
+:root {
+  --z-dropdown: 20;
+  --z-sticky-header: 30;
+  --z-drawer: 40;
+  --z-modal: 50;
+  --z-toast: 9999;
+}
+
+/* ════════════════════════════════════════
    DARK MODE
    Ativar com classe .dark no <html>
    ════════════════════════════════════════ */
@@ -392,6 +407,17 @@ input:-webkit-autofill:focus {
 
 .animate-toast-in  { animation: toast-in  0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .animate-toast-out { animation: toast-out 0.28s cubic-bezier(0.7, 0, 0.84, 0) both; }
+
+/* Movimento reduzido — regra global para as animações via @keyframes CSS
+   (Toaster, página Info) que continuam fora do framer-motion; os primitivos
+   motion (Modal/Drawer/BottomSheet/Dropdown) checam useReducedMotion() no JS. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 /* ════════════════════════════════════════
    SALA DE CONTROLE (/admin/info)

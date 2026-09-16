@@ -47,8 +47,6 @@ export interface BusPassSettings {
   monthlyQuota: number;
   minAdvanceHourBR: number;
   maxHorizonDays: number;
-  /** Se `false`, só ADMIN opera a fila de passes. */
-  employeeOperationEnabled: boolean;
   updatedByAdminId: string | null;
   updatedAt: string | null;
 }
@@ -57,7 +55,6 @@ export interface UpdateBusPassSettingsPayload {
   monthlyQuota?: number;
   minAdvanceHourBR?: number;
   maxHorizonDays?: number;
-  employeeOperationEnabled?: boolean;
 }
 
 /**

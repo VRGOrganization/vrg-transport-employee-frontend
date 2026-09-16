@@ -231,7 +231,7 @@ export function NoticesPage({ role }: NoticesPageProps) {
                 </button>
 
                 {filtersOpen && (
-                  <div className="absolute right-0 z-20 mt-2 w-64 rounded-xl border border-outline-variant/40 bg-surface-container-lowest p-3 shadow-xl">
+                  <div className="absolute right-0 z-[var(--z-dropdown)] mt-2 w-64 rounded-xl border border-outline-variant/40 bg-surface-container-lowest p-3 shadow-xl">
                     <div className="flex items-center justify-between px-1 pb-2">
                       <span className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
                         Filtrar por

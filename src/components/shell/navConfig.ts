@@ -39,6 +39,7 @@ export const EMPLOYEE_NAV_ITEMS: readonly NavItem[] = [
   { icon: IdCard,          label: "Gerenciar Carteirinhas", href: "/employee/cards"        },
   { icon: TicketCheck,     label: "Passes de ônibus",       href: "/employee/bus-pass"     },
   { icon: Bell,            label: "Avisos",                 href: "/employee/notices"      },
+  { icon: MessageSquareText, label: "Mensagens de sistema", href: "/employee/system-notice-templates" },
 ];
 
 export const ADMIN_BRAND: SideNavBrand = {

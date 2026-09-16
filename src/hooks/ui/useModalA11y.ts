@@ -14,23 +14,30 @@ const FOCUSABLE_SELECTOR =
  * via a nullable prop instead of conditionally rendering (e.g. `bus={x}`
  * rather than `{x && <Modal .../>}`), so the effect re-arms every time the
  * modal actually opens rather than only once at first mount.
+ *
+ * `closeOnEscape` (default `true`) lets `dismissible="confirm-only"` /
+ * `"read-required"` callers keep the focus trap without letting Escape act
+ * as a hidden bypass of the explicit action buttons.
  */
 export function useModalA11y(
   panelRef: RefObject<HTMLElement | null>,
   onClose: () => void,
   open: boolean = true,
+  closeOnEscape: boolean = true,
 ) {
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   // Kept fresh every render so the listener (armed only on `open` edges)
   // never calls a stale closure over onClose/loading/etc.
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const closeOnEscapeRef = useRef(closeOnEscape);
+  closeOnEscapeRef.current = closeOnEscape;
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onCloseRef.current();
+        if (closeOnEscapeRef.current) onCloseRef.current();
         return;
       }
       if (e.key !== "Tab" || !panelRef.current) return;

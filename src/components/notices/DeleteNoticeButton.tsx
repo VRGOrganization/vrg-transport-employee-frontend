@@ -53,7 +53,7 @@ export function DeleteNoticeButton({ noticeId, onDeleted }: Props) {
           icon={Trash2}
           variant="danger"
           description="Ele não vai mais aparecer pra quem ainda não abriu, mas quem já recebeu o push não tem como saber que foi apagado."
-          confirmLabel="Sim, apagar"
+          confirmLabel="Apagar"
         />
       )}
     </>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { employeeService } from "@/services/employeeService";
@@ -214,20 +214,19 @@ function EditEmployeeContent() {
         onClose={() => setShowDeleteConfirm(false)}
         title="Desativar funcionário?"
         actions={
-          <div className="flex gap-3">
-            <Button variant="outline" size="md" fullWidth onClick={() => setShowDeleteConfirm(false)}>
+          <div className="flex justify-center gap-3">
+            <Button variant="outline" size="md" onClick={() => setShowDeleteConfirm(false)}>
               Cancelar
             </Button>
             <Button
               variant="primary"
               size="md"
-              fullWidth
               className="bg-error hover:bg-error/90 border-none text-white font-bold"
               loading={deactivating}
               icon={<UserX className="size-4" />}
               onClick={handleDeactivate}
             >
-              Sim, desativar
+              Desativar
             </Button>
           </div>
         }
@@ -249,20 +248,19 @@ function EditEmployeeContent() {
         onClose={() => setShowActivateConfirm(false)}
         title="Reativar funcionário?"
         actions={
-          <div className="flex gap-3">
-            <Button variant="outline" size="md" fullWidth onClick={() => setShowActivateConfirm(false)}>
+          <div className="flex justify-center gap-3">
+            <Button variant="outline" size="md" onClick={() => setShowActivateConfirm(false)}>
               Cancelar
             </Button>
             <Button
               variant="primary"
               size="md"
-              fullWidth
               className="bg-success hover:bg-success/90 border-none text-white font-bold"
               loading={activating}
               icon={<CheckCircle2 className="size-4" />}
               onClick={handleActivate}
             >
-              Sim, reativar
+              Reativar
             </Button>
           </div>
         }

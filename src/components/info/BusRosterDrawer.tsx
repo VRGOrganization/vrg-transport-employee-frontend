@@ -259,7 +259,7 @@ function RosterContent({
         )}
 
         {!loading && !error && (
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-96 overflow-auto">
             <table className="w-full border-collapse text-sm">
               <thead className="sticky top-0 bg-surface-container-lowest">
                 <tr className="border-b border-outline-variant">

@@ -74,7 +74,7 @@ export function BusCapacityBadge({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-2 w-64 rounded-xl border border-outline-variant bg-surface-container-lowest p-3 shadow-lg">
+        <div className="absolute right-0 top-full z-[var(--z-dropdown)] mt-2 w-64 rounded-xl border border-outline-variant bg-surface-container-lowest p-3 shadow-lg">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
             Detalhamento de alunos
           </p>

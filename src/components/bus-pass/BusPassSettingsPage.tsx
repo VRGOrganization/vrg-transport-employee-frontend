@@ -1,51 +1,88 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import { CalendarRange, Minus, Plus, Ticket, Timer } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import { PanelCard } from "@/components/ui/PanelCard";
 import { StatusBanner } from "@/components/ui/StatusBanner";
+import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import { busPassService } from "@/services/busPassService";
 import type { BusPassSettings, UpdateBusPassSettingsPayload } from "@/types/busPass";
 
-interface NumberFieldProps {
+interface StepperFieldProps {
+  icon: LucideIcon;
   label: string;
   hint: string;
   value: number;
   min: number;
   max: number;
+  suffix?: string;
   onChange: (value: number) => void;
 }
 
-function NumberField({
+function StepperField({
+  icon: Icon,
   label,
   hint,
   value,
   min,
   max,
+  suffix,
   onChange,
-}: NumberFieldProps) {
+}: StepperFieldProps) {
+  const clamp = (next: number) => Math.min(max, Math.max(min, next));
+
   return (
-    <label className="block space-y-1">
-      <span className="text-sm font-medium text-on-surface">{label}</span>
-      <input
-        type="number"
-        value={value}
-        min={min}
-        max={max}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className="w-32 rounded-lg border border-outline bg-surface px-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
-      />
-      <span className="block text-xs text-on-surface-variant">{hint}</span>
-    </label>
+    <div className="flex flex-col gap-3 rounded-xl border border-outline-variant/60 bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Icon className="size-4.5" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-on-surface">{label}</p>
+          <p className="mt-0.5 text-xs text-on-surface-variant">{hint}</p>
+        </div>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-1 self-start rounded-lg border border-outline-variant bg-surface-container-lowest pl-1 sm:self-center">
+        <button
+          type="button"
+          aria-label={`Diminuir ${label.toLowerCase()}`}
+          onClick={() => onChange(clamp(value - 1))}
+          disabled={value <= min}
+          className="flex size-8 items-center justify-center rounded-md text-error transition-colors hover:bg-error/10 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <Minus className="size-3.5" />
+        </button>
+        <input
+          type="number"
+          value={value}
+          min={min}
+          max={max}
+          onChange={(event) => onChange(clamp(Number(event.target.value)))}
+          className="w-14 bg-transparent text-center text-sm font-semibold text-on-surface outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        />
+        <button
+          type="button"
+          aria-label={`Aumentar ${label.toLowerCase()}`}
+          onClick={() => onChange(clamp(value + 1))}
+          disabled={value >= max}
+          className="flex size-8 items-center justify-center rounded-md text-success transition-colors hover:bg-success/10 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <Plus className="size-3.5" />
+        </button>
+        {suffix && (
+          <span className="pr-3 pl-1 text-xs text-on-surface-variant">{suffix}</span>
+        )}
+      </div>
+    </div>
   );
 }
 
-/**
- * Configurações do passe. Exclusiva do ADMIN — inclusive o toggle que decide
- * se funcionários podem operar a fila: quem opera não decide a própria
- * permissão.
- */
+/** Configurações do passe. Exclusiva do ADMIN. */
 export function BusPassSettingsPage() {
   const [settings, setSettings] = useState<BusPassSettings | null>(null);
   const [initialSettings, setInitialSettings] = useState<BusPassSettings | null>(null);
@@ -79,6 +116,13 @@ export function BusPassSettingsPage() {
     setSettings((prev) => (prev ? { ...prev, ...changes } : prev));
   };
 
+  const isDirty =
+    !!settings &&
+    !!initialSettings &&
+    (settings.monthlyQuota !== initialSettings.monthlyQuota ||
+      settings.minAdvanceHourBR !== initialSettings.minAdvanceHourBR ||
+      settings.maxHorizonDays !== initialSettings.maxHorizonDays);
+
   const handleSave = async () => {
     if (!settings) return;
 
@@ -96,12 +140,6 @@ export function BusPassSettingsPage() {
     }
     if (!initialSettings || settings.maxHorizonDays !== initialSettings.maxHorizonDays) {
       changes.maxHorizonDays = settings.maxHorizonDays;
-    }
-    if (
-      !initialSettings ||
-      settings.employeeOperationEnabled !== initialSettings.employeeOperationEnabled
-    ) {
-      changes.employeeOperationEnabled = settings.employeeOperationEnabled;
     }
 
     if (Object.keys(changes).length === 0) {
@@ -128,92 +166,83 @@ export function BusPassSettingsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-3" aria-busy="true">
-        <div className="h-8 w-56 animate-pulse rounded bg-surface-container" />
-        <div className="h-48 animate-pulse rounded-xl bg-surface-container" />
-      </div>
+      <main className="px-6 py-5 bg-surface">
+        <div className="w-full max-w-2xl space-y-3" aria-busy="true">
+          <div className="h-8 w-72 animate-pulse rounded bg-surface-container" />
+          <div className="h-64 animate-pulse rounded-2xl bg-surface-container" />
+        </div>
+      </main>
     );
   }
 
   if (error || !settings) {
-    return <StatusBanner variant="error">{error ?? "Sem dados."}</StatusBanner>;
+    return (
+      <main className="px-6 py-5 bg-surface">
+        <StatusBanner variant="error">{error ?? "Sem dados."}</StatusBanner>
+      </main>
+    );
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <header>
-        <h1 className="text-xl font-semibold text-on-surface">
-          Configurações do passe de ônibus
-        </h1>
-        <p className="text-sm text-on-surface-variant">
-          Valem para todos os alunos. Alterações passam a valer nos próximos
-          pedidos. Passes já aprovados não são afetados.
-        </p>
-      </header>
+    <main className="px-6 py-5 bg-surface">
+      <div className="w-full max-w-2xl space-y-5">
+        <header>
+          <h1 className="text-2xl font-bold text-on-surface">
+            Configurações do passe de ônibus
+          </h1>
+          <p className="text-sm text-on-surface-variant">
+            Valem para todos os alunos. Alterações passam a valer nos próximos
+            pedidos. Passes já aprovados não são afetados.
+          </p>
+        </header>
 
-      <section className="space-y-5 rounded-xl border border-outline-variant bg-surface-container-low p-5">
-        <NumberField
-          label="Cota mensal por aluno"
-          hint="Passes aprovados que um aluno pode ter por mês civil. 0 bloqueia novos pedidos."
-          value={settings.monthlyQuota}
-          min={0}
-          max={31}
-          onChange={(monthlyQuota) => patch({ monthlyQuota })}
-        />
-
-        <NumberField
-          label="Hora de corte (véspera)"
-          hint="Até que hora de Brasília, no dia anterior, o aluno pode pedir, reenviar ou cancelar."
-          value={settings.minAdvanceHourBR}
-          min={0}
-          max={23}
-          onChange={(minAdvanceHourBR) => patch({ minAdvanceHourBR })}
-        />
-
-        <NumberField
-          label="Horizonte (dias)"
-          hint="Quantos dias corridos à frente o aluno pode escolher."
-          value={settings.maxHorizonDays}
-          min={1}
-          max={60}
-          onChange={(maxHorizonDays) => patch({ maxHorizonDays })}
-        />
-      </section>
-
-      <section className="rounded-xl border border-outline-variant bg-surface-container-low p-5">
-        <label className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            checked={settings.employeeOperationEnabled}
-            onChange={(event) =>
-              patch({ employeeOperationEnabled: event.target.checked })
-            }
-            className="mt-1 size-4 accent-primary"
+        <PanelCard className="space-y-3 p-4 sm:p-5">
+          <StepperField
+            icon={Ticket}
+            label="Cota mensal por aluno"
+            hint="Passes aprovados que um aluno pode ter por mês civil. 0 bloqueia novos pedidos."
+            value={settings.monthlyQuota}
+            min={0}
+            max={31}
+            onChange={(monthlyQuota) => patch({ monthlyQuota })}
           />
-          <span>
-            <span className="text-sm font-medium text-on-surface">
-              Permitir que funcionários operem passes
-            </span>
-            <span className="mt-0.5 block text-xs text-on-surface-variant">
-              Com a chave desligada, só administradores aprovam, negam,
-              devolvem ou revogam passes. Esta tela de configurações permanece
-              exclusiva do administrador em qualquer caso.
-            </span>
-          </span>
-        </label>
-      </section>
 
-      <div className="flex items-center gap-3">
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? "Salvando…" : "Salvar"}
-        </Button>
-        {settings.updatedAt ? (
+          <StepperField
+            icon={Timer}
+            label="Hora de corte (véspera)"
+            hint="Até que hora de Brasília, no dia anterior, o aluno pode pedir, reenviar ou cancelar."
+            value={settings.minAdvanceHourBR}
+            min={0}
+            max={23}
+            suffix="h"
+            onChange={(minAdvanceHourBR) => patch({ minAdvanceHourBR })}
+          />
+
+          <StepperField
+            icon={CalendarRange}
+            label="Horizonte"
+            hint="Quantos dias corridos à frente o aluno pode escolher."
+            value={settings.maxHorizonDays}
+            min={1}
+            max={60}
+            suffix="dias"
+            onChange={(maxHorizonDays) => patch({ maxHorizonDays })}
+          />
+        </PanelCard>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Button onClick={handleSave} disabled={saving || !isDirty} size="sm">
+            {saving ? "Salvando…" : "Salvar"}
+          </Button>
           <span className="text-xs text-on-surface-variant">
-            Última alteração em{" "}
-            {new Date(settings.updatedAt).toLocaleString("pt-BR")}
+            {isDirty
+              ? "Há alterações não salvas."
+              : settings.updatedAt
+                ? `Última alteração em ${new Date(settings.updatedAt).toLocaleString("pt-BR")}`
+                : "Nenhuma alteração ainda."}
           </span>
-        ) : null}
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

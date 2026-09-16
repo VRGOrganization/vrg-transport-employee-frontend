@@ -10,8 +10,10 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import type { Employee } from "@/types/employee";
 import { Button } from "@/components/ui/Button";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Tabs } from "@/components/ui/Tabs";
 import { Avatar } from "@/components/ui/Avatar";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
 import { buildEmployeesCsv, downloadCsv } from "@/lib/csvUtils";
@@ -37,8 +39,8 @@ const COLUMNS: Column<Employee>[] = [
     ),
     skeleton: () => (
       <div className="flex items-center gap-3">
-        <div className="size-9 rounded-full bg-surface-container-high animate-pulse flex-shrink-0" />
-        <div className="h-3 w-32 bg-surface-container-high rounded animate-pulse" />
+        <Skeleton rounded="rounded-full" className="size-9 bg-surface-container-high flex-shrink-0" />
+        <Skeleton className="h-3 w-32 bg-surface-container-high" />
       </div>
     ),
   },
@@ -67,7 +69,6 @@ const COLUMNS: Column<Employee>[] = [
 export function EmployeesListPage({ role }: { role: "admin" | "employee" }) {
   const [selected, setSelected]             = useState<Employee | null>(null);
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [toggleTarget, setToggleTarget]   = useState<Employee | null>(null);
   const [toggleLoading, setToggleLoading] = useState(false);
   const [toggleError, setToggleError]     = useState("");
@@ -167,33 +168,34 @@ export function EmployeesListPage({ role }: { role: "admin" | "employee" }) {
     label: "Ação",
     align: "right",
     render: (emp) => (
-      <div className="relative inline-block text-left">
-        <button
-          onClick={(e) => { e.stopPropagation(); setOpenDropdownId(openDropdownId === emp._id ? null : emp._id); }}
-          className="size-8 rounded-lg flex items-center justify-center cursor-pointer text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto"
+      // A célula fica dentro de uma <tr onClick=.../> — o wrapper intercepta o
+      // clique depois que o Dropdown já alternou seu próprio estado (via
+      // bubbling até a div-âncora interna), impedindo-o de subir até a linha.
+      <div onClick={(e) => e.stopPropagation()}>
+        <Dropdown
+          align="end"
+          trigger={
+            <button className="size-8 rounded-lg flex items-center justify-center cursor-pointer text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto">
+              <span className="material-symbols-outlined text-lg">more_vert</span>
+            </button>
+          }
         >
-          <span className="material-symbols-outlined text-lg">more_vert</span>
-        </button>
-        {openDropdownId === emp._id && (
-          <>
-            <div className="fixed inset-0 z-10 cursor-pointer" onClick={(e) => { e.stopPropagation(); setOpenDropdownId(null); }} />
-            <div className="absolute right-0 mt-2 w-36 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-              {[
-                { icon: "visibility", label: "Ver",    action: () => { setViewingEmployee(emp); setOpenDropdownId(null); } },
-                { icon: "edit",       label: "Editar", action: () => { setSelected(emp);         setOpenDropdownId(null); } },
-              ].map(({ icon, label, action }) => (
-                <button
-                  key={label}
-                  onClick={(e) => { e.stopPropagation(); action(); }}
-                  className="w-full text-left px-4 py-2 text-sm font-medium cursor-pointer text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
-                >
-                  <span className="material-symbols-outlined text-lg">{icon}</span>
-                  {label}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
+          <div className="w-36 flex flex-col">
+            {[
+              { icon: "visibility", label: "Ver",    action: () => setViewingEmployee(emp) },
+              { icon: "edit",       label: "Editar", action: () => setSelected(emp) },
+            ].map(({ icon, label, action }) => (
+              <button
+                key={label}
+                onClick={action}
+                className="w-full text-left px-4 py-2 text-sm font-medium cursor-pointer text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3"
+              >
+                <span className="material-symbols-outlined text-lg">{icon}</span>
+                {label}
+              </button>
+            ))}
+          </div>
+        </Dropdown>
       </div>
     ),
   };
@@ -309,7 +311,7 @@ export function EmployeesListPage({ role }: { role: "admin" | "employee" }) {
               ? <><strong>{toggleTarget.name}</strong> perderá acesso ao sistema imediatamente. O cadastro poderá ser reativado posteriormente.</>
               : <><strong>{toggleTarget.name}</strong> recuperará acesso ao sistema imediatamente.</>
           }
-          confirmLabel={toggleTarget.active ? "Sim, desativar" : "Sim, reativar"}
+          confirmLabel={toggleTarget.active ? "Desativar" : "Reativar"}
         />
       )}
     </>

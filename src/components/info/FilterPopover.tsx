@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { Check, ChevronDown, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Dropdown } from "@/components/ui/Dropdown";
 
 export interface FilterOption {
   value: string;
@@ -41,42 +42,10 @@ export function FilterPopover({
   searchPlaceholder = "Buscar…",
   icon,
 }: FilterPopoverProps) {
-  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const rootRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
   const listboxId = useId();
 
   const selected = options.find((o) => o.value === value) ?? null;
-
-  useEffect(() => {
-    if (!open) return;
-
-    // Foca a busca ao abrir: o usuário quase sempre quer digitar.
-    searchRef.current?.focus();
-
-    function onPointerDown(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        setOpen(false);
-        setQuery("");
-      }
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setOpen(false);
-        setQuery("");
-        // Devolve o foco ao gatilho — navegação por teclado não pode se perder.
-        rootRef.current?.querySelector("button")?.focus();
-      }
-    }
-
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
 
   const normalized = query
     .normalize("NFD")
@@ -94,100 +63,91 @@ export function FilterPopover({
       )
     : options;
 
+  /** Toda seleção limpa a busca — reabrir começa do zero, sem estado velho. */
   function pick(next: string | null) {
     onChange(next);
-    close();
-  }
-
-  /** Fechar sempre limpa a busca — reabrir começa do zero, sem estado velho. */
-  function close() {
-    setOpen(false);
     setQuery("");
   }
 
   return (
-    <div ref={rootRef} className="relative">
-      <button
-        type="button"
-        disabled={disabled}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={open ? listboxId : undefined}
-        title={disabled ? disabledHint : undefined}
-        onClick={() => (open ? close() : setOpen(true))}
-        className={cn(
-          "inline-flex h-9 max-w-56 items-center gap-1.5 rounded-lg border px-2.5 text-sm",
-          "transition-colors duration-150 cursor-pointer",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-          selected
-            ? "border-primary/50 bg-primary/8 text-on-surface"
-            : "border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:border-outline",
-          disabled && "opacity-40 cursor-not-allowed",
-        )}
-      >
-        {icon}
-        <span className="text-[11px] uppercase tracking-[0.08em] text-on-surface-muted">
-          {name}
-        </span>
-        <span className="truncate font-medium">
-          {selected ? selected.label : emptyLabel}
-        </span>
-        <ChevronDown
+    <Dropdown
+      menuClassName="w-64 p-1 border border-outline-variant ring-0 shadow-none [box-shadow:var(--shadow-modal)]"
+      trigger={(open) => (
+        <button
+          type="button"
+          disabled={disabled}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls={open ? listboxId : undefined}
+          title={disabled ? disabledHint : undefined}
           className={cn(
-            "size-3.5 shrink-0 text-on-surface-muted transition-transform duration-150",
-            open && "rotate-180",
+            "inline-flex h-9 max-w-56 items-center gap-1.5 rounded-lg border px-2.5 text-sm",
+            "transition-colors duration-150 cursor-pointer",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+            selected
+              ? "border-primary/50 bg-primary/8 text-on-surface"
+              : "border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:border-outline",
+            disabled && "opacity-40 cursor-not-allowed",
           )}
-        />
-      </button>
-
-      {open && (
-        <div
-          id={listboxId}
-          role="listbox"
-          aria-label={name}
-          className={cn(
-            "absolute left-0 top-full z-40 mt-1 w-64 rounded-xl border border-outline-variant",
-            "bg-surface-container-lowest p-1 shadow-lg",
-          )}
-          style={{ boxShadow: "var(--shadow-modal)" }}
         >
-          <div className="flex items-center gap-1.5 border-b border-outline-variant px-2 pb-1.5">
-            <Search className="size-3.5 shrink-0 text-on-surface-muted" />
-            <input
-              ref={searchRef}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={searchPlaceholder}
-              aria-label={`Buscar em ${name}`}
-              className="h-7 w-full bg-transparent text-sm text-on-surface placeholder:text-on-surface-muted"
-            />
-          </div>
-
-          <div className="max-h-64 overflow-y-auto py-1">
-            <Option
-              label={emptyLabel}
-              selected={value === null}
-              onSelect={() => pick(null)}
-            />
-            {filtered.map((option) => (
-              <Option
-                key={option.value}
-                label={option.label}
-                hint={option.hint}
-                badge={option.badge}
-                selected={option.value === value}
-                onSelect={() => pick(option.value)}
-              />
-            ))}
-            {filtered.length === 0 && (
-              <p className="px-2.5 py-3 text-center text-xs text-on-surface-muted">
-                Nada encontrado.
-              </p>
+          {icon}
+          <span className="text-[11px] uppercase tracking-[0.08em] text-on-surface-muted">
+            {name}
+          </span>
+          <span className="truncate font-medium">
+            {selected ? selected.label : emptyLabel}
+          </span>
+          <ChevronDown
+            className={cn(
+              "size-3.5 shrink-0 text-on-surface-muted transition-transform duration-150",
+              open && "rotate-180",
             )}
-          </div>
-        </div>
+          />
+        </button>
       )}
-    </div>
+    >
+      <div id={listboxId} role="listbox" aria-label={name}>
+        {/* stopPropagation: a busca não é uma opção — clicar/digitar aqui não deve fechar o menu (o Dropdown fecha ao clicar em qualquer lugar do conteúdo). */}
+        <div
+          className="flex items-center gap-1.5 border-b border-outline-variant px-2 pb-1.5"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Search className="size-3.5 shrink-0 text-on-surface-muted" />
+          <input
+            // Reabre montado do zero a cada abertura do Dropdown — não é autofocus de página.
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={searchPlaceholder}
+            aria-label={`Buscar em ${name}`}
+            className="h-7 w-full bg-transparent text-sm text-on-surface placeholder:text-on-surface-muted"
+          />
+        </div>
+
+        <div className="max-h-64 overflow-y-auto py-1">
+          <Option
+            label={emptyLabel}
+            selected={value === null}
+            onSelect={() => pick(null)}
+          />
+          {filtered.map((option) => (
+            <Option
+              key={option.value}
+              label={option.label}
+              hint={option.hint}
+              badge={option.badge}
+              selected={option.value === value}
+              onSelect={() => pick(option.value)}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <p className="px-2.5 py-3 text-center text-xs text-on-surface-muted">
+              Nada encontrado.
+            </p>
+          )}
+        </div>
+      </div>
+    </Dropdown>
   );
 }
 

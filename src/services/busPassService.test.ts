@@ -127,7 +127,6 @@ describe("busPassService", () => {
     it("lê as configurações", async () => {
       await expect(busPassService.getSettings()).resolves.toMatchObject({
         monthlyQuota: 4,
-        employeeOperationEnabled: false,
       });
     });
 
@@ -137,19 +136,18 @@ describe("busPassService", () => {
         mswHttp.patch("/api/v1/bus-pass/settings", async ({ request }) => {
           body = await request.json();
           return HttpResponse.json({
-            monthlyQuota: 4,
+            monthlyQuota: 6,
             minAdvanceHourBR: 18,
             maxHorizonDays: 14,
-            employeeOperationEnabled: true,
             updatedByAdminId: "admin-1",
             updatedAt: new Date().toISOString(),
           });
         }),
       );
 
-      await busPassService.updateSettings({ employeeOperationEnabled: true });
+      await busPassService.updateSettings({ monthlyQuota: 6 });
 
-      expect(body).toEqual({ employeeOperationEnabled: true });
+      expect(body).toEqual({ monthlyQuota: 6 });
     });
   });
 });

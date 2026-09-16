@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Footer } from "@/components/layout/Footer";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { AdminLicenseRequestForm } from "@/components/students/AdminLicenseRequestForm";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { studentService } from "@/services/studentService";

@@ -157,7 +157,7 @@ export function ParticipantCombobox({
       </button>
 
       {open && (
-        <div className="absolute z-30 mt-1 w-full rounded-xl bg-surface-container-lowest ring-1 ring-outline/30 shadow-xl p-2">
+        <div className="absolute z-[var(--z-dropdown)] mt-1 w-full rounded-xl bg-surface-container-lowest ring-1 ring-outline/30 shadow-xl p-2">
           {/* Busca */}
           <div className="relative mb-2">
             <Search className="size-4 text-on-surface-variant absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
