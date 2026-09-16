@@ -15,9 +15,10 @@ import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Tabs } from "@/components/ui/Tabs";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
+import { Dropdown } from "@/components/ui/Dropdown";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
-import { cn } from "@/lib/utils";
 import { getShiftLabel } from "@/lib/constants";
 import { resolveDisplayName, toTitleCase } from "@/lib/utils/string";
 import { buildStudentsCsv, downloadCsv } from "@/lib/csvUtils";
@@ -52,8 +53,8 @@ const STUDENT_COLUMNS: Column<Student>[] = [
     ),
     skeleton: () => (
       <div className="flex items-center gap-3">
-        <div className="size-9 rounded-full bg-surface-container-high animate-pulse shrink-0" />
-        <div className="h-3 w-32 bg-surface-container-high rounded animate-pulse" />
+        <Skeleton rounded="rounded-full" className="size-9 bg-surface-container-high shrink-0" />
+        <Skeleton className="h-3 w-32 bg-surface-container-high" />
       </div>
     ),
   },
@@ -104,8 +105,8 @@ const BAN_COLUMNS: Column<BanlistEntry>[] = [
     ),
     skeleton: () => (
       <div className="flex items-center gap-3">
-        <div className="size-9 rounded-full bg-surface-container-high animate-pulse shrink-0" />
-        <div className="h-3 w-36 bg-surface-container-high rounded animate-pulse" />
+        <Skeleton rounded="rounded-full" className="size-9 bg-surface-container-high shrink-0" />
+        <Skeleton className="h-3 w-36 bg-surface-container-high" />
       </div>
     ),
   },
@@ -156,7 +157,6 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   }, []);
   const [viewingCardStudent, setViewingCard]  = useState<Student | null>(null);
   const [unbanTarget, setUnbanTarget]         = useState<BanlistEntry | null>(null);
-  const [openDropdownId, setOpenDropdownId]   = useState<string | null>(null);
 
   // ── Elegibilidade para "Novo pedido" (carteirinha manual) ─────────
   // Só pode criar pedido manual se houver janela de inscrição aberta e o
@@ -274,20 +274,11 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   };
 
   // ── Student action column ─────────────────────────────────────────
-  // Da 7ª linha da página em diante o menu de ações abre para CIMA. Abrindo
-  // para baixo nas últimas linhas ele estourava a altura do container da
-  // tabela — que rola em `overflow-x-auto` (o spec faz o eixo Y virar `auto`
-  // junto) — e o navegador criava um segundo scroll vertical, com o menu ainda
-  // por cima cortado. Abrindo para cima o menu fica dentro dos limites e o
-  // scroll extra deixa de existir.
-  const DROPDOWN_FLIP_AFTER_ROW = 6;
-
   const actionsColumn: Column<Student> = {
     key: "actions",
     label: "Ação",
     align: "right",
-    render: (student, index) => {
-      const opensUpward = index >= DROPDOWN_FLIP_AFTER_ROW;
+    render: (student) => {
       const alreadyHasLicense = licenseByStudentId[student._id] === true;
       const hasApprovedLicense = approvedLicenseByStudentId[student._id] === true;
       const hasPendingRequest = pendingRequestByStudentId[student._id] === true;
@@ -311,42 +302,38 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
       const cardDisabled = Boolean(cardDisabledReason);
 
       return (
-      <div className="relative inline-block text-left">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            const next = openDropdownId === student._id ? null : student._id;
-            setOpenDropdownId(next);
-            if (next) checkStudentLicense(student._id);
-          }}
-          className="size-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-lg">more_vert</span>
-        </button>
-        {openDropdownId === student._id && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenDropdownId(null); }} />
-            <div
-              className={cn(
-                "absolute right-0 w-36 bg-surface-container-lowest rounded-lg shadow-xl border border-outline-variant/30 z-20 py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100",
-                opensUpward ? "bottom-full mb-2" : "top-full mt-2",
-              )}
-            >
+        // A célula fica dentro de uma <tr onClick=.../> (seleciona o estudante) — o
+        // wrapper intercepta o clique depois que o Dropdown já alternou seu próprio
+        // estado (via bubbling até a div-âncora interna), impedindo-o de continuar
+        // subindo até a linha.
+        <div onClick={(e) => e.stopPropagation()}>
+          <Dropdown
+            align="end"
+            trigger={
+              <button
+                onClick={() => checkStudentLicense(student._id)}
+                className="size-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary-fixed transition-colors ml-auto cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg">more_vert</span>
+              </button>
+            }
+          >
+            <div className="w-36 flex flex-col">
               {[
-                { icon: "visibility",  label: "Ver",         action: () => { setViewingStudent(student); setOpenDropdownId(null); }, disabled: false, title: undefined },
-                { icon: "edit",        label: "Editar",      action: () => { setEditingStudent(student);  setOpenDropdownId(null); }, disabled: false, title: undefined },
-                { icon: "folder_open", label: "Documentos",  action: () => { setDocsStudent(student);    setOpenDropdownId(null); }, disabled: false, title: undefined },
+                { icon: "visibility",  label: "Ver",         action: () => setViewingStudent(student), disabled: false, title: undefined },
+                { icon: "edit",        label: "Editar",      action: () => setEditingStudent(student),  disabled: false, title: undefined },
+                { icon: "folder_open", label: "Documentos",  action: () => setDocsStudent(student),    disabled: false, title: undefined },
                 {
                   icon: "badge",
                   label: "Carteirinha",
-                  action: () => { setViewingCard(student); setOpenDropdownId(null); },
+                  action: () => setViewingCard(student),
                   disabled: cardDisabled,
                   title: cardDisabledReason || undefined,
                 },
                 {
                   icon: "add_card",
                   label: "Novo pedido",
-                  action: () => { router.push(`/${role}/students/license/new?id=${student._id}`); setOpenDropdownId(null); },
+                  action: () => router.push(`/${role}/students/license/new?id=${student._id}`),
                   disabled: newRequestDisabled,
                   title: newRequestDisabledReason || undefined,
                 },
@@ -355,7 +342,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
                   key={label}
                   disabled={disabled}
                   title={title}
-                  onClick={(e) => { e.stopPropagation(); if (!disabled) action(); }}
+                  onClick={() => { if (!disabled) action(); }}
                   className="w-full text-left px-4 py-2 text-sm font-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-3 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-on-surface"
                 >
                   <span className="material-symbols-outlined text-lg">{icon}</span>
@@ -363,9 +350,8 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
                 </button>
               ))}
             </div>
-          </>
-        )}
-      </div>
+          </Dropdown>
+        </div>
       );
     },
   };
