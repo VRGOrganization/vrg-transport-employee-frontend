@@ -91,9 +91,9 @@
 /* ════════════════════════════════════════
    ESCALA DE Z-INDEX
    Única fonte de empilhamento do app — nunca
-   usar z-10/z-20/z-30/z-40/z-50/z-60/z-[9999]
-   cru, sempre z-[var(--z-*)] correspondente à
-   camada.
+   usar z-10/z-20/z-30/z-40/z-50/z-60/z-[9999]/
+   z-[10000] cru, sempre z-[var(--z-*)]
+   correspondente à camada.
    ════════════════════════════════════════ */
 :root {
   --z-dropdown: 20;
@@ -101,6 +101,11 @@
   --z-drawer: 40;
   --z-modal: 50;
   --z-toast: 9999;
+  /* A popover opened FROM WITHIN an already-open Modal (e.g. the university
+     search list in BusFormModal) — must sit above absolutely everything
+     else in the app, toast included, so it can never end up trapped behind
+     the Modal that hosts it or any other overlay. */
+  --z-modal-popover: 10000;
 }
 
 /* ════════════════════════════════════════
