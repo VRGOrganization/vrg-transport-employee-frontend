@@ -6,7 +6,12 @@ import {
   StudentRecord,
   StudentsResponse,
 } from "@/types/cards.types";
-import type { University } from "@/types/university.types";
+
+/** Recorte da fila: por faculdade ou por ônibus. `null` carrega tudo. */
+export type CardsScope =
+  | { kind: "university"; universityId: string }
+  | { kind: "bus"; busId: string }
+  | null;
 
 interface UseCardsDataReturn {
   students: StudentRecord[];
@@ -53,7 +58,22 @@ type RawLicenseRequestRecord = Omit<
   accessBusIdentifiers?: unknown;
 };
 
-export function useCardsData(university?: University | null): UseCardsDataReturn {
+/**
+ * Pedido pertence ao ônibus quando algum dia do resumo de alocações cai nele.
+ * Sem resumo, vale o `busId` do pedido. Pedido com ida e volta em ônibus
+ * diferentes aparece nos dois.
+ */
+export function requestUsesBus(request: LicenseRequestRecord, busId: string): boolean {
+  const summary = request.allocationSummary ?? [];
+  if (summary.some((entry) => entry.busId === busId)) return true;
+  return summary.length === 0 && resolveId(request.busId) === busId;
+}
+
+export function useCardsData(scope?: CardsScope): UseCardsDataReturn {
+  // Primitivos nas dependências: o escopo costuma ser recriado a cada render.
+  const scopeKind = scope?.kind ?? null;
+  const scopeId = scope ? (scope.kind === "university" ? scope.universityId : scope.busId) : null;
+
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [licenses, setLicenses] = useState<LicenseRecord[]>([]);
   const [licenseRequests, setLicenseRequests] = useState<LicenseRequestRecord[]>([]);
@@ -89,18 +109,17 @@ export function useCardsData(university?: University | null): UseCardsDataReturn
 
       setLicenses(resolvedLicenses);
 
-      const universityId = university?._id ?? null;
+      if (scopeKind && scopeId) {
+        const filteredRequests = normalizedRequests.filter((request) =>
+          scopeKind === "university"
+            ? resolveId(request.universityId) === scopeId
+            : requestUsesBus(request, scopeId),
+        );
 
-      if (universityId) {
-        const filteredRequests = normalizedRequests.filter((request) => {
-          const requestUniversityId = resolveId(request.universityId);
-          return requestUniversityId === universityId;
-        });
+        const scopedStudentIds = new Set(filteredRequests.map((request) => resolveId(request.studentId) ?? request.studentId));
+        const scopedStudents = resolvedStudents.filter((student) => scopedStudentIds.has(student._id));
 
-        const universityStudentIds = new Set(filteredRequests.map((request) => resolveId(request.studentId) ?? request.studentId));
-        const universityStudents = resolvedStudents.filter((student) => universityStudentIds.has(student._id));
-
-        setStudents(universityStudents);
+        setStudents(scopedStudents);
         setLicenseRequests(filteredRequests);
       } else {
         setStudents(resolvedStudents);
@@ -111,7 +130,7 @@ export function useCardsData(university?: University | null): UseCardsDataReturn
     } finally {
       setLoading(false);
     }
-  }, [university]);
+  }, [scopeKind, scopeId]);
 
   useEffect(() => {
     reload();
