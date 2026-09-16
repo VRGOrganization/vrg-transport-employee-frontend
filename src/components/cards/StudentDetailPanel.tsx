@@ -1,4 +1,5 @@
 import { Bus, ChevronDown, Eye, History } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { ImageLightbox, DocumentPreview } from "@/components/cards/CardPageComponents";
 import { http } from "@/services/http";
@@ -443,18 +444,21 @@ export function StudentDetailPanel({
             com base nesta solicitação. Não é possível desfazer por aqui.
           </>
         }
-        confirmLabel="Sim, aprovar"
+        confirmLabel="Aprovar"
       />
 
-      {lightboxIndex !== null && previewItems[lightboxIndex]?.dataUrl && (
-        <ImageLightbox
-          items={previewItems}
-          availableIndexes={availablePreviewIndexes}
-          currentIndex={lightboxIndex}
-          onClose={() => setLightboxIndex(null)}
-          onNavigate={setLightboxIndex}
-        />
-      )}
+      <AnimatePresence>
+        {lightboxIndex !== null && previewItems[lightboxIndex]?.dataUrl && (
+          <ImageLightbox
+            key="lightbox"
+            items={previewItems}
+            availableIndexes={availablePreviewIndexes}
+            currentIndex={lightboxIndex}
+            onClose={() => setLightboxIndex(null)}
+            onNavigate={setLightboxIndex}
+          />
+        )}
+      </AnimatePresence>
 
       {historyOpen && (
         <ImageHistoryDrawer

@@ -13,7 +13,6 @@ const busPassHandlers = [
       monthlyQuota: 4,
       minAdvanceHourBR: 18,
       maxHorizonDays: 14,
-      employeeOperationEnabled: false,
       updatedByAdminId: null,
       updatedAt: null,
     }),

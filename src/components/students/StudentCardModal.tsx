@@ -1,13 +1,15 @@
-import { useState, useEffect, useId, useRef } from "react";
+import { useState, useEffect } from "react";
 import { http } from "@/services/http";
 import { Student } from "@/types/student";
 import { resolveDisplayName, toTitleCase } from "@/lib/utils/string";
 import { LicenseRecord } from "@/types/cards.types";
 import { extractLicenseImage, buildCardsPdfUrl, downloadMedia, getDownloadName } from "@/lib/cardUtils";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { Spinner } from "@/components/ui/Spinner";
 import { Printer, Download, X } from "lucide-react";
 import { PdfPreviewModal } from "@/components/cards/PdfPreviewModal";
-import { useModalA11y } from "@/hooks/ui/useModalA11y";
+import { toast } from "@/lib/toast";
 
 interface StudentCardModalProps {
   student: Student;
@@ -19,9 +21,6 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
   const [error, setError] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
-  const titleId = useId();
-  const panelRef = useRef<HTMLDivElement>(null);
-  useModalA11y(panelRef, onClose);
 
   useEffect(() => {
     const mountState = { cancelled: false };
@@ -65,7 +64,7 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
       setPdfPreviewUrl(pdfUrl);
     } catch (err) {
       if (process.env.NODE_ENV !== "production") console.error(err);
-      alert("Falha ao gerar PDF.");
+      toast.error("Falha ao gerar PDF.");
     }
   };
 
@@ -78,19 +77,16 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in zoom-in-95 duration-200">
-        <div
-          ref={panelRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          tabIndex={-1}
-          className="bg-surface rounded-2xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh] outline-none"
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b border-outline-variant/30">
+      <Modal
+        open
+        onClose={onClose}
+        size="lg"
+        hideClose
+        noPadding
+        header={
+          <div className="flex items-center justify-between p-5 border-b border-outline-variant/30 shrink-0">
             <div>
-              <h2 id={titleId} className="text-xl font-bold text-on-surface tracking-tight">
+              <h2 className="text-xl font-bold text-on-surface tracking-tight">
                 Carteirinha
               </h2>
               <p className="text-sm text-on-surface-variant mt-0.5">
@@ -105,36 +101,9 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
               <X className="size-5" />
             </button>
           </div>
-
-          {/* Content */}
-          <div className="p-6 flex-1 overflow-y-auto flex flex-col items-center justify-center min-h-[400px] bg-surface-container-lowest">
-            {loading ? (
-              <div className="flex flex-col items-center gap-3">
-                <div className="animate-spin rounded-full size-8 border-b-2 border-primary"></div>
-                <span className="text-sm text-on-surface-variant">Carregando carteirinha...</span>
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center gap-3 text-center">
-                <span className="material-symbols-outlined text-4xl text-error">
-                  error
-                </span>
-                <p className="text-on-surface-variant text-sm max-w-sm">
-                  {error}
-                </p>
-              </div>
-            ) : image ? (
-              <div className="relative group rounded-xl overflow-hidden shadow-lg border border-outline-variant/20 bg-white p-2 w-full max-w-5xl">
-                <img
-                  src={image}
-                  alt="Carteirinha"
-                  className="w-full h-auto object-contain rounded-lg max-h-[70vh]"
-                />
-              </div>
-            ) : null}
-          </div>
-
-          {/* Footer */}
-          <div className="p-4 border-t border-outline-variant/30 flex justify-end gap-3 bg-surface">
+        }
+        footer={
+          <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={onClose}>
               Fechar
             </Button>
@@ -155,8 +124,34 @@ export function StudentCardModal({ student, onClose }: StudentCardModalProps) {
               Imprimir Carteirinha
             </Button>
           </div>
+        }
+      >
+        <div className="p-6 flex-1 overflow-y-auto flex flex-col items-center justify-center min-h-[400px] bg-surface-container-lowest">
+          {loading ? (
+            <div className="flex flex-col items-center gap-3">
+              <Spinner size="lg" className="text-primary" />
+              <span className="text-sm text-on-surface-variant">Carregando carteirinha...</span>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center gap-3 text-center">
+              <span className="material-symbols-outlined text-4xl text-error">
+                error
+              </span>
+              <p className="text-on-surface-variant text-sm max-w-sm">
+                {error}
+              </p>
+            </div>
+          ) : image ? (
+            <div className="relative group rounded-xl overflow-hidden shadow-lg border border-outline-variant/20 bg-white p-2 w-full max-w-5xl">
+              <img
+                src={image}
+                alt="Carteirinha"
+                className="w-full h-auto object-contain rounded-lg max-h-[70vh]"
+              />
+            </div>
+          ) : null}
         </div>
-      </div>
+      </Modal>
 
       {pdfPreviewUrl && (
         <PdfPreviewModal

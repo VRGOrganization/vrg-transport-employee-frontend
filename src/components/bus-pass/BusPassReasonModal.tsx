@@ -35,7 +35,7 @@ export function BusPassReasonModal({
 }: BusPassReasonModalProps) {
   const [reason, setReason] = useState("");
 
-  // Idioma do repo (ver ReinforcedConfirmModal): reset em render, sem efeito.
+  // Idioma do repo (ver ConfirmModal): reset em render, sem efeito.
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
     setPrevOpen(open);

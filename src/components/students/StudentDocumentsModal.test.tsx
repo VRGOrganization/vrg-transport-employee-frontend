@@ -91,7 +91,7 @@ describe("StudentDocumentsModal — documentos em PDF", () => {
       return Promise.resolve([]);
     });
 
-    const { container } = render(
+    render(
       <StudentDocumentsModal studentId="student-1" studentName="Aluno 1" onClose={vi.fn()} />,
     );
 
@@ -99,16 +99,16 @@ describe("StudentDocumentsModal — documentos em PDF", () => {
       expect(screen.getByText("Documento de identidade")).toBeInTheDocument(),
     );
 
-    expect(container.querySelector("iframe")).not.toBeInTheDocument();
+    expect(document.body.querySelector("iframe")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Documento de identidade/ }));
 
     const iframe = await waitFor(() => {
-      const el = container.querySelector("iframe");
+      const el = document.body.querySelector("iframe");
       expect(el).toBeInTheDocument();
       return el;
     });
-    expect(container.querySelector("img")).not.toBeInTheDocument();
+    expect(document.body.querySelector("img")).not.toBeInTheDocument();
     expect(iframe).toHaveAttribute("src", pdfUrl);
   });
 });
@@ -317,7 +317,7 @@ describe("StudentDocumentsModal — viewer de imagem em modal separado", () => {
       return Promise.resolve([]);
     });
 
-    const { container } = render(
+    render(
       <StudentDocumentsModal studentId="student-1" studentName="Aluno 1" onClose={vi.fn()} />,
     );
 
@@ -328,7 +328,7 @@ describe("StudentDocumentsModal — viewer de imagem em modal separado", () => {
     fireEvent.click(screen.getByRole("button", { name: /Documento de identidade/ }));
     await screen.findByRole("button", { name: "Voltar" });
 
-    const backdrops = container.querySelectorAll(".fixed.inset-0");
+    const backdrops = document.body.querySelectorAll(".fixed.inset-0");
     const viewerBackdrop = backdrops[backdrops.length - 1];
     fireEvent.click(viewerBackdrop);
 

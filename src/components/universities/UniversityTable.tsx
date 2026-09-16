@@ -28,8 +28,8 @@ export function UniversityTable({
   onReactivate,
   reactivatingId,
   loading,
-  emptyTitle = "Nenhuma faculdade cadastrada",
-  emptyDescription = 'Clique em "Nova Faculdade" para começar',
+  emptyTitle = "Nenhuma Faculdade Cadastrada",
+  emptyDescription = 'Clique Em "Nova Faculdade" Para Começar',
 }: Props) {
   if (loading) {
     return (
@@ -141,7 +141,7 @@ export function UniversityTable({
                   )}
                   {interactive && (
                     <span
-                      title="Listar faculdades"
+                      title="Listar Faculdades"
                       className={cn(
                         "ml-1 p-1.5 rounded-lg transition-all",
                         isSelected
@@ -180,7 +180,7 @@ export function UniversityTable({
                       ) : (
                         <CircleSlash className="size-3" />
                       )}
-                      {university.hasBus ? "Coberta" : "Sem cobertura"}
+                      {university.hasBus ? "Coberta" : "Sem Cobertura"}
                     </span>
                   )}
                   {university.temporary && (

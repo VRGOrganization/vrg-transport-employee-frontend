@@ -30,7 +30,8 @@ Dentro de `(auth)`, existem divisões explícitas baseadas na **Autorização (R
 2. **`src/app/(auth)/employee/...`**
    Área dedicada aos funcionários operacionais.
    - Embora administradores também possam acessar essa área caso a regra de proxy permita, ela é projetada para o uso diário dos funcionários.
-   - Rotas Internas Exemplo: `/employee/cards`, `/employee/info`.
+   - Rotas Internas Exemplo: `/employee/cards`, `/employee/students`, `/employee/buses`, `/employee/bus-pass`, `/employee/system-notice-templates`.
+   - Páginas compartilhadas com o admin recebem a prop `role` e escondem o que o backend reserva ao admin: na frota, desativar ônibus e liberar vagas; nos passes, a tela de configurações; nas mensagens de sistema, editar o endereço do setor.
    - Limita o número de visualizações e fluxos operacionais para que o funcionário padrão do VRG não veja nem manipule configurações sensíveis (como permissões de sistema).
 
 ### Páginas Especiais do Next.js

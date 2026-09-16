@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import type { PageSize } from "@/lib/constants";
 import { SearchInput } from "./SearchInput";
 import { Pagination } from "./Pagination";
+import { Skeleton } from "./Skeleton";
 
 export interface Column<T> {
   key: string;
@@ -134,7 +135,7 @@ export function DataTable<T>({
                       {c.skeleton ? (
                         c.skeleton()
                       ) : (
-                        <div className="h-3 w-24 bg-surface-container-high rounded animate-pulse" />
+                        <Skeleton className="h-3 w-24 bg-surface-container-high" />
                       )}
                     </td>
                   ))}

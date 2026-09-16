@@ -322,17 +322,17 @@ export function PriorityRulesPage({ role }: { role: "admin" | "employee" }) {
         </p>
         <p className="text-sm text-on-surface-variant mb-5">Tem certeza que deseja continuar?</p>
         {deactivateError && <p className="text-sm text-error mb-4">{deactivateError}</p>}
-        <div className="flex gap-3">
-          <Button variant="outline" size="sm" fullWidth onClick={() => { setDeactivateTarget(null); setDeactivateError(""); }} disabled={deactivateLoading}>
+        <div className="flex justify-center gap-3">
+          <Button variant="outline" size="sm" onClick={() => { setDeactivateTarget(null); setDeactivateError(""); }} disabled={deactivateLoading}>
             Não
           </Button>
           <Button
-            variant="primary" size="sm" fullWidth
+            variant="primary" size="sm"
             loading={deactivateLoading}
             onClick={() => void confirmDeactivate()}
             className="bg-error hover:bg-error/90 text-white border-0"
           >
-            Sim, desativar
+            Desativar
           </Button>
         </div>
       </Modal>

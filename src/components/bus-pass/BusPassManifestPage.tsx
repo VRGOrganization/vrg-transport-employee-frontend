@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { PageHeader } from "@/components/layout/PageHeader";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import type { PageSize } from "@/lib/constants";
 import { busPassService } from "@/services/busPassService";

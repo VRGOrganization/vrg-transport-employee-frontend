@@ -1,8 +1,9 @@
 import { ClipboardCheck } from "lucide-react";
-import { useId, useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { StatusBanner } from "@/components/ui/StatusBanner";
 import { http } from "@/services/http";
-import { useModalA11y } from "@/hooks/ui/useModalA11y";
 import {
   PHOTO_TYPE_LABELS,
   REVISION_FIELD_LABELS,
@@ -72,9 +73,6 @@ export function RequestRevisionModal({
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const titleId = useId();
-  const panelRef = useRef<HTMLDivElement>(null);
-  useModalA11y(panelRef, onClose);
 
   const toggle = (
     setter: React.Dispatch<React.SetStateAction<Set<string>>>,
@@ -127,25 +125,21 @@ export function RequestRevisionModal({
     }`;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={() => !submitting && onClose()}
+    <Modal
+      open
+      onClose={onClose}
+      size="md"
+      hideClose
+      noPadding
+      closeOnBackdrop={!submitting}
     >
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        className="w-full max-w-md rounded-2xl bg-surface p-6 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto outline-none"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="p-6 space-y-4">
         <div className="flex items-center gap-3">
           <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
             <ClipboardCheck className="size-5 text-primary" />
           </div>
           <div>
-            <h2 id={titleId} className="font-bold text-on-surface text-base">
+            <h2 className="font-bold text-on-surface text-base">
               Solicitar revisão
             </h2>
             <p className="text-xs text-on-surface-variant">
@@ -202,7 +196,7 @@ export function RequestRevisionModal({
           />
         </div>
 
-        {errorMessage && <p className="text-xs text-error">{errorMessage}</p>}
+        {errorMessage && <StatusBanner variant="error">{errorMessage}</StatusBanner>}
 
         <div className="flex gap-2 pt-2">
           <button
@@ -227,6 +221,6 @@ export function RequestRevisionModal({
           </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

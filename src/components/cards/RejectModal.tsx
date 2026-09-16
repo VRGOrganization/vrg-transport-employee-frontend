@@ -1,8 +1,9 @@
 import { XCircle } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { StatusBanner } from "@/components/ui/StatusBanner";
 import { http } from "@/services/http";
-import { useModalA11y } from "@/hooks/ui/useModalA11y";
 import type {
   LicenseRequestRecord,
   RejectionReasonConfig,
@@ -28,9 +29,6 @@ export function RejectModal({
   const [customMessage, setCustomMessage] = useState("");
   const [rejecting, setRejecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const titleId = useId();
-  const panelRef = useRef<HTMLDivElement>(null);
-  useModalA11y(panelRef, onClose);
 
   const loadReasons = () => {
     setLoadingReasons(true);
@@ -101,25 +99,21 @@ export function RejectModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={() => !rejecting && onClose()}
+    <Modal
+      open
+      onClose={onClose}
+      size="md"
+      hideClose
+      noPadding
+      closeOnBackdrop={!rejecting}
     >
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        className="w-full max-w-md rounded-2xl bg-surface p-6 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto outline-none"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="p-6 space-y-4">
         <div className="flex items-center gap-3">
           <div className="size-10 rounded-xl bg-error/10 flex items-center justify-center shrink-0">
             <XCircle className="size-5 text-error" />
           </div>
           <div>
-            <h2 id={titleId} className="font-bold text-on-surface text-base">Recusar carteirinha</h2>
+            <h2 className="font-bold text-on-surface text-base">Recusar carteirinha</h2>
             <p className="text-xs text-on-surface-variant">Selecione os motivos da recusa</p>
           </div>
         </div>
@@ -130,16 +124,18 @@ export function RejectModal({
           )}
 
           {reasonsError && !loadingReasons && (
-            <div className="flex items-center justify-between gap-2 rounded-lg border border-error/30 bg-error/5 px-3 py-2.5 text-xs text-error">
-              <span>{reasonsError}</span>
-              <button
-                type="button"
-                onClick={loadReasons}
-                className="font-semibold underline shrink-0 cursor-pointer"
-              >
-                Tentar novamente
-              </button>
-            </div>
+            <StatusBanner variant="error">
+              <div className="flex items-center justify-between gap-2">
+                <span>{reasonsError}</span>
+                <button
+                  type="button"
+                  onClick={loadReasons}
+                  className="font-semibold underline shrink-0 cursor-pointer"
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            </StatusBanner>
           )}
 
           {cardReasons.length > 0 && (
@@ -201,7 +197,7 @@ export function RejectModal({
           />
         </div>
 
-        {errorMessage && <p className="text-xs text-error">{errorMessage}</p>}
+        {errorMessage && <StatusBanner variant="error">{errorMessage}</StatusBanner>}
 
         {hasPersonalDocReason && (
           <div className="flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2.5">
@@ -241,6 +237,6 @@ export function RejectModal({
           </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

@@ -34,8 +34,6 @@ import {
 } from "@/components/admin/OpenEnrollmentWindowModal";
 import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { ReinforcedConfirmModal } from "@/components/ui/ReinforcedConfirmModal";
-import { AcknowledgeConfirmModal } from "@/components/ui/AcknowledgeConfirmModal";
 import { toast } from "@/lib/toast";
 import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
 import { PanelCard } from "@/components/ui/PanelCard";
@@ -1046,7 +1044,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
         </div>
       </main>
 
-      <ReinforcedConfirmModal
+      <ConfirmModal
         open={showCloseConfirm}
         onClose={() => {
           if (closingPeriod) return;
@@ -1055,8 +1053,10 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
         onConfirm={handleCloseConfirmed}
         loading={closingPeriod}
         title="Encerrar ciclo"
+        icon={AlertTriangle}
+        variant="danger"
         description={cascadeImpactDescription}
-        confirmWord="ENCERRAR"
+        confirmation={{ kind: "type-word", word: "ENCERRAR" }}
         confirmLabel="Encerrar"
         cancelLabel="Cancelar"
       />
@@ -1136,7 +1136,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
         onSubmit={handleScheduleResetSubmit}
       />
 
-      <ReinforcedConfirmModal
+      <ConfirmModal
         open={showScheduleResetConfirm}
         onClose={() => {
           if (scheduleResetConfirmSaving) return;
@@ -1146,12 +1146,14 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
         loading={scheduleResetConfirmSaving}
         error={scheduleResetConfirmError}
         title="Confirmar antecipação do encerramento"
+        icon={AlertTriangle}
+        variant="danger"
         description={
           pendingResetDays != null
             ? `Isso agendará o encerramento em ${pendingResetDays} dia(s). Quando o prazo chegar, a mesma cascata do encerramento imediato roda automaticamente. Números atuais, podem mudar até lá: ${cascadeImpactDescription}`
             : cascadeImpactDescription
         }
-        confirmWord="ENCERRAR"
+        confirmation={{ kind: "type-word", word: "ENCERRAR" }}
         confirmLabel="Agendar"
         cancelLabel="Cancelar"
       />
@@ -1169,7 +1171,7 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
         onSubmit={handleWindowSubmit}
       />
 
-      <AcknowledgeConfirmModal
+      <ConfirmModal
         open={pendingWindowPayload !== null}
         loading={windowSaving}
         onClose={() => {
@@ -1180,6 +1182,8 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
           if (pendingWindowPayload) void openWindowWithPayload(pendingWindowPayload);
         }}
         title="Confirmar encerramento das carteirinhas"
+        icon={AlertTriangle}
+        variant="danger"
         description={
           <span>
             Ao abrir esta janela, os alunos que ela alcança perderão a
@@ -1191,7 +1195,10 @@ export function EnrollmentPeriodPage({ role }: { role: "admin" | "employee" }) {
             </span>
           </span>
         }
-        acknowledgeLabel="Entendi que os alunos alcançados perderão carteirinha, vaga e passes, e precisarão refazer o pedido."
+        confirmation={{
+          kind: "checkbox",
+          label: "Entendi que os alunos alcançados perderão carteirinha, vaga e passes, e precisarão refazer o pedido.",
+        }}
         confirmLabel="Abrir janela e encerrar"
       />
 

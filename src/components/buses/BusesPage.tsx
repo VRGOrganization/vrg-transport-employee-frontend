@@ -36,8 +36,7 @@ type PageSize = typeof PAGE_SIZE_OPTIONS[number];
 
 const SHIFT_ORDER: Record<string, number> = { morning: 0, afternoon: 1, night: 2 };
 
-export function BusesPage({ role }: { role: "admin" | "employee" }) {
-  void role;
+export function BusesPage() {
   const [statusTab, setStatusTab] = useState<StatusTab>("active");
   const [sortOrder, setSortOrder] = useState<SortOrder>("numeric");
   const [pageSize, setPageSize] = useState<PageSize>(6);
@@ -311,6 +310,7 @@ export function BusesPage({ role }: { role: "admin" | "employee" }) {
       <BusStudentsDrawer
         bus={viewingStudents}
         onClose={() => setViewingStudents(null)}
+        canReleaseSlots
       />
       <DeactivateBusModal
         bus={pendingDeactivate}
@@ -328,7 +328,7 @@ export function BusesPage({ role }: { role: "admin" | "employee" }) {
         title="Reativar Ônibus"
         icon={RotateCcw}
         variant="success"
-        confirmLabel="Sim, reativar"
+        confirmLabel="Reativar"
         description={
           pendingReactivate && (
             <>

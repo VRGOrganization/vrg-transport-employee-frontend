@@ -11,7 +11,7 @@ Esta pasta contém nossa biblioteca fundamental de Design System. Componentes aq
 Exemplos essenciais no nosso sistema:
 - `Button.tsx`: Botões primários, secundários, ícones. 
 - `Input.tsx` / `FieldShell.tsx`: Campos de entrada tipados que abraçam formatação nativa ou máscaras.
-- `Modal.tsx` / `ConfirmModal.tsx`: Envolve diálogos e overlays mantendo acessibilidade (foco preso, tecla Esc).
+- `Modal.tsx` / `ConfirmModal.tsx`: Envolve diálogos e overlays mantendo acessibilidade (foco preso, tecla Esc). `Modal` tem `dismissible: "free" | "confirm-only" | "read-required"` (ESC/backdrop/X liberados / só pelos botões / sem ESC-backdrop mas com X, respectivamente). `ConfirmModal` ganha `confirmation?: { kind: "checkbox" | "type-word" | "type-identifier"; ... }` para exigir um passo extra antes de liberar o botão de confirmar em ações destrutivas; sempre que `confirmation` é passado, o modal força `dismissible="confirm-only"`.
 - `DataTable.tsx`: Motor de tabelas de listagem, suporte flexível a colunas genéricas.
 - `StatusBanner.tsx`, `ResultState.tsx`, `states.tsx`: Feedbacks visuais consistentes de tela vazia, carregamentos e erros.
 

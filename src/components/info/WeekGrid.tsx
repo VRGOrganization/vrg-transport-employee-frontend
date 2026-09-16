@@ -235,7 +235,7 @@ export function WeekGrid({
       {hover && hoveredCell && hoveredCell.byBus.length > 0 && (
         <div
           role="tooltip"
-          className="pointer-events-none fixed z-50 w-56 rounded-lg border border-outline-variant bg-surface-container-lowest p-2 text-xs"
+          className="pointer-events-none fixed z-[var(--z-dropdown)] w-56 rounded-lg border border-outline-variant bg-surface-container-lowest p-2 text-xs"
           style={{
             left: Math.min(hover.x, window.innerWidth - 240),
             top: hover.y + 6,

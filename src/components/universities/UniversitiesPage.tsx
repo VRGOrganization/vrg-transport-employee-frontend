@@ -25,11 +25,11 @@ const PAGE_SIZE = 5;
 const STATUS_TABS = [
   { key: "active" as StatusTab,            label: "Ativas",             icon: CheckCircle2 },
   { key: "inactive" as StatusTab,          label: "Desativadas",        icon: Ban },
-  { key: "inactive-courses" as StatusTab,  label: "Cursos desativados", icon: BookOpen },
+  { key: "inactive-courses" as StatusTab,  label: "Cursos Desativados", icon: BookOpen },
 ];
 
 export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
-  void role;
+  const isAdmin = role === "admin";
   const [statusTab, setStatusTab] = useState<StatusTab>("active");
   const [sortOrder, setSortOrder] = useState<SortOrder>("az");
   const [coverageFilter, setCoverageFilter] = useState<CoverageFilter>("all");
@@ -64,7 +64,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
       if (statusTab === "active") {
         const [unis, busList] = await Promise.all([
           universityApi.listWithQueueCounts(),
-          busApi.listActive(),
+          isAdmin ? busApi.listActive() : Promise.resolve([]),
         ]);
         setUniversities(unis);
         setBuses(busList);
@@ -76,11 +76,11 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
         setInactiveCourses(courses);
       }
     } catch {
-      setError(statusTab === "inactive-courses" ? "Não foi possível carregar os cursos desativados." : "Não foi possível carregar as faculdades.");
+      setError(statusTab === "inactive-courses" ? "Não Foi Possível Carregar Os Cursos Desativados." : "Não Foi Possível Carregar As Faculdades.");
     } finally {
       setLoadingUniversities(false);
     }
-  }, [statusTab]);
+  }, [statusTab, isAdmin]);
 
   const loadCourses = useCallback(async (universityId: string) => {
     setLoadingCourses(true);
@@ -91,7 +91,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
     } catch (err) {
       if (process.env.NODE_ENV !== "production") console.error("[loadCourses] erro:", err);
       setCourses([]);
-      const message = err instanceof Error ? err.message : "Não foi possível carregar os cursos.";
+      const message = err instanceof Error ? err.message : "Não Foi Possível Carregar Os Cursos.";
       setCoursesError(message);
     } finally {
       setLoadingCourses(false);
@@ -198,7 +198,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
       await loadUniversities();
       setPendingReactivate(null);
     } catch {
-      setReactivateError("Não foi possível reativar a faculdade. Tente novamente.");
+      setReactivateError("Não Foi Possível Reativar A Faculdade. Tente Novamente.");
     } finally {
       setReactivatingId(null);
     }
@@ -220,7 +220,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
       setPendingReactivateCourse(null);
     } catch (err) {
       const apiMessage = (err as { message?: string })?.message;
-      setReactivateCourseError(apiMessage || "Não foi possível reativar o curso. Tente novamente.");
+      setReactivateCourseError(apiMessage || "Não Foi Possível Reativar O Curso. Tente Novamente.");
     } finally {
       setReactivatingCourseId(null);
     }
@@ -237,7 +237,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
       setPendingDeactivate(null);
     } catch (err) {
       const apiMessage = (err as { message?: string })?.message;
-      setDeactivateError(apiMessage || "Não foi possível desativar a faculdade. Tente novamente.");
+      setDeactivateError(apiMessage || "Não Foi Possível Desativar A Faculdade. Tente Novamente.");
     } finally {
       setDeactivatingId(null);
     }
@@ -273,14 +273,14 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-2xl font-bold text-on-surface">
-                Gerenciamento de Instituições
+                Gerenciamento De Instituições
               </h1>
               <p className="text-sm text-on-surface-variant mt-1">
-                Cadastre faculdades, gerencie cursos e vincule ônibus
+                Cadastre Faculdades, Gerencie Cursos E Vincule Ônibus
               </p>
             </div>
             <Button variant="primary" size="sm" onClick={() => setCreating(true)}>
-              Adicionar universidade
+              Adicionar Universidade
             </Button>
           </div>
 
@@ -302,10 +302,10 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wide">
                   {statusTab === "active"
-                    ? "Faculdades ativas"
+                    ? "Faculdades Ativas"
                     : statusTab === "inactive"
-                      ? "Faculdades desativadas"
-                      : "Cursos desativados"}
+                      ? "Faculdades Desativadas"
+                      : "Cursos Desativados"}
                 </h2>
                 <span className="text-xs bg-info-container text-info px-2 py-0.5 rounded-full font-medium">
                   {statusTab === "inactive-courses" ? inactiveCourses.length : universities.length}
@@ -317,8 +317,8 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                 onChange={setSearch}
                 placeholder={
                   statusTab === "inactive-courses"
-                    ? "Buscar por curso, faculdade ou sigla..."
-                    : "Buscar por nome ou sigla..."
+                    ? "Buscar Por Curso, Faculdade Ou Sigla..."
+                    : "Buscar Por Nome Ou Sigla..."
                 }
                 className="w-full mb-3"
               />
@@ -335,8 +335,8 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                   >
                     <option value="az">Nome (A → Z)</option>
                     <option value="za">Nome (Z → A)</option>
-                    <option value="temp-first">Temporárias primeiro</option>
-                    <option value="fixed-first">Fixas primeiro</option>
+                    <option value="temp-first">Temporárias Primeiro</option>
+                    <option value="fixed-first">Fixas Primeiro</option>
                   </select>
                 </div>
               )}
@@ -352,7 +352,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                   >
                     <option value="all">Todas</option>
                     <option value="covered">Cobertas</option>
-                    <option value="uncovered">Não cobertas</option>
+                    <option value="uncovered">Não Cobertas</option>
                   </select>
                 </div>
               )}
@@ -367,8 +367,8 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                   deactivatingId={deactivatingId}
                   loading={loadingUniversities}
                   {...(search.trim() && {
-                    emptyTitle: "Nenhuma faculdade encontrada",
-                    emptyDescription: "Tente buscar por outro nome ou sigla.",
+                    emptyTitle: "Nenhuma Faculdade Encontrada",
+                    emptyDescription: "Tente Buscar Por Outro Nome Ou Sigla.",
                   })}
                 />
               ) : statusTab === "inactive" ? (
@@ -377,8 +377,8 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                   loading={loadingUniversities}
                   onReactivate={handleReactivate}
                   reactivatingId={reactivatingId}
-                  emptyTitle={search.trim() ? "Nenhuma faculdade encontrada" : "Nenhuma faculdade desativada"}
-                  emptyDescription={search.trim() ? "Tente buscar por outro nome ou sigla." : "Faculdades desativadas aparecerão aqui."}
+                  emptyTitle={search.trim() ? "Nenhuma Faculdade Encontrada" : "Nenhuma Faculdade Desativada"}
+                  emptyDescription={search.trim() ? "Tente Buscar Por Outro Nome Ou Sigla." : "Faculdades Desativadas Aparecerão Aqui."}
                 />
               ) : (
                 <InactiveCoursesTable
@@ -386,8 +386,8 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                   loading={loadingUniversities}
                   onReactivate={handleReactivateCourse}
                   reactivatingId={reactivatingCourseId}
-                  emptyTitle={search.trim() ? "Nenhum curso encontrado" : "Nenhum curso desativado"}
-                  emptyDescription={search.trim() ? "Tente buscar por outro nome, faculdade ou sigla." : "Cursos desativados aparecerão aqui."}
+                  emptyTitle={search.trim() ? "Nenhum Curso Encontrado" : "Nenhum Curso Desativado"}
+                  emptyDescription={search.trim() ? "Tente Buscar Por Outro Nome, Faculdade Ou Sigla." : "Cursos Desativados Aparecerão Aqui."}
                 />
               )}
 
@@ -395,7 +395,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                 !loadingUniversities && filteredInactiveCourses.length > 0 && (
                   <div className="flex items-center justify-between mt-4 pt-3 border-t border-outline-variant">
                     <span className="text-xs text-on-surface-variant">
-                      Página {courseSafePage} de {courseTotalPages} · {filteredInactiveCourses.length} {filteredInactiveCourses.length === 1 ? "curso" : "cursos"}
+                      Página {courseSafePage} De {courseTotalPages} · {filteredInactiveCourses.length} {filteredInactiveCourses.length === 1 ? "Curso" : "Cursos"}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
@@ -403,7 +403,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                         disabled={courseSafePage <= 1}
                         className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        aria-label="Página anterior"
+                        aria-label="Página Anterior"
                       >
                         <ChevronLeft className="size-4" />
                       </button>
@@ -412,7 +412,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                         onClick={() => setCurrentPage((p) => Math.min(courseTotalPages, p + 1))}
                         disabled={courseSafePage >= courseTotalPages}
                         className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        aria-label="Próxima página"
+                        aria-label="Próxima Página"
                       >
                         <ChevronRight className="size-4" />
                       </button>
@@ -423,7 +423,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                 !loadingUniversities && filteredUniversities.length > 0 && (
                   <div className="flex items-center justify-between mt-4 pt-3 border-t border-outline-variant">
                     <span className="text-xs text-on-surface-variant">
-                      Página {safePage} de {totalPages} · {filteredUniversities.length} {filteredUniversities.length === 1 ? "faculdade" : "faculdades"}
+                      Página {safePage} De {totalPages} · {filteredUniversities.length} {filteredUniversities.length === 1 ? "Faculdade" : "Faculdades"}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
@@ -431,7 +431,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                         disabled={safePage <= 1}
                         className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        aria-label="Página anterior"
+                        aria-label="Página Anterior"
                       >
                         <ChevronLeft className="size-4" />
                       </button>
@@ -440,7 +440,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                         onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                         disabled={safePage >= totalPages}
                         className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        aria-label="Próxima página"
+                        aria-label="Próxima Página"
                       >
                         <ChevronRight className="size-4" />
                       </button>
@@ -479,7 +479,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
 
                   {/* Abas */}
                   <div className="flex gap-1">
-                    {(["courses", "buses"] as DetailTab[]).map((tab) => (
+                    {(isAdmin ? (["courses", "buses"] as DetailTab[]) : (["courses"] as DetailTab[])).map((tab) => (
                       <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
@@ -522,7 +522,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                           onClick={() => loadCourses(selected._id)}
                           className="mt-1 text-xs text-primary hover:underline cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/30 rounded"
                         >
-                          Tentar novamente
+                          Tentar Novamente
                         </button>
                       </div>
                     ) : (
@@ -534,7 +534,7 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
                     )
                   )}
 
-                  {activeTab === "buses" && (
+                  {isAdmin && activeTab === "buses" && (
                     <LinkedBusesPanel
                       university={selected}
                       allBuses={buses}
@@ -547,9 +547,9 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
             {statusTab === "active" && !selected && (
               <div className="flex-1 flex flex-col items-center justify-center py-24 text-on-surface-muted">
                 <Building2 className="size-16 mb-4 text-on-surface-muted/40" />
-                <p className="text-sm font-medium text-on-surface-variant">Selecione uma faculdade</p>
+                <p className="text-sm font-medium text-on-surface-variant">Selecione Uma Faculdade</p>
                 <p className="text-xs text-on-surface-muted mt-1">
-                  para gerenciar seus cursos e ônibus
+                  Para Gerenciar Seus Cursos E Ônibus
                 </p>
               </div>
             )}
@@ -584,13 +584,13 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
         title="Reativar Faculdade"
         icon={RotateCcw}
         variant="success"
-        confirmLabel="Sim, reativar"
+        confirmLabel="Reativar"
         description={
           pendingReactivate && (
             <>
               <p className="text-base font-bold text-on-surface">{pendingReactivate.acronym}</p>
               <p className="text-sm text-on-surface-variant mb-2">{pendingReactivate.name}</p>
-              <p>Esta ação reativará a faculdade. Ela voltará a aparecer para novos cadastros.</p>
+              <p>Esta Ação Reativará A Faculdade. Ela Voltará A Aparecer Para Novos Cadastros.</p>
             </>
           )
         }
@@ -604,12 +604,12 @@ export function UniversitiesPage({ role }: { role: "admin" | "employee" }) {
         title="Reativar Curso"
         icon={RotateCcw}
         variant="success"
-        confirmLabel="Sim, reativar"
+        confirmLabel="Reativar"
         description={
           pendingReactivateCourse && (
             <>
               <p className="text-base font-bold text-on-surface">{pendingReactivateCourse.name}</p>
-              <p>Esta ação reativará o curso. Ele voltará a aparecer para novos cadastros.</p>
+              <p>Esta Ação Reativará O Curso. Ele Voltará A Aparecer Para Novos Cadastros.</p>
             </>
           )
         }
