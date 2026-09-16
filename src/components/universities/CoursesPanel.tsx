@@ -29,7 +29,7 @@ function Pagination({
   return (
     <div className={`flex items-center justify-between ${className ?? ""}`}>
       <span className="text-xs text-on-surface-variant">
-        Página {safePage} de {totalPages} · {total} cursos
+        Página {safePage} De {totalPages} · {total} Cursos
       </span>
       <div className="flex items-center gap-1">
         <button
@@ -37,7 +37,7 @@ function Pagination({
           onClick={() => onPage((p) => Math.max(1, p - 1))}
           disabled={safePage <= 1}
           className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
-          aria-label="Página anterior"
+          aria-label="Página Anterior"
         >
           <ChevronLeft className="size-4" />
         </button>
@@ -46,7 +46,7 @@ function Pagination({
           onClick={() => onPage((p) => Math.min(totalPages, p + 1))}
           disabled={safePage >= totalPages}
           className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
-          aria-label="Próxima página"
+          aria-label="Próxima Página"
         >
           <ChevronRight className="size-4" />
         </button>
@@ -113,7 +113,7 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
       onCoursesChanged();
     } catch (err) {
       const apiMessage = (err as { message?: string })?.message;
-      setDeactivateError(apiMessage || "Não foi possível desativar o curso. Tente novamente.");
+      setDeactivateError(apiMessage || "Não Foi Possível Desativar O Curso. Tente Novamente.");
     } finally {
       setDeactivating(false);
     }
@@ -130,7 +130,7 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
           className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-medium rounded-lg transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40"
         >
           <Plus className="size-3.5" />
-          Novo curso
+          Novo Curso
         </button>
       </div>
 
@@ -139,7 +139,7 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
           <SearchInput
             value={search}
             onChange={setSearch}
-            placeholder="Buscar curso por nome..."
+            placeholder="Buscar Curso Por Nome..."
             className="w-full mb-3"
           />
           <div className="flex items-center gap-2 mb-4">
@@ -153,7 +153,7 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
             >
               <option value="az">Nome (A → Z)</option>
               <option value="za">Nome (Z → A)</option>
-              <option value="model">Tipo de curso</option>
+              <option value="model">Tipo De Curso</option>
             </select>
           </div>
         </>
@@ -162,14 +162,14 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
       {courses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 text-on-surface-muted">
           <GraduationCap className="size-10 mb-2" />
-          <p className="text-sm">Nenhum curso cadastrado</p>
-          <p className="text-xs mt-1">Clique em &quot;Novo curso&quot; para começar</p>
+          <p className="text-sm">Nenhum Curso Cadastrado</p>
+          <p className="text-xs mt-1">Clique Em &quot;Novo Curso&quot; Para Começar</p>
         </div>
       ) : filteredCourses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 text-on-surface-muted">
           <SearchX className="size-10 mb-2" />
-          <p className="text-sm">Nenhum curso encontrado</p>
-          <p className="text-xs mt-1">Tente buscar por outro nome</p>
+          <p className="text-sm">Nenhum Curso Encontrado</p>
+          <p className="text-xs mt-1">Tente Buscar Por Outro Nome</p>
         </div>
       ) : (
         <>
@@ -250,9 +250,9 @@ export function CoursesPanel({ university, courses, onCoursesChanged }: Props) {
               {pendingDeactivate.model && (
                 <p className="text-sm text-on-surface-variant mb-2">{pendingDeactivate.model}</p>
               )}
-              <p>Esta ação desativará o curso. Ele não ficará mais disponível para novos cadastros.</p>
+              <p>Esta Ação Desativará O Curso. Ele Não Ficará Mais Disponível Para Novos Cadastros.</p>
               <p className="text-xs text-on-surface-muted mt-2">
-                Não é possível desativar se houver aluno com carteirinha aprovada vinculado a este curso.
+                Não É Possível Desativar Se Houver Aluno Com Carteirinha Aprovada Vinculado A Este Curso.
               </p>
             </>
           )

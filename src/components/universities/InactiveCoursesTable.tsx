@@ -23,8 +23,8 @@ export function InactiveCoursesTable({
   onReactivate,
   reactivatingId,
   loading,
-  emptyTitle = "Nenhum curso desativado",
-  emptyDescription = "Cursos desativados aparecerão aqui.",
+  emptyTitle = "Nenhum Curso Desativado",
+  emptyDescription = "Cursos Desativados Aparecerão Aqui.",
 }: Props) {
   if (loading) {
     return (
@@ -83,10 +83,10 @@ export function InactiveCoursesTable({
             <div className="mt-2 ml-12 flex items-center gap-1.5 flex-wrap text-[11px] text-on-surface-muted">
               <span className="inline-flex items-center gap-1">
                 <User className="size-3" />
-                Desativado por {course.deactivatedByName ?? "desconhecido"}
+                Desativado Por {course.deactivatedByName ?? "Desconhecido"}
               </span>
               {course.deactivatedAt && (
-                <span>· em {formatDateTimeBR(course.deactivatedAt)}</span>
+                <span>· Em {formatDateTimeBR(course.deactivatedAt)}</span>
               )}
             </div>
           </div>

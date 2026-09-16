@@ -32,7 +32,7 @@ export function DeactivateUniversityModal({
       confirmLabel="Desativar"
       confirmation={
         university
-          ? { kind: "type-identifier", identifier: university.acronym, label: "Confirme a sigla da faculdade" }
+          ? { kind: "type-identifier", identifier: university.acronym, label: "Confirme A Sigla Da Faculdade" }
           : undefined
       }
       description={
@@ -40,17 +40,17 @@ export function DeactivateUniversityModal({
           <>
             <p className="text-base font-bold text-on-surface">{university.acronym}</p>
             <p className="text-sm text-on-surface-variant mb-2">{university.name}</p>
-            <p>Esta ação desativará a faculdade. Ela não aparecerá mais para novos cadastros.</p>
+            <p>Esta Ação Desativará A Faculdade. Ela Não Aparecerá Mais Para Novos Cadastros.</p>
             {((university.pendingCount ?? 0) > 0 ||
               (university.waitlistedCount ?? 0) > 0 ||
               (university.revisionCount ?? 0) > 0) && (
               <p className="mt-2 font-semibold text-error">
-                {university.pendingCount ? `${university.pendingCount} pedido(s) pendente(s)` : null}
+                {university.pendingCount ? `${university.pendingCount} Pedido(s) Pendente(s)` : null}
                 {university.pendingCount && (university.waitlistedCount || university.revisionCount) ? ", " : null}
-                {university.waitlistedCount ? `${university.waitlistedCount} na fila de espera` : null}
+                {university.waitlistedCount ? `${university.waitlistedCount} Na Fila De Espera` : null}
                 {university.waitlistedCount && university.revisionCount ? ", " : null}
-                {university.revisionCount ? `${university.revisionCount} em revisão` : null}
-                {" "}ficarão sem faculdade vinculada.
+                {university.revisionCount ? `${university.revisionCount} Em Revisão` : null}
+                {" "}Ficarão Sem Faculdade Vinculada.
               </p>
             )}
           </>

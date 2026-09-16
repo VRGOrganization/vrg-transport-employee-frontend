@@ -54,7 +54,7 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit, onCourse
       const data = await courseApi.listInactiveByUniversity(initial._id);
       setInactiveCourses(data);
     } catch {
-      setReactivateError("Não foi possível carregar os cursos desativados.");
+      setReactivateError("Não Foi Possível Carregar Os Cursos Desativados.");
     } finally {
       setLoadingInactive(false);
     }
@@ -75,7 +75,7 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit, onCourse
       setInactiveCourses((prev) => prev.filter((c) => c._id !== courseId));
       onCoursesChanged?.();
     } catch {
-      setReactivateError("Não foi possível reativar o curso. Tente novamente.");
+      setReactivateError("Não Foi Possível Reativar O Curso. Tente Novamente.");
     } finally {
       setReactivatingId(null);
     }
@@ -83,7 +83,7 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit, onCourse
 
   const handleSubmit = async () => {
     if (!name.trim() || !acronym.trim() || !address.trim()) {
-      setError("Todos os campos são obrigatórios.");
+      setError("Todos Os Campos São Obrigatórios.");
       return;
     }
     setLoading(true);
@@ -92,7 +92,7 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit, onCourse
       await onSubmit({ name: name.trim(), acronym: acronym.trim(), address: address.trim() });
       onClose();
     } catch (err: any) {
-      setError(err?.message ?? "Erro ao salvar.");
+      setError(err?.message ?? "Erro Ao Salvar.");
     } finally {
       setLoading(false);
     }
@@ -116,7 +116,7 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit, onCourse
             onClick={handleSubmit}
             loading={loading}
           >
-            {initial ? "Salvar alterações" : "Cadastrar"}
+            {initial ? "Salvar Alterações" : "Cadastrar"}
           </Button>
         </div>
       }
@@ -124,7 +124,7 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit, onCourse
       <div className="space-y-4">
         <motion.div custom={0} initial={shouldReduceMotion ? undefined : "hidden"} animate="visible" variants={fieldStaggerVariants}>
           <Input
-            label="Nome completo"
+            label="Nome Completo"
             icon={<Building2 className="size-4" />}
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -163,7 +163,7 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit, onCourse
             onClick={handleToggleInactive}
             className="flex items-center justify-between w-full text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
           >
-            <span>Cursos desativados</span>
+            <span>Cursos Desativados</span>
             {showInactive ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
           </button>
 
@@ -184,7 +184,7 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit, onCourse
                 </div>
               ) : inactiveCourses.length === 0 ? (
                 <p className="text-sm text-on-surface-muted text-center py-4">
-                  Nenhum curso desativado
+                  Nenhum Curso Desativado
                 </p>
               ) : (
                 <ul className="space-y-2">

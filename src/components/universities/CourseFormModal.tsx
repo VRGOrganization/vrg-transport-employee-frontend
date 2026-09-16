@@ -40,11 +40,11 @@ export function CourseFormModal({ open, initial, universityName, onClose, onSubm
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      setError("O nome do curso é obrigatório.");
+      setError("O Nome Do Curso É Obrigatório.");
       return;
     }
     if (!model) {
-      setError("O modelo do curso é obrigatório.");
+      setError("O Modelo Do Curso É Obrigatório.");
       return;
     }
     setLoading(true);
@@ -53,7 +53,7 @@ export function CourseFormModal({ open, initial, universityName, onClose, onSubm
       await onSubmit({ name: name.trim(), model: model || null });
       onClose();
     } catch (err: unknown) {
-      setError((err as { message?: string })?.message ?? "Erro ao salvar.");
+      setError((err as { message?: string })?.message ?? "Erro Ao Salvar.");
     } finally {
       setLoading(false);
     }
@@ -87,7 +87,7 @@ export function CourseFormModal({ open, initial, universityName, onClose, onSubm
       <div className="space-y-4">
         <motion.div custom={0} initial={shouldReduceMotion ? undefined : "hidden"} animate="visible" variants={fieldStaggerVariants}>
           <Input
-            label="Nome do curso"
+            label="Nome Do Curso"
             icon={<BookOpen className="size-4" />}
             value={name}
             onChange={(e) => setName(e.target.value)}
