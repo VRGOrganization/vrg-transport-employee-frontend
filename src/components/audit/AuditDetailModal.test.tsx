@@ -41,7 +41,7 @@ describe("AuditDetailModal", () => {
   it("closes when the X button is clicked", () => {
     const onClose = vi.fn();
     render(<AuditDetailModal event={event} onClose={onClose} />);
-    fireEvent.click(screen.getByLabelText("Fechar"));
+    fireEvent.click(screen.getByLabelText("Fechar modal"));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
