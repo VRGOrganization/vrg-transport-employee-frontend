@@ -38,7 +38,7 @@ export function TopBar() {
   const pageTitle = getPageTitle(pathname);
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-surface-container-lowest/90 backdrop-blur-md border-b border-outline-variant/30">
+    <header className="sticky top-0 z-[var(--z-sticky-header)] h-16 bg-surface-container-lowest/90 backdrop-blur-md border-b border-outline-variant/30">
       <div className="flex items-center justify-between h-full px-8">
         <h1 className="text-base font-bold text-on-surface">{pageTitle}</h1>
 

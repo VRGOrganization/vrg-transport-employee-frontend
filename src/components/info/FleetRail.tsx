@@ -160,7 +160,7 @@ export function FleetRail({
       {hovered && hovered.value > 0 && (
         <div
           role="tooltip"
-          className="pointer-events-none absolute left-48 top-full z-40 mt-1 w-56 rounded-lg border border-outline-variant bg-surface-container-lowest p-2 text-xs"
+          className="pointer-events-none absolute left-48 top-full z-[var(--z-dropdown)] mt-1 w-56 rounded-lg border border-outline-variant bg-surface-container-lowest p-2 text-xs"
           style={{ boxShadow: "var(--shadow-modal)" }}
         >
           <p className="mb-1 font-semibold text-on-surface">

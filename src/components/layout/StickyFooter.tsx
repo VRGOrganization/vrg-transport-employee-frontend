@@ -11,7 +11,7 @@ export function StickyFooter({ children, className, gradient = false }: StickyFo
   return (
     <div
       className={cn(
-        "sticky bottom-0 z-20 px-6 py-4",
+        "sticky bottom-0 z-[var(--z-sticky-header)] px-6 py-4",
         gradient
           ? "bg-gradient-to-t from-surface via-surface/90 to-transparent pt-8"
           : "bg-surface-container-lowest border-t border-outline-variant/30",

@@ -37,7 +37,7 @@ export function SideNav({ brand, items, onLogout, collapsed = false, onToggle }:
   return (
     <aside
       className={cn(
-        "hidden lg:flex h-dvh lg:sticky lg:top-0 z-40 bg-surface-container-lowest flex-col border-r border-outline-variant/30 transition-[width] duration-200 ease-in-out shrink-0 overflow-visible relative",
+        "hidden lg:flex h-dvh lg:sticky lg:top-0 z-[var(--z-sticky-header)] bg-surface-container-lowest flex-col border-r border-outline-variant/30 transition-[width] duration-200 ease-in-out shrink-0 overflow-visible relative",
         collapsed ? "w-16" : "w-64",
       )}
     >
@@ -52,7 +52,7 @@ export function SideNav({ brand, items, onLogout, collapsed = false, onToggle }:
           <button
             onClick={onToggle}
             title={collapsed ? "Expandir menu" : "Recolher menu"}
-            className="absolute -bottom-3.5 -right-3.5 z-50 size-7 rounded-full bg-surface-container-lowest border border-outline-variant/40 flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low shadow-sm transition-colors"
+            className="absolute -bottom-3.5 -right-3.5 z-[var(--z-drawer)] size-7 rounded-full bg-surface-container-lowest border border-outline-variant/40 flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low shadow-sm transition-colors"
           >
             {collapsed ? <ChevronRight className="size-3.5" /> : <ChevronLeft className="size-3.5" />}
           </button>

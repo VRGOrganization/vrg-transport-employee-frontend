@@ -174,7 +174,7 @@ export function ImageLightbox({
   return (
     <dialog
       ref={dialogRef}
-      className="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none items-center justify-center bg-black/80 p-4"
+      className="fixed inset-0 z-[var(--z-modal)] m-0 flex h-full max-h-none w-full max-w-none items-center justify-center bg-black/80 p-4"
       onClose={onClose}
     >
       <div className="relative flex w-full max-w-5xl flex-col gap-3 rounded-2xl border border-white/20 bg-black/60 p-3 md:p-4">
