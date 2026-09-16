@@ -70,10 +70,10 @@ describe("StudentCreateModal", () => {
   });
 
   it("never creates the student from a submit while still on the first step (Enter/implicit submission guard)", () => {
-    const { container } = render(<StudentCreateModal {...baseProps} />);
+    render(<StudentCreateModal {...baseProps} />);
     fillBasicStep();
 
-    const form = container.querySelector("form")!;
+    const form = document.body.querySelector("form")!;
     fireEvent.submit(form);
 
     expect(createMock).not.toHaveBeenCalled();

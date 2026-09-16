@@ -7,56 +7,39 @@ import { cn } from "@/lib/utils";
 import { overlaySpring } from "@/lib/motion";
 import { useModalA11y } from "@/hooks/ui/useModalA11y";
 import { ModalOverlayPortal } from "./ModalOverlayPortal";
+import type { Dismissible } from "./Modal";
 
-/**
- * `"free"`: ESC/backdrop/X all close (default, informational content).
- * `"confirm-only"`: closes only via an explicit action button in `footer`
- * (destructive/irreversible actions).
- * `"read-required"`: no ESC/backdrop close, but the X stays — forces a
- * deliberate dismissal without making it a destructive decision.
- */
-export type Dismissible = "free" | "confirm-only" | "read-required";
-
-interface ModalProps {
+interface DrawerProps {
   open: boolean;
   onClose: () => void;
   title?: ReactNode;
-  size?: "sm" | "md" | "lg" | "xl" | "wide";
+  side?: "left" | "right";
   dismissible?: Dismissible;
-  /** Override for "free" mode only — the other modes force this to false. */
   closeOnBackdrop?: boolean;
-  /** Override for "free" mode only — "confirm-only"/"read-required" force the X regardless. */
   hideClose?: boolean;
   children: ReactNode;
   footer?: ReactNode;
-  /** Full-width content rendered before the padded children area (e.g. gradient headers) */
+  className?: string;
+  /** Full-width content rendered before the padded children area (e.g. gradient headers) — same escape hatch as Modal's `header`. */
   header?: ReactNode;
-  /** Remove default px-6 pb-6 padding from the children wrapper */
+  /** Remove default px-6 pb-6 padding from the children wrapper — same as Modal's `noPadding`. */
   noPadding?: boolean;
 }
 
-const SIZE_CLASSES = {
-  sm: "max-w-sm",
-  md: "max-w-md",
-  lg: "max-w-2xl",
-  xl: "max-w-4xl",
-  // ~60% da largura da tela, com um piso mínimo para não espremer em telas estreitas.
-  wide: "max-w-[min(60vw,72rem)] min-w-[min(60vw,40rem)]",
-} as const;
-
-export function Modal({
+export function Drawer({
   open,
   onClose,
   title,
-  size = "md",
+  side = "right",
   dismissible = "free",
   closeOnBackdrop = false,
   hideClose = false,
   children,
   footer,
+  className,
   header,
   noPadding = false,
-}: ModalProps) {
+}: DrawerProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
@@ -68,12 +51,14 @@ export function Modal({
 
   useModalA11y(panelRef, onClose, open, closeOnEscape);
 
+  const offscreenX = side === "right" ? "100%" : "-100%";
+
   return (
     <ModalOverlayPortal>
       <AnimatePresence>
         {open && (
           <motion.div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[var(--z-modal)] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[var(--z-drawer)] flex"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -90,13 +75,14 @@ export function Modal({
               aria-modal="true"
               aria-labelledby={title ? titleId : undefined}
               tabIndex={-1}
-              initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95 }}
+              initial={{ x: shouldReduceMotion ? 0 : offscreenX }}
+              animate={{ x: 0 }}
+              exit={{ x: shouldReduceMotion ? 0 : offscreenX }}
               transition={shouldReduceMotion ? { duration: 0 } : overlaySpring}
               className={cn(
-                "bg-surface-container-lowest rounded-2xl shadow-xl w-full max-h-[90vh] overflow-y-auto flex flex-col outline-none",
-                SIZE_CLASSES[size],
+                "h-full w-full max-w-md bg-surface-container-lowest shadow-xl flex flex-col outline-none",
+                side === "right" ? "ml-auto" : "mr-auto",
+                className,
               )}
             >
               {header}
@@ -110,7 +96,7 @@ export function Modal({
                   {showClose && (
                     <button
                       onClick={onClose}
-                      aria-label="Fechar modal"
+                      aria-label="Fechar"
                       className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors ml-auto cursor-pointer"
                     >
                       <X className="size-5" />
@@ -118,7 +104,7 @@ export function Modal({
                   )}
                 </div>
               )}
-              <div className={cn("flex-1", !noPadding && "px-6 pb-6")}>{children}</div>
+              <div className={cn("flex-1 overflow-y-auto", !noPadding && "px-6 pb-6")}>{children}</div>
               {footer && (
                 <div className="px-6 pb-6 pt-2 border-t border-outline-variant/30 shrink-0">
                   {footer}

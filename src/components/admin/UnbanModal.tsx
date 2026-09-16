@@ -1,10 +1,11 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
-import { X, ShieldCheck, Loader2, AlertCircle, Calendar } from "lucide-react";
+import { useState } from "react";
+import { X, ShieldCheck, Loader2, Calendar } from "lucide-react";
 import { banlistService } from "@/services/banlistService";
 import { resolveDisplayName, toTitleCase } from "@/lib/utils/string";
-import { useModalA11y } from "@/hooks/ui/useModalA11y";
+import { Modal } from "@/components/ui/Modal";
+import { StatusBanner } from "@/components/ui/StatusBanner";
 import { toast } from "@/lib/toast";
 import type { BanlistEntry } from "@/types/banlist";
 
@@ -19,11 +20,6 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
   const [unbanReasons, setUnbanReasons] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const titleId = useId();
-  const panelRef = useRef<HTMLDivElement>(null);
-  useModalA11y(panelRef, onClose);
-
-  if (!open) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,24 +49,20 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        className="w-full max-w-lg bg-surface rounded-2xl shadow-2xl border border-outline-variant/30 max-h-[90vh] flex flex-col outline-none"
-      >
-
-        {/* Header */}
+    <Modal
+      open={open}
+      onClose={onClose}
+      size="md"
+      hideClose
+      noPadding
+      header={
         <div className="flex items-center justify-between px-6 py-5 border-b border-outline-variant/20 shrink-0">
           <div className="flex items-center gap-3">
             <div className="size-10 rounded-full bg-success/10 flex items-center justify-center">
               <ShieldCheck className="size-5 text-success" />
             </div>
             <div>
-              <h2 id={titleId} className="text-base font-bold text-on-surface">Remover Banimento</h2>
+              <h2 className="text-base font-bold text-on-surface">Remover Banimento</h2>
               <p className="text-xs text-on-surface-variant mt-0.5">Esta ação reintegrará o estudante ao sistema</p>
             </div>
           </div>
@@ -82,7 +74,9 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
             <X className="size-4" />
           </button>
         </div>
-
+      }
+    >
+      <div className="flex flex-col flex-1 min-h-0">
         {/* Student info */}
         <div className="px-6 py-4 bg-surface-container-low/50 border-b border-outline-variant/20 shrink-0">
           <div className="flex items-center gap-3 mb-3">
@@ -128,12 +122,7 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           <div className="px-6 py-5 space-y-4 overflow-y-auto min-h-0">
-            {error && (
-              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-error-container/60 text-error text-xs">
-                <AlertCircle className="size-3.5 flex-shrink-0" />
-                {error}
-              </div>
-            )}
+            {error && <StatusBanner variant="error">{error}</StatusBanner>}
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-on-surface-variant">
@@ -182,6 +171,6 @@ export function UnbanModal({ open, entry, onClose, onSuccess }: UnbanModalProps)
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 }

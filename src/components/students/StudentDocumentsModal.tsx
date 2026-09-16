@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
+import { Spinner } from "@/components/ui/Spinner";
 import { http } from "@/services/http";
 import { transportUsageService } from "@/services/transportUsageService";
 import type { ImageRecord, PhotoType } from "@/types/cards.types";
@@ -103,7 +104,7 @@ export function StudentDocumentsModal({
       {/* Loading */}
       {loading && (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <div className="animate-spin rounded-full size-9 border-b-2 border-primary" />
+          <Spinner size="lg" className="size-9 text-primary" />
           <span className="text-sm text-on-surface-variant">Carregando documentos…</span>
         </div>
       )}

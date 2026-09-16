@@ -1,13 +1,13 @@
 "use client";
 
-import { Ban, CheckCircle2, ClipboardList, RotateCcw, Settings2, ShieldOff } from "lucide-react";
+import { AlertTriangle, Ban, CheckCircle2, ClipboardList, RotateCcw, Settings2, ShieldOff } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import type { PageSize } from "@/lib/constants";
-import { ReinforcedConfirmModal } from "@/components/ui/ReinforcedConfirmModal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Tabs, type TabItem } from "@/components/ui/Tabs";
 import { toast } from "@/lib/toast";
 import { busPassService } from "@/services/busPassService";
@@ -452,12 +452,14 @@ export function BusPassPage({ role }: { role: "admin" | "employee" }) {
         }}
       />
 
-      <ReinforcedConfirmModal
+      <ConfirmModal
         open={revokeTarget !== null}
         title="Revogar passe aprovado"
+        icon={AlertTriangle}
+        variant="danger"
         description="O aluno perde o passe e a vaga volta para o estoque do ônibus."
         confirmLabel="Revogar"
-        confirmWord="REVOGAR"
+        confirmation={{ kind: "type-word", word: "REVOGAR" }}
         loading={actionLoading}
         onClose={() => setRevokeTarget(null)}
         onConfirm={handleRevoke}

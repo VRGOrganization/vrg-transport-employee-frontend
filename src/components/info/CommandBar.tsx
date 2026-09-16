@@ -43,7 +43,7 @@ export function CommandBar({
   downloadDisabled,
 }: CommandBarProps) {
   return (
-    <div className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-outline-variant bg-surface/85 px-6 backdrop-blur-sm">
+    <div className="sticky top-0 z-[var(--z-sticky-header)] flex h-14 items-center gap-2 border-b border-outline-variant bg-surface/85 px-6 backdrop-blur-sm">
       <CycleSelector
         cycles={cycles}
         value={lens.cycleId}

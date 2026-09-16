@@ -104,7 +104,7 @@ export function Toaster() {
     <div
       aria-live="polite"
       aria-label="Notificações"
-      className="pointer-events-none fixed bottom-6 right-6 z-[9999] flex flex-col-reverse gap-2"
+      className="pointer-events-none fixed bottom-6 right-6 z-[var(--z-toast)] flex flex-col-reverse gap-2"
     >
       {toasts.map((t) => (
         <div key={t.id} className="pointer-events-auto">

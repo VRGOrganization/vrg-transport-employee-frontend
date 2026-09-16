@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import type { University, Course } from "@/types/university.types";
 import { Button } from "@/components/ui/Button";
-import { BottomSheet } from "@/components/ui/BottomSheet";
+import { Modal } from "@/components/ui/Modal";
+import { Input } from "@/components/ui/Input";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { courseApi } from "@/lib/universityApi";
-import { BookOpen, RotateCcw, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { fieldStaggerVariants } from "@/lib/motion";
+import { Building2, Tag, MapPin, BookOpen, RotateCcw, Loader2, ChevronDown, ChevronUp, Check } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -17,6 +20,7 @@ interface Props {
 }
 
 export function UniversityFormModal({ open, initial, onClose, onSubmit, onCoursesChanged }: Props) {
+  const shouldReduceMotion = useReducedMotion();
   const [name, setName] = useState("");
   const [acronym, setAcronym] = useState("");
   const [address, setAddress] = useState("");
@@ -95,56 +99,58 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit, onCourse
   };
 
   return (
-    <BottomSheet
+    <Modal
       open={open}
       onClose={onClose}
+      size="md"
       title={initial ? "Editar Faculdade" : "Nova Faculdade"}
-      actions={
+      footer={
         <div className="flex gap-3">
           <Button variant="outline" fullWidth onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
-          <Button variant="primary" fullWidth onClick={handleSubmit} loading={loading}>
+          <Button
+            variant="primary"
+            fullWidth
+            icon={<Check className="size-4" />}
+            onClick={handleSubmit}
+            loading={loading}
+          >
             {initial ? "Salvar alterações" : "Cadastrar"}
           </Button>
         </div>
       }
     >
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-on-surface-variant mb-1">
-            Nome completo
-          </label>
-          <input
+        <motion.div custom={0} initial={shouldReduceMotion ? undefined : "hidden"} animate="visible" variants={fieldStaggerVariants}>
+          <Input
+            label="Nome completo"
+            icon={<Building2 className="size-4" />}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ex: Universidade Federal Fluminense"
-            className="w-full px-4 py-2.5 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-on-surface-variant mb-1">
-            Sigla
-          </label>
-          <input
+        </motion.div>
+        <motion.div custom={1} initial={shouldReduceMotion ? undefined : "hidden"} animate="visible" variants={fieldStaggerVariants}>
+          <Input
+            label="Sigla"
+            icon={<Tag className="size-4" />}
             value={acronym}
             onChange={(e) => setAcronym(e.target.value.toUpperCase())}
             placeholder="Ex: UFF"
             maxLength={20}
-            className="w-full px-4 py-2.5 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary uppercase"
+            className="uppercase"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-on-surface-variant mb-1">
-            Endereço
-          </label>
-          <input
+        </motion.div>
+        <motion.div custom={2} initial={shouldReduceMotion ? undefined : "hidden"} animate="visible" variants={fieldStaggerVariants}>
+          <Input
+            label="Endereço"
+            icon={<MapPin className="size-4" />}
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             placeholder="Ex: Rua Miguel de Frias, 9 - Niterói"
-            className="w-full px-4 py-2.5 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
-        </div>
+        </motion.div>
       </div>
 
       {error && <StatusBanner variant="error" className="mt-4">{error}</StatusBanner>}
@@ -162,7 +168,12 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit, onCourse
           </button>
 
           {showInactive && (
-            <div className="mt-3">
+            <motion.div
+              initial={shouldReduceMotion ? undefined : { opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+              className="mt-3 overflow-hidden"
+            >
               {reactivateError && (
                 <StatusBanner variant="error" className="mb-3">{reactivateError}</StatusBanner>
               )}
@@ -207,10 +218,10 @@ export function UniversityFormModal({ open, initial, onClose, onSubmit, onCourse
                   ))}
                 </ul>
               )}
-            </div>
+            </motion.div>
           )}
         </div>
       )}
-    </BottomSheet>
+    </Modal>
   );
 }

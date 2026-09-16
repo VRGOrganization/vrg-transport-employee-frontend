@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { BanHistoryModal } from "./BanHistoryModal";
@@ -141,7 +141,7 @@ describe("BanHistoryModal", () => {
   });
 
   it("identifica o aluno no cabeçalho", () => {
-    const { container } = renderModal();
-    expect(within(container).getByText("Ana Beatriz Rocha")).toBeInTheDocument();
+    renderModal();
+    expect(screen.getByText("Ana Beatriz Rocha")).toBeInTheDocument();
   });
 });

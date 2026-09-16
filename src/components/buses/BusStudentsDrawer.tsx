@@ -250,9 +250,9 @@ export function BusStudentsDrawer({ bus, onClose, canReleaseSlots = false }: Pro
         open={!!bus}
         onClose={onClose}
         size="xl"
+        closeOnBackdrop={false}
         hideClose
         noPadding
-        closeOnBackdrop={false}
         header={
           bus ? (
             <div className="px-6 py-5 border-b border-outline-variant bg-surface-container-low shrink-0">
