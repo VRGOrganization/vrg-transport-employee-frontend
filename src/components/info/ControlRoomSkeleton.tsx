@@ -1,5 +1,6 @@
 import { DAYS, PERIODS } from "@/types/info.types";
 import { DAY_LABELS } from "@/types/cards.types";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 /**
  * Esqueleto ESTRUTURAL: a grade aparece com suas 15 células e cabeçalhos
@@ -11,7 +12,7 @@ export function ControlRoomSkeleton() {
     <div className="px-6 py-5" aria-busy="true" aria-live="polite">
       <span className="sr-only">Carregando informações do sistema…</span>
 
-      <div className="info-skeleton mb-5 h-6 w-2/3 rounded bg-surface-container-high" />
+      <Skeleton className="info-skeleton mb-5 h-6 w-2/3 bg-surface-container-high" />
 
       <div className="grid grid-cols-12 gap-4">
         <section className="col-span-12 rounded-xl border border-outline-variant bg-surface-container-lowest p-4 lg:col-span-8">
@@ -29,9 +30,10 @@ export function ControlRoomSkeleton() {
                 {period}
               </div>
               {DAYS.map((day) => (
-                <div
+                <Skeleton
                   key={day}
-                  className="info-skeleton h-[92px] flex-1 rounded-lg bg-surface-container-low"
+                  rounded="rounded-lg"
+                  className="info-skeleton h-[92px] flex-1"
                 />
               ))}
             </div>
@@ -41,17 +43,17 @@ export function ControlRoomSkeleton() {
         <div className="col-span-12 space-y-4 lg:col-span-4">
           <section className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
             {Array.from({ length: 4 }, (_, i) => (
-              <div
+              <Skeleton
                 key={i}
-                className="info-skeleton mb-2 h-5 rounded bg-surface-container-high"
+                className="info-skeleton mb-2 h-5 bg-surface-container-high"
               />
             ))}
           </section>
           <section className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
             {Array.from({ length: 5 }, (_, i) => (
-              <div
+              <Skeleton
                 key={i}
-                className="info-skeleton mb-2 h-5 rounded bg-surface-container-high"
+                className="info-skeleton mb-2 h-5 bg-surface-container-high"
               />
             ))}
           </section>
@@ -59,9 +61,10 @@ export function ControlRoomSkeleton() {
 
         <section className="col-span-12 rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
           {Array.from({ length: 5 }, (_, i) => (
-            <div
+            <Skeleton
               key={i}
-              className="info-skeleton mb-2 h-11 rounded-lg bg-surface-container-low"
+              rounded="rounded-lg"
+              className="info-skeleton mb-2 h-11"
             />
           ))}
         </section>

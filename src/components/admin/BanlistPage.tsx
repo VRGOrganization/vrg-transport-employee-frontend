@@ -8,6 +8,7 @@ import type { BanlistEntry } from "@/types/banlist";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Tabs } from "@/components/ui/Tabs";
 import { ErrorState, EmptyState } from "@/components/ui/states";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { useListPage } from "@/hooks/ui/useListPage";
 import { UnbanModal } from "@/components/admin/UnbanModal";
 import type { PageSize } from "@/lib/constants";
@@ -40,8 +41,8 @@ const COLUMNS: Column<BanlistEntry>[] = [
     ),
     skeleton: () => (
       <div className="flex items-center gap-3">
-        <div className="size-9 rounded-full bg-surface-container-high animate-pulse flex-shrink-0" />
-        <div className="h-3 w-36 bg-surface-container-high rounded animate-pulse" />
+        <Skeleton rounded="rounded-full" className="size-9 bg-surface-container-high flex-shrink-0" />
+        <Skeleton className="h-3 w-36 bg-surface-container-high" />
       </div>
     ),
   },

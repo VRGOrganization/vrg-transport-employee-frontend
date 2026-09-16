@@ -7,6 +7,7 @@ import { EmployeeModal } from "@/components/employees/EmployeeModal";
 import type { Employee } from "@/types/employee";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Avatar } from "@/components/ui/Avatar";
+import { Skeleton } from "@/components/ui/Skeleton";
 import type { PageSize } from "@/lib/constants";
 
 interface EmployeeTableProps {
@@ -52,8 +53,8 @@ export function EmployeeTable({ employees, loading, onUpdated, onDeleted }: Empl
       ),
       skeleton: () => (
         <div className="flex items-center gap-4">
-          <div className="size-9 rounded-full bg-surface-container-high animate-pulse shrink-0" />
-          <div className="h-4 w-32 bg-surface-container-high rounded animate-pulse" />
+          <Skeleton rounded="rounded-full" className="size-9 bg-surface-container-high shrink-0" />
+          <Skeleton className="h-4 w-32 bg-surface-container-high" />
         </div>
       ),
     },
