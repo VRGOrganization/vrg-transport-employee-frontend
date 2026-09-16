@@ -43,6 +43,7 @@ export const handlers = [
         _id: "b1",
         identifier: "Onibus 1",
         shift: "Manhã",
+        capacity: 48,
         active: true,
         universitySlots: [
           { universityId: { _id: "u1", acronym: "UA", name: "Universidade Alpha" }, priorityOrder: 1, filledSlots: 10, pendingCount: 2, waitlistedCount: 4 },
@@ -57,7 +58,8 @@ export const handlers = [
       {
         _id: "b2",
         identifier: "Onibus 2",
-        shift: "Tarde",
+        shift: "Noite",
+        capacity: 44,
         active: true,
         universitySlots: [
           { universityId: { _id: "u3", acronym: "UG", name: "Universidade Gama" }, priorityOrder: 1, filledSlots: 8, pendingCount: 0, waitlistedCount: 2 },

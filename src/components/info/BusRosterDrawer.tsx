@@ -170,7 +170,7 @@ function RosterContent({
             <span className="font-medium tabular-nums text-on-surface">
               {bus?.capacity == null
                 ? "sem limite"
-                : `${formatNumber(bus.capacity)} por faculdade/dia`}
+                : `${formatNumber(bus.capacity)} por dia`}
             </span>
           </span>
           {slots.length > 0 && (

@@ -13,10 +13,15 @@ function extractFieldErrors(error: { flatten: () => { fieldErrors: Record<string
   }, {});
 }
 
+type FieldErrors<T> = Partial<Record<keyof T & string, string>>;
+
 interface UseZodFormOptions<T> {
   schema: ZodSchema<T>;
   initialValues: T;
-  onSubmit: (values: T) => Promise<{ success: true } | { success: false; error: string }>;
+  /** Na falha, `fieldErrors` mostra erros do servidor ao lado do campo, além de `error` no banner. */
+  onSubmit: (
+    values: T,
+  ) => Promise<{ success: true } | { success: false; error: string; fieldErrors?: FieldErrors<T> }>;
 }
 
 interface UseZodFormReturn<T> {
@@ -77,6 +82,7 @@ export function useZodForm<T extends Record<string, unknown>>({
       const outcome = await onSubmit(result.data);
       if (!outcome.success) {
         setGeneralError(outcome.error);
+        if (outcome.fieldErrors) setErrors(outcome.fieldErrors);
       }
     } finally {
       setLoading(false);

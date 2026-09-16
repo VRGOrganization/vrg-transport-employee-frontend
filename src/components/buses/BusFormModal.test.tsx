@@ -9,6 +9,11 @@ vi.mock('@/lib/universityApi', () => ({
 }));
 
 import { BusFormModal } from './BusFormModal';
+import type { Bus } from '@/types/university.types';
+
+function makeBus(overrides: Partial<Bus>): Bus {
+  return { _id: 'bus', identifier: '01', active: true, createdAt: '', updatedAt: '', ...overrides };
+}
 
 const UNIVERSITIES = [
   { _id: 'u1', name: 'Universidade Alfa', acronym: 'UA', address: '', active: true, createdAt: '', updatedAt: '' },
@@ -23,26 +28,93 @@ describe('BusFormModal', () => {
     listMock.mockResolvedValue(UNIVERSITIES);
   });
 
-  it('renders empty form when creating and allows submitting with capacity empty (no limit)', async () => {
+  function fillCreateForm({ identifier = '01', capacity = '48', shift = 'Manhã' } = {}) {
+    fireEvent.change(screen.getByPlaceholderText('Ex: 01'), { target: { value: identifier } });
+    fireEvent.change(screen.getByPlaceholderText('Ex: 48'), { target: { value: capacity } });
+    // o único <select> nativo do form (a faculdade é um input[role=combobox])
+    fireEvent.change(document.querySelector('select') as HTMLSelectElement, { target: { value: shift } });
+  }
+
+  it('cria ônibus enviando capacidade numérica e turno, nunca null', async () => {
     const onSubmit = vi.fn(() => Promise.resolve());
     render(<BusFormModal open={true} onClose={() => {}} onSubmit={onSubmit} />);
 
-    // Identifier input
-    const identifier = screen.getByPlaceholderText('Ex: 01');
-    fireEvent.change(identifier, { target: { value: '01' } });
-
-    // Capacity left empty
-    const submit = screen.getByRole('button', { name: /cadastrar/i });
-    fireEvent.click(submit);
+    fillCreateForm({ identifier: '01', capacity: '48', shift: 'Noite' });
+    fireEvent.click(screen.getByRole('button', { name: /cadastrar/i }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(onSubmit.mock.calls[0][0]).toEqual({ identifier: '01', capacity: 48, shift: 'Noite' });
+  });
 
-    const calledWith = onSubmit.mock.calls[0][0];
-    expect(calledWith.identifier).toBe('01');
-    expect('capacity' in calledWith).toBe(true);
-    expect(calledWith.capacity).toBeNull();
-    // shift should not be present when not selected
-    expect(calledWith.shift).toBeUndefined();
+  it('exige capacidade', async () => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    render(<BusFormModal open={true} onClose={() => {}} onSubmit={onSubmit} />);
+
+    fillCreateForm({ capacity: '' });
+    fireEvent.click(screen.getByRole('button', { name: /cadastrar/i }));
+
+    await screen.findByText('Informe a capacidade: um número inteiro de pelo menos 1 vaga.');
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('exige turno', async () => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    render(<BusFormModal open={true} onClose={() => {}} onSubmit={onSubmit} />);
+
+    fillCreateForm({ shift: '' });
+    fireEvent.click(screen.getByRole('button', { name: /cadastrar/i }));
+
+    await screen.findByText('Selecione o turno do ônibus: Manhã ou Noite.');
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('oferece só os turnos Manhã e Noite', () => {
+    render(<BusFormModal open={true} onClose={() => {}} onSubmit={vi.fn()} />);
+
+    const options = Array.from(document.querySelectorAll('select option'))
+      .map((o) => (o as HTMLOptionElement).value)
+      .filter(Boolean);
+    expect(options).toEqual(['Manhã', 'Noite']);
+  });
+
+  it('ônibus antigo com turno Tarde abre sem turno e obriga a escolher', async () => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    const initial = makeBus({ _id: 'bus-old', identifier: '07', capacity: 40, shift: 'Tarde' });
+    render(<BusFormModal open={true} initial={initial} onClose={() => {}} onSubmit={onSubmit} />);
+
+    expect((document.querySelector('select') as HTMLSelectElement).value).toBe('');
+    fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+
+    await screen.findByText('Selecione o turno do ônibus: Manhã ou Noite.');
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('mostra no campo de capacidade a recusa do backend por capacidade abaixo da ocupação', async () => {
+    const message =
+      'A capacidade não pode ser menor que 40, a quantidade de alunos já alocados neste ônibus em um mesmo dia.';
+    const onSubmit = vi.fn(() => Promise.reject({ status: 409, message }));
+    const onClose = vi.fn();
+    const initial = makeBus({ _id: 'bus-full', identifier: '08', capacity: 48, shift: 'Manhã' });
+    render(<BusFormModal open={true} initial={initial} onClose={onClose} onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByPlaceholderText('Ex: 48'), { target: { value: '30' } });
+    fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+
+    const fieldError = await screen.findByText(message);
+    expect(fieldError.closest('div')?.querySelector('input')).toBe(screen.getByPlaceholderText('Ex: 48'));
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('não bloqueia localmente capacidade abaixo da ocupação calculada na tela (quem decide é o backend)', async () => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    const initial = makeBus({ _id: 'bus-9', identifier: '09', capacity: 48, shift: 'Manhã', filledSlotsTotal: 40 });
+    render(<BusFormModal open={true} initial={initial} onClose={() => {}} onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByPlaceholderText('Ex: 48'), { target: { value: '30' } });
+    fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(onSubmit.mock.calls[0][0].capacity).toBe(30);
   });
 
   it('strips non-digits and caps identifier input at 2 characters', () => {
@@ -58,35 +130,11 @@ describe('BusFormModal', () => {
     const onSubmit = vi.fn(() => Promise.resolve());
     render(<BusFormModal open={true} onClose={() => {}} onSubmit={onSubmit} />);
 
-    const identifier = screen.getByPlaceholderText('Ex: 01');
-    fireEvent.change(identifier, { target: { value: '1' } });
-
-    const submit = screen.getByRole('button', { name: /cadastrar/i });
-    fireEvent.click(submit);
+    fillCreateForm({ identifier: '1' });
+    fireEvent.click(screen.getByRole('button', { name: /cadastrar/i }));
 
     await screen.findByText('O identificador deve conter exatamente 2 dígitos numéricos (ex: 01, 02).');
     expect(onSubmit).not.toHaveBeenCalled();
-  });
-
-  it('submits with selected shift', async () => {
-    const onSubmit = vi.fn(() => Promise.resolve());
-    render(<BusFormModal open={true} onClose={() => {}} onSubmit={onSubmit} />);
-
-    // fill identifier
-    const identifier = screen.getByPlaceholderText('Ex: 01');
-    fireEvent.change(identifier, { target: { value: '02' } });
-
-    // select shift — the only native <select> on the form (the university
-    // field is an input[role=combobox], not a <select>)
-    const select = document.querySelector('select') as HTMLSelectElement;
-    fireEvent.change(select, { target: { value: 'Manhã' } });
-
-    const submit = screen.getByRole('button', { name: /cadastrar/i });
-    fireEvent.click(submit);
-
-    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
-    const payload = onSubmit.mock.calls[0][0];
-    expect(payload.shift).toBe('Manhã');
   });
 
   it('hydrates initial shift when editing', async () => {
@@ -122,6 +170,7 @@ describe('BusFormModal', () => {
       _id: 'bus-1',
       identifier: '04',
       capacity: 40,
+      shift: 'Manhã',
       universitySlots: [
         { universityId: 'u1', priorityOrder: 1 },
         { universityId: 'u2', priorityOrder: 2 },
@@ -157,6 +206,7 @@ describe('BusFormModal', () => {
       _id: 'bus-2',
       identifier: '05',
       capacity: 30,
+      shift: 'Noite',
       universitySlots: [
         { universityId: 'uA', priorityOrder: 3 },
         { universityId: 'uB', priorityOrder: 1 },

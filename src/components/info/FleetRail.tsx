@@ -182,7 +182,7 @@ export function FleetRail({
             <p className="mt-1 border-t border-outline-variant pt-1 text-on-surface-muted">
               {hoveredSlot.capacity == null
                 ? "Sem limite de vagas"
-                : `Contador do ônibus: ${formatNumber(hoveredSlot.filled)} · ${formatNumber(hoveredSlot.capacity)} por faculdade`}
+                : `Contador do ônibus: ${formatNumber(hoveredSlot.filled)} · ${formatNumber(hoveredSlot.capacity)} por dia`}
             </p>
           )}
         </div>
