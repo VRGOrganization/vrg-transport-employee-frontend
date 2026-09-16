@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type PageHeaderVariant = "default" | "skeleton";
 
@@ -32,10 +33,10 @@ export function PageHeader({
   if (variant === "skeleton") {
     return (
       <div className={cn("mb-6 flex items-center gap-3", className)}>
-        <div className="size-8 rounded-lg bg-surface-container-high animate-pulse" />
+        <Skeleton rounded="rounded-lg" className="size-8 bg-surface-container-high" />
         <div className="space-y-1.5">
-          <div className="h-4 w-40 bg-surface-container-high rounded animate-pulse" />
-          <div className="h-3 w-24 bg-surface-container-high rounded animate-pulse" />
+          <Skeleton className="h-4 w-40 bg-surface-container-high" />
+          <Skeleton className="h-3 w-24 bg-surface-container-high" />
         </div>
       </div>
     );
