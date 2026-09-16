@@ -1,4 +1,5 @@
-import { type ComponentType, type ReactNode, useEffect, useRef } from "react";
+import { type ComponentType, type ReactNode, useRef } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
@@ -13,6 +14,9 @@ import {
 } from "lucide-react";
 import { downloadMedia, getDownloadName, isPdfDataUrl } from "@/lib/cardUtils";
 import { PanelCard } from "@/components/ui/PanelCard";
+import { ModalOverlayPortal } from "@/components/ui/ModalOverlayPortal";
+import { useModalA11y } from "@/hooks/ui/useModalA11y";
+import { overlaySpring } from "@/lib/motion";
 
 export function FilterButton({
   active,
@@ -147,15 +151,14 @@ export function ImageLightbox({
   onClose: () => void;
   onNavigate: (index: number) => void;
 }) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
   const currentPos = availableIndexes.indexOf(currentIndex);
   const canNavigate = availableIndexes.length > 1;
   const item = items[currentIndex];
   const currentIsPdf = isPdfDataUrl(item?.dataUrl ?? null);
 
-  useEffect(() => {
-    dialogRef.current?.showModal();
-  }, []);
+  useModalA11y(panelRef, onClose);
 
   const goPrev = () => {
     if (!canNavigate || currentPos < 0) return;
@@ -172,12 +175,27 @@ export function ImageLightbox({
   if (!item?.dataUrl) return null;
 
   return (
-    <dialog
-      ref={dialogRef}
-      className="fixed inset-0 z-[var(--z-modal)] m-0 flex h-full max-h-none w-full max-w-none items-center justify-center bg-black/80 p-4"
-      onClose={onClose}
-    >
-      <div className="relative flex w-full max-w-5xl flex-col gap-3 rounded-2xl border border-white/20 bg-black/60 p-3 md:p-4">
+    <ModalOverlayPortal>
+      <motion.div
+        className="fixed inset-0 z-(--z-modal) flex items-center justify-center bg-black/80 p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.2 }}
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+      <motion.div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={item.title}
+        tabIndex={-1}
+        initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95 }}
+        transition={shouldReduceMotion ? { duration: 0 } : overlaySpring}
+        className="relative flex w-full max-w-5xl flex-col gap-3 rounded-2xl border border-white/20 bg-black/60 p-3 md:p-4 outline-none"
+      >
         <div className="flex items-center justify-between gap-2 text-white">
           <div>
             <p className="text-sm font-semibold">{item.title}</p>
@@ -285,7 +303,8 @@ export function ImageLightbox({
             );
           })}
         </div>
-      </div>
-    </dialog>
+      </motion.div>
+      </motion.div>
+    </ModalOverlayPortal>
   );
 }

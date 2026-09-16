@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Download, Search } from "lucide-react";
-import { Drawer } from "@/components/ui/Drawer";
+import { Modal } from "@/components/ui/Modal";
 import { ErrorState } from "@/components/ui/states";
 import { cn } from "@/lib/utils";
 import { DAY_LABELS } from "@/types/cards.types";
@@ -150,10 +150,10 @@ function RosterContent({
   const slots = bus?.universitySlots ?? [];
 
   return (
-    <Drawer
+    <Modal
       open={open}
       onClose={onClose}
-      side="right"
+      size="xl"
       title={busIdentifier ? busLabel(busIdentifier) : "Ônibus"}
     >
       <div className="space-y-3">
@@ -360,6 +360,6 @@ function RosterContent({
           </p>
         </div>
       </div>
-    </Drawer>
+    </Modal>
   );
 }

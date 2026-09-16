@@ -1,11 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import type { Course, CourseModel } from "@/types/university.types";
 import { COURSE_MODEL_OPTIONS } from "@/types/university.types";
 import { Button } from "@/components/ui/Button";
-import { BottomSheet } from "@/components/ui/BottomSheet";
+import { Modal } from "@/components/ui/Modal";
+import { Input } from "@/components/ui/Input";
+import { FieldShell } from "@/components/ui/FieldShell";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { StatusBanner } from "@/components/ui/StatusBanner";
+import { fieldStaggerVariants } from "@/lib/motion";
+import { BookOpen, Check } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -15,7 +21,10 @@ interface Props {
   onSubmit: (data: { name: string; model: CourseModel | null }) => Promise<void>;
 }
 
+const MODEL_OPTIONS = COURSE_MODEL_OPTIONS.map((m) => ({ value: m, label: m }));
+
 export function CourseFormModal({ open, initial, universityName, onClose, onSubmit }: Props) {
+  const shouldReduceMotion = useReducedMotion();
   const [name, setName] = useState("");
   const [model, setModel] = useState<CourseModel | "">("");
   const [loading, setLoading] = useState(false);
@@ -51,59 +60,49 @@ export function CourseFormModal({ open, initial, universityName, onClose, onSubm
   };
 
   return (
-    <BottomSheet
+    <Modal
       open={open}
       onClose={onClose}
+      size="md"
       title={initial ? "Editar Curso" : "Novo Curso"}
-      description={universityName}
-      actions={
+      footer={
         <div className="flex gap-3">
           <Button variant="outline" fullWidth onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
-          <Button variant="primary" fullWidth onClick={handleSubmit} loading={loading}>
+          <Button
+            variant="primary"
+            fullWidth
+            icon={<Check className="size-4" />}
+            onClick={handleSubmit}
+            loading={loading}
+          >
             {initial ? "Salvar" : "Cadastrar"}
           </Button>
         </div>
       }
     >
+      <p className="text-xs text-on-surface-variant -mt-1 mb-4">{universityName}</p>
+
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-on-surface-variant mb-1">
-            Nome do curso
-          </label>
-          <input
+        <motion.div custom={0} initial={shouldReduceMotion ? undefined : "hidden"} animate="visible" variants={fieldStaggerVariants}>
+          <Input
+            label="Nome do curso"
+            icon={<BookOpen className="size-4" />}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ex: Psicologia"
-            className="w-full px-4 py-2.5 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
-        </div>
+        </motion.div>
 
-        <div>
-          <label className="block text-sm font-medium text-on-surface-variant mb-1">
-            Modelo
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {COURSE_MODEL_OPTIONS.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setModel(model === option ? "" : option)}
-                className={`py-2 rounded-lg border text-sm font-medium transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 ${
-                  model === option
-                    ? "bg-primary text-white border-primary"
-                    : "border-outline-variant text-on-surface-variant hover:border-primary/50 hover:text-on-surface"
-                }`}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        </div>
+        <motion.div custom={1} initial={shouldReduceMotion ? undefined : "hidden"} animate="visible" variants={fieldStaggerVariants}>
+          <FieldShell label="Modelo">
+            <SegmentedControl options={MODEL_OPTIONS} value={model} onChange={(v) => setModel(v as CourseModel | "")} columns={3} />
+          </FieldShell>
+        </motion.div>
       </div>
 
       {error && <StatusBanner variant="error" className="mt-4">{error}</StatusBanner>}
-    </BottomSheet>
+    </Modal>
   );
 }

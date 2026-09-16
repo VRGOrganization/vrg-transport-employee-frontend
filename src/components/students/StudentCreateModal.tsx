@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CheckCircle2, UserPlus, ArrowLeft, ArrowRight } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -47,6 +48,22 @@ const STEPS = [
 
 const LAST_STEP = STEPS.length - 1;
 
+// `exit` sai do fluxo normal (position: absolute) pra não empurrar o layout
+// enquanto o próximo passo já entra por baixo — evita o "pulo" de altura
+// durante os ~180ms em que os dois ficam montados ao mesmo tempo.
+const stepVariants = {
+  enter: (direction: 1 | -1) => ({ opacity: 0, x: direction > 0 ? 24 : -24, position: "relative" as const }),
+  center: { opacity: 1, x: 0, position: "relative" as const },
+  exit: (direction: 1 | -1) => ({
+    opacity: 0,
+    x: direction > 0 ? -24 : 24,
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
+    right: 0,
+  }),
+};
+
 // Janela de bloqueio do botão de envio logo após entrar no último passo — evita
 // que um duplo-clique/segundo clique acidental na mesma posição de tela do
 // botão "Próximo" (que vira "Cadastrar Estudante" assim que o passo muda)
@@ -54,7 +71,9 @@ const LAST_STEP = STEPS.length - 1;
 const SUBMIT_COOLDOWN_MS = 400;
 
 export function StudentCreateModal({ open, onClose, onCreated }: Props) {
+  const shouldReduceMotion = useReducedMotion();
   const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState<1 | -1>(1);
   const [submitLocked, setSubmitLocked] = useState(false);
   const [success, setSuccess] = useState(false);
   const [successName, setSuccessName] = useState("");
@@ -154,6 +173,7 @@ export function StudentCreateModal({ open, onClose, onCreated }: Props) {
     // Passo 1 (dados básicos) precisa validar antes de avançar — não espera o
     // envio final para mostrar erro de formato/obrigatoriedade.
     if (step === 0 && !validate()) return;
+    setDirection(1);
     setStep((s) => {
       const nextStep = Math.min(LAST_STEP, s + 1);
       if (nextStep === LAST_STEP) {
@@ -165,6 +185,7 @@ export function StudentCreateModal({ open, onClose, onCreated }: Props) {
   };
   const goBack = () => {
     setSubmitLocked(false);
+    setDirection(-1);
     setStep((s) => Math.max(0, s - 1));
   };
 
@@ -246,6 +267,17 @@ export function StudentCreateModal({ open, onClose, onCreated }: Props) {
           )}
 
           <form onSubmit={onFormSubmit} className="space-y-5">
+            <div className="relative">
+            <AnimatePresence custom={direction} initial={false}>
+              <motion.div
+                key={step}
+                custom={direction}
+                variants={stepVariants}
+                initial={shouldReduceMotion ? "center" : "enter"}
+                animate="center"
+                exit={shouldReduceMotion ? "center" : "exit"}
+                transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: [0.4, 0, 0.2, 1] }}
+              >
             {/* ── Passo 1: dados básicos ────────────────────────────── */}
             {step === 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -369,6 +401,9 @@ export function StudentCreateModal({ open, onClose, onCreated }: Props) {
                 </p>
               </div>
             )}
+              </motion.div>
+            </AnimatePresence>
+            </div>
 
             {/* ── Navegação ──────────────────────────────────────────── */}
             <div className="flex gap-3 pt-2">

@@ -11,7 +11,7 @@ import type {
   LicenseRequestRecord,
   StudentRecord,
 } from "@/types/cards.types";
-import { Drawer } from "@/components/ui/Drawer";
+import { Modal } from "@/components/ui/Modal";
 import { resolveDisplayName, toTitleCase } from "@/lib/utils/string";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { AlertCircle, Bus as BusIcon, Check, Users, UserX, X } from "lucide-react";
@@ -246,11 +246,11 @@ export function BusStudentsDrawer({ bus, onClose, canReleaseSlots = false }: Pro
 
   return (
     <>
-      <Drawer
+      <Modal
         open={!!bus}
         onClose={onClose}
-        side="right"
-        dismissible="free"
+        size="xl"
+        closeOnBackdrop={false}
         hideClose
         noPadding
         header={
@@ -417,7 +417,7 @@ export function BusStudentsDrawer({ bus, onClose, canReleaseSlots = false }: Pro
             </div>
           </>
         )}
-      </Drawer>
+      </Modal>
 
       <ConfirmModal
         open={confirmOpen}
