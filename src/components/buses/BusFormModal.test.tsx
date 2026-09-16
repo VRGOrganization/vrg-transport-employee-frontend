@@ -2,27 +2,25 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock LinkUniversityModal to expose a simple UI that calls `onAdd` when clicked.
-vi.mock('./LinkUniversityModal', () => {
-  const React = require('react');
-  return {
-    default: ({ open, onClose, onAdd }: any) => {
-      if (!open) return null;
-      return (
-        React.createElement('div', { 'data-testid': 'mock-link-modal' },
-          React.createElement('button', { onClick: () => onAdd('u4', 'Faculdade Nova', 'F') }, 'Mock Add'),
-          React.createElement('button', { onClick: () => onClose() }, 'Mock Close')
-        )
-      );
-    },
-  };
-});
+const listMock = vi.fn();
+
+vi.mock('@/lib/universityApi', () => ({
+  universityApi: { list: (...args: unknown[]) => listMock(...args) },
+}));
 
 import { BusFormModal } from './BusFormModal';
+
+const UNIVERSITIES = [
+  { _id: 'u1', name: 'Universidade Alfa', acronym: 'UA', address: '', active: true, createdAt: '', updatedAt: '' },
+  { _id: 'u2', name: 'Universidade Beta', acronym: 'UB', address: '', active: true, createdAt: '', updatedAt: '' },
+  { _id: 'u3', name: 'Universidade Gama', acronym: 'UG', address: '', active: true, createdAt: '', updatedAt: '' },
+  { _id: 'u4', name: 'Faculdade Nova', acronym: 'F', address: '', active: true, createdAt: '', updatedAt: '' },
+];
 
 describe('BusFormModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    listMock.mockResolvedValue(UNIVERSITIES);
   });
 
   it('renders empty form when creating and allows submitting with capacity empty (no limit)', async () => {
@@ -78,8 +76,9 @@ describe('BusFormModal', () => {
     const identifier = screen.getByPlaceholderText('Ex: 01');
     fireEvent.change(identifier, { target: { value: '02' } });
 
-    // select shift (select has no associated for/id, use role)
-    const select = screen.getByRole('combobox') as HTMLSelectElement;
+    // select shift — the only native <select> on the form (the university
+    // field is an input[role=combobox], not a <select>)
+    const select = document.querySelector('select') as HTMLSelectElement;
     fireEvent.change(select, { target: { value: 'Manhã' } });
 
     const submit = screen.getByRole('button', { name: /cadastrar/i });
@@ -101,17 +100,8 @@ describe('BusFormModal', () => {
 
     render(<BusFormModal open={true} initial={initial} onClose={() => {}} onSubmit={onSubmit} />);
 
-    const select = screen.getByRole('combobox') as HTMLSelectElement;
+    const select = document.querySelector('select') as HTMLSelectElement;
     expect(select.value).toBe('Manhã');
-  });
-
-  it('adds and removes university slots via LinkUniversityModal flow', async () => {
-    // We'll render and interact with the link button; actual modal fetch is tested separately
-    const onSubmit = vi.fn(() => Promise.resolve());
-    render(<BusFormModal open={true} onClose={() => {}} onSubmit={onSubmit} />);
-
-    const linkBtn = screen.getByText(/vincular faculdade/i);
-    expect(linkBtn).toBeInTheDocument();
   });
 
   it('validates identifier required', async () => {
@@ -186,19 +176,47 @@ describe('BusFormModal', () => {
     expect(payload.universitySlots.map((s: any) => s.priorityOrder)).toEqual([3, 1, 2]);
   });
 
-  it('adds a university slot via mocked LinkUniversityModal', async () => {
+  it('adds a university slot via the combobox popover (centered above the modal, never behind it)', async () => {
     const onSubmit = vi.fn(() => Promise.resolve());
     render(<BusFormModal open={true} onClose={() => {}} onSubmit={onSubmit} />);
 
-    const linkBtn = screen.getByText(/vincular faculdade/i);
-    fireEvent.click(linkBtn);
+    fireEvent.click(screen.getByRole('button', { name: /vincular faculdade/i }));
 
-    // mock modal should render
-    const addBtn = await screen.findByText('Mock Add');
-    fireEvent.click(addBtn);
+    // The popover renders as its own dialog on top of the BusFormModal's
+    // dialog — both coexist (no z-index collision), never stacked behind it.
+    const dialogs = await screen.findAllByRole('dialog');
+    expect(dialogs).toHaveLength(2);
 
-    // after adding, the UI should show the new university acronym (we mocked acronym 'F')
-    const acronyms = await screen.findAllByText('F');
-    expect(acronyms.length).toBeGreaterThanOrEqual(1);
+    const option = await screen.findByRole('option', { name: /UA.*Universidade Alfa/i });
+    fireEvent.click(option);
+
+    // Popover closes after selection, leaving only the BusFormModal dialog.
+    await waitFor(() => {
+      expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    });
+
+    // The linked-slots list (in the form, behind the closed popover) now
+    // shows the added university.
+    expect(screen.getByText(/Prioridade P1/i)).toBeInTheDocument();
+    expect(screen.getAllByText('UA').length).toBeGreaterThanOrEqual(1);
+
+    // Selected university leaves the popover's candidate list once it
+    // re-renders with the university already filtered out from `slots`.
+    fireEvent.click(screen.getByRole('button', { name: /vincular faculdade/i }));
+    await screen.findAllByRole('dialog');
+    expect(screen.queryByRole('option', { name: /UA.*Universidade Alfa/i })).not.toBeInTheDocument();
+  });
+
+  it('filters the combobox list by search query', async () => {
+    render(<BusFormModal open={true} onClose={() => {}} onSubmit={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /vincular faculdade/i }));
+    const combobox = await screen.findByPlaceholderText(/buscar por nome ou sigla/i);
+    await screen.findByRole('option', { name: /UA.*Universidade Alfa/i });
+
+    fireEvent.change(combobox, { target: { value: 'Beta' } });
+
+    expect(screen.getByRole('option', { name: /UB.*Universidade Beta/i })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /UA.*Universidade Alfa/i })).not.toBeInTheDocument();
   });
 });

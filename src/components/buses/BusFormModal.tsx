@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { universityApi } from "@/lib/universityApi";
 import { cn } from "@/lib/utils";
-import type { Bus } from "@/types/university.types";
+import type { Bus, University } from "@/types/university.types";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -13,7 +13,7 @@ import { FieldShell } from "@/components/ui/FieldShell";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { useZodForm } from "@/components/hooks/useZodForm";
 import { busFormSchema } from "@/lib/validation/bus";
-import LinkUniversityModal from "./LinkUniversityModal";
+import { UniversityComboboxField } from "./UniversityComboboxField";
 
 type SlotDisplay = { universityId: string; name?: string; acronym?: string; priorityOrder: number; filledSlots?: number };
 
@@ -53,7 +53,8 @@ function buildInitialSlots(initial?: Bus | null): SlotDisplay[] {
 
 export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
   const [slots, setSlots] = useState<SlotDisplay[]>(() => buildInitialSlots(initial));
-  const [linkOpen, setLinkOpen] = useState(false);
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [loadingUniversities, setLoadingUniversities] = useState(false);
 
   const { values, errors, generalError, loading, setValue, resetGeneralError, handleSubmit } = useZodForm({
     schema: busFormSchema,
@@ -113,19 +114,15 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    const missing = slots.some((s) => !s.acronym && !s.name);
-    if (!missing) return;
-
     const mountState = { cancelled: false };
+    setLoadingUniversities(true);
     (async () => {
       try {
-        const res = await universityApi.list();
-        const arr = Array.isArray(res) ? res : (res as any)?.data ?? [];
-        const map: Record<string, { acronym?: string; name?: string }> = {};
-        arr.forEach((u: any) => {
-          if (u && u._id) map[u._id] = { acronym: u.acronym, name: u.name };
-        });
+        const list = await universityApi.list();
         if (mountState.cancelled) return;
+        setUniversities(list);
+        const map: Record<string, { acronym?: string; name?: string }> = {};
+        list.forEach((u) => { map[u._id] = { acronym: u.acronym, name: u.name }; });
         setSlots((prev) =>
           prev.map((s) => ({
             ...s,
@@ -134,14 +131,23 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
           }))
         );
       } catch {
-        // ignore
+        if (!mountState.cancelled) setUniversities([]);
+      } finally {
+        if (!mountState.cancelled) setLoadingUniversities(false);
       }
     })();
     return () => { mountState.cancelled = true; };
-  }, [open, slots.length]);
+  }, [open]);
 
-  const handleAddSlot = (id: string, name?: string, acronym?: string) => {
-    setSlots((prev) => [...prev, { universityId: id, name, acronym, priorityOrder: prev.length + 1 }]);
+  const availableUniversities = universities.filter(
+    (u) => !slots.some((s) => s.universityId === u._id)
+  );
+
+  const handleAddSlot = (university: University) => {
+    setSlots((prev) => [
+      ...prev,
+      { universityId: university._id, name: university.name, acronym: university.acronym, priorityOrder: prev.length + 1 },
+    ]);
   };
 
   const handleRemove = (universityId: string) => {
@@ -253,9 +259,12 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
                 </div>
               ))
             )}
-            <div>
-              <button type="button" onClick={() => setLinkOpen(true)} className="mt-2 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-fixed text-primary text-sm">Vincular faculdade</button>
-            </div>
+            <UniversityComboboxField
+              universities={availableUniversities}
+              loading={loadingUniversities}
+              triggerLabel="Vincular faculdade"
+              onSelect={handleAddSlot}
+            />
           </div>
         </FieldShell>
 
@@ -268,8 +277,6 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
           </Button>
         </div>
       </form>
-
-      <LinkUniversityModal open={linkOpen} currentSlots={slots.map((s) => s.universityId)} onClose={() => setLinkOpen(false)} onAdd={handleAddSlot} />
     </Modal>
   );
 }
