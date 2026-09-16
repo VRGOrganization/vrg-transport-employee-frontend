@@ -52,7 +52,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
       setSelectedBusId("");
     } catch (err) {
       const message = (err as { message?: string })?.message;
-      setLinkError(message ?? "Não foi possível vincular o ônibus. Tente novamente.");
+      setLinkError(message ?? "Não Foi Possível Vincular O Ônibus. Tente Novamente.");
     } finally {
       setLoadingId(null);
     }
@@ -68,7 +68,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
       setPendingUnlink(null);
     } catch (err) {
       const message = (err as { message?: string })?.message;
-      setUnlinkError(message ?? "Não foi possível desvincular o ônibus. Tente novamente.");
+      setUnlinkError(message ?? "Não Foi Possível Desvincular O Ônibus. Tente Novamente.");
     } finally {
       setLoadingId(null);
     }
@@ -78,7 +78,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
     <div>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wide">
-          Ônibus vinculados ({linkedBuses.length})
+          Ônibus Vinculados ({linkedBuses.length})
         </h3>
         {availableBuses.length > 0 && (
           <button
@@ -86,7 +86,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
             className="flex items-center gap-1.5 px-3 py-1.5 bg-success hover:bg-success/90 text-white text-xs font-medium rounded-lg transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-success/40"
           >
             {linking ? <X className="size-3.5" /> : <Plus className="size-3.5" />}
-            {linking ? "Cancelar" : "Vincular ônibus"}
+            {linking ? "Cancelar" : "Vincular Ônibus"}
           </button>
         )}
       </div>
@@ -98,10 +98,10 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
             onChange={(e) => setSelectedBusId(e.target.value)}
             className="flex-1 px-3 py-2 rounded-lg border border-on-surface-variant bg-surface-container-low text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-success"
           >
-            <option value="">Selecione um ônibus</option>
+            <option value="">Selecione Um Ônibus</option>
             {availableBuses.map((bus) => (
               <option key={bus._id} value={bus._id}>
-                {bus.identifier} · {bus.capacity} vagas
+                {bus.identifier} · {bus.capacity} Vagas
               </option>
             ))}
           </select>
@@ -126,10 +126,10 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
       {linkedBuses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-on-surface-muted">
           <Bus className="size-10 mb-2" />
-          <p className="text-sm">Nenhum ônibus vinculado</p>
+          <p className="text-sm">Nenhum Ônibus Vinculado</p>
           {allBuses.length === 0 && (
             <p className="text-xs mt-1 text-center">
-              Cadastre ônibus na página de Gerenciamento de Ônibus primeiro
+              Cadastre Ônibus Na Página De Gerenciamento De Ônibus Primeiro
             </p>
           )}
         </div>
@@ -146,7 +146,7 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
                   <p className="text-sm font-medium text-on-surface">
                     {bus.identifier}
                   </p>
-                  <p className="text-xs text-on-surface-muted">{bus.capacity} vagas</p>
+                  <p className="text-xs text-on-surface-muted">{bus.capacity} Vagas</p>
                 </div>
               </div>
               <button
@@ -182,13 +182,13 @@ export function LinkedBusesPanel({ university, allBuses, onBusesChanged }: Props
                 {pendingUnlink.identifier}
                 {pendingUnlink.capacity != null && (
                   <span className="ml-2 text-sm font-normal text-on-surface-variant">
-                    · {pendingUnlink.capacity} vagas
+                    · {pendingUnlink.capacity} Vagas
                   </span>
                 )}
               </p>
               <p className="mt-2">
-                O ônibus será desvinculado de <span className="font-semibold">{university.acronym}</span>.
-                Você pode vincular novamente a qualquer momento.
+                O Ônibus Será Desvinculado De <span className="font-semibold">{university.acronym}</span>.
+                Você Pode Vincular Novamente A Qualquer Momento.
               </p>
             </>
           )

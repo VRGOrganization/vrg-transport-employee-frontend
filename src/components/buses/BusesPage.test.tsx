@@ -26,18 +26,10 @@ describe("BusesPage", () => {
   });
 
   it("admin pode editar e desativar ônibus", async () => {
-    render(<BusesPage role="admin" />);
+    render(<BusesPage />);
 
     expect(await screen.findByTitle("Editar")).toBeInTheDocument();
     expect(screen.getByTitle("Desativar")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /adicionar ônibus/i })).toBeInTheDocument();
-  });
-
-  it("funcionário cadastra e edita, mas não desativa ônibus", async () => {
-    render(<BusesPage role="employee" />);
-
-    expect(await screen.findByTitle("Editar")).toBeInTheDocument();
-    expect(screen.queryByTitle("Desativar")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /adicionar ônibus/i })).toBeInTheDocument();
   });
 });

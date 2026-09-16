@@ -36,7 +36,6 @@ export const EMPLOYEE_NAV_ITEMS: readonly NavItem[] = [
   { icon: LayoutDashboard, label: "Painel do Funcionário",  href: "/employee/dashboard"    },
   { icon: GraduationCap,   label: "Gerenciar Estudantes",   href: "/employee/students"     },
   { icon: Building2,       label: "Instituições",           href: "/employee/universities" },
-  { icon: Bus,             label: "Frota",                  href: "/employee/buses"        },
   { icon: IdCard,          label: "Gerenciar Carteirinhas", href: "/employee/cards"        },
   { icon: TicketCheck,     label: "Passes de ônibus",       href: "/employee/bus-pass"     },
   { icon: Bell,            label: "Avisos",                 href: "/employee/notices"      },

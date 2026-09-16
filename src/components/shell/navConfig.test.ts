@@ -21,12 +21,19 @@ describe("navConfig notices", () => {
 
 describe("navConfig employee", () => {
   it.each([
-    ["Frota", "/employee/buses"],
     ["Mensagens de sistema", "/employee/system-notice-templates"],
     ["Passes de ônibus", "/employee/bus-pass"],
   ])("inclui %s na navegação employee", (label, href) => {
     expect(EMPLOYEE_NAV_ITEMS).toEqual(
       expect.arrayContaining([expect.objectContaining({ label, href })]),
+    );
+  });
+
+  it("não inclui Frota na navegação employee", () => {
+    expect(EMPLOYEE_NAV_ITEMS).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ label: "Frota" }),
+      ]),
     );
   });
 });
