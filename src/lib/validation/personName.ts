@@ -8,8 +8,8 @@ export const PERSON_NAME_PATTERN = /^(?=.*\p{L})[\p{L} '.-]+$/u;
 export const PERSON_NAME_INVALID_MESSAGE =
   "Use apenas letras, espaços, apóstrofo, ponto e hífen.";
 
-const TYPOGRAPHIC_APOSTROPHES = /[‘’ʼ]/g;
-const HYPHEN_VARIANTS = /[‐‑‒–—−]/g;
+const TYPOGRAPHIC_APOSTROPHES = /[\u2018\u2019\u02BC]/g;
+const HYPHEN_VARIANTS = /[\u2010\u2011\u2012\u2013\u2014\u2212]/g;
 
 export function normalizePersonName(value: string): string {
   return value

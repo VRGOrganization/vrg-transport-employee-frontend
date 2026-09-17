@@ -26,7 +26,7 @@ describe("personNameSchema", () => {
   });
 
   it("normaliza apóstrofo, hífen e espaços antes de validar", () => {
-    expect(schema.parse("  Ana–Maria   D’Avila ")).toBe(
+    expect(schema.parse("  Ana\u2013Maria   D\u2019Avila ")).toBe(
       "Ana-Maria D'Avila",
     );
   });
