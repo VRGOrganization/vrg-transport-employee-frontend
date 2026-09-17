@@ -19,6 +19,12 @@ import { DashboardUsersTable, type UserRow, type UserFilter } from "@/components
 import type { PageSize } from "@/lib/constants";
 import type { Student } from "@/types/student";
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+// Teto de `limit` aceito por GET /student no backend. A tabela de usuários
+// mostra a página mais recente; os KPIs não dependem mais desta lista.
+const STUDENT_PAGE_LIMIT = 100;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface StudentRecord {
@@ -101,13 +107,24 @@ export function DashboardPage({ role }: DashboardPageProps) {
     setTableError("");
 
     const fetchAdmin = async () => {
-      const [employeesResult, studentsResult, activePeriodResult, requestsResult] =
-        await Promise.allSettled([
-          employeeService.list(),
-          http.get<Paginated<StudentRecord>>("/student").then(resolvePaginated),
-          http.get<EnrollmentPeriodRecord>("/enrollment-period/active"),
-          http.get<Paginated<unknown>>("/license-request").then(resolvePaginated),
-        ]);
+      const [
+        employeesResult,
+        studentsResult,
+        studentStatsResult,
+        activePeriodResult,
+        fleetCapacityResult,
+      ] = await Promise.allSettled([
+        employeeService.list(),
+        // `limit` explícito: sem ele a API pagina em 20 e a tabela abaixo
+        // mostrava só as 20 primeiras linhas.
+        http
+          .get<Paginated<StudentRecord>>(`/student?limit=${STUDENT_PAGE_LIMIT}`)
+          .then(resolvePaginated),
+        // Os KPIs de contagem vêm do censo agregado, não da página acima.
+        studentService.dashboardStats(),
+        http.get<EnrollmentPeriodRecord>("/enrollment-period/active"),
+        busApi.fleetCapacity(),
+      ]);
 
       const rows: UserRow[] = [];
       const resolvedStudents: StudentRecord[] =
@@ -131,11 +148,18 @@ export function DashboardPage({ role }: DashboardPageProps) {
         }
       }
 
-      if (studentsResult.status === "fulfilled") {
+      // Contagens vindas do censo agregado no banco. Antes saíam da lista
+      // paginada de /student, o que travava os KPIs no tamanho da página.
+      if (studentStatsResult.status === "fulfilled") {
+        const censo = studentStatsResult.value;
         setStats((prev) => ({
           ...prev,
-          activeStudents: resolvedStudents.filter((s) => s.status === "ACTIVE" && s.active).length,
+          activeStudents: censo.totalStudents,
+          pendingStudents: censo.studentsWithPendingRequest,
         }));
+      }
+
+      if (studentsResult.status === "fulfilled") {
         for (const stu of resolvedStudents) {
           rows.push({
             id: stu._id,
@@ -149,33 +173,25 @@ export function DashboardPage({ role }: DashboardPageProps) {
         }
       }
 
-      if (requestsResult.status === "fulfilled") {
-        const requests = requestsResult.value as Array<{
-          status?: string;
-          studentId?: string | { _id?: string };
-        }>;
-        const pendingIds = new Set(
-          requests
-            .filter((r) => r.status === "pending")
-            .map((r) => (typeof r.studentId === "object" ? r.studentId?._id : r.studentId))
-            .filter(Boolean),
-        );
+      const activePeriod =
+        activePeriodResult.status === "fulfilled" ? activePeriodResult.value : null;
+      // Fora de janela de inscrição o backend devolve null aqui (vira {} no
+      // http client), então `totalSlots` não é número.
+      const hasActivePeriod = !!activePeriod && typeof activePeriod.totalSlots === "number";
+      setActivePeriod(hasActivePeriod ? activePeriod : null);
+
+      if (hasActivePeriod) {
         setStats((prev) => ({
           ...prev,
-          pendingStudents: resolvedStudents.filter((s) => s.active && pendingIds.has(s._id)).length,
+          fleetLabel: `${activePeriod.filledSlots}/${activePeriod.totalSlots}`,
         }));
-      }
-
-      if (activePeriodResult.status === "fulfilled") {
-        const p = activePeriodResult.value;
-        const hasActivePeriod = !!p && typeof p.totalSlots === "number";
-        setActivePeriod(hasActivePeriod ? p : null);
-        if (hasActivePeriod) {
-          setStats((prev) => ({
-            ...prev,
-            fleetLabel: `${p.filledSlots}/${p.totalSlots}`,
-          }));
-        }
+      } else if (fleetCapacityResult.status === "fulfilled") {
+        // Sem ciclo ativo nada está ocupado, mas a capacidade da frota existe
+        // e é o que o card deve mostrar — antes ficava "-".
+        setStats((prev) => ({
+          ...prev,
+          fleetLabel: `0/${fleetCapacityResult.value.totalSlots}`,
+        }));
       }
 
       if (employeesResult.status === "rejected" || studentsResult.status === "rejected") {

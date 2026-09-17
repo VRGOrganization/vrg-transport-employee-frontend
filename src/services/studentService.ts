@@ -58,8 +58,18 @@ export interface StudentUpdatePayload {
   degree?: string;
 }
 
+export interface StudentDashboardStats {
+  totalStudents: number;
+  studentsWithCard: number;
+  studentsWithoutCard: number;
+  studentsWithPendingRequest: number;
+}
+
 export const studentService = {
   list:         ()                                => http.get<Student[]>("/student/all"),
+  // Censo agregado no banco (active: true + status: ACTIVE). Contar no cliente
+  // a partir de /student truncava no limite de paginação (20 por padrão).
+  dashboardStats: () => http.get<StudentDashboardStats>("/student/stats/dashboard"),
   listInactive: ()                                => http.get<Paginated<Student>>("/student/inactive").then(resolvePaginated),
   getById:      (id: string)                      => http.get<Student>(`/student/${id}`),
   // POST /student sempre exige multipart/form-data no backend (FileFieldsInterceptor
