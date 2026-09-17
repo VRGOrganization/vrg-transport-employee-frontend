@@ -1,7 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCardsData } from "./useCardsData";
-import type { University } from "@/types/university.types";
 
 const { getMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
@@ -86,8 +85,7 @@ describe("useCardsData", () => {
       return Promise.resolve([]);
     });
 
-    const university = { _id: "uni-1", name: "Universidade 1", acronym: "U1", active: true } as University;
-    const { result } = renderHook(() => useCardsData(university));
+    const { result } = renderHook(() => useCardsData({ kind: "university", universityId: "uni-1" }));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -137,12 +135,72 @@ describe("useCardsData", () => {
       return Promise.resolve([]);
     });
 
-    const university = { _id: "uni-1", name: "Universidade 1", acronym: "U1", active: true } as University;
-    const { result } = renderHook(() => useCardsData(university));
+    const { result } = renderHook(() => useCardsData({ kind: "university", universityId: "uni-1" }));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.students).toHaveLength(0);
     expect(result.current.licenseRequests).toHaveLength(0);
+  });
+  it("na visão por ônibus, mostra só pedidos com algum dia naquele ônibus", async () => {
+    const base = {
+      type: "initial",
+      changedDocuments: [],
+      status: "pending",
+      rejectionReason: null,
+      rejectedAt: null,
+      licenseId: null,
+      enrollmentPeriodId: "period-1",
+      filaPosition: null,
+      accessBusIdentifiers: [],
+      createdAt: "2026-04-19T10:00:00.000Z",
+    };
+    const allocation = (day: string, busId: string | null) => ({
+      day,
+      period: "Manhã",
+      busIdentifier: "01",
+      busId,
+      status: "active",
+    });
+
+    getMock.mockImplementation((path: string) => {
+      if (path === "/student") {
+        return Promise.resolve(
+          ["s1", "s2", "s3", "s4"].map((id) => ({ _id: id, name: id, email: `${id}@a.com`, active: true })),
+        );
+      }
+      if (path === "/license-request?limit=1000") {
+        return Promise.resolve([
+          // ida e volta em ônibus diferentes: aparece nos dois
+          { ...base, _id: "r1", studentId: "s1", universityId: "uni-1", allocationSummary: [allocation("SEG", "bus-A"), allocation("TER", "bus-B")] },
+          { ...base, _id: "r2", studentId: "s2", universityId: "uni-2", allocationSummary: [allocation("SEG", "bus-B")] },
+          // sem resumo de alocações: usa o busId do pedido
+          { ...base, _id: "r3", studentId: "s3", universityId: "uni-1", busId: { _id: "bus-A" }, allocationSummary: [] },
+          { ...base, _id: "r4", studentId: "s4", universityId: "uni-1", allocationSummary: [allocation("QUA", null)] },
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+
+    const { result } = renderHook(() => useCardsData({ kind: "bus", busId: "bus-A" }));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.licenseRequests.map((r) => r._id).sort()).toEqual(["r1", "r3"]);
+    expect(result.current.students.map((s) => s._id).sort()).toEqual(["s1", "s3"]);
+    expect(result.current.stats.pending).toBe(2);
+  });
+
+  it("não recarrega sem parar quando o escopo é recriado a cada render", async () => {
+    getMock.mockResolvedValue([]);
+
+    const { result, rerender } = renderHook(() => useCardsData({ kind: "bus", busId: "bus-A" }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const calls = getMock.mock.calls.length;
+
+    rerender();
+    rerender();
+
+    expect(getMock.mock.calls.length).toBe(calls);
   });
 });

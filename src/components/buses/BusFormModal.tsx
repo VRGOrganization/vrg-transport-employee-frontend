@@ -12,7 +12,7 @@ import { SelectField } from "@/components/ui/SelectField";
 import { FieldShell } from "@/components/ui/FieldShell";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { useZodForm } from "@/components/hooks/useZodForm";
-import { busFormSchema } from "@/lib/validation/bus";
+import { BUS_SHIFTS, busFormSchema, isBusShift, type BusShift } from "@/lib/validation/bus";
 import { UniversityComboboxField } from "./UniversityComboboxField";
 
 type SlotDisplay = { universityId: string; name?: string; acronym?: string; priorityOrder: number; filledSlots?: number };
@@ -21,14 +21,22 @@ interface Props {
   open: boolean;
   initial?: Bus | null;
   onClose: () => void;
-  onSubmit: (data: { identifier: string; capacity?: number | null; universitySlots?: Array<{ universityId: string; priorityOrder: number }>; shift?: string }) => Promise<void>;
+  onSubmit: (data: BusFormSubmitData) => Promise<void>;
 }
 
-const SHIFT_OPTIONS = [
-  { value: "Manhã", label: "Manhã" },
-  { value: "Tarde", label: "Tarde" },
-  { value: "Noite", label: "Noite" },
-];
+export interface BusFormSubmitData {
+  identifier: string;
+  capacity: number;
+  shift: BusShift;
+  universitySlots?: Array<{ universityId: string; priorityOrder: number }>;
+}
+
+const SHIFT_OPTIONS = BUS_SHIFTS.map((shift) => ({ value: shift, label: shift }));
+
+/** Ônibus antigo sem turno ou com "Tarde" abre vazio e obriga a escolher. */
+function initialShift(initial?: Bus | null): string {
+  return isBusShift(initial?.shift) ? initial.shift : "";
+}
 
 function buildInitialSlots(initial?: Bus | null): SlotDisplay[] {
   if (initial?.universitySlots && initial.universitySlots.length > 0) {
@@ -61,38 +69,29 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
     initialValues: {
       identifier: initial?.identifier ?? "",
       capacity: initial?.capacity?.toString() ?? "",
-      shift: initial?.shift ?? "",
+      shift: initialShift(initial),
     },
     onSubmit: async (data) => {
-      const trimmedCapacity = data.capacity.trim();
-      const parsedCapacity = trimmedCapacity.length > 0 ? parseInt(trimmedCapacity, 10) : undefined;
-
-      if (
-        parsedCapacity !== undefined &&
-        initial?.filledSlotsTotal &&
-        parsedCapacity < initial.filledSlotsTotal
-      ) {
-        return {
-          success: false as const,
-          error: `Capacidade não pode ficar abaixo da ocupação atual (${initial.filledSlotsTotal} alunos no pico da semana).`,
-        };
-      }
-
-      const payload: Parameters<Props["onSubmit"]>[0] = {
+      const payload: BusFormSubmitData = {
         identifier: data.identifier,
-        capacity: parsedCapacity ?? null,
+        capacity: Number(data.capacity.trim()),
+        shift: data.shift as BusShift,
       };
       if (slots.length > 0) {
         payload.universitySlots = slots.map((s) => ({ universityId: s.universityId, priorityOrder: s.priorityOrder }));
       }
-      if (data.shift.length > 0) payload.shift = data.shift;
 
       try {
         await onSubmit(payload);
         onClose();
         return { success: true as const };
       } catch (err: unknown) {
-        const error = err as { message?: string };
+        const error = err as { message?: string; status?: number };
+        // 409: capacidade abaixo dos alunos já alocados. Quem sabe a ocupação
+        // real é o backend; a mensagem dele vai para o campo.
+        if (error.status === 409 && /capacidade/i.test(error.message ?? "")) {
+          return { success: false as const, error: "", fieldErrors: { capacity: error.message } };
+        }
         return { success: false as const, error: error?.message ?? "Erro ao salvar." };
       }
     },
@@ -106,7 +105,7 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
     if (open) {
       setValue("identifier", initial?.identifier ?? "");
       setValue("capacity", initial?.capacity?.toString() ?? "");
-      setValue("shift", initial?.shift ?? "");
+      setValue("shift", initialShift(initial));
       resetGeneralError();
       setSlots(buildInitialSlots(initial));
     }
@@ -210,9 +209,9 @@ export function BusFormModal({ open, initial, onClose, onSubmit }: Props) {
         </div>
 
         <SelectField
-          label="Período principal do ônibus"
+          label="Turno do ônibus"
           options={SHIFT_OPTIONS}
-          placeholder="Nenhum"
+          placeholder="Selecione"
           value={values.shift}
           onChange={(e) => setValue("shift", e.target.value)}
           error={errors.shift}

@@ -27,7 +27,7 @@ describe("useStudentSelection — declaração de uso do sistema antigo", () => 
 
   it("expõe alreadyUsesTransport=true quando o backend confirma a declaração", async () => {
     getMock.mockImplementation((path: string) => {
-      if (path === `/transport-usage/student/${student._id}`) {
+      if (path === `/transport-usage/${student._id}`) {
         return Promise.resolve({ studentId: student._id, alreadyUsesTransport: true });
       }
       if (path === `/image/student/${student._id}`) return Promise.resolve([]);
@@ -48,7 +48,7 @@ describe("useStudentSelection — declaração de uso do sistema antigo", () => 
 
   it("expõe alreadyUsesTransport=false quando o backend não tem declaração para o aluno", async () => {
     getMock.mockImplementation((path: string) => {
-      if (path === `/transport-usage/student/${student._id}`) {
+      if (path === `/transport-usage/${student._id}`) {
         return Promise.resolve({ studentId: student._id, alreadyUsesTransport: false });
       }
       if (path === `/image/student/${student._id}`) return Promise.resolve([]);
@@ -69,7 +69,7 @@ describe("useStudentSelection — declaração de uso do sistema antigo", () => 
 
   it("expõe alreadyUsesTransport=false quando a chamada falha", async () => {
     getMock.mockImplementation((path: string) => {
-      if (path === `/transport-usage/student/${student._id}`) {
+      if (path === `/transport-usage/${student._id}`) {
         return Promise.reject(new Error("network error"));
       }
       if (path === `/image/student/${student._id}`) return Promise.resolve([]);

@@ -35,6 +35,8 @@ const DAY_SHORT: Record<Day, string> = {
 };
 
 const SHIFT_LABELS: Record<string, string> = {
+  "Manhã": "Manhã",
+  "Noite": "Noite",
   morning: "Manhã",
   afternoon: "Tarde",
   night: "Noite",

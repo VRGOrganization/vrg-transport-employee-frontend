@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+import {
+  PERSON_NAME_INVALID_MESSAGE,
+  PERSON_NAME_MAX_LENGTH,
+  PERSON_NAME_PATTERN,
+  normalizePersonName,
+  personNameSchema,
+} from "./personName";
+
 const PASSWORD_POLICY_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/;
 
 export { PASSWORD_POLICY_REGEX };
@@ -8,14 +16,22 @@ export { PASSWORD_POLICY_REGEX };
 // backend não aceita alterá-los por essa rota (UpdateStudentDto não tem
 // esses campos), então não faz sentido validá-los como se fossem editáveis.
 export const studentEditSchema = z.object({
-  name: z
-    .string({ error: "Nome é obrigatório" })
-    .trim()
-    .min(1, "Nome é obrigatório")
-    .max(100, "Nome deve ter no máximo 100 caracteres"),
+  name: personNameSchema("Nome"),
   socialName: z
     .string()
-    .max(100, "Nome social deve ter no máximo 100 caracteres")
+    .transform(normalizePersonName)
+    .pipe(
+      z
+        .string()
+        .max(
+          PERSON_NAME_MAX_LENGTH,
+          `Nome social deve ter no máximo ${PERSON_NAME_MAX_LENGTH} caracteres`,
+        )
+        .refine(
+          (value) => value.length === 0 || PERSON_NAME_PATTERN.test(value),
+          PERSON_NAME_INVALID_MESSAGE,
+        ),
+    )
     .optional(),
   telephone: z
     .string({ error: "Telefone é obrigatório" })
@@ -29,11 +45,7 @@ export const studentEditSchema = z.object({
 });
 
 export const studentAdminCreateSchema = z.object({
-  name: z
-    .string({ error: "Nome é obrigatório" })
-    .trim()
-    .min(1, "Nome é obrigatório")
-    .max(100, "Nome deve ter no máximo 100 caracteres"),
+  name: personNameSchema("Nome"),
   email: z
     .string({ error: "Email é obrigatório" })
     .trim()

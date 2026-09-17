@@ -1,6 +1,6 @@
 import { http } from "./http";
 import { resolvePaginated, type Paginated } from "@/types/api";
-import type { Bus, BusStudent, BusRoute } from "@/types/university.types";
+import type { Bus, BusCreateInput, BusStudent, BusRoute, BusUpdateInput } from "@/types/university.types";
 
 export const busService = {
   list:               ()                                   => http.get<Paginated<Bus>>("/bus").then(resolvePaginated),
@@ -33,9 +33,9 @@ export const busService = {
       };
     });
   },
-  create:             (data: { identifier: string; capacity?: number | null; shift?: string }) =>
+  create:             (data: BusCreateInput) =>
                         http.post<Bus>("/bus", data),
-  update:             (id: string, data: Partial<{ identifier: string; capacity?: number | null; shift?: string }>) =>
+  update:             (id: string, data: BusUpdateInput) =>
                         http.patch<Bus>(`/bus/${id}`, data),
   deactivate:         (id: string)                         => http.patch<{ message: string }>(`/bus/${id}/deactivate`, {}),
   reactivate:         (id: string)                         => http.patch<{ message: string }>(`/bus/${id}/activate`, {}),

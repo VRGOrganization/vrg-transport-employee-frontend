@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { http } from "@/services/http";
+import { transportUsageService } from "@/services/transportUsageService";
 import {
   extractLicenseImage,
   normalizeMediaSource,
@@ -217,11 +218,7 @@ licenseRequests: LicenseRequestRecord[],
         http
           .get<LicenseRequestRecord[]>(`/license-request/student/${student._id}`)
           .catch(() => []),
-        http
-          .get<{ studentId: string; alreadyUsesTransport: boolean }>(
-            `/transport-usage/student/${student._id}`,
-          )
-          .catch(() => null),
+        transportUsageService.getByStudent(student._id).catch(() => null),
       ]);
 
       // Buscar licença completa (inclui expirationDate, qrCodeUrl, verificationCode)

@@ -186,8 +186,8 @@ export function useControlRoomView(
     if (!snapshot || !isActiveCycle) return map;
     for (const bus of snapshot.buses) {
       for (const day of DAYS) {
-        // `capacity` é o teto de CADA vínculo faculdade+dia; o preenchido do
-        // dia soma os vínculos, e por isso pode passar da capacidade.
+        // `capacity` é o teto do ônibus no dia; o preenchido do dia soma as
+        // faculdades vinculadas e nunca passa da capacidade.
         const filled = (bus.universitySlots ?? []).reduce((sum, slot) => {
           const match = slot.daySlots?.find((d) => d.day === day);
           return sum + (match?.filledSlots ?? 0);

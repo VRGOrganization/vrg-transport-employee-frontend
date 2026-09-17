@@ -14,6 +14,8 @@ import { PanelCard } from "@/components/ui/PanelCard";
 
 interface ReissueCandidatesSectionProps {
   universityId: string | null;
+  /** Na visão por ônibus, recorta os candidatos pelo ônibus da alocação. */
+  busId?: string | null;
 }
 
 function candidateKey(candidate: ReissueCandidate): string {
@@ -92,7 +94,7 @@ function groupCandidates(candidates: ReissueCandidate[]): ReissueCandidateGroup[
     });
 }
 
-export function ReissueCandidatesSection({ universityId }: ReissueCandidatesSectionProps) {
+export function ReissueCandidatesSection({ universityId, busId = null }: ReissueCandidatesSectionProps) {
   const [candidates, setCandidates] = useState<ReissueCandidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [approvingStudentId, setApprovingStudentId] = useState<string | null>(null);
@@ -126,9 +128,13 @@ export function ReissueCandidatesSection({ universityId }: ReissueCandidatesSect
 
   const visibleGroups = useMemo(() => {
     return groupCandidates(
-      candidates.filter((candidate) => !universityId || candidate.universityId === universityId),
+      candidates.filter(
+        (candidate) =>
+          (!universityId || candidate.universityId === universityId) &&
+          (!busId || candidate.busId === busId),
+      ),
     );
-  }, [candidates, universityId]);
+  }, [candidates, universityId, busId]);
 
   useEffect(() => {
     setSelectedKeysByStudentId((current) => {

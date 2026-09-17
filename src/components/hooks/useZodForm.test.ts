@@ -71,4 +71,24 @@ describe("useZodForm", () => {
 
     expect(submitted).toBe(true);
   });
+  it("handleSubmit shows field errors returned by onSubmit next to the field", async () => {
+    const { result } = renderHook(() =>
+      useZodForm({
+        schema,
+        initialValues: { name: "Joao", email: "joao@test.com" },
+        onSubmit: async () => ({
+          success: false,
+          error: "",
+          fieldErrors: { email: "Este e-mail já está em uso" },
+        }),
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+    });
+
+    expect(result.current.errors.email).toBe("Este e-mail já está em uso");
+    expect(result.current.generalError).toBe("");
+  });
 });

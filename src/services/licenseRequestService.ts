@@ -113,6 +113,23 @@ export interface StudentLicenseRequestSummary {
     | "cancelled";
 }
 
+/** Um ônibus na fila de aprovação (GET /license-request/bus-queue). */
+export interface BusRequestQueueEntry {
+  busId: string;
+  identifier: string;
+  shift: string | null;
+  capacity: number | null;
+  universities: Array<{ universityId: string; acronym: string }>;
+  pendingCount: number;
+  revisionCount: number;
+  waitlistedCount: number;
+}
+
+export interface BusRequestQueue {
+  enrollmentCycleId: string | null;
+  buses: BusRequestQueueEntry[];
+}
+
 export const licenseRequestService = {
   /** Lista as solicitações de um estudante (mais recentes primeiro, no backend). */
   findByStudent: (studentId: string) =>
@@ -160,6 +177,11 @@ export const licenseRequestService = {
   getReviewCounts: (cycleId?: string) => {
     const query = cycleId ? `?enrollmentCycleId=${encodeURIComponent(cycleId)}` : "";
     return http.get<LicenseRequestReviewCounts>(`/license-request/review-counts${query}`);
+  },
+
+  getBusQueue: (cycleId?: string) => {
+    const query = cycleId ? `?enrollmentCycleId=${encodeURIComponent(cycleId)}` : "";
+    return http.get<BusRequestQueue>(`/license-request/bus-queue${query}`);
   },
 
   listReissueCandidates: (cycleId?: string) => {
