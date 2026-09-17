@@ -22,6 +22,13 @@ const UNIVERSITIES = [
   { _id: 'u4', name: 'Faculdade Nova', acronym: 'F', address: '', active: true, createdAt: '', updatedAt: '' },
 ];
 
+const UNIVERSITIES = [
+  { _id: 'u1', name: 'Universidade Alfa', acronym: 'UA', address: '', active: true, createdAt: '', updatedAt: '' },
+  { _id: 'u2', name: 'Universidade Beta', acronym: 'UB', address: '', active: true, createdAt: '', updatedAt: '' },
+  { _id: 'u3', name: 'Universidade Gama', acronym: 'UG', address: '', active: true, createdAt: '', updatedAt: '' },
+  { _id: 'u4', name: 'Faculdade Nova', acronym: 'F', address: '', active: true, createdAt: '', updatedAt: '' },
+];
+
 describe('BusFormModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
