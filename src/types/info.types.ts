@@ -116,7 +116,7 @@ export interface BusLoad {
   busId: string;
   busIdentifier: string;
   shift: Period | null;
-  /** `null` = sem limite. Teto POR faculdade × dia, não do ônibus inteiro. */
+  /** Vagas do ônibus por dia, somando todas as faculdades. `null` só em dado antigo. */
   capacity: number | null;
   days: BusDayLoad[];
   /** Maior valor entre os dias — base da normalização do trilho. */

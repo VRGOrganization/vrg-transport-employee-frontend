@@ -170,4 +170,16 @@ describe("ReissueCandidatesSection", () => {
     await waitFor(() => expect(listReissueCandidatesMock).toHaveBeenCalledTimes(2));
     expect(screen.getByText("Nenhum candidato com vaga liberada.")).toBeInTheDocument();
   });
+  it("na visão por ônibus, mostra só candidatos daquele ônibus", async () => {
+    getActiveMock.mockResolvedValue(null as never);
+    listReissueCandidatesMock.mockResolvedValue([
+      makeCandidate({ allocationId: "a1", studentId: "s1", studentName: "Aluno do 01", busId: "bus-1" }),
+      makeCandidate({ allocationId: "a2", studentId: "s2", studentName: "Aluno do 02", busId: "bus-2", licenseRequestId: "req-2" }),
+    ]);
+
+    render(<ReissueCandidatesSection universityId={null} busId="bus-2" />);
+
+    expect(await screen.findByText("Aluno do 02")).toBeInTheDocument();
+    expect(screen.queryByText("Aluno do 01")).not.toBeInTheDocument();
+  });
 });

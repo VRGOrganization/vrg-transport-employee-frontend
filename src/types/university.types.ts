@@ -1,3 +1,4 @@
+import type { BusShift } from "@/lib/validation/bus";
 export interface University {
   _id: string;
   name: string;
@@ -49,9 +50,8 @@ export interface UniversitySlot {
   priorityOrder: number;
   filledSlots?: number;
   /**
-   * Vagas ocupadas por dia neste vínculo. `bus.capacity` é o teto de CADA
-   * (ônibus × faculdade × dia) — não do ônibus inteiro —, então a soma de um
-   * ônibus num dia pode ultrapassar `capacity` legitimamente.
+   * Vagas ocupadas por dia por esta faculdade. `bus.capacity` é o teto do
+   * ônibus inteiro no dia: a soma de todas as faculdades nunca passa dele.
    * Contador vivo do ciclo ATIVO: zerado no reset, não serve para histórico.
    */
   daySlots?: DaySlotCount[];
@@ -62,7 +62,8 @@ export interface UniversitySlot {
 export interface Bus {
   _id: string;
   identifier: string;
-  // capacidade opcional — se ausente, sem limite
+  // Vagas do ônibus por dia, compartilhadas entre as faculdades. Obrigatória
+  // no cadastro; `null` só aparece em dado antigo.
   capacity?: number | null;
   // nova estrutura com prioridades e contadores
   universitySlots?: UniversitySlot[];
@@ -71,7 +72,8 @@ export interface Bus {
   active: boolean;
   createdAt: string;
   updatedAt: string;
-  // período/turno principal do ônibus (ex.: 'Manhã', 'Tarde', 'Noite')
+  // Turno do ônibus ('Manhã' ou 'Noite'). Obrigatório no cadastro; dado
+  // antigo pode vir vazio ou com 'Tarde'.
   shift?: string | null;
   // contadores expostos pela API de listagem com filas
   waitlistedCount?: number;
@@ -80,6 +82,16 @@ export interface Bus {
   pendingCount?: number;
   filledSlotsTotal?: number;
 }
+
+/** Payload de `POST /bus`: turno e capacidade são obrigatórios. */
+export interface BusCreateInput {
+  identifier: string;
+  shift: BusShift;
+  capacity: number;
+}
+
+/** Payload de `PATCH /bus/:id`: ausente = não alterar; nunca `null`. */
+export type BusUpdateInput = Partial<BusCreateInput>;
 
 export interface BusStudent {
   _id: string;
