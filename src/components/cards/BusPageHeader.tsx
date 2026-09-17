@@ -1,10 +1,10 @@
 import { ArrowLeft } from "lucide-react";
-import type { Bus } from "@/types/university.types";
+import type { BusRequestQueueEntry } from "@/services/licenseRequestService";
 import { AutoRefreshSettings } from "./AutoRefreshSettings";
 import { BusCapacityBadge } from "./BusCapacityBadge";
 
 interface BusPageHeaderProps {
-  bus: Bus;
+  bus: Pick<BusRequestQueueEntry, "identifier" | "shift" | "capacity" | "universities">;
   onBack: () => void;
   isRefreshing: boolean;
   autoRefreshEnabled: boolean;
@@ -46,7 +46,12 @@ export function BusPageHeader({
             Ônibus {bus.identifier} · {bus.shift ?? "-"}
           </h1>
           <p className="text-sm text-on-surface-variant">
-            Gerencie as carteirinhas deste ônibus.
+            {[
+              bus.capacity != null ? `${bus.capacity} vagas por dia` : null,
+              bus.universities.map((university) => university.acronym).join(", ") || null,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Gerencie as carteirinhas deste ônibus."}
           </p>
         </div>
       </div>
@@ -54,7 +59,7 @@ export function BusPageHeader({
       <div className="flex flex-wrap items-center gap-3">
         <BusCapacityBadge
           approved={approved}
-          capacity={bus.capacity ?? null}
+          capacity={null}
           pending={pending}
           waitlisted={waitlisted}
           review={review}

@@ -28,7 +28,7 @@ function makeImage(over: Partial<ImageRecord> = {}): ImageRecord {
 describe("StudentDocumentsModal — declaração de uso do sistema antigo", () => {
   it("exibe a carteirinha de transporte quando o aluno declarou alreadyUsesTransport=true", async () => {
     getMock.mockImplementation((path: string) => {
-      if (path === "/transport-usage/student/student-1") {
+      if (path === "/transport-usage/student-1") {
         return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: true });
       }
       if (path === "/image/student/student-1") {
@@ -51,7 +51,7 @@ describe("StudentDocumentsModal — declaração de uso do sistema antigo", () =
 
   it("não exibe a carteirinha de transporte quando alreadyUsesTransport=false, mesmo se existir o documento", async () => {
     getMock.mockImplementation((path: string) => {
-      if (path === "/transport-usage/student/student-1") {
+      if (path === "/transport-usage/student-1") {
         return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
       }
       if (path === "/image/student/student-1") {
@@ -80,7 +80,7 @@ describe("StudentDocumentsModal — documentos em PDF", () => {
       "https://bucket.r2.cloudflarestorage.com/abc123.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256";
 
     getMock.mockImplementation((path: string) => {
-      if (path === "/transport-usage/student/student-1") {
+      if (path === "/transport-usage/student-1") {
         return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
       }
       if (path === "/image/student/student-1") {
@@ -116,7 +116,7 @@ describe("StudentDocumentsModal — documentos em PDF", () => {
 describe("StudentDocumentsModal — declaração de PCD", () => {
   it("exibe o laudo médico quando hasDisability=true", async () => {
     getMock.mockImplementation((path: string) => {
-      if (path === "/transport-usage/student/student-1") {
+      if (path === "/transport-usage/student-1") {
         return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
       }
       if (path === "/image/student/student-1") {
@@ -144,7 +144,7 @@ describe("StudentDocumentsModal — declaração de PCD", () => {
 
   it("não exibe o laudo médico quando hasDisability=false, mesmo se existir o documento", async () => {
     getMock.mockImplementation((path: string) => {
-      if (path === "/transport-usage/student/student-1") {
+      if (path === "/transport-usage/student-1") {
         return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
       }
       if (path === "/image/student/student-1") {
@@ -175,7 +175,7 @@ describe("StudentDocumentsModal — declaração de PCD", () => {
 describe("StudentDocumentsModal — documento sem imagem atribuída", () => {
   it("não exibe botão para documento sem imagem", async () => {
     getMock.mockImplementation((path: string) => {
-      if (path === "/transport-usage/student/student-1") {
+      if (path === "/transport-usage/student-1") {
         return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
       }
       if (path === "/image/student/student-1") {
@@ -204,7 +204,7 @@ describe("StudentDocumentsModal — documento sem imagem atribuída", () => {
 describe("StudentDocumentsModal — viewer de imagem em modal separado", () => {
   it("não renderiza a imagem grande até o usuário clicar no documento", async () => {
     getMock.mockImplementation((path: string) => {
-      if (path === "/transport-usage/student/student-1") {
+      if (path === "/transport-usage/student-1") {
         return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
       }
       if (path === "/image/student/student-1") {
@@ -227,7 +227,7 @@ describe("StudentDocumentsModal — viewer de imagem em modal separado", () => {
 
   it("abre o viewer em modal próprio ao clicar no documento, com botões Voltar e Fechar", async () => {
     getMock.mockImplementation((path: string) => {
-      if (path === "/transport-usage/student/student-1") {
+      if (path === "/transport-usage/student-1") {
         return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
       }
       if (path === "/image/student/student-1") {
@@ -253,7 +253,7 @@ describe("StudentDocumentsModal — viewer de imagem em modal separado", () => {
   it("botão Voltar fecha o viewer e retorna ao modal de documentos, sem chamar onClose", async () => {
     const onClose = vi.fn();
     getMock.mockImplementation((path: string) => {
-      if (path === "/transport-usage/student/student-1") {
+      if (path === "/transport-usage/student-1") {
         return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
       }
       if (path === "/image/student/student-1") {
@@ -282,7 +282,7 @@ describe("StudentDocumentsModal — viewer de imagem em modal separado", () => {
   it("botão Fechar do viewer chama onClose", async () => {
     const onClose = vi.fn();
     getMock.mockImplementation((path: string) => {
-      if (path === "/transport-usage/student/student-1") {
+      if (path === "/transport-usage/student-1") {
         return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
       }
       if (path === "/image/student/student-1") {
@@ -308,7 +308,7 @@ describe("StudentDocumentsModal — viewer de imagem em modal separado", () => {
 
   it("clicar no backdrop do viewer não fecha o modal", async () => {
     getMock.mockImplementation((path: string) => {
-      if (path === "/transport-usage/student/student-1") {
+      if (path === "/transport-usage/student-1") {
         return Promise.resolve({ studentId: "student-1", alreadyUsesTransport: false });
       }
       if (path === "/image/student/student-1") {

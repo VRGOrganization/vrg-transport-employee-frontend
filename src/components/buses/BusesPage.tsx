@@ -12,7 +12,7 @@ import type {
   StudentRecord,
 } from "@/types/cards.types";
 import { BusTable } from "@/components/buses/BusTable";
-import { BusFormModal } from "@/components/buses/BusFormModal";
+import { BusFormModal, type BusFormSubmitData } from "@/components/buses/BusFormModal";
 import { BusStudentsDrawer } from "@/components/buses/BusStudentsDrawer";
 import { DeactivateBusModal } from "@/components/buses/DeactivateBusModal";
 import { Bus as BusIcon, Armchair, Building2, Unlink, CheckCircle2, Ban, RotateCcw, ArrowUpDown } from "lucide-react";
@@ -34,7 +34,7 @@ const STATUS_TABS = [
 const PAGE_SIZE_OPTIONS = [6, 12, 18] as const;
 type PageSize = typeof PAGE_SIZE_OPTIONS[number];
 
-const SHIFT_ORDER: Record<string, number> = { morning: 0, afternoon: 1, night: 2 };
+const SHIFT_ORDER: Record<string, number> = { "Manhã": 0, "Noite": 1 };
 
 export function BusesPage() {
   const [statusTab, setStatusTab] = useState<StatusTab>("active");
@@ -114,17 +114,23 @@ export function BusesPage() {
   const safePage = Math.min(currentPage, totalPages);
   const pageItems = sortedBuses.slice((safePage - 1) * pageSize, safePage * pageSize);
 
-  const handleCreate = async (data: { identifier: string; capacity?: number | null; universitySlots?: Array<{ universityId: string; priorityOrder: number }>; shift?: string }) => {
-    const created = await busApi.create({ identifier: data.identifier, capacity: data.capacity, ...(data.shift ? { shift: data.shift } : {}) });
+  const handleCreate = async (data: BusFormSubmitData) => {
+    const created = await busApi.create({ identifier: data.identifier, capacity: data.capacity, shift: data.shift });
     if (data.universitySlots && data.universitySlots.length > 0) {
       await busApi.updateUniversitySlots(created._id, data.universitySlots);
     }
     await loadBuses();
   };
 
-  const handleEdit = async (data: { identifier: string; capacity?: number | null; universitySlots?: Array<{ universityId: string; priorityOrder: number }>; shift?: string }) => {
+  const handleEdit = async (data: BusFormSubmitData) => {
     if (!editing) return;
-    await busApi.update(editing._id, { identifier: data.identifier, capacity: data.capacity, ...(data.shift ? { shift: data.shift } : {}) });
+    // Só envia o que mudou: capacidade inalterada não passa pela trava de
+    // ocupação do backend.
+    await busApi.update(editing._id, {
+      identifier: data.identifier,
+      ...(data.capacity !== editing.capacity ? { capacity: data.capacity } : {}),
+      ...(data.shift !== editing.shift ? { shift: data.shift } : {}),
+    });
     if (data.universitySlots) {
       await busApi.updateUniversitySlots(editing._id, data.universitySlots);
     }
