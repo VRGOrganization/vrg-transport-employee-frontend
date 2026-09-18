@@ -18,11 +18,16 @@ interface DropdownProps {
 }
 
 interface Position {
-  top: number;
+  top?: number;
+  bottom?: number;
   left?: number;
   right?: number;
   width?: number;
 }
+
+/** Altura estimada do menu quando ainda não foi medido (antes do primeiro paint). */
+const ESTIMATED_MENU_HEIGHT = 200;
+const VIEWPORT_MARGIN = 8;
 
 export function Dropdown({
   trigger,
@@ -42,16 +47,32 @@ export function Dropdown({
     const rect = anchorRef.current?.getBoundingClientRect();
     if (!rect) return;
     const width = matchTriggerWidth ? rect.width : undefined;
+
+    const menuHeight = menuRef.current?.offsetHeight ?? ESTIMATED_MENU_HEIGHT;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const openUpward =
+      spaceBelow < menuHeight + VIEWPORT_MARGIN && spaceAbove > spaceBelow;
+
+    const vertical = openUpward
+      ? { bottom: window.innerHeight - rect.top + 4 }
+      : { top: rect.bottom + 4 };
+
     setPosition(
       align === "end"
-        ? { top: rect.bottom + 4, right: window.innerWidth - rect.right, width }
-        : { top: rect.bottom + 4, left: rect.left, width },
+        ? { ...vertical, right: window.innerWidth - rect.right, width }
+        : { ...vertical, left: rect.left, width },
     );
   };
 
   useLayoutEffect(() => {
     if (!open) return;
+    // Primeira passada com a altura estimada (menu ainda não montado); uma
+    // segunda passada roda no próximo frame com a altura real medida, o que
+    // corrige o lado (cima/baixo) caso a estimativa tenha errado.
     recomputePosition();
+    const raf = requestAnimationFrame(recomputePosition);
+    return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, align]);
 
@@ -99,6 +120,7 @@ export function Dropdown({
               style={{
                 position: "fixed",
                 top: position.top,
+                bottom: position.bottom,
                 left: position.left,
                 right: position.right,
                 width: position.width,

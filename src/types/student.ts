@@ -79,6 +79,15 @@ export interface LicenseRequestRecord {
   createdAt: string;
 }
 
+/** GET /student/list-flags: IDs de alunos para os filtros da lista. */
+export interface StudentListFlags {
+  activeLicenseStudentIds: string[];
+  /** Carteirinha pendente ou em revisão já reenviada pelo aluno. */
+  licenseRequestAwaitingReviewStudentIds: string[];
+  /** Passe pendente ou em revisão já reenviada pelo aluno. */
+  busPassAwaitingReviewStudentIds: string[];
+}
+
 export type StudentShift = "Manhã" | "Tarde" | "Noite" | "Integral";
 
 export const SHIFTS: { value: StudentShift; label: string; icon: string }[] = [
