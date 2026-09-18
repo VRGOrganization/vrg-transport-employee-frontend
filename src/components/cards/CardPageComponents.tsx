@@ -1,5 +1,6 @@
 import { type ComponentType, type ReactNode, useRef } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { usePrefersReducedMotion } from "@/hooks/ui/useTheme";
 import {
   ChevronLeft,
   ChevronRight,
@@ -152,7 +153,7 @@ export function ImageLightbox({
   onNavigate: (index: number) => void;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
   const currentPos = availableIndexes.indexOf(currentIndex);
   const canNavigate = availableIndexes.length > 1;
   const item = items[currentIndex];

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { usePrefersReducedMotion } from "@/hooks/ui/useTheme";
 import type { Course, CourseModel } from "@/types/university.types";
 import { COURSE_MODEL_OPTIONS } from "@/types/university.types";
 import { Button } from "@/components/ui/Button";
@@ -24,7 +25,7 @@ interface Props {
 const MODEL_OPTIONS = COURSE_MODEL_OPTIONS.map((m) => ({ value: m, label: m }));
 
 export function CourseFormModal({ open, initial, universityName, onClose, onSubmit }: Props) {
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
   const [name, setName] = useState("");
   const [model, setModel] = useState<CourseModel | "">("");
   const [loading, setLoading] = useState(false);
