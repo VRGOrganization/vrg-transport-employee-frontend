@@ -11,6 +11,8 @@ interface UseListPageOptions<T, Tab extends string> {
   errorMessage?: string;
   reloadOnTabChange?: boolean;
   sortFn?: (a: T, b: T) => number;
+  /** Filtro extra além da busca (ex.: filtros de toolbar). Mudar a função não refaz o fetch. */
+  filterFn?: (item: T) => boolean;
 }
 
 export function useListPage<T, Tab extends string>({
@@ -21,6 +23,7 @@ export function useListPage<T, Tab extends string>({
   errorMessage = "Não foi possível carregar os dados",
   reloadOnTabChange = false,
   sortFn,
+  filterFn,
 }: UseListPageOptions<T, Tab>) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [items, setItems] = useState<Record<Tab, T[] | null>>(
@@ -74,9 +77,10 @@ export function useListPage<T, Tab extends string>({
           return searchFields(item).some((f) => f.toLowerCase().includes(q));
         })
       : current;
+    if (filterFn) result = result.filter(filterFn);
     if (sortFn) result = [...result].sort(sortFn);
     return result;
-  }, [current, search, searchFields, sortFn]);
+  }, [current, search, searchFields, sortFn, filterFn]);
 
   const paginated = useMemo(
     () => filtered.slice((page - 1) * pageSize, page * pageSize),

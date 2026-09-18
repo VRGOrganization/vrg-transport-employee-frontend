@@ -6,6 +6,9 @@ export const busService = {
   list:               ()                                   => http.get<Paginated<Bus>>("/bus").then(resolvePaginated),
   listActive:         ()                                   => http.get<Paginated<Bus>>("/bus/active").then(resolvePaginated),
   listInactive:       ()                                   => http.get<Paginated<Bus>>("/bus/inactive").then(resolvePaginated),
+  // Capacidade da frota ativa em vaga-dia. Vem do backend já calculada
+  // (capacidade × dias úteis) e não depende de ciclo de inscrição aberto.
+  fleetCapacity:      ()                                   => http.get<{ totalSlots: number }>("/bus/fleet-capacity"),
   listWithQueueCounts: async () => {
     const [busList, queueResult] = await Promise.all([
       http.get<Paginated<Bus>>("/bus").then(resolvePaginated),

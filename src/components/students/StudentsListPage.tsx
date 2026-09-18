@@ -8,7 +8,7 @@ import { studentService } from "@/services/studentService";
 import { banlistService } from "@/services/banlistService";
 import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
 import { licenseRequestService } from "@/services/licenseRequestService";
-import type { Student } from "@/types/student";
+import type { Student, StudentListFlags } from "@/types/student";
 import type { BanlistEntry } from "@/types/banlist";
 import type { LicenseRecord } from "@/types/cards.types";
 import { DataTable, type Column } from "@/components/ui/DataTable";
@@ -16,6 +16,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Dropdown } from "@/components/ui/Dropdown";
+import { FilterPopover, type FilterOption } from "@/components/info/FilterPopover";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState, EmptyState } from "@/components/ui/states";
 import { useListPage } from "@/hooks/ui/useListPage";
@@ -40,6 +41,42 @@ const TAB_ITEMS = [
 
 // Funcionário não gerencia banimentos.
 const STUDENT_ONLY_TAB_ITEMS = TAB_ITEMS.filter((t) => t.key !== "banned");
+
+// ── Filtros da toolbar ────────────────────────────────────────────────
+type DocumentsFilter = "sent" | "missing";
+type LicenseFilter = "active" | "none";
+type AwaitingReviewFilter = "any" | "license" | "pass" | "none";
+
+const DOCUMENTS_FILTER_OPTIONS: FilterOption[] = [
+  { value: "sent",    label: "Enviados"     },
+  { value: "missing", label: "Não enviados" },
+];
+
+const LICENSE_FILTER_OPTIONS: FilterOption[] = [
+  { value: "active", label: "Ativa"                 },
+  { value: "none",   label: "Sem carteirinha ativa" },
+];
+
+const AWAITING_REVIEW_FILTER_OPTIONS: FilterOption[] = [
+  { value: "any",     label: "Carteirinha ou passe" },
+  { value: "license", label: "Carteirinha"          },
+  { value: "pass",    label: "Passe"                },
+  { value: "none",    label: "Nada pendente"        },
+];
+
+interface StudentFlagSets {
+  activeLicense: Set<string>;
+  licenseRequestAwaitingReview: Set<string>;
+  busPassAwaitingReview: Set<string>;
+}
+
+function toFlagSets(flags: StudentListFlags): StudentFlagSets {
+  return {
+    activeLicense: new Set(flags.activeLicenseStudentIds),
+    licenseRequestAwaitingReview: new Set(flags.licenseRequestAwaitingReviewStudentIds),
+    busPassAwaitingReview: new Set(flags.busPassAwaitingReviewStudentIds),
+  };
+}
 
 const STUDENT_COLUMNS: Column<Student>[] = [
   {
@@ -194,16 +231,52 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
   }, [licenseByStudentId, checkingLicenseId]);
 
   // ── Lista de estudantes ativos ───────────────────────────────────
+  // Flags (carteirinha ativa, pedidos aguardando análise) vêm junto da lista
+  // e recarregam com ela. Se falharem, a lista carrega e só os filtros que
+  // dependem delas ficam desabilitados.
+  const [flags, setFlags] = useState<StudentFlagSets | null>(null);
+
   const studentFetcher = useCallback(async () => {
-    // Funcionário não acessa a banlist (endpoint admin-only).
-    if (!isAdmin) return studentService.list();
-    const [students, activeBans] = await Promise.all([
+    const [students, flagSets, activeBans] = await Promise.all([
       studentService.list(),
-      banlistService.list(true).catch(() => [] as BanlistEntry[]),
+      studentService.listFlags().then(toFlagSets, () => null),
+      // Funcionário não acessa a banlist (endpoint admin-only).
+      isAdmin
+        ? banlistService.list(true).catch(() => [] as BanlistEntry[])
+        : Promise.resolve([] as BanlistEntry[]),
     ]);
-    const ids = new Set(activeBans.map((b) => b.studentId));
-    return students.filter((s) => !ids.has(s._id));
+    setFlags(flagSets);
+    const bannedIds = new Set(activeBans.map((b) => b.studentId));
+    return students.filter((s) => !bannedIds.has(s._id));
   }, [isAdmin]);
+
+  const [documentsFilter, setDocumentsFilter] = useState<DocumentsFilter | null>(null);
+  const [licenseFilter, setLicenseFilter] = useState<LicenseFilter | null>(null);
+  const [awaitingReviewFilter, setAwaitingReviewFilter] = useState<AwaitingReviewFilter | null>(null);
+  const hasActiveFilter = Boolean(documentsFilter || licenseFilter || awaitingReviewFilter);
+
+  const filterFn = useCallback(
+    (s: Student) => {
+      if (documentsFilter === "sent" && !s.hasPersonalDocuments) return false;
+      if (documentsFilter === "missing" && s.hasPersonalDocuments) return false;
+      if (!flags) return true;
+
+      const hasActiveLicense = flags.activeLicense.has(s._id);
+      if (licenseFilter === "active" && !hasActiveLicense) return false;
+      if (licenseFilter === "none" && hasActiveLicense) return false;
+
+      const licensePending = flags.licenseRequestAwaitingReview.has(s._id);
+      const passPending = flags.busPassAwaitingReview.has(s._id);
+      switch (awaitingReviewFilter) {
+        case "any":     return licensePending || passPending;
+        case "license": return licensePending;
+        case "pass":    return passPending;
+        case "none":    return !licensePending && !passPending;
+        default:        return true;
+      }
+    },
+    [documentsFilter, licenseFilter, awaitingReviewFilter, flags],
+  );
 
   const [sortAsc, setSortAsc] = useState(true);
 
@@ -228,7 +301,23 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
     fetcher: studentFetcher,
     searchFields: (s) => [s.name, s.socialName ?? "", s.email, s.institution ?? ""],
     sortFn,
+    filterFn,
   });
+
+  const changeFilter = <V,>(setter: (value: V) => void) => (value: V) => {
+    setter(value);
+    setStudentPage(1);
+  };
+
+  const clearFilters = () => {
+    setDocumentsFilter(null);
+    setLicenseFilter(null);
+    setAwaitingReviewFilter(null);
+    setStudentPage(1);
+  };
+
+  const flagsUnavailable = !studentLoading && flags === null;
+  const flagsUnavailableHint = "Não foi possível carregar carteirinhas e solicitações.";
 
   // ── Banidos (admin) ──────────────────────────────────────────────
   const banFetcher = useCallback(
@@ -404,7 +493,7 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
         </div>
 
         {/* Toolbar */}
-        <div className="px-4 pb-3 flex items-center gap-3">
+        <div className="px-4 pb-3 flex flex-wrap items-center gap-3">
           <Tabs items={isAdmin ? TAB_ITEMS : STUDENT_ONLY_TAB_ITEMS} value={topTab} onChange={setTopTab} />
           {isStudentTab && (
             <button
@@ -414,6 +503,46 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
               {sortAsc ? <ArrowUpAZ className="size-4" /> : <ArrowDownAZ className="size-4" />}
               {sortAsc ? "A–Z" : "Z–A"}
             </button>
+          )}
+          {isStudentTab && (
+            <>
+              <span aria-hidden="true" className="h-6 w-px bg-outline-variant" />
+              <FilterPopover
+                name="Documentos"
+                value={documentsFilter}
+                options={DOCUMENTS_FILTER_OPTIONS}
+                onChange={changeFilter((v) => setDocumentsFilter(v as DocumentsFilter | null))}
+                searchable={false}
+              />
+              <FilterPopover
+                name="Carteirinha"
+                emptyLabel="Todas"
+                value={licenseFilter}
+                options={LICENSE_FILTER_OPTIONS}
+                onChange={changeFilter((v) => setLicenseFilter(v as LicenseFilter | null))}
+                disabled={flagsUnavailable}
+                disabledHint={flagsUnavailableHint}
+                searchable={false}
+              />
+              <FilterPopover
+                name="Aguardando análise"
+                value={awaitingReviewFilter}
+                options={AWAITING_REVIEW_FILTER_OPTIONS}
+                onChange={changeFilter((v) => setAwaitingReviewFilter(v as AwaitingReviewFilter | null))}
+                disabled={flagsUnavailable}
+                disabledHint={flagsUnavailableHint}
+                searchable={false}
+              />
+              {hasActiveFilter && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="px-2 py-1.5 text-sm font-semibold text-primary hover:underline cursor-pointer"
+                >
+                  Limpar filtros
+                </button>
+              )}
+            </>
           )}
         </div>
 
@@ -431,9 +560,11 @@ export function StudentsListPage({ role }: { role: "admin" | "employee" }) {
                 icon={GraduationCap}
                 title="Nenhum estudante"
                 description={
-                  studentSearch
-                    ? "Nenhum estudante encontrado para esta busca."
-                    : "Adicione o primeiro estudante ao sistema."
+                  hasActiveFilter
+                    ? "Nenhum estudante para estes filtros."
+                    : studentSearch
+                      ? "Nenhum estudante encontrado para esta busca."
+                      : "Adicione o primeiro estudante ao sistema."
                 }
               />
             }
