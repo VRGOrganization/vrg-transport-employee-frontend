@@ -25,6 +25,8 @@ interface FilterPopoverProps {
   emptyLabel?: string;
   searchPlaceholder?: string;
   icon?: ReactNode;
+  /** Listas curtas (poucas opções fixas) dispensam o campo de busca. */
+  searchable?: boolean;
 }
 
 /**
@@ -41,6 +43,7 @@ export function FilterPopover({
   emptyLabel = "Todos",
   searchPlaceholder = "Buscar…",
   icon,
+  searchable = true,
 }: FilterPopoverProps) {
   const [query, setQuery] = useState("");
   const listboxId = useId();
@@ -108,21 +111,23 @@ export function FilterPopover({
     >
       <div id={listboxId} role="listbox" aria-label={name}>
         {/* stopPropagation: a busca não é uma opção — clicar/digitar aqui não deve fechar o menu (o Dropdown fecha ao clicar em qualquer lugar do conteúdo). */}
-        <div
-          className="flex items-center gap-1.5 border-b border-outline-variant px-2 pb-1.5"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Search className="size-3.5 shrink-0 text-on-surface-muted" />
-          <input
-            // Reabre montado do zero a cada abertura do Dropdown — não é autofocus de página.
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={searchPlaceholder}
-            aria-label={`Buscar em ${name}`}
-            className="h-7 w-full bg-transparent text-sm text-on-surface placeholder:text-on-surface-muted"
-          />
-        </div>
+        {searchable && (
+          <div
+            className="flex items-center gap-1.5 border-b border-outline-variant px-2 pb-1.5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Search className="size-3.5 shrink-0 text-on-surface-muted" />
+            <input
+              // Reabre montado do zero a cada abertura do Dropdown — não é autofocus de página.
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={searchPlaceholder}
+              aria-label={`Buscar em ${name}`}
+              className="h-7 w-full bg-transparent text-sm text-on-surface placeholder:text-on-surface-muted"
+            />
+          </div>
+        )}
 
         <div className="max-h-64 overflow-y-auto py-1">
           <Option

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, beforeEach, vi } from "vitest";
 
 import { StudentsListPage } from "./StudentsListPage";
@@ -7,11 +7,12 @@ import { studentService } from "@/services/studentService";
 import { banlistService } from "@/services/banlistService";
 import { enrollmentPeriodService } from "@/services/enrollmentPeriodService";
 import { licenseRequestService } from "@/services/licenseRequestService";
-import type { Student } from "@/types/student";
+import type { Student, StudentListFlags } from "@/types/student";
 
 vi.mock("@/services/studentService", () => ({
   studentService: {
     list: vi.fn(),
+    listFlags: vi.fn(),
     getById: vi.fn(),
   },
 }));
@@ -47,6 +48,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 const listStudentsMock = vi.mocked(studentService.list);
+const listFlagsMock = vi.mocked(studentService.listFlags);
 const listBansMock = vi.mocked(banlistService.list);
 const getActiveEnrollmentMock = vi.mocked(enrollmentPeriodService.getActive);
 const httpGetMock = vi.mocked(http.get);
@@ -82,6 +84,18 @@ const OPEN_CYCLE = {
   updatedAt: "2024-01-01",
 };
 
+const NO_FLAGS: StudentListFlags = {
+  activeLicenseStudentIds: [],
+  licenseRequestAwaitingReviewStudentIds: [],
+  busPassAwaitingReviewStudentIds: [],
+};
+
+// "Carteirinha" também é o nome de um filtro da toolbar: procurar o item só
+// dentro do menu de ações aberto.
+async function menuItem(label: string) {
+  return within(await screen.findByRole("menu")).getByText(label);
+}
+
 async function openDropdown(studentName: string) {
   const row = (await screen.findByText(studentName)).closest("tr");
   if (!row) throw new Error("Linha do estudante não encontrada");
@@ -94,6 +108,7 @@ describe("StudentsListPage — bloqueio de 'Novo pedido' manual de carteirinha",
   beforeEach(() => {
     vi.clearAllMocks();
     listStudentsMock.mockResolvedValue([makeStudent()]);
+    listFlagsMock.mockResolvedValue(NO_FLAGS);
     listBansMock.mockResolvedValue([]);
     findRequestsByStudentMock.mockResolvedValue([]);
     // clearAllMocks apaga o retorno declarado no vi.mock — rearmar aqui.
@@ -203,8 +218,8 @@ describe("StudentsListPage — bloqueio de 'Novo pedido' manual de carteirinha",
 
     await openDropdown("Aluno Um");
 
-    await waitFor(() => {
-      expect(screen.getByText("Carteirinha").closest("button")).toBeDisabled();
+    await waitFor(async () => {
+      expect((await menuItem("Carteirinha")).closest("button")).toBeDisabled();
     });
   });
 
@@ -216,8 +231,8 @@ describe("StudentsListPage — bloqueio de 'Novo pedido' manual de carteirinha",
 
     await openDropdown("Aluno Um");
 
-    await waitFor(() => {
-      expect(screen.getByText("Carteirinha").closest("button")).toBeDisabled();
+    await waitFor(async () => {
+      expect((await menuItem("Carteirinha")).closest("button")).toBeDisabled();
     });
   });
 
@@ -229,8 +244,96 @@ describe("StudentsListPage — bloqueio de 'Novo pedido' manual de carteirinha",
 
     await openDropdown("Aluno Um");
 
-    await waitFor(() => {
-      expect(screen.getByText("Carteirinha").closest("button")).not.toBeDisabled();
+    await waitFor(async () => {
+      expect((await menuItem("Carteirinha")).closest("button")).not.toBeDisabled();
     });
+  });
+});
+
+describe("StudentsListPage — filtros da toolbar", () => {
+  const withDocs = makeStudent({ _id: "s-docs", name: "Com Documentos", hasPersonalDocuments: true });
+  const withoutDocs = makeStudent({ _id: "s-nodocs", name: "Sem Documentos", hasPersonalDocuments: false });
+  const licensed = makeStudent({ _id: "s-license", name: "Com Carteirinha" });
+  const pendingLicense = makeStudent({ _id: "s-req", name: "Pedido Pendente" });
+  const pendingPass = makeStudent({ _id: "s-pass", name: "Passe Pendente" });
+  const all = [withDocs, withoutDocs, licensed, pendingLicense, pendingPass];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    listStudentsMock.mockResolvedValue(all);
+    listFlagsMock.mockResolvedValue({
+      activeLicenseStudentIds: ["s-license"],
+      licenseRequestAwaitingReviewStudentIds: ["s-req"],
+      busPassAwaitingReviewStudentIds: ["s-pass"],
+    });
+    listBansMock.mockResolvedValue([]);
+    getActiveEnrollmentMock.mockResolvedValue(OPEN_CYCLE);
+    vi.mocked(banlistService.getHistory).mockResolvedValue([]);
+  });
+
+  async function pick(filterName: RegExp, option: string) {
+    fireEvent.click(await screen.findByRole("button", { name: filterName }));
+    fireEvent.click(await screen.findByRole("option", { name: option }));
+  }
+
+  function visibleNames() {
+    return all.map((s) => s.name).filter((name) => screen.queryByText(name));
+  }
+
+  it("filtra por documentos pessoais não enviados", async () => {
+    render(<StudentsListPage role="employee" />);
+    await screen.findByText("Sem Documentos");
+
+    await pick(/^Documentos/, "Não enviados");
+
+    await waitFor(() => expect(visibleNames()).toEqual(["Sem Documentos"]));
+  });
+
+  it("filtra por carteirinha ativa", async () => {
+    render(<StudentsListPage role="employee" />);
+    await screen.findByText("Com Carteirinha");
+
+    await pick(/^Carteirinha/, "Ativa");
+
+    await waitFor(() => expect(visibleNames()).toEqual(["Com Carteirinha"]));
+  });
+
+  it.each([
+    ["Carteirinha ou passe", ["Pedido Pendente", "Passe Pendente"]],
+    ["Carteirinha", ["Pedido Pendente"]],
+    ["Passe", ["Passe Pendente"]],
+    ["Nada pendente", ["Com Documentos", "Sem Documentos", "Com Carteirinha"]],
+  ])("filtra aguardando análise: %s", async (option, expected) => {
+    render(<StudentsListPage role="employee" />);
+    await screen.findByText("Passe Pendente");
+
+    await pick(/^Aguardando análise/, option);
+
+    await waitFor(() => expect(visibleNames()).toEqual(expected));
+  });
+
+  it("'Limpar filtros' volta a mostrar todos", async () => {
+    render(<StudentsListPage role="employee" />);
+    await screen.findByText("Com Carteirinha");
+    expect(screen.queryByText("Limpar filtros")).not.toBeInTheDocument();
+
+    await pick(/^Carteirinha/, "Ativa");
+    await waitFor(() => expect(visibleNames()).toEqual(["Com Carteirinha"]));
+
+    fireEvent.click(screen.getByText("Limpar filtros"));
+
+    await waitFor(() => expect(visibleNames()).toHaveLength(all.length));
+    expect(screen.queryByText("Limpar filtros")).not.toBeInTheDocument();
+  });
+
+  it("sem as flags, a lista carrega e os filtros que dependem delas ficam desabilitados", async () => {
+    listFlagsMock.mockRejectedValue(new Error("falhou"));
+
+    render(<StudentsListPage role="employee" />);
+    await screen.findByText("Com Carteirinha");
+
+    expect(screen.getByRole("button", { name: /^Documentos/ })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: /^Carteirinha/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^Aguardando análise/ })).toBeDisabled();
   });
 });

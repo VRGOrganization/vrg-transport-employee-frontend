@@ -1,6 +1,6 @@
 import { http } from "./http";
 import { resolvePaginated, type Paginated } from "@/types/api";
-import type { Student } from "@/types/student";
+import type { Student, StudentListFlags } from "@/types/student";
 
 export interface StudentCreatePayload {
   name: string;
@@ -70,6 +70,7 @@ export const studentService = {
   // Censo agregado no banco (active: true + status: ACTIVE). Contar no cliente
   // a partir de /student truncava no limite de paginação (20 por padrão).
   dashboardStats: () => http.get<StudentDashboardStats>("/student/stats/dashboard"),
+  listFlags:    ()                                => http.get<StudentListFlags>("/student/list-flags"),
   listInactive: ()                                => http.get<Paginated<Student>>("/student/inactive").then(resolvePaginated),
   getById:      (id: string)                      => http.get<Student>(`/student/${id}`),
   // POST /student sempre exige multipart/form-data no backend (FileFieldsInterceptor
