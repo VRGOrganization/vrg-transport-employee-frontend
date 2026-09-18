@@ -1,7 +1,8 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { usePrefersReducedMotion } from "@/hooks/ui/useTheme";
 
 export interface SegmentedControlOption {
   value: string;
@@ -33,7 +34,7 @@ export function SegmentedControl({
   columns = 3,
   className,
 }: SegmentedControlProps) {
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
 
   return (
     <div className={cn("grid gap-2", COLUMN_CLASSES[columns], className)}>
@@ -47,7 +48,9 @@ export function SegmentedControl({
             aria-pressed={selected}
             className={cn(
               "relative px-2 py-2 rounded-lg border text-sm font-medium transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30",
-              selected ? "border-primary text-white" : "border-outline-variant text-on-surface-variant hover:border-primary/50 hover:text-on-surface",
+              selected
+                ? "border-primary bg-primary text-on-primary"
+                : "border-outline-variant text-on-surface-variant hover:border-primary/50 hover:text-on-surface",
             )}
           >
             {selected && (

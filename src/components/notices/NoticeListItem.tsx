@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { formatDate } from "@/lib/license-formatters";
 import { DeleteNoticeButton } from "./DeleteNoticeButton";
 import { PollResultsPanel } from "./PollResultsPanel";
+import { ResendNoticeButton } from "./ResendNoticeButton";
 import { TogglePinButton } from "./TogglePinButton";
 import type { Notice, NoticeStatus, NoticeType } from "@/services/noticeService";
 
@@ -90,6 +91,7 @@ export function NoticeListItem({ notice, onDeleted, onUpdated }: Props) {
             onToggled={onUpdated}
           />
         )}
+        {notice.status === "published" && <ResendNoticeButton noticeId={notice.id} />}
         <DeleteNoticeButton noticeId={notice.id} onDeleted={onDeleted} />
       </div>
 

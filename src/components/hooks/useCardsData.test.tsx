@@ -19,7 +19,7 @@ describe("useCardsData", () => {
 
   it("filtra pedidos pela universidade selecionada", async () => {
     getMock.mockImplementation((path: string) => {
-      if (path === "/student") {
+      if (path === "/student/all") {
         return Promise.resolve([
           { _id: "student-1", name: "Aluno 1", email: "a@a.com", active: true },
           { _id: "student-2", name: "Aluno 2", email: "b@b.com", active: true },
@@ -89,7 +89,7 @@ describe("useCardsData", () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(getMock).toHaveBeenCalledWith("/student");
+    expect(getMock).toHaveBeenCalledWith("/student/all");
     expect(getMock).toHaveBeenCalledWith("/license/all");
     expect(getMock).toHaveBeenCalledWith("/license-request?limit=1000");
     expect(result.current.students).toHaveLength(1);
@@ -102,7 +102,7 @@ describe("useCardsData", () => {
 
   it("nao mostra aprovacao de outra universidade", async () => {
     getMock.mockImplementation((path: string) => {
-      if (path === "/student") {
+      if (path === "/student/all") {
         return Promise.resolve([
           { _id: "student-1", name: "Aluno 1", email: "a@a.com", active: true },
         ]);
@@ -164,7 +164,7 @@ describe("useCardsData", () => {
     });
 
     getMock.mockImplementation((path: string) => {
-      if (path === "/student") {
+      if (path === "/student/all") {
         return Promise.resolve(
           ["s1", "s2", "s3", "s4"].map((id) => ({ _id: id, name: id, email: `${id}@a.com`, active: true })),
         );

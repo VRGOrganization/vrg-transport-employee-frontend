@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { usePrefersReducedMotion } from "@/hooks/ui/useTheme";
 import { CheckCircle2, UserPlus, ArrowLeft, ArrowRight } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -71,7 +72,7 @@ const stepVariants = {
 const SUBMIT_COOLDOWN_MS = 400;
 
 export function StudentCreateModal({ open, onClose, onCreated }: Props) {
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [submitLocked, setSubmitLocked] = useState(false);
