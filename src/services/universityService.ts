@@ -2,11 +2,14 @@ import { http } from "./http";
 import { resolvePaginated, type Paginated } from "@/types/api";
 import type { University, Course, CourseModel } from "@/types/university.types";
 
+// GET /university é paginado no backend (default limit=20, teto 100). As telas
+// de admin fazem sua própria paginação client-side sobre a lista inteira, então
+// pedimos o teto para não truncar antes da hora (ver /course/inactive, mesmo padrão).
 export const universityService = {
-  list:         ()                                                    => http.get<Paginated<University>>("/university").then(resolvePaginated),
+  list:         ()                                                    => http.get<Paginated<University>>("/university?limit=100").then(resolvePaginated),
   listWithQueueCounts: async () => {
     const [universityList, queueResult] = await Promise.all([
-      http.get<Paginated<University>>("/university").then(resolvePaginated),
+      http.get<Paginated<University>>("/university?limit=100").then(resolvePaginated),
       http.get<{ enrollmentCycleId: string | null; universities: Array<{ universityId: string; pendingCount: number; revisionCount: number; waitlistedCount: number }> }>("/university/queue"),
     ]);
     const queueMapById = new Map(
@@ -23,7 +26,7 @@ export const universityService = {
       };
     });
   },
-  listInactive: ()                                                    => http.get<Paginated<University>>("/university/inactive").then(resolvePaginated),
+  listInactive: ()                                                    => http.get<Paginated<University>>("/university/inactive?limit=100").then(resolvePaginated),
   getById:      (id: string)                                          => http.get<University>(`/university/${id}`),
   create:       (data: { name: string; acronym: string; address: string }) => http.post<University>("/university", data),
   createTemporary: (name: string) => http.post<University>("/university/temporary", { name }),
