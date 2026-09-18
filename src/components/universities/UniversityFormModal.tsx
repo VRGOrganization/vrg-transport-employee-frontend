@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { usePrefersReducedMotion } from "@/hooks/ui/useTheme";
 import type { University, Course } from "@/types/university.types";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -20,7 +21,7 @@ interface Props {
 }
 
 export function UniversityFormModal({ open, initial, onClose, onSubmit, onCoursesChanged }: Props) {
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
   const [name, setName] = useState("");
   const [acronym, setAcronym] = useState("");
   const [address, setAddress] = useState("");

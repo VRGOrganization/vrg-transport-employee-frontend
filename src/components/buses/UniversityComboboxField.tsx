@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { usePrefersReducedMotion } from "@/hooks/ui/useTheme";
 import { Plus, Search, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ModalOverlayPortal } from "@/components/ui/ModalOverlayPortal";
@@ -29,7 +30,7 @@ export function UniversityComboboxField({ universities, loading, disabled, trigg
   const [highlighted, setHighlighted] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

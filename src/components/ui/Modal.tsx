@@ -1,7 +1,8 @@
 "use client";
 
 import { useId, useRef, type ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { usePrefersReducedMotion } from "@/hooks/ui/useTheme";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { overlaySpring } from "@/lib/motion";
@@ -59,7 +60,7 @@ export function Modal({
 }: ModalProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
 
   const closeOnEscape = dismissible === "free";
   const closeOnBackdropEffective = dismissible === "free" && closeOnBackdrop;

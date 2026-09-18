@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { usePrefersReducedMotion } from "@/hooks/ui/useTheme";
 import { cn } from "@/lib/utils";
 import { useClickOutside } from "@/hooks/ui/useClickOutside";
 import { ModalOverlayPortal } from "./ModalOverlayPortal";
@@ -41,7 +42,7 @@ export function Dropdown({
   const [position, setPosition] = useState<Position | null>(null);
   const anchorRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
 
   const recomputePosition = () => {
     const rect = anchorRef.current?.getBoundingClientRect();

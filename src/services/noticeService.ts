@@ -63,6 +63,9 @@ export const noticeService = {
 
   deleteNotice: (noticeId: string) => http.delete<void>(`/employee/notices/${noticeId}`),
 
+  resendNotice: (noticeId: string) =>
+    http.post<void>(`/employee/notices/${noticeId}/resend`, {}),
+
   togglePin: (noticeId: string, pinned: boolean) =>
     http.patch<Notice>(`/employee/notices/${noticeId}/pin`, { pinned }),
 

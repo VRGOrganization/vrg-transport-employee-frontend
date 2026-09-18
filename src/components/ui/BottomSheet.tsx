@@ -1,7 +1,8 @@
 "use client";
 
 import { useId, useRef } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { usePrefersReducedMotion } from "@/hooks/ui/useTheme";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -42,7 +43,7 @@ export function BottomSheet({
 }: BottomSheetProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
 
   const closeOnEscape = dismissible === "free";
   const closeOnBackdropEffective = dismissible === "free" && closeOnOverlay;
