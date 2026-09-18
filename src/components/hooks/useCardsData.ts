@@ -85,7 +85,10 @@ export function useCardsData(scope?: CardsScope): UseCardsDataReturn {
     setError("");
     try {
       const [studentsResponse, licensesResponse, requestsResponse] = await Promise.all([
-        http.get<StudentsResponse>("/student"),
+        // /student é paginado (limit default 20); /student/all traz todos os
+        // ativos de uma vez — os KPIs (total, withCard, pending, ...) derivam
+        // dessa lista e ficavam travados em 20 com o endpoint paginado.
+        http.get<StudentsResponse>("/student/all"),
         http.get<LicenseRecord[]>("/license/all"),
         // limit alto: a fila é ordenada por prioridade → FIFO no cliente, então
         // precisamos do conjunto completo (um teto baixo truncaria a fila).
