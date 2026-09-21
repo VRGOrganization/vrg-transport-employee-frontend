@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { getBackendApiBaseUrl, getServiceSecret } from "@/lib/server/bff-auth";
+import { getClientIp, forwardedFor } from "@/lib/server/client-ip";
 import { checkRateLimit } from "@/lib/server/rate-limit";
 import { forgotPasswordSchema } from "@/lib/validation/auth";
 
 const SAFE_RESPONSE = {
   message: "Se o email estiver cadastrado, você receberá um link de recuperação em breve.",
 };
+
+const RATE_LIMITED_FALLBACK = "Muitas tentativas. Tente novamente mais tarde.";
+
+// Teto anti-flood, não limite por pessoa: este balde é por IP, e uma rede
+// compartilhada junta muita gente num endereço só. Se ele ficar apertado,
+// uma pessoa bloqueia as outras antes mesmo de o backend ser chamado. Quem
+// de fato limita é o balde por e-mail do backend, que é por pessoa.
+const IP_FLOOD_POINTS = 100;
+const IP_FLOOD_WINDOW_MS = 3_600_000;
 
 function isConnectivityError(error: unknown): boolean {
   if (!(error instanceof TypeError)) return false;
@@ -26,12 +36,11 @@ function isConnectivityError(error: unknown): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    const xff = request.headers.get("x-forwarded-for") ?? "";
-    const clientIp = xff.split(",")[0]?.trim() || "unknown";
+    const clientIp = getClientIp(request);
 
-    if (!checkRateLimit(`forgot-password:${clientIp}`, 5, 900_000)) {
+    if (!checkRateLimit(`forgot-password:${clientIp}`, IP_FLOOD_POINTS, IP_FLOOD_WINDOW_MS)) {
       return NextResponse.json(
-        { message: "Muitas tentativas. Tente novamente em 15 minutos." },
+        { message: "Muitas tentativas. Tente novamente mais tarde." },
         { status: 429 },
       );
     }
@@ -46,17 +55,47 @@ export async function POST(request: NextRequest) {
 
     const { email } = result.data;
 
-    await fetch(`${getBackendApiBaseUrl()}/auth/employee/forgot-password`, {
+    const upstream = await fetch(`${getBackendApiBaseUrl()}/auth/employee/forgot-password`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-service-secret": getServiceSecret(),
+        ...forwardedFor(clientIp),
       },
       body: JSON.stringify({ email }),
       cache: "no-store",
     });
 
-    // Sempre retorna 200 independente do resultado — previne enumeração de emails
+    // 429 é o único status que vaza. Ele não diz se a conta existe (o balde
+    // é consumido antes de qualquer consulta ao banco), e esconder isso só
+    // fazia o modal mentir "Email enviado!" quando nada foi despachado.
+    if (upstream.status === 429) {
+      const payload = (await upstream.json().catch(() => ({}))) as {
+        message?: string;
+      };
+      const responseHeaders = new Headers();
+      const retryAfter = upstream.headers.get("retry-after");
+      if (retryAfter) responseHeaders.set("Retry-After", retryAfter);
+
+      return NextResponse.json(
+        {
+          message:
+            typeof payload?.message === "string"
+              ? payload.message
+              : RATE_LIMITED_FALLBACK,
+        },
+        { status: 429, headers: responseHeaders },
+      );
+    }
+
+    // Demais erros seguem mascarados para não permitir enumeração de emails.
+    // Mascarar a resposta, porém, não é motivo pra sumir com o erro do log.
+    if (!upstream.ok) {
+      console.error(
+        `[BFF][auth/forgot-password] upstream respondeu ${upstream.status}`,
+      );
+    }
+
     return NextResponse.json(SAFE_RESPONSE);
   } catch (error) {
     if (isConnectivityError(error)) {
