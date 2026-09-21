@@ -7,18 +7,24 @@ import {
   ROLE_COOKIE_NAME,
   SID_COOKIE_NAME,
 } from "@/lib/server/bff-auth";
+import { getClientIp, forwardedFor } from "@/lib/server/client-ip";
 import { withAuthRouteGuards } from "@/lib/server/route-helpers";
 import {
   backendSessionPayloadSchema,
   employeeLoginRequestSchema,
 } from "@/lib/validation/auth";
 
-async function tryLogin(url: string, body: unknown): Promise<Response> {
+async function tryLogin(
+  url: string,
+  body: unknown,
+  clientIp: string,
+): Promise<Response> {
   return fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "x-service-secret": getServiceSecret(),
+      ...forwardedFor(clientIp),
     },
     body: JSON.stringify(body),
     cache: "no-store",
@@ -54,14 +60,14 @@ export const POST = withAuthRouteGuards({
   rateLimitMax: 10,
   rateLimitWindowMs: 300_000,
   schema: employeeLoginRequestSchema,
-  handler: async ({ login, password, role }): Promise<NextResponse> => {
+  handler: async ({ login, password, role }, request): Promise<NextResponse> => {
     const base = getBackendApiBaseUrl();
     const endpoint = role === "admin" ? "/auth/admin/login" : "/auth/employee/login";
     const payload = role === "admin"
       ? { username: login, password }
       : { registrationId: login, password };
 
-    const upstreamResult = await tryLogin(`${base}${endpoint}`, payload)
+    const upstreamResult = await tryLogin(`${base}${endpoint}`, payload, getClientIp(request))
       .then((res) => ({ type: "success" as const, res }))
       .catch((error) => {
         if (isUpstreamConnectivityError(error)) {

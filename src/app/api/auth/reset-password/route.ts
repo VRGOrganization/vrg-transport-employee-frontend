@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { getBackendApiBaseUrl, getServiceSecret } from "@/lib/server/bff-auth";
+import { getClientIp, forwardedFor } from "@/lib/server/client-ip";
 import { checkRateLimit } from "@/lib/server/rate-limit";
 import { resetPasswordSchema } from "@/lib/validation/auth";
 
@@ -22,8 +23,7 @@ function isConnectivityError(error: unknown): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    const xff = request.headers.get("x-forwarded-for") ?? "";
-    const clientIp = xff.split(",")[0]?.trim() || "unknown";
+    const clientIp = getClientIp(request);
 
     if (!checkRateLimit(`reset-password:${clientIp}`, 10, 3600_000)) {
       return NextResponse.json(
@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
         headers: {
           "Content-Type": "application/json",
           "x-service-secret": getServiceSecret(),
+          ...forwardedFor(clientIp),
         },
         body: JSON.stringify({ token, password }),
         cache: "no-store",
